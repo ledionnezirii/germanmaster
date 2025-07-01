@@ -23,6 +23,16 @@ const Chat = () => {
   // German special characters
   const germanChars = ["ä", "ö", "ü", "ß", "Ä", "Ö", "Ü"]
 
+  // Auto-focus input when a new question is loaded
+  useEffect(() => {
+    if (currentQuestion && inputRef.current && !loading) {
+      // Small delay to ensure the question message is rendered first
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 100)
+    }
+  }, [currentQuestion, loading])
+
   // Function to insert character at cursor position
   const insertCharacter = (char) => {
     const input = inputRef.current
@@ -33,8 +43,8 @@ const Chat = () => {
     const text = currentInput
     const before = text.substring(0, start)
     const after = text.substring(end)
-
     const newText = before + char + after
+
     setCurrentInput(newText)
 
     // Set cursor position after the inserted character
@@ -65,9 +75,9 @@ const Chat = () => {
         timestamp: new Date(),
       },
     ])
+
     // Reset asked questions when level changes
     setAskedQuestionIds([])
-
     // Clear any existing question to prevent duplicates
     setCurrentQuestion(null)
 
@@ -85,6 +95,7 @@ const Chat = () => {
 
     try {
       setLoading(true)
+
       // Build query parameters for better randomization
       const queryParams = {
         level: selectedLevel,
@@ -98,6 +109,7 @@ const Chat = () => {
         setCurrentQuestion(response.data)
         setShowHint(false)
         setHintIndex(0)
+
         // Add question ID to asked questions list
         setAskedQuestionIds((prev) => [...prev, response.data._id])
 
@@ -251,6 +263,7 @@ const Chat = () => {
   const showNextHint = () => {
     if (currentQuestion && currentQuestion.hints && hintIndex < currentQuestion.hints.length) {
       const hint = currentQuestion.hints[hintIndex]
+
       setMessages((prev) => [
         ...prev,
         {
@@ -264,6 +277,11 @@ const Chat = () => {
 
       setHintIndex(hintIndex + 1)
       setShowHint(true)
+
+      // Refocus input after showing hint
+      setTimeout(() => {
+        inputRef.current?.focus()
+      }, 100)
     }
   }
 
@@ -278,6 +296,7 @@ const Chat = () => {
         timestamp: new Date(),
       },
     ])
+
     setTimeout(() => {
       fetchQuestion()
     }, 1000)
@@ -381,6 +400,7 @@ const Chat = () => {
                       <XCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
                     )}
                     {message.isHint && <Lightbulb className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />}
+
                     <div className="flex-1">
                       <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
                       {message.score && (
