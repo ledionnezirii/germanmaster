@@ -9,17 +9,14 @@ const { asyncHandler } = require("../utils/asyncHandler")
 // @access  Public
 const getAllQuestions = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20, level, category, difficulty } = req.query
-
   const query = { isActive: true }
 
   if (level) {
     query.level = level
   }
-
   if (category) {
     query.category = category
   }
-
   if (difficulty) {
     query.difficulty = Number.parseInt(difficulty)
   }
@@ -107,7 +104,6 @@ const answerQuestion = asyncHandler(async (req, res) => {
   // Normalize answers for comparison
   const normalizedUserAnswer = answer.toLowerCase().trim()
   const normalizedCorrectAnswer = question.answer.toLowerCase().trim()
-
   const isCorrect = normalizedUserAnswer === normalizedCorrectAnswer
 
   // Calculate similarity score
@@ -131,6 +127,54 @@ const answerQuestion = asyncHandler(async (req, res) => {
     })
   }
 
+  // Generate detailed feedback based on correctness
+  let detailedFeedback = ""
+  let reasonWhy = ""
+
+  if (isCorrect) {
+    // Correct answer feedback
+    reasonWhy = question.explanation || "Përgjigja juaj përputhet me zgjidhjen e saktë!"
+    detailedFeedback = `Shkëlqyer! Përgjigja juaj "${answer}" është plotësisht e saktë!`
+
+    if (question.explanation) {
+      detailedFeedback += `\n\nPse është e saktë: ${question.explanation}`
+    }
+
+    // Add grammar rule or pattern explanation if available
+    if (question.grammarRule) {
+      detailedFeedback += `\n\nRregulli gramatikor: ${question.grammarRule}`
+    }
+  } else {
+    // Incorrect answer feedback
+    reasonWhy = `Përgjigja juaj "${answer}" nuk është e saktë. Përgjigja e drejtë është "${question.answer}".`
+
+    if (question.explanation) {
+      reasonWhy += ` ${question.explanation}`
+    }
+
+    detailedFeedback = `Jo plotësisht e saktë. Përgjigja juaj: "${answer}"`
+    detailedFeedback += `\nPërgjigja e saktë: "${question.answer}"`
+
+    if (question.explanation) {
+      detailedFeedback += `\n\nShpjegimi: ${question.explanation}`
+    }
+
+    // Provide specific feedback based on common mistakes
+    if (question.commonMistakes) {
+      const userMistake = question.commonMistakes.find(
+        (mistake) => mistake.incorrectAnswer.toLowerCase() === normalizedUserAnswer,
+      )
+      if (userMistake) {
+        detailedFeedback += `\n\nGabimi i zakonshëm: ${userMistake.explanation}`
+      }
+    }
+
+    // If partial credit, explain what was right
+    if (score > 0 && score < 80) {
+      detailedFeedback += `\n\nMorët ${score}% - disa pjesë të përgjigjes tuaj ishin në rrugën e duhur!`
+    }
+  }
+
   res.json(
     new ApiResponse(200, {
       correct: isCorrect,
@@ -138,13 +182,16 @@ const answerQuestion = asyncHandler(async (req, res) => {
       correctAnswer: question.answer,
       userAnswer: answer,
       explanation: question.explanation,
+      detailedFeedback,
+      reasonWhy,
       hints: question.hints,
       xpAwarded,
+      grammarRule: question.grammarRule,
       message: isCorrect
-        ? "Excellent! Correct answer!"
+        ? "Shkëlqyer! Përgjigje e saktë!"
         : score >= 80
-          ? "Very close! Good job!"
-          : "Not quite right. Try again!",
+          ? "Shumë afër! Punë e mirë!"
+          : "Jo plotësisht e saktë. Provo përsëri!",
     }),
   )
 })
@@ -153,35 +200,102 @@ const answerQuestion = asyncHandler(async (req, res) => {
 // @route   GET /api/questions/random
 // @access  Public
 const getRandomQuestion = asyncHandler(async (req, res) => {
-  const { level, category } = req.query
-
+  const { level, category, excludeIds } = req.query
   const query = { isActive: true }
 
   if (level) {
     query.level = level
   }
-
   if (category) {
     query.category = category
   }
 
-  const count = await Question.countDocuments(query)
+  // Exclude previously shown questions to ensure variety
+  if (excludeIds) {
+    const excludeArray = excludeIds.split(",").filter((id) => id.trim())
+    if (excludeArray.length > 0) {
+      query._id = { $nin: excludeArray }
+    }
+  }
 
+  const count = await Question.countDocuments(query)
   if (count === 0) {
     throw new ApiError(404, "No questions found matching criteria")
   }
 
-  const random = Math.floor(Math.random() * count)
-  const question = await Question.findOne(query).select("-answer").skip(random)
+  // Use MongoDB's $sample aggregation for true randomization
+  const questions = await Question.aggregate([
+    { $match: query },
+    { $sample: { size: 1 } },
+    { $project: { answer: 0 } }, // Exclude answer field
+  ])
+
+  if (questions.length === 0) {
+    throw new ApiError(404, "No questions found")
+  }
+
+  const question = questions[0]
+
+  // Populate createdBy field if needed
+  await Question.populate(question, { path: "createdBy", select: "emri mbiemri" })
 
   res.json(new ApiResponse(200, question))
+})
+
+// @desc    Get multiple random questions for practice session
+// @route   GET /api/questions/random-batch
+// @access  Public
+const getRandomQuestionBatch = asyncHandler(async (req, res) => {
+  const { level, category, limit = 5 } = req.query
+  const query = { isActive: true }
+
+  if (level) {
+    query.level = level
+  }
+  if (category) {
+    query.category = category
+  }
+
+  const batchSize = Math.min(Number.parseInt(limit), 20) // Max 20 questions per batch
+
+  // Use MongoDB's $sample for true randomization
+  const questions = await Question.aggregate([
+    { $match: query },
+    { $sample: { size: batchSize } },
+    { $project: { answer: 0 } }, // Exclude answer field
+  ])
+
+  if (questions.length === 0) {
+    throw new ApiError(404, "No questions found matching criteria")
+  }
+
+  res.json(
+    new ApiResponse(200, {
+      questions,
+      count: questions.length,
+      level,
+      category,
+    }),
+  )
 })
 
 // @desc    Create new question
 // @route   POST /api/questions
 // @access  Private (Admin)
 const createQuestion = asyncHandler(async (req, res) => {
-  const { question, answer, level, category, difficulty, hints, explanation, tags, xpReward } = req.body
+  const {
+    question,
+    answer,
+    level,
+    category,
+    difficulty,
+    hints,
+    explanation,
+    tags,
+    xpReward,
+    grammarRule,
+    commonMistakes,
+  } = req.body
 
   const newQuestion = await Question.create({
     question,
@@ -193,6 +307,8 @@ const createQuestion = asyncHandler(async (req, res) => {
     explanation,
     tags,
     xpReward,
+    grammarRule,
+    commonMistakes,
     createdBy: req.user.id,
   })
 
@@ -270,6 +386,7 @@ module.exports = {
   getQuestionById,
   answerQuestion,
   getRandomQuestion,
+  getRandomQuestionBatch,
   createQuestion,
   updateQuestion,
   deleteQuestion,
