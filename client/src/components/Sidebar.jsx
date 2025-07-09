@@ -25,15 +25,16 @@ const Sidebar = () => {
 
   const menuItems = [
     { icon: Home, label: "Home", path: "/", requireAuth: false },
-    { icon: Trophy, label: "Leaderboard", path: "/leaderboard", requireAuth: false },
-    { icon: Headphones, label: "Listen", path: "/listen", requireAuth: true },
     { icon: Languages, label: "Translate", path: "/translate", requireAuth: true },
-    { icon: User, label: "Account", path: "/account", requireAuth: true },
+    { icon: Headphones, label: "Listen", path: "/listen", requireAuth: true },
     { icon: BookOpen, label: "Dictionary", path: "/dictionary", requireAuth: true },
     { icon: FolderOpen, label: "Category", path: "/category", requireAuth: true },
     { icon: MessageCircle, label: "Chat", path: "/chat", requireAuth: true },
-    { icon: GraduationCap, label: "Grammar", path: "/grammar", requireAuth: true },
     { icon: Swords, label: "Challenge", path: "/challenge", requireAuth: true },
+    { icon: GraduationCap, label: "Grammar", path: "/grammar", requireAuth: true },
+
+    { icon: Trophy, label: "Leaderboard", path: "/leaderboard", requireAuth: false },
+    { icon: User, label: "Account", path: "/account", requireAuth: true },
   ]
 
   const filteredMenuItems = menuItems.filter((item) => !item.requireAuth || isAuthenticated)
