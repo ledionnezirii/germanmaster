@@ -1,8 +1,7 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import { listenService } from "../services/api"
-import { Volume2, Play, Pause, Check, X, Filter, CheckCircle } from "lucide-react"
+import { Volume2, Play, Pause, Check, X, Filter } from "lucide-react"
 
 const Listen = () => {
   const [tests, setTests] = useState([])
@@ -42,14 +41,13 @@ const Listen = () => {
     try {
       const response = await listenService.getUserProgress()
       const progressData = response.data
-
       console.log("Full progress data from backend:", progressData)
 
       // Create a set of completed test IDs for easy lookup
       const completedTests = new Set()
 
       // Check all possible sources of completed tests
-      if (progressData.recentTests) {
+      if (progressData.recentTests && Array.isArray(progressData.recentTests)) {
         console.log("Recent tests:", progressData.recentTests)
         progressData.recentTests.forEach((test) => {
           completedTests.add(test._id)
@@ -57,17 +55,25 @@ const Listen = () => {
       }
 
       // Also check if there's a completedTestIds array
-      if (progressData.completedTestIds) {
+      if (progressData.completedTestIds && Array.isArray(progressData.completedTestIds)) {
         console.log("Completed test IDs:", progressData.completedTestIds)
         progressData.completedTestIds.forEach((testId) => {
           completedTests.add(testId)
         })
       }
 
-      // Also check if there's a completedTests array or similar
-      if (progressData.completedTests) {
-        console.log("Completed tests array:", progressData.completedTests)
-        progressData.completedTests.forEach((testId) => {
+      // Check allCompletedTests array
+      if (progressData.allCompletedTests && Array.isArray(progressData.allCompletedTests)) {
+        console.log("All completed tests:", progressData.allCompletedTests)
+        progressData.allCompletedTests.forEach((test) => {
+          completedTests.add(test._id)
+        })
+      }
+
+      // Check completedFromTests array
+      if (progressData.completedFromTests && Array.isArray(progressData.completedFromTests)) {
+        console.log("Completed from tests:", progressData.completedFromTests)
+        progressData.completedFromTests.forEach((testId) => {
           completedTests.add(testId)
         })
       }
@@ -114,7 +120,6 @@ const Listen = () => {
       })
 
       console.log("Completed tests from test data:", Array.from(completedTests))
-
       if (completedTests.size > 0) {
         setUserProgress({ completedTests })
       }
@@ -143,6 +148,7 @@ const Listen = () => {
     utterance.onstart = () => setIsPlaying(true)
     utterance.onend = () => setIsPlaying(false)
     utterance.onerror = () => setIsPlaying(false)
+
     window.speechSynthesis.speak(utterance)
   }
 
@@ -272,14 +278,12 @@ const Listen = () => {
                       {result.message}
                     </p>
                   </div>
-
                   {!result.correct && (
                     <div className="mt-4">
                       <p className="text-sm text-gray-700 mb-2">Correct answer:</p>
                       <p className="font-medium text-gray-900">{result.correctAnswer}</p>
                     </div>
                   )}
-
                   <div className="mt-4 flex gap-3">
                     <button
                       onClick={resetTest}
@@ -309,7 +313,7 @@ const Listen = () => {
   }
 
   return (
-    <div className="h-min-screen  p-4 flex flex-col">
+    <div className="h-min-screen p-4 flex flex-col">
       <div className="max-w-6xl mx-auto w-full">
         {/* Header */}
         <header className="mb-4 flex-shrink-0">
@@ -365,7 +369,6 @@ const Listen = () => {
             {tests.length > 0 ? (
               tests.map((test) => {
                 const isCompleted = userProgress.completedTests && userProgress.completedTests.has(test._id)
-
                 return (
                   <div
                     key={test._id}
@@ -376,8 +379,6 @@ const Listen = () => {
                     }`}
                     onClick={() => setSelectedTest(test)}
                   >
-                   
-
                     {/* Level Badge */}
                     <div
                       className={`absolute top-2 right-2 ${getLevelColor(test.level)} px-1.5 py-0.5 rounded text-xs font-medium`}
@@ -402,16 +403,13 @@ const Listen = () => {
                       >
                         {test.title}
                       </h3>
-
                       <p className={`text-xs line-clamp-2 ${isCompleted ? "text-green-700" : "text-gray-600"}`}>
                         {test.text ? test.text.substring(0, 80) + "..." : "Audio exercise"}
                       </p>
-
                       <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center">
                         <span className={`text-xs ${isCompleted ? "text-green-600" : "text-gray-500"}`}>
                           German • Audio Exercise
                         </span>
-
                         <span
                           className={`text-xs px-1.5 py-0.5 rounded font-medium ${
                             isCompleted ? "bg-green-200 text-green-800" : "bg-teal-100 text-teal-800"
@@ -421,7 +419,6 @@ const Listen = () => {
                         </span>
                       </div>
                     </div>
-
                   </div>
                 )
               })
