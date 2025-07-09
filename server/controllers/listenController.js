@@ -4,12 +4,28 @@ const { ApiError } = require("../utils/ApiError")
 const { ApiResponse } = require("../utils/ApiResponse")
 const { asyncHandler } = require("../utils/asyncHandler")
 
+// Helper function to normalize text for comparison
+const normalizeText = (text) => {
+  return (
+    text
+      .toLowerCase()
+      .trim()
+      // Remove extra whitespace between words
+      .replace(/\s+/g, " ")
+      // Remove common punctuation
+      .replace(/[.,!?;:]/g, "")
+      // Remove quotes and other special characters
+      .replace(/["""'']/g, "")
+      // Trim again after all replacements
+      .trim()
+  )
+}
+
 // @desc    Get all listening tests
 // @route   GET /api/listen
 // @access  Public
 const getAllTests = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20, level, difficulty } = req.query
-
   const query = { isActive: true }
 
   if (level) {
@@ -97,39 +113,52 @@ const checkAnswer = asyncHandler(async (req, res) => {
   }
 
   const test = await Listen.findById(testId)
-
   if (!test || !test.isActive) {
     throw new ApiError(404, "Test not found")
   }
 
-  // Normalize answers for comparison
-  const normalizedUserAnswer = userAnswer.toLowerCase().trim()
-  const normalizedCorrectAnswer = test.correctText.toLowerCase().trim()
+  // Normalize answers for comparison using improved normalization
+  const normalizedUserAnswer = normalizeText(userAnswer)
+  const normalizedCorrectAnswer = normalizeText(test.correctText)
 
-  // Calculate similarity (simple approach)
-  const isCorrect = normalizedUserAnswer === normalizedCorrectAnswer
+  console.log("User answer (normalized):", normalizedUserAnswer)
+  console.log("Correct answer (normalized):", normalizedCorrectAnswer)
 
-  // Calculate score based on similarity
+  // Calculate similarity
+  const isExactMatch = normalizedUserAnswer === normalizedCorrectAnswer
+
+  // Calculate word-based similarity for partial credit
+  const userWords = normalizedUserAnswer.split(" ").filter((word) => word.length > 0)
+  const correctWords = normalizedCorrectAnswer.split(" ").filter((word) => word.length > 0)
+
+  // Count matching words
+  const matchingWords = userWords.filter((word) => correctWords.includes(word))
+  const wordSimilarity = matchingWords.length / Math.max(userWords.length, correctWords.length)
+
+  // Calculate final score
   let score = 0
-  if (isCorrect) {
+  let isCorrect = false
+
+  if (isExactMatch) {
     score = 100
+    isCorrect = true
   } else {
-    // Simple similarity calculation
-    const words1 = normalizedUserAnswer.split(" ")
-    const words2 = normalizedCorrectAnswer.split(" ")
-    const commonWords = words1.filter((word) => words2.includes(word))
-    score = Math.round((commonWords.length / Math.max(words1.length, words2.length)) * 100)
+    // Give partial credit based on word similarity
+    score = Math.round(wordSimilarity * 100)
+    // Consider it correct if similarity is very high (90%+)
+    isCorrect = score >= 90
   }
+
+  console.log("Final score:", score, "Is correct:", isCorrect)
 
   // Award XP if score is above threshold
   let xpAwarded = 0
   if (score >= 80) {
     xpAwarded = test.xpReward || 10 // Default XP if not set
-
     // Update user's XP, completed tests count, and add to listenTestsPassed
     await User.findByIdAndUpdate(req.user.id, {
       $inc: { xp: xpAwarded, completedTests: 1 },
-      $addToSet: { listenTestsPassed: testId }, // This was missing!
+      $addToSet: { listenTestsPassed: testId },
     })
   }
 
@@ -152,6 +181,18 @@ const checkAnswer = asyncHandler(async (req, res) => {
     }
   }
 
+  // Determine message based on score
+  let message
+  if (isCorrect) {
+    message = "Perfect! Well done!"
+  } else if (score >= 80) {
+    message = "Good job! Close enough!"
+  } else if (score >= 60) {
+    message = "Not bad, but try to be more accurate!"
+  } else {
+    message = "Not quite right, but keep practicing!"
+  }
+
   res.json(
     new ApiResponse(200, {
       correct: isCorrect,
@@ -159,11 +200,8 @@ const checkAnswer = asyncHandler(async (req, res) => {
       correctAnswer: test.correctText,
       userAnswer,
       xpAwarded,
-      message: isCorrect
-        ? "Perfect! Well done!"
-        : score >= 80
-          ? "Good job! Close enough!"
-          : "Not quite right, but keep practicing!",
+      message,
+      wordSimilarity: Math.round(wordSimilarity * 100), // For debugging
     }),
   )
 })
@@ -173,7 +211,6 @@ const checkAnswer = asyncHandler(async (req, res) => {
 // @access  Private
 const markAsListened = asyncHandler(async (req, res) => {
   const test = await Listen.findById(req.params.id)
-
   if (!test || !test.isActive) {
     throw new ApiError(404, "Test not found")
   }
@@ -196,6 +233,7 @@ const markAsListened = asyncHandler(async (req, res) => {
     score: 0, // No score for just listening
     completedAt: new Date(),
   })
+
   await test.save()
 
   res.json(new ApiResponse(200, null, "Test marked as listened"))
@@ -308,7 +346,6 @@ const getUserProgress = asyncHandler(async (req, res) => {
 // @access  Private
 const getAllTestsWithCompletion = asyncHandler(async (req, res) => {
   const { page = 1, limit = 50, level, difficulty } = req.query
-
   const query = { isActive: true }
 
   if (level) {
