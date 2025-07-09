@@ -1,9 +1,8 @@
 const User = require("../models/User")
-const { generateToken } = require("../utils/generateToken");
-const { ApiError } = require("../utils/ApiError");
-const { ApiResponse } = require("../utils/ApiResponse");
-const { asyncHandler } = require("../utils/asyncHandler");
-
+const { generateToken } = require("../utils/generateToken")
+const { ApiError } = require("../utils/ApiError")
+const { ApiResponse } = require("../utils/ApiResponse")
+const { asyncHandler } = require("../utils/asyncHandler")
 
 // @desc    Register user
 // @route   POST /api/auth/signup
@@ -17,7 +16,7 @@ const signup = asyncHandler(async (req, res) => {
     throw new ApiError(400, "User already exists with this email")
   }
 
-  // Determine role (admin check)
+  // Set role (admin or user)
   const role = email === process.env.ADMIN_EMAIL ? "admin" : "user"
 
   // Create user
@@ -33,8 +32,12 @@ const signup = asyncHandler(async (req, res) => {
     // Generate token
     const token = generateToken(user._id)
 
-    // Update last login
-    await user.updateLastLogin()
+    try {
+      // Update streak on first login (signup)
+      await user.updateStreakOnLogin()
+    } catch (error) {
+      console.error("Error updating streak on signup:", error)
+    }
 
     res.status(201).json(
       new ApiResponse(
@@ -49,6 +52,7 @@ const signup = asyncHandler(async (req, res) => {
             role: user.role,
             xp: user.xp,
             level: user.level,
+            streakCount: user.streakCount || 0,
           },
         },
         "User registered successfully",
@@ -59,37 +63,33 @@ const signup = asyncHandler(async (req, res) => {
   }
 })
 
-// @desc    Authenticate user
+// @desc    Authenticate user (Login)
 // @route   POST /api/auth/login
 // @access  Public
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body
 
-  // Check for user and include password
+  // Find user and include password
   const user = await User.findOne({ email }).select("+password")
-
   if (!user) {
     throw new ApiError(401, "Invalid credentials")
   }
 
-  // Check if account is locked
-  if (user.isLocked) {
-    throw new ApiError(423, "Account temporarily locked due to too many failed login attempts")
-  }
-
   // Check password
   const isMatch = await user.comparePassword(password)
-
   if (!isMatch) {
-    await user.incLoginAttempts()
     throw new ApiError(401, "Invalid credentials")
+  }
+
+  try {
+    // Update streak on login
+    await user.updateStreakOnLogin()
+  } catch (error) {
+    console.error("Error updating streak on login:", error)
   }
 
   // Generate token
   const token = generateToken(user._id)
-
-  // Update last login
-  await user.updateLastLogin()
 
   res.json(
     new ApiResponse(
@@ -105,6 +105,7 @@ const login = asyncHandler(async (req, res) => {
           xp: user.xp,
           level: user.level,
           profilePicture: user.profilePicture,
+          streakCount: user.streakCount || 0,
         },
       },
       "Login successful",
@@ -132,6 +133,7 @@ const getMe = asyncHandler(async (req, res) => {
         studyHours: user.studyHours,
         completedTests: user.completedTests,
         achievements: user.achievements,
+        streakCount: user.streakCount || 0,
       },
     }),
   )
