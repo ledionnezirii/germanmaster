@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "../context/AuthContext"
 import { authService } from "../services/api"
-import { User, Star, Trophy, Clock, BookOpen, Camera, Loader2, Edit2, Save, X } from 'lucide-react'
+import { User, Star, Trophy, Clock, BookOpen, Camera, Loader2, Edit2, Save, X } from "lucide-react"
 
 const Account = () => {
   const { user, logout, updateUser } = useAuth()
@@ -17,6 +17,7 @@ const Account = () => {
     studyHours: 0,
     completedTests: 0,
     achievements: [],
+    streakCount: 0,
   })
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -24,7 +25,7 @@ const Account = () => {
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState({
     firstName: "",
-    lastName: ""
+    lastName: "",
   })
   const [saving, setSaving] = useState(false)
 
@@ -34,39 +35,35 @@ const Account = () => {
 
   const fetchUserData = async () => {
     try {
-      const [profileResponse, xpResponse] = await Promise.all([
-        authService.getProfile(), 
-        authService.getUserXp()
-      ])
-
-      const profileData = profileResponse.data
-      const xpData = xpResponse.data
+      const profileResponse = await authService.getProfile()
+      const profileData = profileResponse.data.user || profileResponse.data
 
       const userData = {
-        firstName: profileData.firstName || "",
-        lastName: profileData.lastName || "",
+        firstName: profileData.emri || profileData.firstName || "",
+        lastName: profileData.mbiemri || profileData.lastName || "",
         email: profileData.email || "",
         profilePicture: profileData.profilePicture,
-        xp: xpData.xp || 0,
+        xp: profileData.xp || 0,
         level: profileData.level || "A1",
         studyHours: profileData.studyHours || 0,
         completedTests: profileData.completedTests || 0,
         achievements: profileData.achievements || [],
+        streakCount: profileData.streakCount || 0,
       }
 
       setUserStats(userData)
       setEditForm({
         firstName: userData.firstName,
-        lastName: userData.lastName
+        lastName: userData.lastName,
       })
 
-      // Update user context
       updateUser({
         firstName: userData.firstName,
         lastName: userData.lastName,
         xp: userData.xp,
         level: userData.level,
         profilePicture: userData.profilePicture,
+        streakCount: userData.streakCount,
       })
     } catch (error) {
       console.error("Error fetching user data:", error)
@@ -79,14 +76,12 @@ const Account = () => {
     const file = event.target.files[0]
     if (!file) return
 
-    // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
       alert("File size must be less than 5MB")
       return
     }
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"]
     if (!allowedTypes.includes(file.type)) {
       alert("Only JPEG, PNG, and GIF files are allowed")
       return
@@ -94,19 +89,16 @@ const Account = () => {
 
     setUploading(true)
     setImageError(false)
-    
+
     try {
       const formData = new FormData()
       formData.append("profilePicture", file)
-
       const response = await authService.uploadProfilePicture(formData)
-
-      // Update local state and context
       const newProfilePicture = response.data.profilePicture
+
       setUserStats((prev) => ({ ...prev, profilePicture: newProfilePicture }))
       updateUser({ profilePicture: newProfilePicture })
-      
-      // Reset the file input
+
       event.target.value = ""
     } catch (error) {
       console.error("Error uploading profile picture:", error)
@@ -117,20 +109,14 @@ const Account = () => {
     }
   }
 
-  const handleImageError = () => {
-    setImageError(true)
-  }
-
-  const handleImageLoad = () => {
-    setImageError(false)
-  }
+  const handleImageError = () => setImageError(true)
+  const handleImageLoad = () => setImageError(false)
 
   const handleEditToggle = () => {
     if (editing) {
-      // Cancel editing - reset form
       setEditForm({
         firstName: userStats.firstName,
-        lastName: userStats.lastName
+        lastName: userStats.lastName,
       })
     }
     setEditing(!editing)
@@ -138,10 +124,7 @@ const Account = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setEditForm(prev => ({
-      ...prev,
-      [name]: value
-    }))
+    setEditForm((prev) => ({ ...prev, [name]: value }))
   }
 
   const handleSaveProfile = async () => {
@@ -154,20 +137,18 @@ const Account = () => {
     try {
       await authService.updateProfile({
         firstName: editForm.firstName.trim(),
-        lastName: editForm.lastName.trim()
+        lastName: editForm.lastName.trim(),
       })
 
-      // Update local state
-      setUserStats(prev => ({
+      setUserStats((prev) => ({
         ...prev,
         firstName: editForm.firstName.trim(),
-        lastName: editForm.lastName.trim()
+        lastName: editForm.lastName.trim(),
       }))
 
-      // Update context
       updateUser({
         firstName: editForm.firstName.trim(),
-        lastName: editForm.lastName.trim()
+        lastName: editForm.lastName.trim(),
       })
 
       setEditing(false)
@@ -180,10 +161,9 @@ const Account = () => {
   }
 
   const getXPProgress = () => {
-    // Calculate XP progress for current level
     const baseXP = 100
-    const currentLevelXP = baseXP * Math.pow(1.5, parseInt(userStats.level.substring(1)) - 1)
-    const nextLevelXP = baseXP * Math.pow(1.5, parseInt(userStats.level.substring(1)))
+    const currentLevelXP = baseXP * Math.pow(1.5, Number.parseInt(userStats.level.substring(1)) - 1)
+    const nextLevelXP = baseXP * Math.pow(1.5, Number.parseInt(userStats.level.substring(1)))
     const progress = ((userStats.xp % currentLevelXP) / currentLevelXP) * 100
     return Math.min(progress, 100)
   }
@@ -200,7 +180,7 @@ const Account = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 p-4">
+    <div className="max-w-6xl mx-auto space-y-6 p-4">
       {/* Profile Header */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex flex-col md:flex-row items-center gap-6">
@@ -220,7 +200,6 @@ const Account = () => {
                 <User className="h-12 w-12 text-gray-400" />
               )}
             </div>
-
             <label className="absolute bottom-0 right-0 bg-teal-600 rounded-full p-2 cursor-pointer hover:bg-teal-700 transition-colors shadow-lg">
               <Camera className="h-4 w-4 text-white" />
               <input
@@ -231,7 +210,6 @@ const Account = () => {
                 disabled={uploading}
               />
             </label>
-
             {uploading && (
               <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
                 <Loader2 className="h-6 w-6 animate-spin text-white" />
@@ -293,7 +271,7 @@ const Account = () => {
                   </button>
                 </div>
                 <p className="text-gray-600 mt-1">{userStats.email}</p>
-                <div className="mt-3 flex items-center justify-center md:justify-start gap-2">
+                <div className="mt-3 flex items-center justify-center md:justify-start gap-2 flex-wrap">
                   <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm font-medium">
                     Level {userStats.level}
                   </span>
@@ -301,6 +279,7 @@ const Account = () => {
                     {userStats.xp} XP
                   </span>
                 </div>
+
                 {/* XP Progress Bar */}
                 <div className="mt-3 w-full max-w-xs mx-auto md:mx-0">
                   <div className="flex justify-between text-xs text-gray-600 mb-1">
@@ -308,7 +287,7 @@ const Account = () => {
                     <span>{Math.round(getXPProgress())}%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
+                    <div
                       className="bg-teal-600 h-2 rounded-full transition-all duration-300"
                       style={{ width: `${getXPProgress()}%` }}
                     ></div>
@@ -328,9 +307,9 @@ const Account = () => {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+      {/* Stats Grid - Now includes streak as 5th box */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-xl p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3">
             <div className="bg-yellow-100 p-3 rounded-lg">
               <Star className="h-6 w-6 text-yellow-600" />
@@ -342,7 +321,7 @@ const Account = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-xl p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3">
             <div className="bg-green-100 p-3 rounded-lg">
               <Trophy className="h-6 w-6 text-green-600" />
@@ -354,7 +333,7 @@ const Account = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div className="bg-gradient-to-r from-blue-50 to-blue-100 rounded-xl p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3">
             <div className="bg-blue-100 p-3 rounded-lg">
               <Clock className="h-6 w-6 text-blue-600" />
@@ -366,7 +345,7 @@ const Account = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+        <div className="bg-gradient-to-r from-purple-50 to-purple-100 rounded-xl p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3">
             <div className="bg-purple-100 p-3 rounded-lg">
               <BookOpen className="h-6 w-6 text-purple-600" />
@@ -374,6 +353,19 @@ const Account = () => {
             <div>
               <p className="text-sm text-gray-600 font-medium">Tests Completed</p>
               <p className="text-2xl font-bold text-gray-900">{userStats.completedTests}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* STREAK BOX - Same size as other boxes */}
+        <div className="bg-gradient-to-r from-orange-50 to-red-100 rounded-xl p-6 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3">
+            <div className="bg-orange-100 p-3 rounded-lg">
+              <span className="text-2xl">🔥</span>
+            </div>
+            <div>
+              <p className="text-sm text-gray-600 font-medium">Day Streak</p>
+              <p className="text-2xl font-bold text-gray-900">{userStats.streakCount}</p>
             </div>
           </div>
         </div>
@@ -385,11 +377,14 @@ const Account = () => {
           <Trophy className="h-5 w-5 text-yellow-600" />
           <h2 className="text-xl font-bold text-gray-900">Achievements</h2>
         </div>
-        
+
         {userStats.achievements && userStats.achievements.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {userStats.achievements.map((achievement, index) => (
-              <div key={index} className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-4 border border-yellow-200">
+              <div
+                key={index}
+                className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-4 border border-yellow-200"
+              >
                 <div className="flex items-start gap-3">
                   <div className="bg-yellow-100 p-2 rounded-full">
                     <Trophy className="h-4 w-4 text-yellow-600" />
@@ -415,10 +410,7 @@ const Account = () => {
           </div>
         )}
       </div>
-
-     
-      </div>
-    
+    </div>
   )
 }
 

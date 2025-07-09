@@ -353,7 +353,7 @@ const Translate = () => {
                     </span>
                     <span
                       className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                        isCompleted ? "bg-green-700/80 text-yellow-100" : "bg-teal-100 text-teal-800"
+                        isCompleted ? "bg-orange-400 text-yellow-100" : "bg-teal-100 text-teal-800"
                       }`}
                     >
                       {isCompleted ? "Përfunduar" : "Fillo"}

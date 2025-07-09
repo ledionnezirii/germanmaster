@@ -47,7 +47,10 @@ export const authService = {
       email: userData.email,
       password: userData.password,
     }),
-  getProfile: () => api.get("/users/profile"),
+  
+  // FIXED: Changed from /users/profile to /auth/me
+  getProfile: () => api.get("/auth/me"),
+  
   updateProfile: (data) =>
     api.put("/users/profile", {
       emri: data.firstName,
@@ -153,59 +156,41 @@ export const challengeService = {
     if (category) params.append("category", category)
     return api.get(`/challenge/challengeQuestions?${params}`)
   },
-
   // Get challenge statistics
   getChallengeStats: () => api.get("/challenge/challengeStats"),
-
   // Get user challenge history
   getChallengeHistory: (username, limit = 10) => api.get(`/challenge/challengeHistory/${username}?limit=${limit}`),
-
   // Get challenge leaderboard
   getChallengeLeaderboard: (limit = 10) => api.get(`/challenge/challengeLeaderboard?limit=${limit}`),
-
   // Get active challenge rooms
   getActiveRooms: () => api.get("/challenge/activeRooms"),
-
   // Get available categories
   getCategories: () => api.get("/challenge/categories"),
-
   // Get practice questions
   getPracticeQuestions: (count = 5, category = null) => api.post("/challenge/practice", { count, category }),
-
   // Get challenge by room ID (for spectator mode)
   getChallengeByRoomId: (roomId) => api.get(`/challenge/room/${roomId}`),
-
   // Submit challenge feedback
   submitChallengeFeedback: (challengeId, feedback) => api.post(`/challenge/${challengeId}/feedback`, { feedback }),
-
   // Get user's challenge statistics
   getUserChallengeStats: (userId) => api.get(`/challenge/user/${userId}/stats`),
-
   // Report a challenge issue
   reportChallengeIssue: (challengeId, issue) => api.post(`/challenge/${challengeId}/report`, { issue }),
-
   // Get challenge difficulty levels
   getDifficultyLevels: () => api.get("/challenge/difficulty-levels"),
-
   // Get questions by difficulty
   getQuestionsByDifficulty: (difficulty, count = 10) =>
     api.get(`/challenge/questions/difficulty/${difficulty}?count=${count}`),
-
   // Get daily challenge
   getDailyChallenge: () => api.get("/challenge/daily"),
-
   // Submit daily challenge result
   submitDailyChallenge: (answers) => api.post("/challenge/daily/submit", { answers }),
-
   // Get weekly leaderboard
   getWeeklyLeaderboard: (limit = 10) => api.get(`/challenge/leaderboard/weekly?limit=${limit}`),
-
   // Get monthly leaderboard
   getMonthlyLeaderboard: (limit = 10) => api.get(`/challenge/leaderboard/monthly?limit=${limit}`),
-
   // Get challenge achievements
   getChallengeAchievements: (userId) => api.get(`/challenge/achievements/${userId}`),
-
   // Unlock achievement
   unlockAchievement: (achievementId) => api.post(`/challenge/achievements/${achievementId}/unlock`),
 }
