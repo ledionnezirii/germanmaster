@@ -31,7 +31,6 @@ const getAllTests = asyncHandler(async (req, res) => {
   if (level) {
     query.level = level
   }
-
   if (difficulty) {
     query.difficulty = Number.parseInt(difficulty)
   }
@@ -145,16 +144,17 @@ const checkAnswer = asyncHandler(async (req, res) => {
   } else {
     // Give partial credit based on word similarity
     score = Math.round(wordSimilarity * 100)
-    // Consider it correct if similarity is very high (90%+)
-    isCorrect = score >= 90
+    // FIXED: Only consider it correct if it's an exact match or very close (95%+)
+    isCorrect = score >= 95
   }
 
   console.log("Final score:", score, "Is correct:", isCorrect)
 
-  // Award XP if score is above threshold
+  // FIXED: Only award XP and mark as completed if the answer is actually correct
   let xpAwarded = 0
-  if (score >= 80) {
-    xpAwarded = test.xpReward || 10 // Default XP if not set
+  if (isCorrect) {
+    // Changed from score >= 80 to isCorrect
+    xpAwarded = test.xpReward || 10
     // Update user's XP, completed tests count, and add to listenTestsPassed
     await User.findByIdAndUpdate(req.user.id, {
       $inc: { xp: xpAwarded, completedTests: 1 },
@@ -162,22 +162,25 @@ const checkAnswer = asyncHandler(async (req, res) => {
     })
   }
 
-  // Record completion in the test document
-  const existingCompletion = test.listenTestsPassed.find((completion) => completion.user.toString() === req.user.id)
+  // Record completion in the test document ONLY if correct
+  if (isCorrect) {
+    // Added this condition
+    const existingCompletion = test.listenTestsPassed.find((completion) => completion.user.toString() === req.user.id)
 
-  if (!existingCompletion) {
-    test.listenTestsPassed.push({
-      user: req.user.id,
-      score,
-      completedAt: new Date(),
-    })
-    await test.save()
-  } else {
-    // Update existing completion with better score if applicable
-    if (score > existingCompletion.score) {
-      existingCompletion.score = score
-      existingCompletion.completedAt = new Date()
+    if (!existingCompletion) {
+      test.listenTestsPassed.push({
+        user: req.user.id,
+        score,
+        completedAt: new Date(),
+      })
       await test.save()
+    } else {
+      // Update existing completion with better score if applicable
+      if (score > existingCompletion.score) {
+        existingCompletion.score = score
+        existingCompletion.completedAt = new Date()
+        await test.save()
+      }
     }
   }
 
@@ -186,7 +189,7 @@ const checkAnswer = asyncHandler(async (req, res) => {
   if (isCorrect) {
     message = "Perfect! Well done!"
   } else if (score >= 80) {
-    message = "Good job! Close enough!"
+    message = "Very close! Try to be more precise."
   } else if (score >= 60) {
     message = "Not bad, but try to be more accurate!"
   } else {
@@ -266,7 +269,6 @@ const createTest = asyncHandler(async (req, res) => {
 // @access  Private (Admin)
 const updateTest = asyncHandler(async (req, res) => {
   const test = await Listen.findById(req.params.id)
-
   if (!test) {
     throw new ApiError(404, "Test not found")
   }
@@ -284,7 +286,6 @@ const updateTest = asyncHandler(async (req, res) => {
 // @access  Private (Admin)
 const deleteTest = asyncHandler(async (req, res) => {
   const test = await Listen.findById(req.params.id)
-
   if (!test) {
     throw new ApiError(404, "Test not found")
   }
@@ -351,7 +352,6 @@ const getAllTestsWithCompletion = asyncHandler(async (req, res) => {
   if (level) {
     query.level = level
   }
-
   if (difficulty) {
     query.difficulty = Number.parseInt(difficulty)
   }
