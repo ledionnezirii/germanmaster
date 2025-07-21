@@ -1,28 +1,38 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const jwt = require("jsonwebtoken")
+const { ApiError } = require("../utils/ApiError") // Assuming ApiError is defined
+const { asyncHandler } = require("../utils/asyncHandler") // Assuming asyncHandler is defined
+const User = require("../models/User") // Assuming User model is defined
 
-module.exports = async (req, res, next) => {
-  const token = req.headers['authorization']?.split(' ')[1]; // Extract token from Authorization header
+const auth = asyncHandler(async (req, res, next) => {
+  // If it's an OPTIONS request (preflight), just pass it to the next middleware.
+  // The 'cors' middleware will handle the OPTIONS response.
+  if (req.method === "OPTIONS") {
+    return next()
+  }
+
+  let token
+
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+    try {
+      // Get token from header
+      token = req.headers.authorization.split(" ")[1]
+
+      // Verify token
+      const decoded = jwt.verify(token, process.env.JWT_SECRET)
+
+      // Attach user from the token
+      req.user = await User.findById(decoded.id).select("-password")
+
+      next()
+    } catch (error) {
+      console.error("Authentication error:", error.message)
+      throw new ApiError(401, "Not authorized, token failed")
+    }
+  }
 
   if (!token) {
-    return res.status(401).json({ message: 'Token missing' });
+    throw new ApiError(401, "Not authorized, no token")
   }
+})
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Decode the token to get the user ID
-    const user = await User.findById(decoded.id); // Find user in the database
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    req.user = user; // Attach user to the request object
-    next(); // Pass control to the next middleware/route handler
-  } catch (err) {
-    if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token expired. Please refresh your token.' });
-    }
-    console.error(err);
-    return res.status(401).json({ message: 'Token invalid' });
-  }
-};
+module.exports = auth
