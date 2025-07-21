@@ -1,7 +1,6 @@
 "use client"
-
 import { useState, useEffect } from "react"
-import { grammarService } from "../services/api"
+import { grammarService } from "../services/api" // Assuming this service is available
 import {
   GraduationCap,
   BookOpen,
@@ -36,12 +35,10 @@ const Grammar = () => {
     try {
       setLoading(true)
       setError(null)
-
       const response =
         selectedLevel === "all"
           ? await grammarService.getAllTopics()
           : await grammarService.getTopicsByLevel(selectedLevel)
-
       // Handle different response structures
       let topicsData = []
       if (response.data?.topics) {
@@ -53,7 +50,6 @@ const Grammar = () => {
       } else if (response.data?.data && Array.isArray(response.data.data)) {
         topicsData = response.data.data
       }
-
       setTopics(Array.isArray(topicsData) ? topicsData : [])
     } catch (error) {
       console.error("Error fetching topics:", error)
@@ -74,7 +70,7 @@ const Grammar = () => {
       setShowResults({})
     } catch (error) {
       console.error("Error fetching topic details:", error)
-      setError("Failed to load topic details")
+      setError("Dështoi ngarkimi i detajeve të temës") // Albanian: Failed to load topic details
     } finally {
       setTopicLoading(false)
     }
@@ -94,12 +90,10 @@ const Grammar = () => {
   const handleAnswerSelect = (exerciseIndex, answer) => {
     const exercise = selectedTopic.exercises[exerciseIndex]
     const isCorrect = answer === exercise.correctAnswer
-
     setSelectedAnswers({
       ...selectedAnswers,
       [exerciseIndex]: answer,
     })
-
     // Immediately show result
     setShowResults({
       ...showResults,
@@ -115,16 +109,14 @@ const Grammar = () => {
     if ("speechSynthesis" in window) {
       // Cancel any ongoing speech
       window.speechSynthesis.cancel()
-
       const utterance = new SpeechSynthesisUtterance(text)
       utterance.lang = "de-DE" // German language
       utterance.rate = 0.8 // Slightly slower for learning
       utterance.pitch = 1
       utterance.volume = 1
-
       window.speechSynthesis.speak(utterance)
     } else {
-      alert("Speech synthesis not supported in your browser")
+      alert("Sinteza e të folurit nuk mbështetet në shfletuesin tuaj") // Albanian: Speech synthesis not supported in your browser
     }
   }
 
@@ -135,16 +127,24 @@ const Grammar = () => {
 
   const levels = ["all", "A1", "A2", "B1", "B2", "C1", "C2"]
 
+  // Consistent color scheme with Listen.jsx and Dictionary.jsx
   const getLevelColor = (level) => {
-    const colors = {
-      A1: "bg-green-100 text-green-800",
-      A2: "bg-blue-100 text-blue-800",
-      B1: "bg-yellow-100 text-yellow-800",
-      B2: "bg-orange-100 text-orange-800",
-      C1: "bg-red-100 text-red-800",
-      C2: "bg-purple-100 text-purple-800",
+    switch (level) {
+      case "A1":
+        return "bg-teal-100 text-teal-800 border-teal-200"
+      case "A2":
+        return "bg-teal-200 text-teal-800 border-teal-300"
+      case "B1":
+        return "bg-teal-300 text-teal-800 border-teal-400"
+      case "B2":
+        return "bg-teal-400 text-teal-800 border-teal-500"
+      case "C1":
+        return "bg-teal-500 text-white border-teal-600"
+      case "C2":
+        return "bg-teal-600 text-white border-teal-700"
+      default:
+        return "bg-gray-200 text-gray-800 border-gray-300"
     }
-    return colors[level] || "bg-gray-100 text-gray-800"
   }
 
   const getDifficultyStars = (difficulty) => {
@@ -162,11 +162,11 @@ const Grammar = () => {
           <button
             onClick={handleBackToTopics}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors"
+            aria-label="Kthehu te Temat e Gramatikës"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Grammar Topics
+            Kthehu te Temat e Gramatikës
           </button>
-
           {topicLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-teal-600"></div>
@@ -191,7 +191,6 @@ const Grammar = () => {
                   )}
                 </div>
               </div>
-
               {/* Tags */}
               {selectedTopic.tags && selectedTopic.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
@@ -209,7 +208,6 @@ const Grammar = () => {
             </>
           )}
         </div>
-
         {/* Navigation Tabs */}
         {!topicLoading && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200">
@@ -221,9 +219,10 @@ const Grammar = () => {
                     ? "text-teal-600 border-b-2 border-teal-600"
                     : "text-gray-600 hover:text-gray-800"
                 }`}
+                aria-label="Përmbajtja e Gramatikës"
               >
                 <BookOpen className="h-4 w-4" />
-                Content
+                Përmbajtja
               </button>
               <button
                 onClick={() => setActiveTab("examples")}
@@ -232,9 +231,10 @@ const Grammar = () => {
                     ? "text-teal-600 border-b-2 border-teal-600"
                     : "text-gray-600 hover:text-gray-800"
                 }`}
+                aria-label={`Shembuj (${selectedTopic.examples?.length || 0})`}
               >
                 <Lightbulb className="h-4 w-4" />
-                Examples ({selectedTopic.examples?.length || 0})
+                Shembuj ({selectedTopic.examples?.length || 0})
               </button>
               <button
                 onClick={() => setActiveTab("exercises")}
@@ -243,73 +243,74 @@ const Grammar = () => {
                     ? "text-teal-600 border-b-2 border-teal-600"
                     : "text-gray-600 hover:text-gray-800"
                 }`}
+                aria-label={`Ushtrime (${selectedTopic.exercises?.length || 0})`}
               >
                 <Target className="h-4 w-4" />
-                Exercises ({selectedTopic.exercises?.length || 0})
+                Ushtrime ({selectedTopic.exercises?.length || 0})
               </button>
             </div>
-
             <div className="p-6">
               {/* Content Tab */}
               {activeTab === "content" && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Grammar Explanation</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Shpjegimi i Gramatikës</h3>
                   {typeof selectedTopic.content === "string" ? (
                     <p className="text-gray-700 leading-relaxed">{selectedTopic.content}</p>
                   ) : (
                     <div className="space-y-4">
                       {selectedTopic.content?.english && (
-                        <div className="bg-blue-50 p-4 rounded-lg">
+                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                           <h4 className="font-medium text-blue-800 mb-2 flex items-center gap-2">
                             <Globe className="h-4 w-4" />
-                            English Explanation
+                            Shpjegimi në Anglisht
                           </h4>
                           <p className="text-blue-700">{selectedTopic.content.english}</p>
                         </div>
                       )}
                       {selectedTopic.content?.german && (
-                        <div className="bg-green-50 p-4 rounded-lg">
-                          <h4 className="font-medium text-green-800 mb-2 flex items-center gap-2">
+                        <div className="bg-teal-50 p-4 rounded-lg border border-teal-200">
+                          <h4 className="font-medium text-teal-800 mb-2 flex items-center gap-2">
                             <Globe className="h-4 w-4" />
-                            German Explanation
+                            Shpjegimi në Gjermanisht
                             <button
                               onClick={() => speakGerman(selectedTopic.content.german)}
-                              className="ml-2 p-1 text-green-600 hover:text-green-800 hover:bg-green-100 rounded transition-colors"
-                              title="Listen to pronunciation"
+                              className="ml-2 p-1 text-teal-600 hover:text-teal-800 hover:bg-teal-100 rounded transition-colors"
+                              title="Dëgjo shqiptimin"
+                              aria-label="Dëgjo shqiptimin"
                             >
                               <Volume2 className="h-4 w-4" />
                             </button>
                           </h4>
-                          <p className="text-green-700">{selectedTopic.content.german}</p>
+                          <p className="text-teal-700">{selectedTopic.content.german}</p>
                         </div>
                       )}
                     </div>
                   )}
                 </div>
               )}
-
               {/* Examples Tab */}
               {activeTab === "examples" && (
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Examples</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Shembuj</h3>
                   {selectedTopic.examples && selectedTopic.examples.length > 0 ? (
                     <div className="space-y-4">
                       {selectedTopic.examples.map((example, index) => (
-                        <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                        <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                           {example.english && (
                             <div className="mb-3">
-                              <span className="text-sm font-medium text-blue-600 uppercase">English:</span>
+                              <span className="text-sm font-medium text-blue-600 uppercase">Anglisht:</span>
                               <p className="text-gray-800 mt-1">{example.english}</p>
                             </div>
                           )}
                           {example.german && (
                             <div className="mb-3">
                               <div className="flex items-center gap-2 mb-1">
-                                <span className="text-sm font-medium text-green-600 uppercase">German:</span>
+                                <span className="text-sm font-medium text-teal-600 uppercase">Gjermanisht:</span>
                                 <button
                                   onClick={() => speakGerman(example.german)}
-                                  className="p-1 text-green-600 hover:text-green-800 hover:bg-green-100 rounded transition-colors"
-                                  title="Listen to pronunciation"
+                                  className="p-1 text-teal-600 hover:text-teal-800 hover:bg-teal-100 rounded transition-colors"
+                                  title="Dëgjo shqiptimin"
+                                  aria-label="Dëgjo shqiptimin"
                                 >
                                   <Volume2 className="h-3 w-3" />
                                 </button>
@@ -319,7 +320,7 @@ const Grammar = () => {
                           )}
                           {example.explanation && (
                             <div>
-                              <span className="text-sm font-medium text-gray-500 uppercase">Explanation:</span>
+                              <span className="text-sm font-medium text-gray-600 uppercase">Shpjegim:</span>
                               <p className="text-gray-600 italic mt-1">{example.explanation}</p>
                             </div>
                           )}
@@ -327,30 +328,27 @@ const Grammar = () => {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-center py-8">No examples available for this topic.</p>
+                    <p className="text-gray-500 text-center py-8">Nuk ka shembuj të disponueshëm për këtë temë.</p>
                   )}
                 </div>
               )}
-
               {/* Exercises Tab */}
               {activeTab === "exercises" && (
                 <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-gray-900">Practice Exercises</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Ushtrime Praktike</h3>
                   {selectedTopic.exercises && selectedTopic.exercises.length > 0 ? (
                     <div className="space-y-6">
                       {selectedTopic.exercises.map((exercise, index) => (
-                        <div key={index} className="bg-gray-50 p-6 rounded-lg">
+                        <div key={index} className="bg-gray-50 p-6 rounded-lg border border-gray-200">
                           <div className="flex items-center gap-2 mb-4">
                             <Target className="h-5 w-5 text-teal-600" />
-                            <h4 className="font-semibold text-gray-900">Exercise {index + 1}</h4>
+                            <h4 className="font-semibold text-gray-900">Ushtrimi {index + 1}</h4>
                           </div>
-
                           {exercise.question && (
                             <div className="mb-4">
                               <p className="text-gray-800 font-medium">{exercise.question}</p>
                             </div>
                           )}
-
                           {exercise.options && exercise.options.length > 0 && (
                             <div className="mb-4">
                               <div className="grid grid-cols-2 gap-2">
@@ -370,6 +368,7 @@ const Grammar = () => {
                                           ? "bg-green-100 border-green-300 text-green-800"
                                           : "bg-white border-gray-300 hover:bg-gray-50"
                                     } ${showResults[index] ? "cursor-not-allowed" : "cursor-pointer"}`}
+                                    aria-label={`Zgjidh përgjigjen: ${option}`}
                                   >
                                     <div className="flex items-center justify-between">
                                       <span>{option}</span>
@@ -389,23 +388,23 @@ const Grammar = () => {
                               </div>
                             </div>
                           )}
-
                           {/* Additional exercise content */}
                           <div className="space-y-3 text-sm">
                             {exercise.english && (
                               <div>
-                                <span className="font-medium text-blue-600">English:</span>
+                                <span className="font-medium text-blue-600">Anglisht:</span>
                                 <p className="text-gray-700">{exercise.english}</p>
                               </div>
                             )}
                             {exercise.german && (
                               <div>
                                 <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-medium text-green-600">German:</span>
+                                  <span className="font-medium text-teal-600">Gjermanisht:</span>
                                   <button
                                     onClick={() => speakGerman(exercise.german)}
-                                    className="p-1 text-green-600 hover:text-green-800 hover:bg-green-100 rounded transition-colors"
-                                    title="Listen to pronunciation"
+                                    className="p-1 text-teal-600 hover:text-teal-800 hover:bg-teal-100 rounded transition-colors"
+                                    title="Dëgjo shqiptimin"
+                                    aria-label="Dëgjo shqiptimin"
                                   >
                                     <Volume2 className="h-3 w-3" />
                                   </button>
@@ -415,33 +414,33 @@ const Grammar = () => {
                             )}
                             {exercise.explanation && (
                               <div>
-                                <span className="font-medium text-gray-600">Explanation:</span>
+                                <span className="font-medium text-gray-600">Shpjegim:</span>
                                 <p className="text-gray-600 italic">{exercise.explanation}</p>
                               </div>
                             )}
                           </div>
                         </div>
                       ))}
-
                       {/* Back to Topics button when all exercises are completed */}
                       {isAllExercisesCompleted() && (
                         <div className="text-center pt-6 border-t border-gray-200">
                           <div className="mb-4">
                             <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-2" />
-                            <h3 className="text-lg font-semibold text-gray-900 mb-1">Great job!</h3>
-                            <p className="text-gray-600">You've completed all exercises for this topic.</p>
+                            <h3 className="text-lg font-semibold text-gray-900 mb-1">Punë e shkëlqyer!</h3>
+                            <p className="text-gray-600">Keni përfunduar të gjitha ushtrimet për këtë temë.</p>
                           </div>
                           <button
                             onClick={handleBackToTopics}
                             className="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium"
+                            aria-label="Kthehu te Temat e Gramatikës"
                           >
-                            Back to Grammar Topics
+                            Kthehu te Temat e Gramatikës
                           </button>
                         </div>
                       )}
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-center py-8">No exercises available for this topic.</p>
+                    <p className="text-gray-500 text-center py-8">Nuk ka ushtrime të disponueshme për këtë temë.</p>
                   )}
                 </div>
               )}
@@ -459,46 +458,49 @@ const Grammar = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
           <GraduationCap className="h-6 w-6 text-teal-600" />
-          German Grammar
+          Gramatika Gjermane
         </h1>
-        <p className="text-gray-600">Master German grammar with structured lessons and exercises</p>
+        <p className="text-gray-600">Zotëroni gramatikën gjermane me mësime dhe ushtrime të strukturuara</p>
       </div>
-
       {/* Level Filter */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="h-5 w-5 text-gray-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Filter by Level</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Filtro sipas Nivelit</h2>
         </div>
         <div className="flex flex-wrap gap-2">
           {levels.map((level) => (
             <button
               key={level}
               onClick={() => setSelectedLevel(level)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedLevel === level ? "bg-teal-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                selectedLevel === level
+                  ? level === "all"
+                    ? "bg-teal-600 text-white border-teal-700"
+                    : getLevelColor(level)
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200"
               }`}
+              aria-label={`Filtro sipas nivelit ${level === "all" ? "Të gjitha Nivelet" : level}`}
             >
-              {level === "all" ? "All Levels" : level}
+              {level === "all" ? "Të gjitha Nivelet" : level}
             </button>
           ))}
         </div>
       </div>
-
       {/* Error Display */}
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <h3 className="font-semibold text-red-800 mb-2">Error Loading Topics:</h3>
+          <h3 className="font-semibold text-red-800 mb-2">Gabim gjatë ngarkimit të temave:</h3>
           <p className="text-red-700">{error}</p>
           <button
             onClick={fetchTopics}
             className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+            aria-label="Provo përsëri"
           >
-            Retry
+            Provo Përsëri
           </button>
         </div>
       )}
-
       {/* Topics Grid */}
       {loading ? (
         <div className="flex items-center justify-center min-h-96">
@@ -511,6 +513,7 @@ const Grammar = () => {
               key={topic._id}
               onClick={() => handleTopicClick(topic)}
               className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all cursor-pointer hover:scale-105"
+              aria-label={`Mëso për temën: ${topic.name || "Temë pa titull"}`}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="bg-teal-100 p-3 rounded-lg">
@@ -527,23 +530,19 @@ const Grammar = () => {
                   )}
                 </div>
               </div>
-
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{topic.name || "Untitled Topic"}</h3>
-
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{topic.name || "Temë pa titull"}</h3>
               {topic.description && <p className="text-gray-600 text-sm mb-4 line-clamp-3">{topic.description}</p>}
-
               {/* Stats */}
               <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
                 <div className="flex items-center gap-1">
                   <Target className="h-4 w-4" />
-                  <span>{topic.exercises?.length || 0} exercises</span>
+                  <span>{topic.exercises?.length || 0} ushtrime</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <BookOpen className="h-4 w-4" />
-                  <span>{topic.examples?.length || 0} examples</span>
+                  <span>{topic.examples?.length || 0} shembuj</span>
                 </div>
               </div>
-
               {/* Tags */}
               {topic.tags && topic.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-4">
@@ -557,34 +556,33 @@ const Grammar = () => {
                     </span>
                   ))}
                   {topic.tags.length > 3 && (
-                    <span className="text-xs text-gray-500">+{topic.tags.length - 3} more</span>
+                    <span className="text-xs text-gray-500">+{topic.tags.length - 3} më shumë</span>
                   )}
                 </div>
               )}
-
               <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                <span className="text-sm text-gray-500">Click to learn</span>
-                <span className="text-teal-600 hover:text-teal-700 font-medium text-sm">Start Learning →</span>
+                <span className="text-sm text-gray-500">Kliko për të mësuar</span>
+                <span className="text-teal-600 hover:text-teal-700 font-medium text-sm">Fillo Mësimin →</span>
               </div>
             </div>
           ))}
         </div>
       )}
-
       {topics.length === 0 && !loading && !error && (
         <div className="text-center py-12">
           <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No grammar topics available</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Nuk ka tema gramatikore të disponueshme</h3>
           <p className="text-gray-600">
             {selectedLevel === "all"
-              ? "Grammar topics will appear here when they are added."
-              : `No topics available for level ${selectedLevel}.`}
+              ? "Temat e gramatikës do të shfaqen këtu kur të shtohen."
+              : `Nuk ka tema të disponueshme për nivelin ${selectedLevel}.`}
           </p>
           <button
             onClick={fetchTopics}
             className="mt-4 px-4 py-2 bg-teal-600 text-white rounded hover:bg-teal-700 transition-colors"
+            aria-label="Rifresko"
           >
-            Refresh
+            Rifresko
           </button>
         </div>
       )}

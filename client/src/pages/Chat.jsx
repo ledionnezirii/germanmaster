@@ -1,7 +1,6 @@
 "use client"
-
 import { useState, useEffect, useRef } from "react"
-import { questionsService } from "../services/api"
+import { questionsService } from "../services/api" // Assuming this service is available
 import { MessageCircle, Send, Bot, User, Filter, Lightbulb, RefreshCw, CheckCircle, XCircle, Star } from "lucide-react"
 
 const Chat = () => {
@@ -37,16 +36,13 @@ const Chat = () => {
   const insertCharacter = (char) => {
     const input = inputRef.current
     if (!input) return
-
     const start = input.selectionStart
     const end = input.selectionEnd
     const text = currentInput
     const before = text.substring(0, start)
     const after = text.substring(end)
     const newText = before + char + after
-
     setCurrentInput(newText)
-
     // Set cursor position after the inserted character
     setTimeout(() => {
       input.focus()
@@ -71,48 +67,39 @@ const Chat = () => {
         id: Date.now(),
         type: "bot",
         content:
-          "Mirë se vini në German Grammar Chat! Do t'ju bëj pyetje për të praktikuar gjermanishten. Le të fillojmë!",
+          "Mirë se vini në Bisedën Gramatikore Gjermane! Do t'ju bëj pyetje për të praktikuar gjermanishten. Le të fillojmë!",
         timestamp: new Date(),
       },
     ])
-
     // Reset asked questions when level changes
     setAskedQuestionIds([])
     // Clear any existing question to prevent duplicates
     setCurrentQuestion(null)
-
     // Add a small delay to ensure state is properly reset
     const timer = setTimeout(() => {
       fetchQuestion()
     }, 500)
-
     return () => clearTimeout(timer)
   }, [selectedLevel])
 
   const fetchQuestion = async () => {
     // Prevent multiple simultaneous calls
     if (loading) return
-
     try {
       setLoading(true)
-
       // Build query parameters for better randomization
       const queryParams = {
         level: selectedLevel,
         // Pass excluded IDs to ensure variety
         excludeIds: askedQuestionIds.join(","),
       }
-
       const response = await questionsService.getRandomQuestion(queryParams)
-
       if (response.data) {
         setCurrentQuestion(response.data)
         setShowHint(false)
         setHintIndex(0)
-
         // Add question ID to asked questions list
         setAskedQuestionIds((prev) => [...prev, response.data._id])
-
         // Add new question
         setMessages((prev) => [
           ...prev,
@@ -168,7 +155,6 @@ const Chat = () => {
       content: currentInput,
       timestamp: new Date(),
     }
-
     setMessages((prev) => [...prev, userMessage])
 
     // Clear input immediately
@@ -187,7 +173,6 @@ const Chat = () => {
       // Create detailed bot response
       let botContent = ""
       let responseIcon = null
-
       if (result.correct) {
         botContent = `${result.message}\n\n`
         botContent += `Përgjigja juaj "${result.userAnswer}" është e saktë!`
@@ -204,7 +189,7 @@ const Chat = () => {
       } else {
         botContent = `${result.message}\n\n`
         botContent += `Përgjigja juaj: "${result.userAnswer}"`
-        botContent += `\nPërgjigja e saktë: "${result.correctAnswer}"`
+        botContent += `\nPërgjigja e saktë: "${result.correctAnswer}"` // Keep this for now, as it's part of the backend response
         if (result.reasonWhy) {
           botContent += `\n\nPse nuk është e saktë: ${result.reasonWhy}`
         }
@@ -227,7 +212,6 @@ const Chat = () => {
         detailedResponse: true,
         responseIcon: responseIcon,
       }
-
       setMessages((prev) => [...prev, botResponse])
 
       // Load next question after delay
@@ -238,9 +222,7 @@ const Chat = () => {
           content: "Le të vazhdojmë me pyetjen e ardhshme!",
           timestamp: new Date(),
         }
-
         setMessages((prev) => [...prev, nextQuestionMessage])
-
         // Load new question after short delay
         setTimeout(() => {
           fetchQuestion()
@@ -255,7 +237,6 @@ const Chat = () => {
         timestamp: new Date(),
         isCorrect: false,
       }
-
       setMessages((prev) => [...prev, errorResponse])
     }
   }
@@ -263,7 +244,6 @@ const Chat = () => {
   const showNextHint = () => {
     if (currentQuestion && currentQuestion.hints && hintIndex < currentQuestion.hints.length) {
       const hint = currentQuestion.hints[hintIndex]
-
       setMessages((prev) => [
         ...prev,
         {
@@ -274,10 +254,8 @@ const Chat = () => {
           isHint: true,
         },
       ])
-
       setHintIndex(hintIndex + 1)
       setShowHint(true)
-
       // Refocus input after showing hint
       setTimeout(() => {
         inputRef.current?.focus()
@@ -296,7 +274,6 @@ const Chat = () => {
         timestamp: new Date(),
       },
     ])
-
     setTimeout(() => {
       fetchQuestion()
     }, 1000)
@@ -312,30 +289,31 @@ const Chat = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <MessageCircle className="h-6 w-6 text-teal-600" />
-              Grammar Chat
+              Bisedë Gramatikore
             </h1>
             <p className="text-gray-600">Praktiko gramatikën gjermane me pyetje interaktive</p>
           </div>
-
           <div className="flex items-center gap-4">
-            <div className="bg-teal-100 px-3 py-1 rounded-lg">
+            <div className="bg-teal-100 px-3 py-1 rounded-lg border border-teal-200">
               <span className="text-teal-800 font-medium">Pikët: {score}</span>
             </div>
             <div className="text-sm text-gray-600">Pyetje të bëra: {askedQuestionIds.length}</div>
             <button
               onClick={resetQuestions}
-              className="bg-gray-500 text-white px-3 py-1 rounded-lg hover:bg-gray-600 transition-colors text-sm flex items-center gap-1"
+              className="bg-gray-600 text-white px-3 py-1 rounded-lg hover:bg-gray-700 transition-colors text-sm flex items-center gap-1 font-semibold"
               title="Rifillo pyetjet"
+              aria-label="Rivendos pyetjet"
             >
               <RefreshCw className="h-4 w-4" />
-              Reset
+              Rivendos
             </button>
             <div className="flex items-center gap-2">
               <Filter className="h-4 w-4 text-gray-600" />
               <select
                 value={selectedLevel}
                 onChange={(e) => setSelectedLevel(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                className="border border-gray-400 rounded-lg px-3 py-1 text-sm focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-gray-800"
+                aria-label="Zgjidh nivelin e vështirësisë"
               >
                 {levels.map((level) => (
                   <option key={level} value={level}>
@@ -349,7 +327,7 @@ const Chat = () => {
       </div>
 
       {/* Chat Container */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-[600px]">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col h-[500px]">
         {/* Messages */}
         <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
           {messages.length === 0 && (
@@ -359,7 +337,6 @@ const Chat = () => {
               <p className="text-sm">Pyetjet do të shfaqen këtu bazuar në nivelin që ke zgjedhur.</p>
             </div>
           )}
-
           {messages.map((message) => (
             <div key={message.id} className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
               <div
@@ -378,7 +355,6 @@ const Chat = () => {
                     <Bot className="h-4 w-4 text-white" />
                   )}
                 </div>
-
                 <div
                   className={`px-4 py-3 rounded-lg ${
                     message.type === "user"
@@ -400,7 +376,6 @@ const Chat = () => {
                       <XCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
                     )}
                     {message.isHint && <Lightbulb className="h-4 w-4 text-yellow-600 mt-0.5 flex-shrink-0" />}
-
                     <div className="flex-1">
                       <p className="text-sm whitespace-pre-line leading-relaxed">{message.content}</p>
                       {message.score && (
@@ -415,7 +390,6 @@ const Chat = () => {
               </div>
             </div>
           ))}
-
           {loading && (
             <div className="flex justify-start">
               <div className="flex items-center gap-2">
@@ -438,7 +412,6 @@ const Chat = () => {
               </div>
             </div>
           )}
-
           {/* Hidden element for auto scroll */}
           <div ref={messagesEndRef} />
         </div>
@@ -450,14 +423,14 @@ const Chat = () => {
             {currentQuestion && currentQuestion.hints && hintIndex < currentQuestion.hints.length && (
               <button
                 onClick={showNextHint}
-                className="bg-yellow-500 text-white px-3 py-1 rounded-lg hover:bg-yellow-600 transition-colors text-sm flex items-center gap-1"
+                className="bg-yellow-500 text-white px-3 py-1 rounded-lg hover:bg-yellow-600 transition-colors text-sm flex items-center gap-1 font-semibold"
+                aria-label={`Shfaq ndihmën ${hintIndex + 1} nga ${currentQuestion.hints.length}`}
               >
                 <Lightbulb className="h-4 w-4" />
                 Ndihmë ({hintIndex + 1}/{currentQuestion.hints.length})
               </button>
             )}
           </div>
-
           {/* German Characters Helper */}
           <div className="mb-3">
             <div className="text-xs text-gray-500 mb-2">Shkronja gjermane:</div>
@@ -466,16 +439,16 @@ const Chat = () => {
                 <button
                   key={char}
                   onClick={() => insertCharacter(char)}
-                  className="bg-blue-100 hover:bg-blue-200 text-blue-800 px-2 py-1 rounded text-sm font-medium transition-colors border border-blue-200 hover:border-blue-300"
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-2 py-1 rounded text-sm font-medium transition-colors border border-gray-200 hover:border-gray-300"
                   type="button"
                   title={`Shto shkronjën ${char}`}
+                  aria-label={`Shto shkronjën ${char}`}
                 >
                   {char}
                 </button>
               ))}
             </div>
           </div>
-
           {/* Input form */}
           <form onSubmit={handleSubmit} className="flex gap-2">
             <input
@@ -484,14 +457,16 @@ const Chat = () => {
               value={currentInput}
               onChange={(e) => setCurrentInput(e.target.value)}
               placeholder="Shkruaj përgjigjen tënde në gjermanisht..."
-              className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              className="flex-1 border border-gray-400 rounded-lg px-4 py-2 focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-gray-800 placeholder-gray-500"
               disabled={loading || !currentQuestion}
               autoComplete="off"
+              aria-label="Fusha e përgjigjes"
             />
             <button
               type="submit"
               disabled={!currentInput.trim() || loading || !currentQuestion}
-              className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
+              aria-label="Dërgo përgjigjen"
             >
               <Send className="h-5 w-5" />
             </button>

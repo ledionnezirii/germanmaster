@@ -1,4 +1,5 @@
 "use client"
+
 import { useState, useRef, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
@@ -19,11 +20,11 @@ const Navbar = () => {
   }
 
   const navLinks = [
-    { to: "/", label: "Home" },
-    { to: "/leaderboard", label: "Leaderboard" },
-    { to: "/listen", label: "Listen" },
-    { to: "/translate", label: "Translate" },
-    { to: "/chat", label: "Chat" },
+    { to: "/", label: "Kryefaqja" }, // Home
+    { to: "/leaderboard", label: "Renditja" }, // Leaderboard
+    { to: "/listen", label: "Dëgjo" }, // Listen
+    { to: "/translate", label: "Përkthe" }, // Translate
+    { to: "/chat", label: "Bisedo" }, // Chat
   ]
 
   // Close dropdown when clicking outside
@@ -79,7 +80,7 @@ const Navbar = () => {
             onError={() => setImageError(true)}
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center rounded-full bg-green-600 text-white text-sm font-medium">
+          <div className="flex h-full w-full items-center justify-center rounded-full bg-orange-500 text-white text-sm font-medium">
             {fallback}
           </div>
         )}
@@ -89,23 +90,24 @@ const Navbar = () => {
 
   return (
     <nav className="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
-      {" "}
-      {/* Softer background and border */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Left side - Logo and menu toggle */}
           <div className="flex items-center space-x-4">
             <Button variant="ghost" size="icon" onClick={toggleSidebar} className="md:hidden">
-              <Menu className="h-5 w-5 text-slate-200" /> {/* Softer icon color */}
+              <Menu className="h-5 w-5 text-slate-200" />
               <span className="sr-only">Toggle sidebar</span>
             </Button>
             <Link to="/" className="flex items-center space-x-2 group">
-              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center group-hover:bg-green-700 transition-colors">
+              <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center group-hover:bg-orange-600 transition-colors">
                 <span className="text-white font-bold text-lg">G</span>
               </div>
-              <span className="text-xl font-bold text-white hidden sm:block group-hover:text-green-400 transition-colors">
-                GermanLearner
-              </span>
+              <div className="flex flex-col items-start">
+                <span className="text-xl font-bold text-white hidden sm:block group-hover:text-orange-300 transition-colors">
+                  GermanLearner
+                </span>
+                <span className="text-xs text-orange-200 hidden sm:block">Gjermanisht për Shqiptarët</span>
+              </div>
             </Link>
           </div>
           {/* Center - Navigation links */}
@@ -114,7 +116,7 @@ const Navbar = () => {
               <Link
                 key={link.to}
                 to={link.to}
-                className="text-slate-200 hover:text-white hover:bg-slate-700 px-4 py-2 rounded-md text-sm font-medium transition-colors" // Softer text and hover colors
+                className="text-slate-200 hover:text-white hover:bg-slate-700 px-4 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 {link.label}
               </Link>
@@ -126,51 +128,45 @@ const Navbar = () => {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center space-x-2 text-slate-200 hover:text-white hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors" // Softer text and hover colors
+                  className="flex items-center space-x-2 text-slate-200 hover:text-white hover:bg-slate-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   <Avatar
                     src={user?.profilePicture || "/placeholder.svg"}
                     alt="Profile"
                     fallback={user?.firstName ? user.firstName.charAt(0).toUpperCase() : "U"}
                   />
-                  <span className="hidden sm:block">{user?.firstName || "Profile"}</span>
+                  <span className="hidden sm:block">{user?.firstName || "Profili"}</span>
                   <ChevronDown
                     className={`h-4 w-4 text-slate-200 transition-transform ${isDropdownOpen ? "rotate-180" : ""}`}
-                  />{" "}
-                  {/* Softer icon color */}
+                  />
                 </button>
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-slate-700 rounded-md shadow-lg ring-1 ring-slate-600 ring-opacity-5 focus:outline-none z-50">
-                    {" "}
-                    {/* Softer background and ring */}
                     <div className="py-1">
                       {/* User Info */}
                       <div className="px-4 py-3 border-b border-slate-600">
-                        {" "}
-                        {/* Softer border */}
                         <div className="flex flex-col space-y-1">
                           {user?.firstName && <p className="text-white font-medium">{user.firstName}</p>}
-                          {user?.email && <p className="text-slate-300 truncate">{user.email}</p>}{" "}
-                          {/* Softer text color */}
+                          {user?.email && <p className="text-slate-300 truncate">{user.email}</p>}
                         </div>
                       </div>
                       {/* Account Link */}
                       <Link
                         to="/account"
-                        className="flex items-center px-4 py-2 text-slate-200 hover:bg-slate-600 hover:text-white transition-colors" // Softer text and hover colors
+                        className="flex items-center px-4 py-2 text-slate-200 hover:bg-slate-600 hover:text-white transition-colors"
                         onClick={() => setIsDropdownOpen(false)}
                       >
                         <User className="mr-3 h-4 w-4" />
-                        Account Settings
+                        Cilësimet e Llogarisë
                       </Link>
                       {/* Logout Button */}
                       <button
                         onClick={handleLogout}
-                        className="flex items-center w-full px-4 py-2 text-red-300 hover:bg-red-900/20 hover:text-red-200 transition-colors" // Adjusted red for softer dark background
+                        className="flex items-center w-full px-4 py-2 text-red-300 hover:bg-red-900/20 hover:text-red-200 transition-colors"
                       >
                         <LogOut className="mr-3 h-4 w-4" />
-                        Log out
+                        Dilni
                       </button>
                     </div>
                   </div>
@@ -180,15 +176,15 @@ const Navbar = () => {
               <div className="flex items-center space-x-2">
                 <Link
                   to="/signin"
-                  className="text-slate-200 hover:text-white hover:bg-slate-700 px-4 py-2 rounded-md text-sm font-medium transition-colors" // Softer text and hover colors
+                  className="text-slate-200 hover:text-white hover:bg-slate-700 px-4 py-2 rounded-md text-sm font-medium transition-colors"
                 >
-                  Sign In
+                  Hyni
                 </Link>
                 <Link
                   to="/signup"
-                  className="bg-green-600 text-white hover:bg-green-700 px-4 py-2 rounded-md text-sm font-medium transition-colors" // Kept green accent
+                  className="bg-orange-500 text-white hover:bg-orange-600 px-4 py-2 rounded-md text-sm font-medium transition-colors"
                 >
-                  Sign Up
+                  Regjistrohuni
                 </Link>
               </div>
             )}

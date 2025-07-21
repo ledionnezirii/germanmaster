@@ -1,7 +1,6 @@
 "use client"
-
 import { useState, useEffect } from "react"
-import { categoriesService } from "../services/api"
+import { categoriesService } from "../services/api" // Assuming this service is available
 import { FolderOpen, Volume2, ArrowLeft, BookOpen } from "lucide-react"
 
 const Category = () => {
@@ -17,9 +16,7 @@ const Category = () => {
     try {
       setLoading(true)
       const response = await categoriesService.getAllCategories()
-
       console.log("Categories response:", response) // Debug log
-
       // Handle different response structures
       let categoriesData = []
       if (response.data) {
@@ -31,7 +28,6 @@ const Category = () => {
           categoriesData = response.data.categories
         }
       }
-
       console.log("Processed categories:", categoriesData) // Debug log
       setCategories(categoriesData)
     } catch (error) {
@@ -46,9 +42,7 @@ const Category = () => {
     try {
       const response = await categoriesService.getCategoryById(categoryId)
       const categoryData = response.data.data || response.data // Handle both response formats
-
       console.log("Category data received:", categoryData) // Debug log
-
       setSelectedCategory({
         name: categoryName,
         words: categoryData.words || [],
@@ -60,7 +54,7 @@ const Category = () => {
       setSelectedCategory({
         name: categoryName,
         words: [],
-        description: "Error loading category details",
+        description: "Gabim gjatë ngarkimit të detajeve të kategorisë", // Albanian: Error loading category details
         level: "",
       })
     }
@@ -68,8 +62,28 @@ const Category = () => {
 
   const playPronunciation = (word) => {
     const utterance = new SpeechSynthesisUtterance(word)
-    utterance.lang = "de-DE"
+    utterance.lang = "de-DE" // Assuming German pronunciation
     window.speechSynthesis.speak(utterance)
+  }
+
+  // Consistent color scheme with Listen.jsx and Dictionary.jsx
+  const getLevelColor = (level) => {
+    switch (level) {
+      case "A1":
+        return "bg-teal-100 text-teal-800 border-teal-200"
+      case "A2":
+        return "bg-teal-200 text-teal-800 border-teal-300"
+      case "B1":
+        return "bg-teal-300 text-teal-800 border-teal-400"
+      case "B2":
+        return "bg-teal-400 text-teal-800 border-teal-500"
+      case "C1":
+        return "bg-teal-500 text-white border-teal-600"
+      case "C2":
+        return "bg-teal-600 text-white border-teal-700"
+      default:
+        return "bg-gray-200 text-gray-800 border-gray-300"
+    }
   }
 
   if (selectedCategory) {
@@ -81,12 +95,12 @@ const Category = () => {
             <button
               onClick={() => setSelectedCategory(null)}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+              aria-label="Kthehu te Kategoritë"
             >
               <ArrowLeft className="h-5 w-5" />
-              Back to Categories
+              Kthehu te Kategoritë
             </button>
           </div>
-
           {selectedCategory.words && selectedCategory.words.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {selectedCategory.words.map((wordObj, index) => (
@@ -101,15 +115,15 @@ const Category = () => {
                     </div>
                     <button
                       onClick={() => playPronunciation(wordObj.word)}
-                      className="text-gray-400 hover:text-teal-600 transition-colors"
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      aria-label={`Luaj shqiptimin për ${wordObj.word}`}
                     >
                       <Volume2 className="h-5 w-5" />
                     </button>
                   </div>
-
                   {wordObj.examples && wordObj.examples.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Examples:</h4>
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Shembuj:</h4>
                       <ul className="space-y-1">
                         {wordObj.examples.slice(0, 3).map((example, exIndex) => (
                           <li key={exIndex} className="text-sm text-gray-600">
@@ -125,8 +139,8 @@ const Category = () => {
           ) : (
             <div className="text-center py-8">
               <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No words found</h3>
-              <p className="text-gray-600">This category doesn't have any words yet.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nuk u gjetën fjalë</h3>
+              <p className="text-gray-600">Kjo kategori nuk ka ende fjalë.</p>
             </div>
           )}
         </div>
@@ -138,8 +152,8 @@ const Category = () => {
     <div className="max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Word Categories</h1>
-        <p className="text-gray-600">Explore German vocabulary organized by topics and themes</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">Kategoritë e Fjalëve</h1>
+        <p className="text-gray-600">Eksploroni fjalorin gjermanisht të organizuar sipas temave dhe kategorive</p>
       </div>
 
       {/* Categories Grid */}
@@ -155,6 +169,7 @@ const Category = () => {
                 key={category._id}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => fetchCategoryDetails(category._id, category.category)}
+                aria-label={`Eksploro kategorinë ${category.category}`}
               >
                 <div className="flex items-center gap-3 mb-4">
                   <div className="bg-teal-100 p-3 rounded-lg">
@@ -162,18 +177,19 @@ const Category = () => {
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900">{category.category}</h3>
                 </div>
-
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Category</span>
-                  <button className="text-teal-600 hover:text-teal-700 font-medium text-sm">Explore →</button>
+                  <span className="text-sm text-gray-600">Kategori</span>
+                  <button className="text-teal-600 hover:text-teal-700 font-medium text-sm" aria-label="Eksploro">
+                    Eksploro →
+                  </button>
                 </div>
               </div>
             ))
           ) : (
             <div className="col-span-full text-center py-12">
               <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No categories available</h3>
-              <p className="text-gray-600">Categories will appear here when they are added.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nuk ka kategori të disponueshme</h3>
+              <p className="text-gray-600">Kategoritë do të shfaqen këtu kur të shtohen.</p>
             </div>
           )}
         </div>
