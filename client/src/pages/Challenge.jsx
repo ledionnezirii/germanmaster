@@ -21,7 +21,7 @@ import {
   CheckCircle,
   AlertCircle,
   Flag,
-  GraduationCap,
+  Type,
 } from "lucide-react"
 
 const Challenge = () => {
@@ -30,24 +30,27 @@ const Challenge = () => {
   const [userXp, setUserXp] = useState(0)
   const [isLoadingProfile, setIsLoadingProfile] = useState(true)
   const [isConnected, setIsConnected] = useState(false)
-  const [gameState, setGameState] = useState("idle")
+  const [gameState, setGameState] = useState("idle") // idle, waiting, playing, finished
+  const [gameType, setGameType] = useState("wordRace") // NEW: 'quiz' or 'wordRace'
   const [roomId, setRoomId] = useState("")
   const [players, setPlayers] = useState([])
   const [message, setMessage] = useState("")
-  const [questions, setQuestions] = useState([])
-  const [currentQuestion, setCurrentQuestion] = useState(0)
-  const [selectedAnswer, setSelectedAnswer] = useState(null)
+  const [questions, setQuestions] = useState([]) // This will now hold words for wordRace
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0) // Renamed for clarity
+  const [typedWord, setTypedWord] = useState("") // NEW: For word race input
   const [timeLeft, setTimeLeft] = useState(300)
   const [results, setResults] = useState(null)
-  const [playerProgress, setPlayerProgress] = useState({})
+  const [playerProgress, setPlayerProgress] = useState({}) // Tracks score/wordsTyped for all players
   const [waitingCount, setWaitingCount] = useState(0)
   const [questionStartTime, setQuestionStartTime] = useState(null)
   const [userFinished, setUserFinished] = useState(false)
   const [waitingForOpponent, setWaitingForOpponent] = useState(false)
+  const [isJoiningChallenge, setIsJoiningChallenge] = useState(false)
 
   const timerRef = useRef(null)
   const socketRef = useRef(null)
   const startTimeRef = useRef(null)
+  const inputRef = useRef(null) // Ref for the input field
 
   // Fetch user profile and XP
   useEffect(() => {
@@ -56,7 +59,6 @@ const Challenge = () => {
         setIsLoadingProfile(true)
         const profileResponse = await authService.getProfile()
         const xpResponse = await authService.getUserXp()
-
         const profileData = profileResponse.data
         const xpData = xpResponse.data
 
@@ -72,7 +74,6 @@ const Challenge = () => {
           email: profileData.email,
           profilePicture: profileData.profilePicture || profileData.profileImage || null,
         })
-
         setUserXp(totalXp)
       } catch (error) {
         console.error("Error fetching user data:", error)
@@ -84,7 +85,6 @@ const Challenge = () => {
         setIsLoadingProfile(false)
       }
     }
-
     fetchUserData()
   }, [])
 
@@ -122,6 +122,7 @@ const Challenge = () => {
       setRoomId(data.roomId)
       setMessage(data.message)
       setWaitingCount(data.waitingCount || 1)
+      setGameType(data.gameType || "quiz") // Ensure gameType is set
     })
 
     newSocket.on("waitingUpdate", (data) => {
@@ -129,34 +130,22 @@ const Challenge = () => {
       setWaitingCount(data.waitingCount)
     })
 
-    newSocket.on("quizStart", (data) => {
-      setGameState("playing")
-      setRoomId(data.roomId)
-      setPlayers(data.users)
-      setQuestions(data.questions)
-      setMessage(data.message)
-      setTimeLeft(data.timeLimit)
-      setCurrentQuestion(0)
-      setSelectedAnswer(null)
-      setWaitingCount(0)
-      setUserFinished(false)
-      setWaitingForOpponent(false)
-      setQuestionStartTime(Date.now())
-      startTimeRef.current = Date.now()
-      startTimer()
-    })
+    // Handle game start (now generic for quiz and word race)
+    newSocket.on("quizStart", handleGameStart) // Existing quiz start
+    newSocket.on("wordRaceStart", handleGameStart) // NEW: Word race start
 
     newSocket.on("playerFinished", (data) => {
       setPlayerProgress((prev) => ({
         ...prev,
         [data.username]: {
-          score: data.score,
+          score: data.score, // For quiz
+          wordsTyped: data.wordsTyped, // For wordRace
+          correctWords: data.correctWords, // For wordRace
           xp: data.xp,
           time: data.time,
           finished: true,
         },
       }))
-
       if (data.username === user.name) {
         setUserFinished(true)
         setWaitingForOpponent(true)
@@ -164,61 +153,48 @@ const Challenge = () => {
       }
     })
 
-    newSocket.on("quizResult", (data) => {
-      setGameState("finished")
-      setResults(data)
-      setMessage(data.message)
-      setUserFinished(false)
-      setWaitingForOpponent(false)
-      clearTimer()
-
-      const userResult = data.users.find((u) => u.username === user.name)
-      if (userResult && userResult.xp > 0) {
-        addXpToProfile(userResult.xp, `Challenge - ${userResult.score} correct answers`)
-      }
+    // NEW: Real-time progress update for word race
+    newSocket.on("playerProgressUpdate", (data) => {
+      setPlayerProgress((prev) => ({
+        ...prev,
+        [data.username]: {
+          ...prev[data.username], // Keep existing finished state if any
+          wordsTyped: data.wordsTyped,
+          correctWords: data.correctWords,
+          totalWords: data.totalWords,
+        },
+      }))
     })
+
+    // Handle game results (now generic for quiz and word race)
+    newSocket.on("quizResult", handleGameResult) // Existing quiz result
+    newSocket.on("wordRaceResult", handleGameResult) // NEW: Word race result
 
     // Handle opponent leaving - with XP reward
     newSocket.on("opponentLeft", (data) => {
       const reason = data.reason === "disconnected" ? "u shkëput" : "doli"
-
-      // Show XP reward message if provided
+      setIsJoiningChallenge(false)
       if (data.winnerXp && data.winnerXp > 0) {
         setMessage(`Kundërshtari ${reason} nga loja. Ju fituat automatikisht dhe morët ${data.winnerXp} XP!`)
-        addXpToProfile(data.winnerXp, "Challenge - Fitore nga largimi i kundërshtarit")
+        addXpToProfile(data.winnerXp, `Challenge - Fitore nga largimi i kundërshtarit (${data.gameType})`)
       } else {
         setMessage(`Kundërshtari ${reason} nga loja. Ju fituat automatikisht!`)
       }
-
-      setGameState("idle")
-      setWaitingCount(0)
-      setUserFinished(false)
-      setWaitingForOpponent(false)
-      clearTimer()
+      resetGameState()
     })
 
     // Handle successful leave
     newSocket.on("leftChallenge", (data) => {
       console.log("Successfully left challenge:", data.message)
       setMessage(data.message)
-      setGameState("idle")
-      setWaitingCount(0)
-      setUserFinished(false)
-      setWaitingForOpponent(false)
-      setRoomId("")
-      setPlayers([])
-      setQuestions([])
-      setCurrentQuestion(0)
-      setSelectedAnswer(null)
-      setResults(null)
-      setPlayerProgress({})
-      setQuestionStartTime(null)
-      clearTimer()
+      setIsJoiningChallenge(false)
+      resetGameState()
     })
 
     newSocket.on("error", (data) => {
       console.error("Socket error:", data.message)
       setMessage(`Gabim: ${data.message}`)
+      setIsJoiningChallenge(false)
     })
 
     return () => {
@@ -226,6 +202,55 @@ const Challenge = () => {
       clearTimer()
     }
   }, [user])
+
+  const handleGameStart = (data) => {
+    setGameState("playing")
+    setRoomId(data.roomId)
+    setPlayers(data.users)
+    setQuestions(data.questions)
+    setMessage(data.message)
+    setTimeLeft(data.timeLimit)
+    setCurrentQuestionIndex(0)
+    setTypedWord("") // Reset typed word
+    setWaitingCount(0)
+    setUserFinished(false)
+    setWaitingForOpponent(false)
+    setQuestionStartTime(Date.now())
+    startTimeRef.current = Date.now()
+    setGameType(data.gameType) // Set the game type received from server
+    // Initialize playerProgress for all players in the room
+    setPlayerProgress(
+      data.users.reduce(
+        (acc, p) => ({
+          ...acc,
+          [p.username]: { score: 0, wordsTyped: 0, correctWords: 0, xp: 0, finished: false },
+        }),
+        {},
+      ),
+    )
+    startTimer()
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
+    setIsJoiningChallenge(false)
+  }
+
+  const handleGameResult = (data) => {
+    setGameState("finished")
+    setResults(data)
+    setMessage(data.message)
+    setUserFinished(false)
+    setWaitingForOpponent(false)
+    clearTimer()
+    const userResult = data.users.find((u) => u.username === user.name)
+    if (userResult && userResult.xp > 0) {
+      addXpToProfile(
+        userResult.xp,
+        `Challenge - ${data.gameType === "wordRace" ? `${userResult.correctWords} fjalë të sakta` : `${userResult.score} përgjigje të sakta`}`,
+      )
+    }
+    setIsJoiningChallenge(false)
+  }
 
   const addXpToProfile = async (xpAmount, reason) => {
     try {
@@ -259,15 +284,24 @@ const Challenge = () => {
   }
 
   const handleTimeUp = () => {
-    if (socket && roomId && currentQuestion < questions.length && !userFinished) {
+    if (socket && roomId && currentQuestionIndex < questions.length && !userFinished) {
       const timeSpent = questionStartTime ? Math.round((Date.now() - questionStartTime) / 1000) : 0
-
-      socket.emit("quizAnswer", {
-        roomId,
-        questionId: questions[currentQuestion].id,
-        answer: selectedAnswer !== null ? questions[currentQuestion].options[selectedAnswer] : "",
-        timeSpent,
-      })
+      if (gameType === "wordRace") {
+        socket.emit("submitAnswer", {
+          roomId,
+          questionId: questions[currentQuestionIndex].id,
+          typedWord: typedWord, // Send current typed word
+          timeSpent,
+        })
+      } else {
+        // Quiz
+        socket.emit("submitAnswer", {
+          roomId,
+          questionId: questions[currentQuestionIndex].id,
+          answer: null, // No answer selected if time is up
+          timeSpent,
+        })
+      }
     }
   }
 
@@ -276,13 +310,13 @@ const Challenge = () => {
       console.log("Cannot join challenge - missing requirements")
       return
     }
-
-    console.log("Joining challenge with username:", user.name)
+    console.log("Joining challenge with username:", user.name, "gameType:", gameType)
     setMessage("Duke u lidhur me challenge...")
-
+    setIsJoiningChallenge(true)
     socket.emit("joinChallenge", {
       username: user.name,
       userId: user.id,
+      gameType: gameType, // Send selected game type
     })
   }
 
@@ -291,51 +325,57 @@ const Challenge = () => {
       console.log("No socket connection available")
       return
     }
-
     console.log("Leaving challenge - current state:", gameState, "roomId:", roomId)
-
-    // Show immediate feedback
     setMessage("Duke dalë nga challenge-i...")
-
-    // Emit leave event
     socket.emit("leaveChallenge")
   }
 
-  const handleAnswerSelect = (answerIndex) => {
-    if (userFinished) return
-    setSelectedAnswer(answerIndex)
-  }
-
   const handleSubmitAnswer = () => {
-    if (selectedAnswer === null) {
-      alert("Ju lutem zgjidhni një përgjigje!")
+    if (userFinished) return
+
+    const currentWord = questions[currentQuestionIndex]
+    if (!currentWord) return
+
+    const timeSpent = questionStartTime ? Math.round((Date.now() - questionStartTime) / 1000) : 0
+
+    if (gameType === "wordRace") {
+      if (typedWord.trim() === "") {
+        alert("Ju lutem shkruani fjalën!")
+        return
+      }
+      socket.emit("submitAnswer", {
+        roomId,
+        questionId: currentWord.id,
+        typedWord: typedWord,
+        timeSpent,
+      })
+    } else {
+      // Quiz
+      // This part would be for quiz answers, which are not in this word race UI
+      // For now, this button is only for word race.
       return
     }
 
-    if (socket && roomId && questions[currentQuestion] && !userFinished) {
-      const timeSpent = questionStartTime ? Math.round((Date.now() - questionStartTime) / 1000) : 0
-
-      socket.emit("quizAnswer", {
-        roomId,
-        questionId: questions[currentQuestion].id,
-        answer: questions[currentQuestion].options[selectedAnswer],
-        timeSpent,
-      })
-
-      if (currentQuestion < questions.length - 1) {
-        setCurrentQuestion((prev) => prev + 1)
-        setSelectedAnswer(null)
-        setQuestionStartTime(Date.now())
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex((prev) => prev + 1)
+      setTypedWord("") // Clear input for next word
+      setQuestionStartTime(Date.now())
+      if (inputRef.current) {
+        inputRef.current.focus() // Focus input for next word
       }
+    } else {
+      // Last question/word submitted, user is finished
+      setUserFinished(true)
+      setWaitingForOpponent(true)
+      setMessage("Keni përfunduar! Duke pritur që kundërshtari të përfundojë...")
     }
   }
 
-  const handleNewChallenge = () => {
-    console.log("Starting new challenge")
+  const resetGameState = () => {
     setGameState("idle")
     setQuestions([])
-    setCurrentQuestion(0)
-    setSelectedAnswer(null)
+    setCurrentQuestionIndex(0)
+    setTypedWord("")
     setResults(null)
     setMessage("")
     setTimeLeft(300)
@@ -347,11 +387,17 @@ const Challenge = () => {
     setWaitingForOpponent(false)
     setQuestionStartTime(null)
     clearTimer()
+    setIsJoiningChallenge(false)
+  }
+
+  const handleNewChallenge = () => {
+    console.log("Starting new challenge")
+    resetGameState()
   }
 
   const handleReturnHome = () => {
     console.log("Returning to home")
-    handleNewChallenge()
+    resetGameState()
   }
 
   const formatTime = (seconds) => {
@@ -360,16 +406,16 @@ const Challenge = () => {
     return `${mins}:${secs.toString().padStart(2, "0")}`
   }
 
-  const getStatusColor = () => {
+  const getStatusIcon = () => {
     switch (gameState) {
       case "waiting":
-        return "bg-amber-50 border-amber-200 text-amber-800"
+        return <Loader className="animate-spin h-4 w-4" />
       case "playing":
-        return "bg-emerald-50 border-emerald-200 text-emerald-800"
+        return <Play className="h-4 w-4" />
       case "finished":
-        return "bg-green-50 border-green-200 text-green-800"
+        return <CheckCircle className="h-4 w-4" />
       default:
-        return "bg-stone-50 border-stone-200 text-stone-800"
+        return null
     }
   }
 
@@ -382,10 +428,12 @@ const Challenge = () => {
   // Loading state
   if (isLoadingProfile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-stone-100 via-amber-50 to-orange-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 text-center max-w-sm w-full">
-          <Loader className="animate-spin w-12 h-12 sm:w-16 sm:h-16 text-amber-600 mx-auto mb-4" />
-          <p className="text-stone-600 text-sm sm:text-base">Duke ngarkuar profilin tuaj...</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-sm text-center bg-white rounded-lg shadow-md p-6 sm:p-8">
+          <div className="flex flex-col items-center justify-center">
+            <Loader className="animate-spin w-12 h-12 sm:w-16 sm:h-16 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-600 text-sm sm:text-base">Duke ngarkuar profilin tuaj...</p>
+          </div>
         </div>
       </div>
     )
@@ -394,18 +442,20 @@ const Challenge = () => {
   // Not authenticated
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-stone-100 via-amber-50 to-orange-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 text-center max-w-md w-full">
-          <Lock className="w-12 h-12 sm:w-16 sm:h-16 text-stone-400 mx-auto mb-4" />
-          <h2 className="text-xl sm:text-2xl font-bold text-stone-800 mb-4">Duhet të jeni të kyçur</h2>
-          <p className="text-stone-600 mb-6 text-sm sm:text-base">Ju lutem kyçuni për të luajtur challenge-in</p>
-          <button
-            onClick={() => (window.location.href = "/signin")}
-            className="bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 px-6 rounded-xl font-semibold hover:from-amber-600 hover:to-orange-600 transition-all duration-200 flex items-center gap-2 mx-auto text-sm sm:text-base"
-          >
-            <LogOut className="w-4 h-4" />
-            Kyçu
-          </button>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md text-center bg-white rounded-lg shadow-md p-6 sm:p-8">
+          <div className="flex flex-col items-center justify-center">
+            <Lock className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4">Duhet të jeni të kyçur</h2>
+            <p className="text-gray-600 mb-6 text-sm sm:text-base">Ju lutem kyçuni për të luajtur challenge-in</p>
+            <button
+              onClick={() => (window.location.href = "/signin")}
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-gray-900 text-white hover:bg-gray-700 h-10 px-4 py-2 w-full"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Kyçu
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -414,20 +464,19 @@ const Challenge = () => {
   const currentLevel = Math.floor(userXp / 100) + 1
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-100 via-amber-50 to-orange-100 p-2 sm:p-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gray-50 p-2 sm:p-4">
+      <div className="max-w-2xl mx-auto">
         {/* Header with Profile */}
-        <div className="text-center mb-4 sm:mb-8">
+        <div className="text-center mb-4 sm:mb-6">
           <div className="flex items-center justify-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-            <Flag className="w-8 h-8 sm:w-10 sm:h-10 text-amber-700" />
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-stone-800">Challenge Gjermanisht</h1>
+            <Flag className="w-7 h-7 sm:w-8 h-8 text-gray-700" />
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Gara e Fjalëve Gjermanisht</h1>
           </div>
-
           {/* User Profile Card */}
-          <div className="bg-white/60 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-3 sm:p-4 mb-3 sm:mb-4 max-w-sm sm:max-w-md mx-auto shadow-lg">
-            <div className="flex items-center justify-center space-x-3 sm:space-x-4">
+          <div className="max-w-sm mx-auto shadow-sm bg-white rounded-lg">
+            <div className="flex items-center justify-center p-3 sm:p-4">
               {/* Profile Picture */}
-              <div className="relative">
+              <div className="relative mr-3 sm:mr-4">
                 {user.profilePicture ? (
                   <img
                     src={
@@ -436,121 +485,100 @@ const Challenge = () => {
                         : `http://localhost:5000${user.profilePicture}`
                     }
                     alt={user.name}
-                    className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-3 sm:border-4 border-white shadow-lg object-cover"
+                    className="w-10 h-10 sm:w-12 h-12 rounded-full border-2 border-white shadow-sm object-cover"
                     onError={(e) => {
                       e.target.style.display = "none"
                     }}
                   />
                 ) : (
-                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-3 sm:border-4 border-white shadow-lg bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center">
-                    <span className="text-white font-bold text-sm sm:text-xl">
+                  <div className="w-10 h-10 sm:w-12 h-12 rounded-full border-2 border-white shadow-sm bg-gray-300 flex items-center justify-center">
+                    <span className="text-gray-700 font-bold text-xs sm:text-sm">
                       {user.firstName?.charAt(0) || "U"}
                       {user.lastName?.charAt(0) || ""}
                     </span>
                   </div>
                 )}
-
                 {/* Connection Status */}
-                <div className="absolute -bottom-1 -right-1 w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 border-white flex items-center justify-center bg-white">
+                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-4 h-4 rounded-full border border-white flex items-center justify-center bg-white">
                   {isConnected ? (
-                    <Wifi className="w-2 h-2 sm:w-3 sm:h-3 text-emerald-600" />
+                    <Wifi className="w-2 h-2 sm:w-2.5 h-2.5 text-emerald-600" />
                   ) : (
-                    <WifiOff className="w-2 h-2 sm:w-3 sm:h-3 text-red-500" />
+                    <WifiOff className="w-2 h-2 sm:w-2.5 h-2.5 text-red-500" />
                   )}
                 </div>
               </div>
-
               {/* User Info */}
               <div className="text-left">
-                <h3 className="text-stone-800 font-bold text-sm sm:text-lg">{user.name || "User"}</h3>
-                <div className="flex items-center space-x-2 sm:space-x-4 text-stone-600 text-xs sm:text-sm">
+                <h3 className="text-sm sm:text-base font-semibold text-gray-900">{user.name || "User"}</h3>
+                <p className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600">
                   <span className="flex items-center gap-1">
-                    <Star className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <Star className="w-3 h-3" />
                     {userXp} XP
                   </span>
                   <span className="flex items-center gap-1">
-                    <BarChart3 className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <BarChart3 className="w-3 h-3" />
                     Level {currentLevel}
                   </span>
-                </div>
+                </p>
               </div>
             </div>
-          </div>
-
-          <div className="flex items-center justify-center space-x-2">
-            {isConnected ? (
-              <div className="flex items-center gap-2 text-stone-700 text-xs sm:text-sm">
-                <Wifi className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>E lidhur</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-stone-700 text-xs sm:text-sm">
-                <WifiOff className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>E shkëputur</span>
-              </div>
-            )}
           </div>
         </div>
 
         {/* Main Card */}
-        <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 lg:p-8">
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
           {/* Status Message */}
           {message && (
-            <div className={`p-3 sm:p-4 rounded-xl border-2 mb-4 sm:mb-6 ${getStatusColor()}`}>
-              <p className="text-center font-semibold flex items-center justify-center gap-2 text-sm sm:text-base">
-                {gameState === "waiting" && <Loader className="animate-spin w-4 h-4" />}
-                {gameState === "playing" && <Play className="w-4 h-4" />}
-                {gameState === "finished" && <CheckCircle className="w-4 h-4" />}
-                {message}
-              </p>
+            <div className="relative w-full rounded-lg border px-4 py-3 text-sm [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground [&>svg~*]:pl-7 bg-gray-100 border-gray-300 text-gray-700 mb-4 sm:mb-6">
+              <div className="flex items-center justify-center gap-2">
+                {getStatusIcon()}
+                <p className="text-center font-semibold text-sm sm:text-base">{message}</p>
+              </div>
             </div>
           )}
 
           {/* Idle State - Join Challenge */}
           {gameState === "idle" && (
-            <div className="text-center space-y-4 sm:space-y-6">
-              <GraduationCap className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 text-stone-400 mx-auto mb-4" />
-              <div className="space-y-3 sm:space-y-4">
-                <h3 className="text-xl sm:text-2xl font-bold text-stone-800">
-                  Gati për challenge gjermanisht, {user.firstName || "User"}?
-                </h3>
-                <p className="text-stone-600 text-sm sm:text-base">Sfidoni lojtarë të tjerë dhe fitoni XP!</p>
-              </div>
-
+            <div className="text-center space-y-4">
+              <Type className="w-14 h-14 sm:w-16 h-16 text-gray-400 mx-auto mb-2" />
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
+                Gati për garën e fjalëve gjermanisht, {user.firstName || "User"}?
+              </h3>
+              <p className="text-sm sm:text-base text-gray-600">
+                Sfidoni lojtarë të tjerë dhe fitoni XP duke shkruar fjalë!
+              </p>
               <button
                 onClick={handleJoinChallenge}
-                disabled={!isConnected}
-                className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 sm:py-4 px-6 sm:px-8 rounded-xl font-bold text-sm sm:text-lg hover:from-amber-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2 sm:gap-3"
+                disabled={!isConnected || gameState !== "idle" || isJoiningChallenge}
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-gray-900 text-white hover:bg-gray-700 h-11 px-8 py-2 w-full"
               >
-                <Play className="w-5 h-5 sm:w-6 sm:h-6" />
-                Fillo Challenge-in Gjermanisht
+                <Play className="mr-2 h-5 w-5" />
+                Fillo Garën e Fjalëve
               </button>
             </div>
           )}
 
           {/* Waiting State */}
           {gameState === "waiting" && (
-            <div className="text-center space-y-4 sm:space-y-6">
-              <Loader className="animate-spin w-12 h-12 sm:w-16 sm:h-16 text-amber-600 mx-auto" />
-              <div className="space-y-2">
-                <h3 className="text-lg sm:text-xl font-bold text-stone-700">Duke pritur kundërshtar...</h3>
-                <p className="text-stone-600 flex items-center justify-center gap-2 text-sm sm:text-base">
-                  <Users className="w-4 h-4" />
-                  {waitingCount > 1 ? `${waitingCount} lojtarë në pritje` : "Ju jeni i pari në pritje"}
-                </p>
-                <div className="bg-amber-50 p-3 sm:p-4 rounded-xl">
-                  <p className="text-xs sm:text-sm text-amber-700 flex items-center justify-center gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    <strong>Këshillë:</strong> Hapni një dritare tjetër ose ftoni një shok për të luajtur!
-                  </p>
+            <div className="text-center space-y-4">
+              <Loader className="animate-spin w-12 h-12 sm:w-14 h-14 text-gray-600 mx-auto" />
+              <h3 className="text-base sm:text-lg font-semibold text-gray-700">Duke pritur kundërshtar...</h3>
+              <p className="text-gray-600 flex items-center justify-center gap-2 text-sm sm:text-base">
+                <Users className="w-4 h-4" />
+                {waitingCount > 1 ? `${waitingCount} lojtarë në pritje` : "Ju jeni i pari në pritje"}
+              </p>
+              <div className="relative w-full rounded-lg border px-4 py-3 text-sm [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground [&>svg~*]:pl-7 text-left bg-gray-100 border-gray-300 text-gray-700">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <h5 className="text-sm font-semibold">Këshillë:</h5>
                 </div>
+                <p className="text-xs">Hapni një dritare tjetër ose ftoni një shok për të luajtur!</p>
               </div>
-
               <button
                 onClick={handleLeaveChallenge}
-                className="bg-red-400 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-xl hover:bg-red-500 transition-colors flex items-center gap-2 mx-auto text-sm sm:text-base"
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-red-600 text-white hover:bg-red-700 h-10 px-4 py-2 w-full"
               >
-                <LogOut className="w-4 h-4" />
+                <LogOut className="mr-2 h-4 w-4" />
                 Dil nga Pritja
               </button>
             </div>
@@ -558,35 +586,35 @@ const Challenge = () => {
 
           {/* Playing State */}
           {gameState === "playing" && questions.length > 0 && (
-            <div className="space-y-4 sm:space-y-6">
+            <div className="space-y-4">
               {/* Header with leave button */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-                <div className="text-xs sm:text-sm text-stone-600">
-                  {!userFinished && currentQuestion < questions.length && (
-                    <span className="flex items-center gap-2">
-                      <Target className="w-4 h-4" />
-                      Pyetja {currentQuestion + 1} nga {questions.length}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
+                <div className="text-xs sm:text-sm text-gray-600">
+                  {!userFinished && currentQuestionIndex < questions.length && (
+                    <span className="flex items-center gap-1">
+                      <Target className="w-3 h-3" />
+                      Fjala {currentQuestionIndex + 1} nga {questions.length}
                     </span>
                   )}
                   {userFinished && (
-                    <span className="text-emerald-600 font-semibold flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4" />
+                    <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" />
                       Keni përfunduar!
                     </span>
                   )}
                 </div>
-                <div className="flex items-center space-x-3 sm:space-x-4">
+                <div className="flex items-center space-x-3">
                   {!userFinished && (
-                    <div className={`text-base sm:text-lg font-bold flex items-center gap-2 ${getTimerColor()}`}>
-                      <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+                    <div className={`text-base font-bold flex items-center gap-1 ${getTimerColor()}`}>
+                      <Clock className="w-4 h-4" />
                       {formatTime(timeLeft)}
                     </div>
                   )}
                   <button
                     onClick={handleLeaveChallenge}
-                    className="bg-red-400 text-white py-2 px-3 sm:px-4 rounded-lg text-xs sm:text-sm hover:bg-red-500 transition-colors flex items-center gap-2"
+                    className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3"
                   >
-                    <LogOut className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <LogOut className="mr-1 h-3 w-3" />
                     Dil
                   </button>
                 </div>
@@ -594,88 +622,102 @@ const Challenge = () => {
 
               {/* Progress Bar */}
               {!userFinished && (
-                <div className="w-full bg-stone-200 rounded-full h-2">
+                <div className="relative h-2 w-full overflow-hidden rounded-full bg-gray-200">
                   <div
-                    className="bg-gradient-to-r from-amber-500 to-orange-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
-                  ></div>
+                    role="progressbar"
+                    aria-valuenow={((currentQuestionIndex + 1) / questions.length) * 100}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    className="h-full w-full flex-1 bg-gray-900 transition-all"
+                    style={{
+                      transform: `translateX(-${100 - ((currentQuestionIndex + 1) / questions.length) * 100}%)`,
+                    }}
+                  />
                 </div>
               )}
 
-              {/* Question or Waiting State */}
-              {!userFinished && currentQuestion < questions.length && (
+              {/* Word to Type or Waiting State */}
+              {!userFinished && currentQuestionIndex < questions.length && (
                 <>
-                  {/* Question */}
-                  <div className="bg-stone-50 p-4 sm:p-6 rounded-xl">
-                    <h3 className="text-lg sm:text-xl font-bold text-stone-800 mb-4">
-                      {questions[currentQuestion].question}
-                    </h3>
-
-                    {/* Answer Options */}
-                    <div className="space-y-3">
-                      {questions[currentQuestion].options.map((option, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleAnswerSelect(index)}
-                          className={`w-full p-3 sm:p-4 text-left rounded-xl border-2 transition-all duration-200 text-sm sm:text-base ${
-                            selectedAnswer === index
-                              ? "border-amber-500 bg-amber-50 text-amber-800"
-                              : "border-stone-200 hover:border-stone-300 hover:bg-stone-50"
-                          }`}
-                        >
-                          <span className="font-semibold mr-3">{String.fromCharCode(65 + index)}.</span>
-                          {option}
-                        </button>
-                      ))}
+                  {/* Word Display */}
+                  <div className="rounded-lg border bg-card text-card-foreground shadow-sm text-center">
+                    <div className="p-4">
+                      <p className="text-sm text-muted-foreground mb-1">Shkruani fjalën:</p>
+                      <h3 className="text-2xl sm:text-3xl font-semibold text-gray-900 mb-2">
+                        {questions[currentQuestionIndex].word}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">({questions[currentQuestionIndex].translation})</p>
                     </div>
                   </div>
 
-                  {/* Submit Button */}
-                  <button
-                    onClick={handleSubmitAnswer}
-                    disabled={selectedAnswer === null}
-                    className="w-full bg-gradient-to-r from-emerald-500 to-green-500 text-white py-3 sm:py-4 px-6 sm:px-8 rounded-xl font-bold text-sm sm:text-lg hover:from-emerald-600 hover:to-green-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3"
-                  >
-                    {currentQuestion === questions.length - 1 ? (
-                      <>
-                        <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
-                        Përfundo Challenge-in
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4 sm:w-5 sm:h-5" />
-                        Pyetja Tjetër
-                      </>
-                    )}
-                  </button>
+                  {/* Typing Input */}
+                  <div className="relative">
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={typedWord}
+                      onChange={(e) => setTypedWord(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === "Enter") {
+                          handleSubmitAnswer()
+                        }
+                      }}
+                      placeholder="Shkruani fjalën këtu..."
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pr-10"
+                      disabled={userFinished}
+                    />
+                    <button
+                      onClick={handleSubmitAnswer}
+                      disabled={typedWord.trim() === "" || userFinished}
+                      className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-gray-800 text-white hover:bg-gray-700 h-9 w-9 absolute right-1 top-1/2 -translate-y-1/2"
+                      aria-label="Submit word"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                    </button>
+                  </div>
                 </>
               )}
 
               {/* Waiting for opponent to finish */}
               {waitingForOpponent && (
-                <div className="text-center space-y-4">
-                  <Loader className="animate-spin w-12 h-12 sm:w-16 sm:h-16 text-stone-400 mx-auto" />
-                  <h3 className="text-lg sm:text-xl font-bold text-stone-700">Duke pritur kundërshtarin...</h3>
-                  <p className="text-stone-600 text-sm sm:text-base">Kundërshtari juaj ende po përgjigjet pyetjeve</p>
+                <div className="text-center space-y-3">
+                  <Loader className="animate-spin w-10 h-10 text-gray-400 mx-auto" />
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-700">Duke pritur kundërshtarin...</h3>
+                  <p className="text-sm text-gray-600">Kundërshtari juaj ende po shkruan fjalët</p>
                 </div>
               )}
 
               {/* Player Progress */}
               {Object.keys(playerProgress).length > 0 && (
-                <div className="bg-stone-50 p-3 sm:p-4 rounded-xl">
-                  <h4 className="font-bold text-stone-700 mb-2 flex items-center gap-2 text-sm sm:text-base">
-                    <Users className="w-4 h-4" />
-                    Progresi i Lojtarëve:
-                  </h4>
-                  {Object.entries(playerProgress).map(([username, progress]) => (
-                    <div key={username} className="flex justify-between items-center text-xs sm:text-sm">
-                      <span>{username}</span>
-                      <span className="text-emerald-600 flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
-                        {progress.score} pikë ({progress.time}s)
-                      </span>
-                    </div>
-                  ))}
+                <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+                  <div className="flex flex-col space-y-1.5 p-4 pb-2">
+                    <h4 className="text-base font-semibold leading-none tracking-tight flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Progresi i Lojtarëve:
+                    </h4>
+                  </div>
+                  <div className="p-4 pt-2">
+                    {Object.entries(playerProgress).map(([username, progress]) => (
+                      <div key={username} className="flex justify-between items-center text-sm py-1">
+                        <span>
+                          {username} {username === user.name && "(Ju)"}
+                        </span>
+                        <span className="text-gray-700 flex items-center gap-1">
+                          {progress.finished ? (
+                            <>
+                              <CheckCircle className="w-3 h-3" />
+                              Përfunduar ({progress.correctWords} fjalë)
+                            </>
+                          ) : (
+                            <>
+                              <Type className="w-3 h-3" />
+                              {progress.correctWords || 0} / {questions.length} fjalë
+                            </>
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -683,34 +725,32 @@ const Challenge = () => {
 
           {/* Results State */}
           {gameState === "finished" && results && (
-            <div className="text-center space-y-4 sm:space-y-6">
-              <div className="flex justify-center mb-4">
+            <div className="text-center space-y-4">
+              <div className="flex justify-center mb-2">
                 {results.users.find((u) => u.username === user.name)?.isWinner ? (
-                  <Trophy className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 text-amber-500" />
+                  <Trophy className="w-14 h-14 sm:w-16 h-16 text-gray-900" />
                 ) : (
-                  <Target className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 text-stone-400" />
+                  <Target className="w-14 h-14 sm:w-16 h-16 text-gray-400" />
                 )}
               </div>
-
-              <div className="space-y-4">
-                <h3 className="text-xl sm:text-2xl font-bold text-stone-800">Rezultatet</h3>
-
-                {/* Results Table */}
-                <div className="bg-stone-50 rounded-xl p-4 sm:p-6">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-900">Rezultatet</h3>
+              {/* Results Table */}
+              <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+                <div className="p-4">
                   <div className="space-y-3">
                     {results.users.map((player, index) => (
                       <div
                         key={player.username}
-                        className={`flex justify-between items-center p-3 rounded-xl ${
-                          player.username === user.name ? "bg-amber-100 border-2 border-amber-300" : "bg-white"
+                        className={`flex justify-between items-center p-3 rounded-md ${
+                          player.username === user.name ? "bg-gray-100 border border-gray-300" : "bg-white"
                         }`}
                       >
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-2">
                           <span className="flex items-center">
                             {index === 0 ? (
-                              <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
+                              <Trophy className="w-4 h-4 sm:w-5 h-5 text-gray-900" />
                             ) : (
-                              <Target className="w-5 h-5 sm:w-6 sm:h-6 text-stone-400" />
+                              <Target className="w-4 h-4 sm:w-5 h-5 text-gray-400" />
                             )}
                           </span>
                           <span className="font-semibold text-sm sm:text-base">
@@ -718,10 +758,11 @@ const Challenge = () => {
                             {player.username === user.name && " (Ju)"}
                           </span>
                         </div>
-
                         <div className="text-right">
-                          <div className="font-bold text-base sm:text-lg">{player.score} pikë</div>
-                          <div className="text-xs sm:text-sm text-stone-600 flex items-center gap-1 justify-end">
+                          <div className="font-bold text-base sm:text-lg">
+                            {gameType === "wordRace" ? `${player.correctWords} fjalë` : `${player.score} pikë`}
+                          </div>
+                          <div className="text-xs text-gray-600 flex items-center gap-1 justify-end">
                             <Star className="w-3 h-3" />+{player.xp} XP
                           </div>
                         </div>
@@ -730,21 +771,20 @@ const Challenge = () => {
                   </div>
                 </div>
               </div>
-
               {/* Two buttons after challenge ends */}
               <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
                 <button
                   onClick={handleNewChallenge}
-                  className="flex-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white py-3 sm:py-4 px-6 sm:px-8 rounded-xl font-bold text-sm sm:text-lg hover:from-amber-600 hover:to-orange-600 flex items-center justify-center gap-2 sm:gap-3"
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-gray-900 text-white hover:bg-gray-700 h-11 px-8 py-2 flex-1"
                 >
-                  <RotateCcw className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <RotateCcw className="mr-2 h-4 w-4" />
                   Challenge i Ri
                 </button>
                 <button
                   onClick={handleReturnHome}
-                  className="flex-1 bg-gradient-to-r from-stone-500 to-stone-600 text-white py-3 sm:py-4 px-6 sm:px-8 rounded-xl font-bold text-sm sm:text-lg hover:from-stone-600 hover:to-stone-700 flex items-center justify-center gap-2 sm:gap-3"
+                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-11 px-8 py-2 flex-1"
                 >
-                  <Home className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <Home className="mr-2 h-4 w-4" />
                   Kthehu në Fillim
                 </button>
               </div>
