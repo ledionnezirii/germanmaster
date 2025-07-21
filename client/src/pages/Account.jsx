@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "../context/AuthContext"
 import { authService } from "../services/api"
-import { User, Star, Trophy, Clock, BookOpen, Camera, Loader2 } from "lucide-react"
+import { User, Star, Trophy, Clock, BookOpen, Camera, Loader2, Flame } from "lucide-react" // Added Flame icon
 import { useNavigate } from "react-router-dom"
 
 const Account = () => {
@@ -29,28 +29,23 @@ const Account = () => {
   const handleProfilePictureUpload = async (event) => {
     const file = event.target.files[0]
     if (!file) return
-
     if (file.size > 5 * 1024 * 1024) {
-      alert("File size must be less than 5MB")
+      alert("Madhësia e skedarit duhet të jetë më pak se 5MB") // Albanian: File size must be less than 5MB
       return
     }
-
     const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif"]
     if (!allowedTypes.includes(file.type)) {
-      alert("Only JPEG, PNG, and GIF files are allowed")
+      alert("Lejohen vetëm skedarët JPEG, PNG dhe GIF") // Albanian: Only JPEG, PNG, and GIF files are allowed
       return
     }
-
     setUploading(true)
     setImageError(false) // Reset error before new upload attempt
-
     try {
       const formData = new FormData()
       formData.append("profilePicture", file)
       const response = await authService.uploadProfilePicture(formData)
       const newProfilePicture = response.data.profilePicture // This should be the absolute URL
       console.log("Account.jsx: Upload successful. New profile picture URL:", newProfilePicture)
-
       // Immediately update the local display URL
       setProfilePictureDisplayUrl(newProfilePicture)
       // Update AuthContext, which will also persist to localStorage
@@ -59,7 +54,7 @@ const Account = () => {
     } catch (error) {
       console.error("Account.jsx: Error uploading profile picture:", error)
       setImageError(true) // Set error if upload fails
-      alert("Failed to upload profile picture. Please try again.")
+      alert("Dështoi ngarkimi i fotos së profilit. Ju lutemi provoni përsëri.") // Albanian: Failed to upload profile picture. Please try again.
     } finally {
       setUploading(false)
     }
@@ -85,18 +80,14 @@ const Account = () => {
     const baseXP = 100
     // Ensure level is a string like "A1", "B2", etc. and parse the number part
     const currentLevelNum = Number.parseInt(user.level?.replace(/[^0-9]/g, "") || "1") // Extract number, default to 1
-
     // Calculate XP required for current and next level
     const currentLevelXP = baseXP * Math.pow(1.5, currentLevelNum - 1)
     const nextLevelXP = baseXP * Math.pow(1.5, currentLevelNum)
-
     // Ensure xpForNextLevel is not zero to avoid division by zero
     const xpForNextLevel = nextLevelXP - currentLevelXP
     if (xpForNextLevel <= 0) return 100 // If no XP needed for next level, assume 100% progress
-
     const xpInCurrentLevel = user.xp - currentLevelXP
     const progress = (xpInCurrentLevel / xpForNextLevel) * 100
-
     return Math.min(Math.max(progress, 0), 100) || 0 // Ensure progress is between 0 and 100
   }, [user]) // Recalculate only when user object changes
 
@@ -107,7 +98,7 @@ const Account = () => {
       <div className="flex items-center justify-center min-h-96">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-teal-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading your profile...</p>
+          <p className="text-gray-600">Duke ngarkuar profilin tuaj...</p> {/* Albanian: Loading your profile... */}
         </div>
       </div>
     )
@@ -128,7 +119,7 @@ const Account = () => {
                 <img
                   key={profilePictureDisplayUrl} // Key helps React re-render if URL changes
                   src={profilePictureDisplayUrl || "/placeholder.svg"}
-                  alt="Profile"
+                  alt="Profili" // Albanian: Profile
                   className="w-full h-full object-cover"
                   onError={handleImageError}
                   onLoad={handleImageLoad}
@@ -164,24 +155,11 @@ const Account = () => {
             <p className="text-gray-600 mt-1">{user.email}</p>
             <div className="mt-3 flex items-center justify-center md:justify-start gap-2 flex-wrap">
               <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm font-medium">
-                Level {user.level}
+                Niveli {user.level} {/* Albanian: Level */}
               </span>
               <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
                 {user.xp} XP
               </span>
-            </div>
-            {/* XP Progress Bar */}
-            <div className="mt-3 w-full max-w-xs mx-auto md:mx-0">
-              <div className="flex justify-between text-xs text-gray-600 mb-1">
-                <span>Progress to next level</span>
-                <span>{Math.round(getXPProgress())}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-teal-600 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${getXPProgress()}%` }}
-                ></div>
-              </div>
             </div>
           </div>
           {/* Logout Button */}
@@ -189,7 +167,7 @@ const Account = () => {
             onClick={handleSignOut}
             className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium"
           >
-            Sign Out
+            Dilni {/* Albanian: Sign Out */}
           </button>
         </div>
       </div>
@@ -201,7 +179,7 @@ const Account = () => {
               <Star className="h-6 w-6 text-yellow-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 font-medium">XP Points</p>
+              <p className="text-sm text-gray-600 font-medium">Pikë XP</p> {/* Albanian: XP Points */}
               <p className="text-2xl font-bold text-gray-900">{user.xp}</p>
             </div>
           </div>
@@ -212,7 +190,7 @@ const Account = () => {
               <Trophy className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 font-medium">Current Level</p>
+              <p className="text-sm text-gray-600 font-medium">Niveli Aktual</p> {/* Albanian: Current Level */}
               <p className="text-2xl font-bold text-gray-900">{user.level}</p>
             </div>
           </div>
@@ -223,7 +201,7 @@ const Account = () => {
               <Clock className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 font-medium">Study Hours</p>
+              <p className="text-sm text-gray-600 font-medium">Orë Studimi</p> {/* Albanian: Study Hours */}
               <p className="text-2xl font-bold text-gray-900">{user.studyHours}</p>
             </div>
           </div>
@@ -234,7 +212,8 @@ const Account = () => {
               <BookOpen className="h-6 w-6 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-600 font-medium">Tests Completed</p>
+              <p className="text-sm text-gray-600 font-medium">Teste të Përfunduara</p>{" "}
+              {/* Albanian: Tests Completed */}
               <p className="text-2xl font-bold text-gray-900">{user.completedTests}</p>
             </div>
           </div>
@@ -243,10 +222,10 @@ const Account = () => {
         <div className="bg-gradient-to-r from-orange-50 to-red-100 rounded-xl p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3">
             <div className="bg-orange-100 p-3 rounded-lg">
-              <span className="text-2xl">🔥</span>
+              <Flame className="h-6 w-6 text-orange-600" /> {/* Replaced emoji with Lucide icon */}
             </div>
             <div>
-              <p className="text-sm text-gray-600 font-medium">Day Streak</p>
+              <p className="text-sm text-gray-600 font-medium">Ditë Rresht</p> {/* Albanian: Day Streak */}
               <p className="text-2xl font-bold text-gray-900">{user.streakCount}</p>
             </div>
           </div>
@@ -256,7 +235,7 @@ const Account = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center gap-2 mb-4">
           <Trophy className="h-5 w-5 text-yellow-600" />
-          <h2 className="text-xl font-bold text-gray-900">Achievements</h2>
+          <h2 className="text-xl font-bold text-gray-900">Arritjet</h2> {/* Albanian: Achievements */}
         </div>
         {user.achievements && user.achievements.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -274,7 +253,7 @@ const Account = () => {
                     <p className="text-sm text-gray-600 mt-1">{achievement.description}</p>
                     {achievement.date && (
                       <p className="text-xs text-gray-500 mt-2">
-                        Earned on {new Date(achievement.date).toLocaleDateString()}
+                        Fituan më {new Date(achievement.date).toLocaleDateString()} {/* Albanian: Earned on */}
                       </p>
                     )}
                   </div>
@@ -285,8 +264,9 @@ const Account = () => {
         ) : (
           <div className="text-center py-8">
             <Trophy className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-600 mb-2">No achievements yet</p>
-            <p className="text-sm text-gray-500">Keep learning to earn your first achievement!</p>
+            <p className="text-gray-600 mb-2">Ende nuk ka arritje</p> {/* Albanian: No achievements yet */}
+            <p className="text-sm text-gray-500">Vazhdoni të mësoni për të fituar arritjen tuaj të parë!</p>{" "}
+            {/* Albanian: Keep learning to earn your first achievement! */}
           </div>
         )}
       </div>

@@ -16,6 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Swords,
+  Sparkles,
 } from "lucide-react"
 
 const Sidebar = () => {
@@ -24,19 +25,30 @@ const Sidebar = () => {
   const location = useLocation()
 
   const menuItems = [
-    { icon: Home, label: "Home", path: "/", requireAuth: false },
-    { icon: Languages, label: "Translate", path: "/translate", requireAuth: true },
-    { icon: Headphones, label: "Listen", path: "/listen", requireAuth: true },
-    { icon: BookOpen, label: "Dictionary", path: "/dictionary", requireAuth: true },
-    { icon: FolderOpen, label: "Category", path: "/category", requireAuth: true },
-    { icon: MessageCircle, label: "Chat", path: "/chat", requireAuth: true },
-    { icon: Swords, label: "Challenge", path: "/challenge", requireAuth: true },
-    { icon: GraduationCap, label: "Grammar", path: "/grammar", requireAuth: true },
-    { icon: Trophy, label: "Leaderboard", path: "/leaderboard", requireAuth: false },
-    { icon: User, label: "Account", path: "/account", requireAuth: true },
+    { icon: Home, label: "Kryefaqja", path: "/", requireAuth: false }, // Home
+    { icon: Languages, label: "Përkthe", path: "/translate", requireAuth: true }, // Translate
+    { icon: Headphones, label: "Dëgjo", path: "/listen", requireAuth: true }, // Listen
+    { icon: BookOpen, label: "Fjalor", path: "/dictionary", requireAuth: true }, // Dictionary
+    { icon: FolderOpen, label: "Kategori", path: "/category", requireAuth: true }, // Category
+    { icon: MessageCircle, label: "Bisedo", path: "/chat", requireAuth: true }, // Chat
+    { icon: Swords, label: "Sfidë", path: "/challenge", requireAuth: true }, // Challenge
+    { icon: GraduationCap, label: "Gramatikë", path: "/grammar", requireAuth: true }, // Grammar
+    { icon: Trophy, label: "Renditja", path: "/leaderboard", requireAuth: false }, // Leaderboard
+    { icon: User, label: "Llogaria", path: "/account", requireAuth: true }, // Account
+  ]
+
+  const footerMenuItems = [
+    {
+      icon: Sparkles,
+      label: "Kaloni në Premium", // Upgrade to Premium
+      path: "/premium",
+      requireAuth: false,
+      description: "Përfitoni më shumë me veçori ekskluzive!", // Get more with exclusive features!
+    },
   ]
 
   const filteredMenuItems = menuItems.filter((item) => !item.requireAuth || isAuthenticated)
+  const filteredFooterMenuItems = footerMenuItems.filter((item) => !item.requireAuth || isAuthenticated)
 
   // Handle link click - close sidebar on mobile
   const handleLinkClick = () => {
@@ -52,7 +64,6 @@ const Sidebar = () => {
       {!isCollapsed && (
         <div className="fixed inset-0 z-30 bg-black/30 lg:hidden" onClick={toggleSidebar} aria-hidden="true" />
       )}
-
       {/* Sidebar */}
       <div
         className={`
@@ -60,6 +71,7 @@ const Sidebar = () => {
           transition-all duration-300 ease-in-out
           ${isCollapsed ? "-translate-x-full lg:translate-x-0 lg:w-16" : "translate-x-0 w-64"}
           z-40 lg:z-10
+          flex flex-col
         `}
       >
         {/* Toggle button */}
@@ -74,9 +86,8 @@ const Sidebar = () => {
             <ChevronLeft className="h-4 w-4 text-slate-300" />
           )}
         </button>
-
         {/* Menu items */}
-        <nav className="mt-8 px-3 pb-6">
+        <nav className="mt-8 px-3 pb-6 flex-1 overflow-y-auto">
           <ul className="space-y-2">
             {filteredMenuItems.map((item) => {
               const Icon = item.icon
@@ -102,6 +113,44 @@ const Sidebar = () => {
             })}
           </ul>
         </nav>
+
+        {/* Professional Footer Section */}
+        <div className="mt-auto px-3 py-4 border-t border-slate-800">
+          <ul className="space-y-2">
+            {filteredFooterMenuItems.map((item) => {
+              const Icon = item.icon
+              const isActive = location.pathname === item.path
+              return (
+                <li key={item.path}>
+                  <Link
+                    to={item.path}
+                    onClick={item.action || handleLinkClick}
+                    className={`
+                      flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors
+                      ${isActive ? "bg-green-400/20 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"}
+                      ${isCollapsed ? "justify-center" : "justify-start"}
+                    `}
+                    title={isCollapsed ? item.label : ""}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    <Icon className={`h-5 w-5 flex-shrink-0 ${isCollapsed ? "" : "mr-3"}`} />
+                    {!isCollapsed && <span className="truncate">{item.label}</span>}
+                  </Link>
+                  {!isCollapsed && item.description && (
+                    <p className="mt-1 ml-8 text-xs text-slate-400">{item.description}</p>
+                  )}
+                </li>
+              )
+            })}
+          </ul>
+          {!isCollapsed && (
+            <div className="mt-4 text-center text-xs text-slate-500">
+              © {new Date().getFullYear()} German Tutor.
+              <br />
+              Të gjitha të drejtat e rezervuara.
+            </div>
+          )}
+        </div>
       </div>
     </>
   )

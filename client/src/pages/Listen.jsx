@@ -1,7 +1,6 @@
-
 "use client"
 import { useState, useEffect } from "react"
-import { listenService } from "../services/api"
+import { listenService } from "../services/api" // Assuming this service is available
 import { Volume2, Play, Pause, Check, X, Filter } from "lucide-react"
 
 const Listen = () => {
@@ -14,11 +13,21 @@ const Listen = () => {
   const [loading, setLoading] = useState(true)
   const [selectedLevel, setSelectedLevel] = useState("all")
   const [userProgress, setUserProgress] = useState({})
+  const [failedAttempts, setFailedAttempts] = useState(0) // State for failed attempts
+  const [showFullText, setShowFullText] = useState(false) // State to show full text
 
   useEffect(() => {
     fetchTests()
     fetchUserProgress()
   }, [selectedLevel])
+
+  // Reset failed attempts and showFullText when a new test is selected
+  useEffect(() => {
+    if (selectedTest) {
+      setFailedAttempts(0)
+      setShowFullText(false)
+    }
+  }, [selectedTest])
 
   const fetchTests = async () => {
     try {
@@ -43,42 +52,31 @@ const Listen = () => {
       const response = await listenService.getUserProgress()
       const progressData = response.data
       console.log("Full progress data from backend:", progressData)
-
-      // Create a set of completed test IDs for easy lookup
       const completedTests = new Set()
-
-      // Check all possible sources of completed tests
       if (progressData.recentTests && Array.isArray(progressData.recentTests)) {
         console.log("Recent tests:", progressData.recentTests)
         progressData.recentTests.forEach((test) => {
           completedTests.add(test._id)
         })
       }
-
-      // Also check if there's a completedTestIds array
       if (progressData.completedTestIds && Array.isArray(progressData.completedTestIds)) {
         console.log("Completed test IDs:", progressData.completedTestIds)
         progressData.completedTestIds.forEach((testId) => {
           completedTests.add(testId)
         })
       }
-
-      // Check allCompletedTests array
       if (progressData.allCompletedTests && Array.isArray(progressData.allCompletedTests)) {
         console.log("All completed tests:", progressData.allCompletedTests)
         progressData.allCompletedTests.forEach((test) => {
           completedTests.add(test._id)
         })
       }
-
-      // Check completedFromTests array
       if (progressData.completedFromTests && Array.isArray(progressData.completedFromTests)) {
         console.log("Completed from tests:", progressData.completedFromTests)
         progressData.completedFromTests.forEach((testId) => {
           completedTests.add(testId)
         })
       }
-
       console.log("Final completed tests set:", Array.from(completedTests))
       setUserProgress({ completedTests })
     } catch (error) {
@@ -88,14 +86,10 @@ const Listen = () => {
     }
   }
 
-  // Alternative method to check completion status by looking at the tests themselves
   const fetchCompletionStatusFromTests = async () => {
     try {
-      // Get the current user ID (you might need to adjust this based on how you store user info)
       const token = localStorage.getItem("authToken") || localStorage.getItem("token")
       if (!token) return
-
-      // Decode token to get user ID (adjust this based on your token structure)
       let userId
       try {
         const payload = JSON.parse(atob(token.split(".")[1]))
@@ -104,10 +98,7 @@ const Listen = () => {
         console.error("Could not decode token:", e)
         return
       }
-
       console.log("Current user ID:", userId)
-
-      // Check each test to see if the current user has completed it
       const completedTests = new Set()
       tests.forEach((test) => {
         if (
@@ -119,7 +110,6 @@ const Listen = () => {
           completedTests.add(test._id)
         }
       })
-
       console.log("Completed tests from test data:", Array.from(completedTests))
       if (completedTests.size > 0) {
         setUserProgress({ completedTests })
@@ -129,7 +119,6 @@ const Listen = () => {
     }
   }
 
-  // Call this after tests are loaded
   useEffect(() => {
     if (tests.length > 0) {
       fetchCompletionStatusFromTests()
@@ -142,49 +131,47 @@ const Listen = () => {
       setIsPlaying(false)
       return
     }
-
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.lang = "de-DE"
     utterance.rate = 0.8
     utterance.onstart = () => setIsPlaying(true)
     utterance.onend = () => setIsPlaying(false)
     utterance.onerror = () => setIsPlaying(false)
-
     window.speechSynthesis.speak(utterance)
   }
 
   const handleSubmit = async () => {
     if (!userAnswer.trim()) return
-
     try {
       const response = await listenService.checkAnswer(selectedTest._id, userAnswer)
       console.log("Check answer response:", response.data)
       setResult(response.data)
       setShowResult(true)
 
-      // If the answer was correct or good enough, mark as completed immediately
       if (response.data.correct || response.data.score >= 80) {
         console.log("Test completed successfully, updating local state")
-        // Update local state immediately
         setUserProgress((prev) => ({
           ...prev,
           completedTests: new Set([...prev.completedTests, selectedTest._id]),
         }))
-
-        // Also refresh the full progress data after a delay
         setTimeout(() => {
           console.log("Refreshing progress data after completion")
           fetchUserProgress()
-          fetchTests() // Refresh tests to get updated completion data
+          fetchTests()
         }, 1000)
+        setFailedAttempts(0) // Reset attempts on success
+        setShowFullText(false) // Hide full text on success
+      } else {
+        setFailedAttempts((prev) => prev + 1) // Increment attempts on failure
       }
     } catch (error) {
       console.error("Error checking answer:", error)
       setResult({
-        message: "Incorrect answer. Try again!",
+        message: "Jo krejt saktë, por vazhdoni të praktikoni!", // Corrected Albanian message
         correct: false,
       })
       setShowResult(true)
+      setFailedAttempts((prev) => prev + 1) // Increment attempts on error
     }
   }
 
@@ -193,7 +180,8 @@ const Listen = () => {
     setShowResult(false)
     setResult(null)
     setSelectedTest(null)
-    // Refresh progress when going back to ensure latest completion status
+    setFailedAttempts(0) // Reset attempts when going back to test list
+    setShowFullText(false) // Hide full text when going back to test list
     fetchUserProgress()
     fetchTests()
   }
@@ -226,40 +214,43 @@ const Listen = () => {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
               <h1 className="text-xl font-bold text-gray-900">{selectedTest.title}</h1>
-              <button onClick={resetTest} className="text-gray-600 hover:text-gray-900">
+              <button onClick={resetTest} className="text-gray-600 hover:text-gray-900" aria-label="Kthehu te Testet">
                 <X className="h-6 w-6" />
               </button>
             </div>
-
             <div className="space-y-6">
               {/* Audio Controls */}
               <div className="bg-gray-50 rounded-lg p-6 text-center">
                 <button
                   onClick={() => playAudio(selectedTest.text)}
                   className="bg-teal-600 text-white p-4 rounded-full hover:bg-teal-700 transition-colors"
+                  aria-label={isPlaying ? "Pauzë" : "Luaj"}
                 >
                   {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
                 </button>
-                <p className="mt-4 text-gray-600">Click to listen to the German text</p>
+                <p className="mt-4 text-gray-600">Klikoni për të dëgjuar tekstin gjermanisht</p>
               </div>
 
               {/* Answer Input */}
               {!showResult && (
                 <div className="space-y-4">
-                  <label className="block text-sm font-medium text-gray-700">Type what you heard:</label>
+                  <label htmlFor="user-answer" className="block text-sm font-medium text-gray-700">
+                    Shkruani atë që dëgjuat:
+                  </label>
                   <textarea
+                    id="user-answer"
                     value={userAnswer}
                     onChange={(e) => setUserAnswer(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                    rows="4"
-                    placeholder="Type the German text you heard..."
+                    className="w-full p-3 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-gray-800 placeholder-gray-500"
+                    rows="8" // Increased rows for more space
+                    placeholder="Shkruani tekstin gjermanisht që dëgjuat..."
                   />
                   <button
                     onClick={handleSubmit}
                     disabled={!userAnswer.trim()}
-                    className="w-full bg-teal-600 text-white py-3 rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="w-full bg-gray-800 text-white py-3 rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
                   >
-                    Check Answer
+                    Kontrollo Përgjigjen
                   </button>
                 </div>
               )}
@@ -279,18 +270,13 @@ const Listen = () => {
                       {result.message}
                     </p>
                   </div>
-                  {!result.correct && (
-                    <div className="mt-4">
-                      <p className="text-sm text-gray-700 mb-2">Correct answer:</p>
-                      <p className="font-medium text-gray-900">{result.correctAnswer}</p>
-                    </div>
-                  )}
+                  {/* Removed the display of result.correctAnswer here */}
                   <div className="mt-4 flex gap-3">
                     <button
                       onClick={resetTest}
-                      className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                      className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors font-semibold"
                     >
-                      Back to Tests
+                      Kthehu te Testet
                     </button>
                     {!result.correct && (
                       <button
@@ -298,12 +284,31 @@ const Listen = () => {
                           setShowResult(false)
                           setUserAnswer("")
                         }}
-                        className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors"
+                        className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors font-semibold"
                       >
-                        Try Again
+                        Provoni Përsëri
                       </button>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* Show Full Text after 4 failed attempts */}
+              {showResult && !result.correct && failedAttempts >= 4 && (
+                <div className="mt-4 text-center">
+                  {!showFullText ? (
+                    <button
+                      onClick={() => setShowFullText(true)}
+                      className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors font-semibold"
+                    >
+                      Shfaq Tekstin e Plotë ({failedAttempts} tentativa)
+                    </button>
+                  ) : (
+                    <div className="bg-gray-100 p-4 rounded-lg border border-gray-200 text-gray-800 text-left">
+                      <p className="font-semibold mb-2">Teksti Origjinal:</p>
+                      <p>{selectedTest.text}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -319,11 +324,11 @@ const Listen = () => {
         {/* Header */}
         <header className="mb-4 flex-shrink-0">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Listening Practice</h1>
-            <p className="text-gray-600">Improve your German listening skills with audio exercises</p>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Praktikë Dëgjimi</h1>
+            <p className="text-gray-600">Përmirësoni aftësitë tuaja të dëgjimit në gjermanisht me ushtrime audio</p>
             {/* Debug info */}
             <p className="text-xs text-gray-400 mt-2">
-              Completed tests: {userProgress.completedTests ? userProgress.completedTests.size : 0}
+              Teste të përfunduara: {userProgress.completedTests ? userProgress.completedTests.size : 0}
             </p>
           </div>
         </header>
@@ -332,7 +337,7 @@ const Listen = () => {
         <div className="bg-gray-50 p-3 rounded-lg mb-4 border border-gray-200 flex-shrink-0">
           <div className="flex items-center gap-2 mb-2">
             <Filter size={16} className="text-teal-600" />
-            <h2 className="text-sm font-medium text-gray-800">Filter by Level</h2>
+            <h2 className="text-sm font-medium text-gray-800">Filtro sipas Nivelit</h2>
           </div>
           <div className="flex flex-wrap gap-2">
             {levels.map((level) => (
@@ -347,7 +352,7 @@ const Listen = () => {
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200"
                 }`}
               >
-                {level === "all" ? "All Levels" : level}
+                {level === "all" ? "Të gjitha Nivelet" : level}
                 {selectedLevel === level && (
                   <span className="ml-1 inline-flex items-center justify-center w-4 h-4 bg-white/50 rounded-full text-xs">
                     ✓
@@ -386,14 +391,12 @@ const Listen = () => {
                     >
                       {test.level}
                     </div>
-
                     {/* Background Icon */}
                     <Volume2
                       className={`absolute -bottom-4 -right-4 w-16 h-16 ${
                         isCompleted ? "text-green-200" : "text-gray-200"
                       }`}
                     />
-
                     <div className="relative z-10">
                       <h3
                         className={`text-sm font-semibold mb-1 pr-12 ${
@@ -405,18 +408,18 @@ const Listen = () => {
                         {test.title}
                       </h3>
                       <p className={`text-xs line-clamp-2 ${isCompleted ? "text-green-700" : "text-gray-600"}`}>
-                        {test.text ? test.text.substring(0, 80) + "..." : "Audio exercise"}
+                        {test.text ? test.text.substring(0, 80) + "..." : "Ushtrim Audio"}
                       </p>
                       <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center">
                         <span className={`text-xs ${isCompleted ? "text-green-600" : "text-gray-500"}`}>
-                          German • Audio Exercise
+                          Gjermanisht • Ushtrim Audio
                         </span>
                         <span
                           className={`text-xs px-1.5 py-0.5 rounded font-medium ${
                             isCompleted ? "bg-green-200 text-green-800" : "bg-teal-100 text-teal-800"
                           }`}
                         >
-                          {isCompleted ? "Completed" : "Listen"}
+                          {isCompleted ? "Përfunduar" : "Dëgjo"}
                         </span>
                       </div>
                     </div>
@@ -427,8 +430,10 @@ const Listen = () => {
               <div className="col-span-full text-center py-8">
                 <div className="bg-gray-50 rounded-lg p-6 inline-block">
                   <Volume2 className="text-teal-600 w-10 h-10 mx-auto mb-3" />
-                  <h3 className="text-sm font-medium text-gray-800 mb-1">No tests found</h3>
-                  <p className="text-gray-500 text-xs">Try selecting different levels or check back later</p>
+                  <h3 className="text-sm font-medium text-gray-800 mb-1">Nuk u gjetën teste</h3>
+                  <p className="text-gray-500 text-xs">
+                    Provoni të zgjidhni nivele të ndryshme ose kontrolloni më vonë
+                  </p>
                 </div>
               </div>
             )}
@@ -440,4 +445,3 @@ const Listen = () => {
 }
 
 export default Listen
-
