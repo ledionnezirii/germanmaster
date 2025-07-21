@@ -19,7 +19,15 @@ const challengeSchema = new mongoose.Schema({
         required: true
       },
       socketId: String,
-      score: {
+      score: { // For quiz
+        type: Number,
+        default: 0
+      },
+      wordsTyped: { // For wordRace
+        type: Number,
+        default: 0
+      },
+      correctWords: { // For wordRace
         type: Number,
         default: 0
       },
@@ -29,8 +37,9 @@ const challengeSchema = new mongoose.Schema({
       },
       answers: [
         {
-          questionId: Number,
-          answer: String,
+          questionId: Number, // For quiz
+          answer: String, // For quiz
+          typedWord: String, // For wordRace
           isCorrect: Boolean,
           timeSpent: Number,
           timestamp: Date
@@ -47,12 +56,14 @@ const challengeSchema = new mongoose.Schema({
       }
     }
   ],
-  questions: [
+  questions: [ // This will now hold either quiz questions or words for typing
     {
       id: Number,
-      question: String,
-      options: [String],
-      correctAnswer: String,
+      question: String, // For quiz
+      options: [String], // For quiz
+      correctAnswer: String, // For quiz
+      word: String, // For wordRace
+      translation: String, // For wordRace
       category: String
     }
   ],
@@ -65,8 +76,9 @@ const challengeSchema = new mongoose.Schema({
     type: String,
     default: null
   },
-  gameType: {
+  gameType: { // NEW: To differentiate between quiz and word race
     type: String,
+    enum: ["quiz", "wordRace"],
     default: "quiz"
   },
   timeLimit: {
