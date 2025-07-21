@@ -1,64 +1,59 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Trophy, Medal, Crown, Star } from "lucide-react"
+import { io } from "socket.io-client"
+import api, { SOCKET_URL } from "../services/api" // Removed getAbsoluteImageUrl import as it's not needed here
 
 const Leaderboard = () => {
   const [leaderboardData, setLeaderboardData] = useState([])
   const [loading, setLoading] = useState(true)
   const [timeFrame, setTimeFrame] = useState("weekly")
 
-  // Mock data - replace with actual API call
-  const mockData = [
-    {
-      rank: 1,
-      name: "Maria Schmidt",
-      xp: 2450,
-      level: "B2",
-      avatar: "/placeholder.svg?height=40&width=40",
-      streak: 15,
-    },
-    {
-      rank: 2,
-      name: "John Doe",
-      xp: 2120,
-      level: "B1",
-      avatar: "/placeholder.svg?height=40&width=40",
-      streak: 12,
-    },
-    {
-      rank: 3,
-      name: "Anna Mueller",
-      xp: 1890,
-      level: "B1",
-      avatar: "/placeholder.svg?height=40&width=40",
-      streak: 8,
-    },
-    {
-      rank: 4,
-      name: "David Wilson",
-      xp: 1650,
-      level: "A2",
-      avatar: "/placeholder.svg?height=40&width=40",
-      streak: 6,
-    },
-    {
-      rank: 5,
-      name: "Sarah Johnson",
-      xp: 1420,
-      level: "A2",
-      avatar: "/placeholder.svg?height=40&width=40",
-      streak: 4,
-    },
-  ]
+  const fetchLeaderboard = useCallback(async (period) => {
+    setLoading(true)
+    try {
+      const response = await api.get(`/leaderboard/${period}`)
+      // The backend (leaderboardController.js) already provides absolute URLs for avatars,
+      // so we can use them directly without further processing.
+      setLeaderboardData(response.data)
+    } catch (error) {
+      console.error(`Error fetching ${period} leaderboard:`, error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setLeaderboardData(mockData)
-      setLoading(false)
-    }, 1000)
-  }, [timeFrame])
+    fetchLeaderboard(timeFrame)
+
+    const socket = io(SOCKET_URL)
+
+    socket.on("connect", () => {
+      console.log("Connected to WebSocket server:", socket.id)
+      socket.emit("requestLeaderboard", { timeFrame, limit: 10 })
+    })
+
+    socket.on("leaderboardUpdate", (update) => {
+      console.log("Leaderboard update received:", update)
+      if (update.type === timeFrame) {
+        // The backend (socket/index.js) also provides absolute URLs for avatars in updates.
+        setLeaderboardData(update.data)
+      }
+    })
+
+    socket.on("leaderboardError", (error) => {
+      console.error("Leaderboard socket error:", error.message)
+    })
+
+    socket.on("disconnect", () => {
+      console.log("Disconnected from WebSocket server")
+    })
+
+    return () => {
+      socket.disconnect()
+    }
+  }, [timeFrame, fetchLeaderboard])
 
   const getRankIcon = (rank) => {
     switch (rank) {
@@ -93,9 +88,11 @@ const Leaderboard = () => {
     )
   }
 
+  const topThree = leaderboardData.slice(0, 3)
+  const podiumUsers = [topThree[1], topThree[0], topThree[2]].filter(Boolean)
+
   return (
     <div className="mx-auto space-y-6">
-      {/* Header */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -105,7 +102,6 @@ const Leaderboard = () => {
             </h1>
             <p className="text-gray-600">See how you rank against other learners</p>
           </div>
-
           <div className="flex gap-2">
             {["weekly", "monthly", "all-time"].map((period) => (
               <button
@@ -121,60 +117,51 @@ const Leaderboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Top 3 Podium */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-6 text-center">Top Performers</h2>
         <div className="flex justify-center items-end space-x-4">
-          {leaderboardData.slice(0, 3).map((user, index) => {
+          {podiumUsers.map((user, index) => {
             const heights = ["h-24", "h-32", "h-20"]
-            const positions = [1, 0, 2] // Second place in middle
-            const actualIndex = positions[index]
-            const actualUser = leaderboardData[actualIndex]
+            const podiumHeightIndex = user.rank === 1 ? 1 : user.rank === 2 ? 0 : 2
 
             return (
-              <div key={actualUser.rank} className="flex flex-col items-center">
+              <div key={user.rank} className="flex flex-col items-center">
                 <div className="mb-2">
                   <img
-                    src={actualUser.avatar || "/placeholder.svg"}
-                    alt={actualUser.name}
+                    src={user.avatar || "/placeholder.svg"} // Use the absolute URL directly
+                    alt={user.name}
                     className="w-12 h-12 rounded-full border-2 border-gray-200"
                   />
                 </div>
-                <p className="text-sm font-medium text-gray-900 text-center mb-1">{actualUser.name.split(" ")[0]}</p>
-                <p className="text-xs text-gray-600 mb-2">{actualUser.xp} XP</p>
+                <p className="text-sm font-medium text-gray-900 text-center mb-1">{user.name.split(" ")[0]}</p>
+                <p className="text-xs text-gray-600 mb-2">{user.xp} XP</p>
                 <div
-                  className={`${heights[index]} w-16 bg-gradient-to-t ${
-                    actualUser.rank === 1
+                  className={`${heights[podiumHeightIndex]} w-16 bg-gradient-to-t ${
+                    user.rank === 1
                       ? "from-yellow-400 to-yellow-500"
-                      : actualUser.rank === 2
+                      : user.rank === 2
                         ? "from-gray-300 to-gray-400"
                         : "from-amber-500 to-amber-600"
                   } rounded-t-lg flex items-center justify-center`}
                 >
-                  <span className="text-white font-bold">{actualUser.rank}</span>
+                  <span className="text-white font-bold">{user.rank}</span>
                 </div>
               </div>
             )
           })}
         </div>
       </div>
-
-      {/* Full Leaderboard */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Full Rankings</h2>
         </div>
-
         <div className="divide-y divide-gray-200">
           {leaderboardData.map((user) => (
             <div key={user.rank} className="p-4 hover:bg-gray-50 transition-colors">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center justify-center w-8">{getRankIcon(user.rank)}</div>
-
                   <img src={user.avatar || "/placeholder.svg"} alt={user.name} className="w-10 h-10 rounded-full" />
-
                   <div>
                     <p className="font-medium text-gray-900">{user.name}</p>
                     <div className="flex items-center space-x-2">
@@ -185,7 +172,6 @@ const Leaderboard = () => {
                     </div>
                   </div>
                 </div>
-
                 <div className="text-right">
                   <div className="flex items-center space-x-1">
                     <Star className="h-4 w-4 text-yellow-500" />

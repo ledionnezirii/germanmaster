@@ -1,8 +1,8 @@
 "use client"
 
 import { Link, useLocation } from "react-router-dom"
-import { useSidebar } from "../context/SidebarContext"
-import { useAuth } from "../context/AuthContext"
+import { useSidebar } from "../context/SidebarContext" // Assuming this path is correct
+import { useAuth } from "../context/AuthContext" // Assuming this path is correct
 import {
   Home,
   Trophy,
@@ -32,7 +32,6 @@ const Sidebar = () => {
     { icon: MessageCircle, label: "Chat", path: "/chat", requireAuth: true },
     { icon: Swords, label: "Challenge", path: "/challenge", requireAuth: true },
     { icon: GraduationCap, label: "Grammar", path: "/grammar", requireAuth: true },
-
     { icon: Trophy, label: "Leaderboard", path: "/leaderboard", requireAuth: false },
     { icon: User, label: "Account", path: "/account", requireAuth: true },
   ]
@@ -50,7 +49,9 @@ const Sidebar = () => {
   return (
     <>
       {/* Mobile overlay - only show on mobile when sidebar is open */}
-      {!isCollapsed && <div className="fixed inset-0 bg-black/30 z-30 lg:hidden" onClick={toggleSidebar} />}
+      {!isCollapsed && (
+        <div className="fixed inset-0 z-30 bg-black/30 lg:hidden" onClick={toggleSidebar} aria-hidden="true" />
+      )}
 
       {/* Sidebar */}
       <div
@@ -64,7 +65,8 @@ const Sidebar = () => {
         {/* Toggle button */}
         <button
           onClick={toggleSidebar}
-          className="absolute -right-3 top-6 bg-slate-800 border border-slate-700 rounded-full p-1 shadow-md hover:shadow-lg transition-shadow hidden lg:block z-10"
+          className="absolute -right-3 top-6 z-10 hidden rounded-full border border-slate-700 bg-slate-800 p-1 shadow-md transition-shadow hover:shadow-lg lg:block"
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? (
             <ChevronRight className="h-4 w-4 text-slate-300" />
@@ -79,20 +81,20 @@ const Sidebar = () => {
             {filteredMenuItems.map((item) => {
               const Icon = item.icon
               const isActive = location.pathname === item.path
-
               return (
                 <li key={item.path}>
                   <Link
                     to={item.path}
                     onClick={handleLinkClick}
                     className={`
-                      flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                      flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors
                       ${isActive ? "bg-green-400/20 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"}
                       ${isCollapsed ? "justify-center" : "justify-start"}
                     `}
                     title={isCollapsed ? item.label : ""}
+                    aria-current={isActive ? "page" : undefined}
                   >
-                    <Icon className={`h-5 w-5 ${isCollapsed ? "" : "mr-3"} flex-shrink-0`} />
+                    <Icon className={`h-5 w-5 flex-shrink-0 ${isCollapsed ? "" : "mr-3"}`} />
                     {!isCollapsed && <span className="truncate">{item.label}</span>}
                   </Link>
                 </li>

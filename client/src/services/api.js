@@ -1,6 +1,22 @@
 import axios from "axios"
 
+// Define the API base URL. For production, you will need to change this
+// to your deployed backend API URL (e.g., "https://your-backend-api.com/api").
 const API_BASE_URL = "http://localhost:5000/api"
+
+// Define the WebSocket URL. For production, you will need to change this
+// to your deployed backend WebSocket URL (e.g., "https://your-backend-api.com").
+export const SOCKET_URL = "http://localhost:5000" // This is the URL for your socket.io server
+
+// Helper function to construct an absolute URL for images
+export const getAbsoluteImageUrl = (relativePath) => {
+  if (!relativePath) return "/placeholder.svg?height=40&width=40" // Default placeholder
+  // Assuming your images are served from the same base as your API, but without the '/api' suffix
+  const baseServerUrl = API_BASE_URL.replace("/api", "")
+  // Ensure the relativePath starts with a '/'
+  const normalizedPath = relativePath.startsWith("/") ? relativePath : `/${relativePath}`
+  return `${baseServerUrl}${normalizedPath}`
+}
 
 // Create axios instance with default config
 const api = axios.create({
@@ -47,10 +63,7 @@ export const authService = {
       email: userData.email,
       password: userData.password,
     }),
-  
-  // FIXED: Changed from /users/profile to /auth/me
   getProfile: () => api.get("/auth/me"),
-  
   updateProfile: (data) =>
     api.put("/users/profile", {
       emri: data.firstName,
@@ -149,11 +162,13 @@ export const questionsService = {
 
 // Challenge services
 export const challengeService = {
-  // Get random challenge questions
-  getChallengeQuestions: (count = 10, category = null) => {
+  // Get random challenge questions (now supports gameType)
+  getChallengeQuestions: (count = 10, category = null, gameType = "quiz") => {
+    // NEW: gameType
     const params = new URLSearchParams()
     if (count) params.append("count", count)
     if (category) params.append("category", category)
+    if (gameType) params.append("gameType", gameType) // NEW: Add gameType to params
     return api.get(`/challenge/challengeQuestions?${params}`)
   },
   // Get challenge statistics
@@ -166,8 +181,9 @@ export const challengeService = {
   getActiveRooms: () => api.get("/challenge/activeRooms"),
   // Get available categories
   getCategories: () => api.get("/challenge/categories"),
-  // Get practice questions
-  getPracticeQuestions: (count = 5, category = null) => api.post("/challenge/practice", { count, category }),
+  // Get practice questions (now supports gameType)
+  getPracticeQuestions: (count = 5, category = null, gameType = "quiz") =>
+    api.post("/challenge/practice", { count, category, gameType }), // NEW: gameType
   // Get challenge by room ID (for spectator mode)
   getChallengeByRoomId: (roomId) => api.get(`/challenge/room/${roomId}`),
   // Submit challenge feedback
@@ -187,8 +203,7 @@ export const challengeService = {
   submitDailyChallenge: (answers) => api.post("/challenge/daily/submit", { answers }),
   // Get weekly leaderboard
   getWeeklyLeaderboard: (limit = 10) => api.get(`/challenge/leaderboard/weekly?limit=${limit}`),
-  // Get monthly leaderboard
-  getMonthlyLeaderboard: (limit = 10) => api.get(`/challenge/leaderboard/monthly?limit=${limit}`),
+  // Get monthly leaderboard: (limit = 10) => api.get(`/challenge/leaderboard/monthly?limit=${limit}`),
   // Get challenge achievements
   getChallengeAchievements: (userId) => api.get(`/challenge/achievements/${userId}`),
   // Unlock achievement
