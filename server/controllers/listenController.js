@@ -21,6 +21,24 @@ const normalizeText = (text) => {
   )
 }
 
+// Function to calculate Jaccard Similarity between two strings
+const calculateJaccardSimilarity = (text1, text2) => {
+  const words1 = new Set(normalizeText(text1).split(" ").filter(word => word.length > 0));
+  const words2 = new Set(normalizeText(text2).split(" ").filter(word => word.length > 0));
+
+  if (words1.size === 0 && words2.size === 0) {
+    return 1; // Both empty, considered 100% similar
+  }
+  if (words1.size === 0 || words2.size === 0) {
+    return 0; // One empty, one not, considered 0% similar
+  }
+
+  const intersection = new Set([...words1].filter(word => words2.has(word)));
+  const union = new Set([...words1, ...words2]);
+
+  return intersection.size / union.size;
+};
+
 // @desc    Get all listening tests
 // @route   GET /api/listen
 // @access  Public
@@ -106,7 +124,6 @@ const getTestById = asyncHandler(async (req, res) => {
 // @access  Private
 const checkAnswer = asyncHandler(async (req, res) => {
   const { testId, userAnswer } = req.body
-
   if (!testId || !userAnswer) {
     throw new ApiError(400, "Test ID and user answer are required")
   }
@@ -116,44 +133,20 @@ const checkAnswer = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Test not found")
   }
 
-  // Normalize answers for comparison using improved normalization
-  const normalizedUserAnswer = normalizeText(userAnswer)
-  const normalizedCorrectAnswer = normalizeText(test.correctText)
+  // Calculate Jaccard Similarity
+  const jaccardSimilarity = calculateJaccardSimilarity(userAnswer, test.correctText);
+  const score = Math.round(jaccardSimilarity * 100);
 
-  console.log("User answer (normalized):", normalizedUserAnswer)
-  console.log("Correct answer (normalized):", normalizedCorrectAnswer)
+  // Define the passing threshold
+  const PASSING_THRESHOLD = 75;
+  const isCorrect = score >= PASSING_THRESHOLD;
 
-  // Calculate similarity
-  const isExactMatch = normalizedUserAnswer === normalizedCorrectAnswer
+  console.log("User answer (normalized):", normalizeText(userAnswer))
+  console.log("Correct answer (normalized):", normalizeText(test.correctText))
+  console.log("Final score (Jaccard):", score, "Is correct:", isCorrect)
 
-  // Calculate word-based similarity for partial credit
-  const userWords = normalizedUserAnswer.split(" ").filter((word) => word.length > 0)
-  const correctWords = normalizedCorrectAnswer.split(" ").filter((word) => word.length > 0)
-
-  // Count matching words
-  const matchingWords = userWords.filter((word) => correctWords.includes(word))
-  const wordSimilarity = matchingWords.length / Math.max(userWords.length, correctWords.length)
-
-  // Calculate final score
-  let score = 0
-  let isCorrect = false
-
-  if (isExactMatch) {
-    score = 100
-    isCorrect = true
-  } else {
-    // Give partial credit based on word similarity
-    score = Math.round(wordSimilarity * 100)
-    // FIXED: Only consider it correct if it's an exact match or very close (95%+)
-    isCorrect = score >= 95
-  }
-
-  console.log("Final score:", score, "Is correct:", isCorrect)
-
-  // FIXED: Only award XP and mark as completed if the answer is actually correct
   let xpAwarded = 0
   if (isCorrect) {
-    // Changed from score >= 80 to isCorrect
     xpAwarded = test.xpReward || 10
     // Update user's XP, completed tests count, and add to listenTestsPassed
     await User.findByIdAndUpdate(req.user.id, {
@@ -164,9 +157,7 @@ const checkAnswer = asyncHandler(async (req, res) => {
 
   // Record completion in the test document ONLY if correct
   if (isCorrect) {
-    // Added this condition
     const existingCompletion = test.listenTestsPassed.find((completion) => completion.user.toString() === req.user.id)
-
     if (!existingCompletion) {
       test.listenTestsPassed.push({
         user: req.user.id,
@@ -187,13 +178,11 @@ const checkAnswer = asyncHandler(async (req, res) => {
   // Determine message based on score
   let message
   if (isCorrect) {
-    message = "Perfect! Well done!"
-  } else if (score >= 80) {
-    message = "Very close! Try to be more precise."
-  } else if (score >= 60) {
-    message = "Not bad, but try to be more accurate!"
+    message = "Excellent! You passed with a great score!"
+  } else if (score >= 60) { // Adjusted for new threshold
+    message = "Good effort! You were close, keep practicing."
   } else {
-    message = "Not quite right, but keep practicing!"
+    message = "Keep practicing! You'll get there."
   }
 
   res.json(
@@ -204,7 +193,7 @@ const checkAnswer = asyncHandler(async (req, res) => {
       userAnswer,
       xpAwarded,
       message,
-      wordSimilarity: Math.round(wordSimilarity * 100), // For debugging
+      similarityMetric: "Jaccard", // Indicate which metric was used
     }),
   )
 })
@@ -220,7 +209,6 @@ const markAsListened = asyncHandler(async (req, res) => {
 
   // Check if already marked
   const alreadyListened = test.listenTestsPassed.some((completion) => completion.user.toString() === req.user.id)
-
   if (alreadyListened) {
     throw new ApiError(400, "Test already completed")
   }
@@ -236,7 +224,6 @@ const markAsListened = asyncHandler(async (req, res) => {
     score: 0, // No score for just listening
     completedAt: new Date(),
   })
-
   await test.save()
 
   res.json(new ApiResponse(200, null, "Test marked as listened"))
@@ -301,7 +288,6 @@ const deleteTest = asyncHandler(async (req, res) => {
 // @access  Private
 const getUserProgress = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id).populate("listenTestsPassed", "title level difficulty")
-
   const totalTests = await Listen.countDocuments({ isActive: true })
   const completedTests = user.listenTestsPassed.length
 
@@ -400,7 +386,7 @@ const resetUserProgress = asyncHandler(async (req, res) => {
   // Clear user's completed tests
   await User.findByIdAndUpdate(req.user.id, {
     $set: { listenTestsPassed: [] },
-    $inc: { completedTests: -1000 }, // Reset completed tests counter
+    $inc: { completedTests: -1000 }, // Reset completed tests counter (adjust as needed)
   })
 
   res.json(new ApiResponse(200, null, "User progress reset successfully"))
