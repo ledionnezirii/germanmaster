@@ -194,6 +194,8 @@ app.use("/uploads", (req, res, next) => {
   res.header("Access-Control-Allow-Methods", "GET")
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization")
   res.header("Access-Control-Allow-Credentials", "true")
+  // Add the Cross-Origin-Resource-Policy header
+  res.header("Cross-Origin-Resource-Policy", "cross-origin")
   next()
 })
 app.use("/uploads", express.static("uploads"))
