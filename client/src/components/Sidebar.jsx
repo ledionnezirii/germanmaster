@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Swords,
   Sparkles,
+  MapIcon,
 } from "lucide-react"
 
 const Sidebar = () => {
@@ -34,7 +35,10 @@ const Sidebar = () => {
     { icon: Swords, label: "Sfidë", path: "/challenge", requireAuth: true }, // Challenge
     { icon: GraduationCap, label: "Gramatikë", path: "/grammar", requireAuth: true }, // Grammar
     { icon: Trophy, label: "Renditja", path: "/leaderboard", requireAuth: false }, // Leaderboard
+    { icon: MapIcon, label: "PlanProgrami", path: "/plan", requireAuth: true }, // Account
     { icon: User, label: "Llogaria", path: "/account", requireAuth: true }, // Account
+
+
   ]
 
   const footerMenuItems = [

@@ -15,6 +15,7 @@ import Grammar from "./pages/Grammar"
 import SignIn from "./auth/SignIn"
 import SignUp from "./auth/SignUp"
 import Challenge from "./pages/Challenge"
+import Plan from "./pages/Plan"
 
 const AppContent = () => {
   const { isCollapsed } = useSidebar()
@@ -46,6 +47,7 @@ const AppContent = () => {
               <Route path="/signin" element={<SignIn />} />
               <Route path="/signup" element={<SignUp />} />
                 <Route path="/challenge" element={<Challenge />} />
+                <Route path="/plan" element={<Plan />} />
             </Routes>
           </div>
         </main>
