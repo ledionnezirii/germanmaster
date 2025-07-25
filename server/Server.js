@@ -2,24 +2,22 @@ const express = require("express")
 const mongoose = require("mongoose")
 const cors = require("cors")
 const helmet = require("helmet")
-const rateLimit = require("express-rate-limit")
+// const rateLimit = require("express-rate-limit") // Temporarily commented out
 const compression = require("compression")
 const { createServer } = require("http")
 const { Server } = require("socket.io")
 const jwt = require("jsonwebtoken")
 require("dotenv").config()
 
-// Import challenge handlers
 const {
   handleJoinChallenge,
-  handleSubmitAnswer, // Changed from handleQuizAnswer
+  handleSubmitAnswer,
   handleLeaveChallenge,
   handleDisconnect,
   getWaitingPlayersCount,
   getActiveRoomsCount,
-} = require("./controllers/challengeController") // Ensure this path is correct
+} = require("./controllers/challengeController")
 
-// Import routes
 const authRoutes = require("./routes/authRoutes")
 const userRoutes = require("./routes/userRoutes")
 const dictionaryRoutes = require("./routes/dictionaryRoutes")
@@ -31,28 +29,26 @@ const grammarRoutes = require("./routes/grammarRoutes")
 const favoriteRoutes = require("./routes/favoriteRoutes")
 const challengeRoutes = require("./routes/challengeRoutes")
 const leaderboardRoutes = require("./routes/leaderboardRoutes")
+const planRoutes = require("./routes/planRoutes")
 
-// Import middleware
 const { errorHandler, notFound } = require("./middleware/errorMiddleware")
 const { requestLogger } = require("./middleware/loggerMiddleware")
 
 const app = express()
 const server = createServer(app)
 
-// Socket.IO setup with authentication
 const io = new Server(server, {
   cors: {
     origin:
       process.env.NODE_ENV === "production"
         ? process.env.FRONTEND_URL
         : ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"],
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   },
   transports: ["websocket", "polling"],
 })
 
-// Socket authentication middleware
 io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth.token
@@ -60,9 +56,7 @@ io.use(async (socket, next) => {
       console.log("No token provided for socket connection")
       return next(new Error("Authentication error: No token provided"))
     }
-    // Verify JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
-    // Attach user info to socket
     socket.userId = decoded.id || decoded._id
     socket.username = decoded.username || decoded.emri || decoded.firstName
     console.log(`Socket authenticated for user: ${socket.username} (${socket.userId})`)
@@ -73,70 +67,51 @@ io.use(async (socket, next) => {
   }
 })
 
-// Socket.IO connection handling
 io.on("connection", (socket) => {
   console.log(`🔌 User connected: ${socket.id} (${socket.username})`)
-  // Send connection confirmation
   socket.emit("connected", {
     message: "Successfully connected to challenge server",
     userId: socket.userId,
     username: socket.username,
   })
-
-  // Handle joining a challenge (now accepts gameType)
   socket.on("joinChallenge", (data) => {
     console.log("Join challenge event received:", data)
     const challengeData = {
       username: data.username || socket.username,
       userId: data.userId || socket.userId,
-      gameType: data.gameType || "quiz", // Pass gameType
+      gameType: data.gameType || "quiz",
       difficulty: data.difficulty,
       category: data.category,
     }
     handleJoinChallenge(socket, io, challengeData)
   })
-
-  // Handle answers (now generic for quiz and word race)
   socket.on("submitAnswer", (data) => {
-    // Changed from quizAnswer
     console.log("Submit answer event received:", data)
     handleSubmitAnswer(socket, io, data)
   })
-
-  // Handle leaving challenge
   socket.on("leaveChallenge", () => {
     console.log("Leave challenge event received")
     handleLeaveChallenge(socket, io)
   })
-
-  // Keep old submitScore for backward compatibility (if needed, otherwise remove)
   socket.on("submitScore", (data) => {
     console.log("Submit score event received (legacy):", data)
-    // You might want to adapt this to call handleSubmitAnswer with appropriate data
-    // For now, it's left as is, but consider removing if not used.
     handleSubmitAnswer(socket, io, {
       roomId: data.roomId,
       questionId: data.questionId,
       answer: data.answer,
       timeSpent: data.timeSpent,
-      // Assume gameType is quiz for legacy submitScore
       gameType: "quiz",
     })
   })
-
-  // Handle disconnect
   socket.on("disconnect", (reason) => {
     console.log(`🔌 User disconnected: ${socket.id} (${socket.username}), reason: ${reason}`)
     handleDisconnect(socket, io)
   })
-
-  // Handle connection errors
   socket.on("connect_error", (error) => {
     console.error("Socket connection error:", error)
   })
 })
 
-// Security middleware
 app.use(
   helmet({
     crossOriginEmbedderPolicy: false,
@@ -145,19 +120,17 @@ app.use(
 )
 app.use(compression())
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: {
-    error: "Too many requests from this IP, please try again later.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-})
-app.use("/api/", limiter)
+// const limiter = rateLimit({ // Temporarily commented out
+//   windowMs: 15 * 60 * 1000,
+//   max: 100,
+//   message: {
+//     error: "Too many requests from this IP, please try again later.",
+//   },
+//   standardHeaders: true,
+//   legacyHeaders: false,
+// })
+// app.use("/api/", limiter) // Temporarily commented out
 
-// CORS configuration
 app.use(
   cors({
     origin:
@@ -170,37 +143,30 @@ app.use(
   }),
 )
 
-// Body parsing middleware
 app.use(express.json({ limit: "10mb" }))
 app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 
-// Request logging
 app.use(requestLogger)
 
-// Fix the CORS middleware for uploads
 app.use("/uploads", (req, res, next) => {
   const allowedOrigins =
     process.env.NODE_ENV === "production"
       ? [process.env.FRONTEND_URL]
       : ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"]
   const origin = req.headers.origin
-  // Check if the request origin is in the allowed origins list
   if (allowedOrigins.includes(origin)) {
     res.header("Access-Control-Allow-Origin", origin)
   } else if (process.env.NODE_ENV !== "production") {
-    // For development, allow any localhost origin
     res.header("Access-Control-Allow-Origin", "*")
   }
   res.header("Access-Control-Allow-Methods", "GET")
   res.header("Access-Control-Allow-Headers", "Content-Type, Authorization")
   res.header("Access-Control-Allow-Credentials", "true")
-  // Add the Cross-Origin-Resource-Policy header
   res.header("Cross-Origin-Resource-Policy", "cross-origin")
   next()
 })
 app.use("/uploads", express.static("uploads"))
 
-// Health check endpoint
 app.get("/health", (req, res) => {
   res.status(200).json({
     status: "OK",
@@ -211,7 +177,7 @@ app.get("/health", (req, res) => {
   })
 })
 
-// API routes
+console.log("Registering API routes...")
 app.use("/api/auth", authRoutes)
 app.use("/api/users", userRoutes)
 app.use("/api/dictionary", dictionaryRoutes)
@@ -223,12 +189,12 @@ app.use("/api/grammar", grammarRoutes)
 app.use("/api/favorites", favoriteRoutes)
 app.use("/api/challenge", challengeRoutes)
 app.use("/api/leaderboard", leaderboardRoutes)
+app.use("/api/plan", planRoutes)
+console.log("Plan routes registered at /api/plan")
 
-// Error handling middleware
 app.use(notFound)
 app.use(errorHandler)
 
-// Database connection
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI, {
@@ -242,7 +208,6 @@ const connectDB = async () => {
   }
 }
 
-// Graceful shutdown
 const gracefulShutdown = (signal) => {
   console.log(`👋 ${signal} received. Shutting down gracefully...`)
   server.close(() => {
@@ -263,7 +228,6 @@ const gracefulShutdown = (signal) => {
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"))
 process.on("SIGINT", () => gracefulShutdown("SIGINT"))
 
-// Start server
 const PORT = process.env.PORT || 5000
 const startServer = async () => {
   await connectDB()
@@ -281,7 +245,6 @@ const startServer = async () => {
     console.log(`   POST /api/challenge/practice - Get practice questions`)
   })
 }
-
 startServer().catch((error) => {
   console.error("Failed to start server:", error)
   process.exit(1)
