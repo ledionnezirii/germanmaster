@@ -1,5 +1,5 @@
 const express = require("express")
-const { protect } = require("../middleware/authMiddleware")
+const  protect  = require("../middleware/auth")
 const { createPlan, getPlanByLevel, markTopicAsCompleted } = require("../controllers/planController")
 
 const router = express.Router()
