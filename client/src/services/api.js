@@ -1,8 +1,8 @@
 import axios from "axios"
 
 const API_BASE_URL = "http://localhost:5000/api"
-
 export const SOCKET_URL = "http://localhost:5000"
+
 export const getAbsoluteImageUrl = (relativePath) => {
   if (!relativePath) return "/placeholder.svg?height=40&width=40"
   const baseServerUrl = API_BASE_URL.replace("/api", "")
@@ -111,7 +111,8 @@ export const listenService = {
 export const translateService = {
   getAllTexts: (params = {}) => api.get("/translate", { params }),
   getTextById: (id) => api.get(`/translate/${id}`),
-  submitAnswers: (textId, answers) => api.post(`/translate/${textId}`, answers),
+  // FIXED: Added /submit to the URL and wrapped answers in an object
+  submitAnswers: (textId, answers) => api.post(`/translate/${textId}/submit`, { answers }),
   getTextProgress: (textId) => api.get(`/translate/${textId}/progress`),
   getUserProgress: () => api.get("/translate/user/progress"),
   createText: (textData) => api.post("/translate", textData),
@@ -133,8 +134,9 @@ export const questionsService = {
   getQuestionsByLevel: (level, params = {}) => api.get(`/questions/level/${level}`, { params }),
   getQuestionsByCategory: (category, params = {}) => api.get(`/questions/category/${category}`, { params }),
   getQuestionById: (id) => api.get(`/questions/${id}`),
-  answerQuestion: (questionId, answer) => api.post(`/questions/${questionId}`, answer),
-  getRandomQuestion: (params = {}) => api.get("/questions/random", params),
+  // FIXED: Added /answer to the URL and wrapped answer in an object
+  answerQuestion: (questionId, answer) => api.post(`/questions/${questionId}/answer`, { answer }),
+  getRandomQuestion: (params = {}) => api.get("/questions/random", { params }),
   createQuestion: (questionData) => api.post("/questions", questionData),
   updateQuestion: (id, questionData) => api.put(`/questions/${id}`, questionData),
   deleteQuestion: (id) => api.delete(`/questions/${id}`),
@@ -171,7 +173,6 @@ export const challengeService = {
 
 export const planService = {
   getPlanByLevel: (level) => api.get(`/plan/${level}`),
-  // Reverted signature to pass planId
   markTopicAsCompleted: (planId, topicId) => api.put(`/plan/${planId}/topic/${topicId}/complete`),
   createPlan: (level, topics) => api.post("/plan", { level, topics }),
 }

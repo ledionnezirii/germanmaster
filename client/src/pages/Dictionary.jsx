@@ -1,6 +1,7 @@
 "use client"
+
 import { useState, useEffect } from "react"
-import { dictionaryService, favoritesService } from "../services/api" // Assuming these services are available
+import { dictionaryService, favoritesService } from "../services/api"
 import { BookOpen, Volume2, Heart, Search, Filter } from "lucide-react"
 
 const Dictionary = () => {
@@ -62,7 +63,8 @@ const Dictionary = () => {
 
   const playPronunciation = (word) => {
     const utterance = new SpeechSynthesisUtterance(word)
-    utterance.lang = "de-DE" // Assuming German pronunciation
+    utterance.lang = "de-DE"
+    utterance.rate = 0.8
     window.speechSynthesis.speak(utterance)
   }
 
@@ -76,23 +78,37 @@ const Dictionary = () => {
 
   const levels = ["all", "A1", "A2", "B1", "B2", "C1", "C2"]
 
-  // Consistent color scheme with Listen.jsx
   const getLevelColor = (level) => {
     switch (level) {
       case "A1":
-        return "bg-teal-100 text-teal-800 border-teal-200"
+        return "bg-emerald-100 text-emerald-800 border-emerald-200"
       case "A2":
-        return "bg-teal-200 text-teal-800 border-teal-300"
+        return "bg-emerald-200 text-emerald-800 border-emerald-300"
       case "B1":
-        return "bg-teal-300 text-teal-800 border-teal-400"
+        return "bg-blue-200 text-blue-800 border-blue-300"
       case "B2":
-        return "bg-teal-400 text-teal-800 border-teal-500"
+        return "bg-blue-300 text-blue-800 border-blue-400"
       case "C1":
-        return "bg-teal-500 text-white border-teal-600"
+        return "bg-purple-400 text-white border-purple-500"
       case "C2":
-        return "bg-teal-600 text-white border-teal-700"
+        return "bg-purple-600 text-white border-purple-700"
       default:
         return "bg-gray-200 text-gray-800 border-gray-300"
+    }
+  }
+
+  const getPartOfSpeechColor = (partOfSpeech) => {
+    switch (partOfSpeech?.toLowerCase()) {
+      case "noun":
+        return "bg-blue-100 text-blue-800"
+      case "verb":
+        return "bg-green-100 text-green-800"
+      case "adjective":
+        return "bg-purple-100 text-purple-800"
+      case "adverb":
+        return "bg-orange-100 text-orange-800"
+      default:
+        return "bg-gray-100 text-gray-800"
     }
   }
 
@@ -101,7 +117,7 @@ const Dictionary = () => {
       {/* Header */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Fjalor Gjermanisht</h1>
-        <p className="text-gray-600">Eksploroni fjalorin gjermanisht të organizuar sipas niveleve të vështirësisë</p>
+        <p className="text-gray-600">Eksploroni fjalorin gjermanisht të organizuar sipas niveleve</p>
       </div>
 
       {/* Controls */}
@@ -114,8 +130,7 @@ const Dictionary = () => {
             placeholder="Kërkoni fjalë ose përkthime..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 border border-gray-400 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-gray-800 placeholder-gray-500"
-            aria-label="Kërkoni fjalë ose përkthime"
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
@@ -133,35 +148,23 @@ const Dictionary = () => {
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors border ${
                   selectedLevel === level
                     ? level === "all"
-                      ? "bg-teal-600 text-white border-teal-700"
+                      ? "bg-blue-600 text-white border-blue-700"
                       : getLevelColor(level)
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200"
                 }`}
-                aria-pressed={selectedLevel === level}
-                aria-label={`Filtro sipas nivelit ${level === "all" ? "Të gjitha Nivelet" : level}`}
               >
-                {level === "all" ? "Të gjitha Nivelet" : level}
-                {selectedLevel === level && (
-                  <span className="ml-1 inline-flex items-center justify-center w-4 h-4 bg-white/50 rounded-full text-xs">
-                    ✓
-                  </span>
-                )}
+                {level === "all" ? "Të gjitha" : level}
               </button>
             ))}
           </div>
           <button
             onClick={() => setShowFavorites(!showFavorites)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              showFavorites
-                ? "bg-gray-700 text-white hover:bg-gray-800" // Consistent with "Show Full Text" button
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              showFavorites ? "bg-red-600 text-white hover:bg-red-700" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
             }`}
-            aria-pressed={showFavorites}
-            aria-label={showFavorites ? "Shfaq të gjitha fjalët" : "Shfaq vetëm fjalët e preferuara"}
           >
-            <Heart className={`h-4 w-4 ${showFavorites ? "fill-current text-red-400" : ""}`} />{" "}
-            {/* Heart color when active */}
-            Vetëm të Preferuarat
+            <Heart className={`h-4 w-4 ${showFavorites ? "fill-current" : ""}`} />
+            Të Preferuarat
           </button>
         </div>
       </div>
@@ -169,25 +172,30 @@ const Dictionary = () => {
       {/* Words Grid */}
       {loading ? (
         <div className="flex items-center justify-center min-h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>{" "}
-          {/* Consistent spinner color */}
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredWords.map((word) => {
             const isFavorite = favorites.some((fav) => fav._id === word._id)
+            const firstExample = word.examples && word.examples.length > 0 ? word.examples[0] : null
+
             return (
               <div
                 key={word._id}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-lg font-semibold text-gray-900">{word.word}</h3>
+                {/* Word Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">{word.word}</h3>
+                    <p className="text-gray-700 text-lg">{word.translation}</p>
+                  </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => playPronunciation(word.word)}
-                      className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-                      aria-label={`Luaj shqiptimin për ${word.word}`}
+                      className="text-gray-400 hover:text-blue-600 transition-colors p-1"
+                      title="Luaj shqiptimin"
                     >
                       <Volume2 className="h-4 w-4" />
                     </button>
@@ -196,20 +204,33 @@ const Dictionary = () => {
                       className={`transition-colors p-1 ${
                         isFavorite ? "text-red-500" : "text-gray-400 hover:text-red-500"
                       }`}
-                      aria-label={
-                        isFavorite ? `Hiq ${word.word} nga të preferuarat` : `Shto ${word.word} te të preferuarat`
-                      }
+                      title={isFavorite ? "Hiq nga të preferuarat" : "Shto te të preferuarat"}
                     >
                       <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
                     </button>
                   </div>
                 </div>
-                <p className="text-gray-700 mb-3">{word.translation}</p>
-                <div className="flex items-center justify-between">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getLevelColor(word.level)}`}>
+
+                {/* Badges */}
+                <div className="flex items-center gap-2 mb-4">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getLevelColor(word.level)}`}>
                     {word.level}
                   </span>
+                  {word.partOfSpeech && (
+                    <span
+                      className={`px-3 py-1 rounded-full text-sm font-medium ${getPartOfSpeechColor(word.partOfSpeech)}`}
+                    >
+                      {word.partOfSpeech}
+                    </span>
+                  )}
                 </div>
+
+                {/* German Example */}
+                {firstExample && firstExample.german && (
+                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                    <p className="text-gray-800 text-sm italic">"{firstExample.german}"</p>
+                  </div>
+                )}
               </div>
             )
           })}
