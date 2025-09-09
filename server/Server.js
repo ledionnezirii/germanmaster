@@ -30,6 +30,7 @@ const favoriteRoutes = require("./routes/favoriteRoutes")
 const challengeRoutes = require("./routes/challengeRoutes")
 const leaderboardRoutes = require("./routes/leaderboardRoutes")
 const planRoutes = require("./routes/planRoutes")
+const testRoutes = require("./routes/testRoutes");
 
 const { errorHandler, notFound } = require("./middleware/errorMiddleware")
 const { requestLogger } = require("./middleware/loggerMiddleware")
@@ -40,9 +41,17 @@ const server = createServer(app)
 const io = new Server(server, {
   cors: {
     origin:
-      process.env.NODE_ENV === "production"
-        ? process.env.FRONTEND_URL
-        : ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"],
+  process.env.NODE_ENV === "production"
+    ? process.env.FRONTEND_URL
+    : [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:5173",
+        "http://192.168.100.159:3000",
+        "http://192.168.100.159:3001",
+        "http://192.168.100.159:5173"
+      ],
+
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   },
@@ -136,12 +145,22 @@ app.use(
     origin:
       process.env.NODE_ENV === "production"
         ? process.env.FRONTEND_URL
-        : ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"],
+        : [
+          "http://localhost:3000",
+          "http://localhost:3001",
+          "http://localhost:5173",
+          "http://192.168.100.159:3000",
+          "http://192.168.100.159:3001",
+          "http://192.168.100.159:5173"
+        ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  }),
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  })
 )
+
 
 app.use(express.json({ limit: "10mb" }))
 app.use(express.urlencoded({ extended: true, limit: "10mb" }))
@@ -190,7 +209,7 @@ app.use("/api/favorites", favoriteRoutes)
 app.use("/api/challenge", challengeRoutes)
 app.use("/api/leaderboard", leaderboardRoutes)
 app.use("/api/plan", planRoutes)
-console.log("Plan routes registered at /api/plan")
+app.use("/api/tests",testRoutes)
 
 app.use(notFound)
 app.use(errorHandler)
@@ -231,7 +250,7 @@ process.on("SIGINT", () => gracefulShutdown("SIGINT"))
 const PORT = process.env.PORT || 5000
 const startServer = async () => {
   await connectDB()
-  server.listen(PORT, () => {
+  server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`)
     console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`)
     console.log(`🎯 Challenge system enabled with German questions`)

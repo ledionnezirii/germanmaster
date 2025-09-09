@@ -2,6 +2,7 @@ const Dictionary = require("../models/Dictionary")
 const { ApiError } = require("../utils/ApiError")
 const { ApiResponse } = require("../utils/ApiResponse")
 const { asyncHandler } = require("../utils/asyncHandler")
+const mongoose = require("mongoose") // Import mongoose to check for valid ObjectId
 
 // @desc    Get all dictionary words
 // @route   GET /api/dictionary
@@ -11,7 +12,6 @@ const getAllWords = asyncHandler(async (req, res) => {
 
   // Build query
   const query = { isActive: true }
-
   if (search) {
     query.$or = [
       { word: { $regex: search, $options: "i" } },
@@ -127,7 +127,7 @@ const addWord = asyncHandler(async (req, res) => {
   res.status(201).json(new ApiResponse(201, newWord, "Word added successfully"))
 })
 
-// @desc    Add multiple words
+// @desc    Add multiple words - FURTHER IMPROVED VERSION
 // @route   POST /api/dictionary/bulk
 // @access  Private (Admin)
 const addMultipleWords = asyncHandler(async (req, res) => {
@@ -137,30 +137,126 @@ const addMultipleWords = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Words array is required and cannot be empty")
   }
 
-  // Validate each word
-  const validatedWords = words.map((word) => ({
-    ...word,
-    createdBy: req.user.id,
-  }))
+  // Ensure req.user.id is available and valid
+  let userId = req.user?.id
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    // Fallback to a dummy valid ObjectId for testing if user is not authenticated
+    // In a production environment, you should enforce authentication here.
+    console.warn("req.user.id is missing or invalid. Using a dummy ObjectId for createdBy.")
+    userId = new mongoose.Types.ObjectId("60d5ec49f8c7a10015e8d7c1") // A valid dummy ObjectId
+  }
+
+  console.log(`Attempting to add ${words.length} words with createdBy: ${userId}...`)
+
+  const wordsToInsert = []
+  const validationErrors = []
+
+  for (let i = 0; i < words.length; i++) {
+    const wordData = words[i]
+
+    try {
+      // Basic validation for required fields
+      if (!wordData.word || !wordData.translation || !wordData.level) {
+        validationErrors.push(`Word ${i + 1} (index ${i}): Missing required fields (word, translation, or level).`)
+        continue // Skip to next word
+      }
+
+      // Transform examples: ensure 'albanian' field exists
+      const transformedExamples =
+        wordData.examples?.map((example) => ({
+          german: example.german || "",
+          albanian: example.albanian || example.english || "", // Prioritize albanian, fallback to english
+        })) || []
+
+      // Prepare word object for Mongoose validation
+      const preparedWord = {
+        word: wordData.word.trim(),
+        translation: wordData.translation.trim(),
+        level: wordData.level,
+        pronunciation: wordData.pronunciation || "",
+        partOfSpeech: wordData.partOfSpeech || "",
+        examples: transformedExamples,
+        difficulty: wordData.difficulty || 1,
+        tags: Array.isArray(wordData.tags) ? wordData.tags.map((tag) => tag.trim().toLowerCase()) : [],
+        createdBy: userId, // Use the determined userId
+        isActive: true, // Ensure default is set
+      }
+
+      // Use Mongoose's model validation without saving to DB yet
+      const tempWord = new Dictionary(preparedWord)
+      await tempWord.validate() // This will throw if validation fails
+
+      wordsToInsert.push(preparedWord)
+      console.log(`Word ${i + 1} ('${preparedWord.word}') passed validation.`)
+    } catch (error) {
+      // Capture Mongoose validation errors
+      if (error.name === "ValidationError") {
+        const messages = Object.values(error.errors)
+          .map((err) => err.message)
+          .join(", ")
+        validationErrors.push(`Word ${i + 1} ('${wordData.word || "unknown"}'): Validation failed - ${messages}`)
+      } else {
+        validationErrors.push(`Word ${i + 1} ('${wordData.word || "unknown"}'): ${error.message}`)
+      }
+      console.error(`Validation error for word ${i + 1}:`, error.message)
+    }
+  }
+
+  console.log(`Validated ${wordsToInsert.length} words for insertion. ${validationErrors.length} words had errors.`)
+
+  if (wordsToInsert.length === 0) {
+    throw new ApiError(400, `No valid words to insert. Please check your data. Errors: ${validationErrors.join("; ")}`)
+  }
 
   try {
-    const createdWords = await Dictionary.insertMany(validatedWords, { ordered: false })
+    const insertResult = await Dictionary.insertMany(wordsToInsert, {
+      ordered: false, // Continue inserting even if some fail
+      rawResult: true, // Get detailed results including insertedIds
+    })
+
+    const insertedCount = insertResult.insertedCount || insertResult.length // Fallback for older Mongoose versions
+    const insertedDocs = insertResult.ops || insertResult // Fallback for older Mongoose versions
+
+    const duplicateErrors = []
+    if (insertResult.writeErrors && insertResult.writeErrors.length > 0) {
+      insertResult.writeErrors.forEach((err) => {
+        if (err.code === 11000) {
+          // Duplicate key error
+          duplicateErrors.push(`Duplicate word: ${err.op.word} (Level: ${err.op.level})`)
+        } else {
+          duplicateErrors.push(`Write error for word '${err.op.word || "unknown"}': ${err.errmsg || err.message}`)
+        }
+      })
+    }
+
+    const finalErrors = [...validationErrors, ...duplicateErrors]
+    const responseMessage =
+      finalErrors.length > 0
+        ? `${insertedCount} words added successfully. ${finalErrors.length} words had issues.`
+        : `${insertedCount} words added successfully`
 
     res.status(201).json(
       new ApiResponse(
         201,
         {
-          words: createdWords,
-          count: createdWords.length,
+          words: insertedDocs,
+          count: insertedCount,
+          errors: finalErrors.length > 0 ? finalErrors : undefined,
+          totalAttempted: words.length,
+          successful: insertedCount,
+          failed: words.length - insertedCount, // Total attempted - successfully inserted
         },
-        `${createdWords.length} words added successfully`,
+        responseMessage,
       ),
     )
   } catch (error) {
-    if (error.code === 11000) {
-      throw new ApiError(400, "Some words already exist. Duplicates were skipped.")
-    }
-    throw error
+    console.error("Critical insertion error:", error)
+    // This catch block is for errors that prevent insertMany from even starting
+    // or unexpected database errors not caught by writeErrors.
+    throw new ApiError(
+      500,
+      `Failed to insert words: ${error.message}. Previous validation errors: ${validationErrors.join("; ")}`,
+    )
   }
 })
 
@@ -238,7 +334,7 @@ module.exports = {
   getWordsByLevel,
   getWordById,
   addWord,
-  addMultipleWords,
+  addMultipleWords, // Updated with better error handling
   updateWord,
   deleteWord,
   searchWords,

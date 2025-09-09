@@ -28,7 +28,14 @@ const dictionarySchema = new mongoose.Schema(
     },
     partOfSpeech: {
       type: String,
-      enum: ["noun", "verb", "adjective", "adverb", "preposition", "conjunction", "interjection", "article"],
+      enum: [
+        // English terms
+        "noun", "verb", "adjective", "adverb", "preposition", 
+        "conjunction", "interjection", "article","pronoun",
+        // Albanian terms
+        "emër", "folje", "mbiemër", "ndajfolje", "parafjalë", 
+        "lidhëz", "thirrje", "nyjë","përemër",
+      ],
       lowercase: true,
     },
     examples: [
@@ -38,7 +45,7 @@ const dictionarySchema = new mongoose.Schema(
           required: true,
           trim: true,
         },
-        english: {
+        albanian: {  // Changed from 'english' to 'albanian'
           type: String,
           required: true,
           trim: true,
