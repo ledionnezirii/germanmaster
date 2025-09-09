@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Trophy, Medal, Crown, Star } from "lucide-react"
+import { Trophy, Medal, Crown, Star, Flame } from "lucide-react"
 import { io } from "socket.io-client"
 import api, { SOCKET_URL } from "../services/api" // Removed getAbsoluteImageUrl import as it's not needed here
 
@@ -168,7 +168,10 @@ const Leaderboard = () => {
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getLevelColor(user.level)}`}>
                         {user.level}
                       </span>
-                      <span className="text-xs text-gray-500">{user.streak} day streak</span>
+                      <div className="flex items-center space-x-1">
+                        <Flame className="h-3 w-3 text-orange-500" />
+                        <span className="text-xs text-gray-500">{user.streak}</span>
+                      </div>
                     </div>
                   </div>
                 </div>

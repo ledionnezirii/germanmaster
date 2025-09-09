@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { planService, authService } from "../services/api"
-import { CheckCircle2 } from "lucide-react"
+import { ArrowLeft, CheckCircle, Check, AlertCircle, Search, BookOpen, Target, Trophy } from "lucide-react"
 
 export default function PlanPage() {
   const [selectedLevel, setSelectedLevel] = useState(null)
@@ -10,9 +10,24 @@ export default function PlanPage() {
   const [userXp, setUserXp] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [submittingTopicId, setSubmittingTopicId] = useState(null) // New state for tracking submission
+  const [submittingTopicId, setSubmittingTopicId] = useState(null)
 
   const levels = ["A1", "A2", "B1", "B2", "C1", "C2"]
+
+  useEffect(() => {
+    const script = document.createElement("script")
+    script.src = "https://unpkg.com/lucide@latest/dist/umd/lucide.js"
+    script.onload = () => {
+      if (window.lucide) {
+        window.lucide.createIcons()
+      }
+    }
+    document.head.appendChild(script)
+
+    return () => {
+      document.head.removeChild(script)
+    }
+  }, [])
 
   useEffect(() => {
     const fetchPlanAndXp = async () => {
@@ -51,17 +66,16 @@ export default function PlanPage() {
   }
 
   const handleMarkAsFinished = async (topicId) => {
-    if (!plan || submittingTopicId) return // Prevent multiple submissions or if no plan
+    if (!plan || submittingTopicId) return
 
-    setSubmittingTopicId(topicId) // Set the topic currently being submitted
+    setSubmittingTopicId(topicId)
 
-    // Optimistic UI update: Update the plan state immediately
     setPlan((prevPlan) => {
-      if (!prevPlan) return null // Should not happen if !plan check passes
+      if (!prevPlan) return null
 
       const updatedTopics = prevPlan.topics.map((topic) =>
         topic._id === topicId
-          ? { ...topic, isCompleted: true, xpAwarded: 100, completedAt: new Date().toISOString() } // Use ISO string for consistency
+          ? { ...topic, isCompleted: true, xpAwarded: 100, completedAt: new Date().toISOString() }
           : topic,
       )
       return { ...prevPlan, topics: updatedTopics }
@@ -71,19 +85,14 @@ export default function PlanPage() {
       const response = await planService.markTopicAsCompleted(plan._id, topicId)
       if (response.success) {
         console.log("Updated plan from server:", response.data.plan)
-        // The optimistic update should already reflect the change.
-        // We can re-verify or just update XP from the response.
         setUserXp(response.data.userXp)
       }
     } catch (err) {
       console.error("Failed to mark topic as finished:", err)
-      // Revert optimistic update if API call fails
       setPlan((prevPlan) => {
         if (!prevPlan) return null
         const revertedTopics = prevPlan.topics.map((topic) =>
-          topic._id === topicId
-            ? { ...topic, isCompleted: false, xpAwarded: 0, completedAt: undefined } // Revert to original state
-            : topic,
+          topic._id === topicId ? { ...topic, isCompleted: false, xpAwarded: 0, completedAt: undefined } : topic,
         )
         return { ...prevPlan, topics: revertedTopics }
       })
@@ -94,45 +103,79 @@ export default function PlanPage() {
         setError("Dështoi shënimi i temës si e përfunduar. Ju lutemi provoni përsëri.")
       }
     } finally {
-      setSubmittingTopicId(null) // Clear the submitting state regardless of success or failure
+      setSubmittingTopicId(null)
     }
   }
 
   if (!selectedLevel) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
-        <h1 className="text-3xl font-bold mb-6 text-center text-gray-900">
-          Zgjidhni Nivelin Tuaj të Mësimit të Gjermanishtes
-        </h1>
-        <p className="text-lg text-gray-700 mb-4 text-center max-w-2xl">
-          Kjo është seksioni i planit të mësimit ku mund të shënoni temat që tashmë i zotëroni.
-        </p>
-        <p className="text-base text-gray-900 mb-8 text-center max-w-2xl font-medium">
-          Nëse nuk e njihni një temë, ju lutemi shkoni dhe mësojeni atë fillimisht. Pasi ta keni mësuar dhe zotëruar,
-          kthehuni këtu dhe shënojeni si "Përfunduar" për të ndjekur progresin tuaj!
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6 gap-6 w-full max-w-6xl">
-          {levels.map((level) => (
-            <div
-              key={level}
-              onClick={() => handleLevelSelect(level)}
-              className="rounded-lg border bg-white text-gray-900 shadow-sm p-6 cursor-pointer hover:shadow-lg transition-shadow duration-200 flex flex-col items-center justify-center text-center"
-            >
-              <div className="pb-2">
-                <h3 className="text-4xl font-extrabold text-blue-600">{level}</h3>
-              </div>
-              <div className="pt-2">
-                <p className="text-sm text-gray-700">
-                  {level === "A1" && "Nivel fillestar për bazat e gjermanishtes."}
-                  {level === "A2" && "Nivel paramesatar, zgjeroni fjalorin dhe gramatikën."}
-                  {level === "B1" && "Nivel mesatar, komunikim i pavarur në situata të përditshme."}
-                  {level === "B2" && "Nivel i lartë mesatar, kuptim dhe shprehje më komplekse."}
-                  {level === "C1" && "Nivel i avancuar, përdorim i rrjedhshëm dhe i saktë i gjuhës."}
-                  {level === "C2" && "Nivel i zotërimit, aftësi gati amtare në gjermanisht."}
-                </p>
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-blue-50">
+        <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <div className="flex justify-center mb-6">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-teal-100">
+                <BookOpen className="h-8 w-8 text-teal-600" />
               </div>
             </div>
-          ))}
+            <h1 className="text-4xl font-bold text-gray-900 mb-4 text-balance">
+              Zgjidhni Nivelin Tuaj të Gjermanishtes
+            </h1>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto text-pretty">
+              Kjo është seksioni i planit të mësimit ku mund të shënoni temat që tashmë i zotëroni.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {levels.map((level, index) => {
+              const colors = [
+                { bg: "bg-blue-50", text: "text-blue-600", border: "border-blue-200", hover: "hover:border-blue-400" },
+                {
+                  bg: "bg-green-50",
+                  text: "text-green-600",
+                  border: "border-green-200",
+                  hover: "hover:border-green-400",
+                },
+                {
+                  bg: "bg-purple-50",
+                  text: "text-purple-600",
+                  border: "border-purple-200",
+                  hover: "hover:border-purple-400",
+                },
+                {
+                  bg: "bg-orange-50",
+                  text: "text-orange-600",
+                  border: "border-orange-200",
+                  hover: "hover:border-orange-400",
+                },
+                { bg: "bg-pink-50", text: "text-pink-600", border: "border-pink-200", hover: "hover:border-pink-400" },
+                {
+                  bg: "bg-indigo-50",
+                  text: "text-indigo-600",
+                  border: "border-indigo-200",
+                  hover: "hover:border-indigo-400",
+                },
+              ]
+              const color = colors[index]
+
+              return (
+                <button
+                  key={level}
+                  onClick={() => handleLevelSelect(level)}
+                  className={`group ${color.bg} ${color.border} ${color.hover} border-2 rounded-xl p-8 text-center transition-all duration-200 hover:shadow-lg hover:scale-105`}
+                >
+                  <div className={`text-4xl font-bold ${color.text} mb-3`}>{level}</div>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {level === "A1" && "Nivel fillestar për bazat e gjermanishtes"}
+                    {level === "A2" && "Nivel paramesatar, zgjeroni fjalorin"}
+                    {level === "B1" && "Nivel mesatar, komunikim i pavarur"}
+                    {level === "B2" && "Nivel i lartë mesatar"}
+                    {level === "C1" && "Nivel i avancuar"}
+                    {level === "C2" && "Nivel i zotërimit"}
+                  </p>
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
     )
@@ -140,36 +183,49 @@ export default function PlanPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <p className="text-gray-900">Po ngarkohet plani i mësimit të gjermanishtes për nivelin {selectedLevel}...</p>
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Po ngarkohet plani për nivelin {selectedLevel}...</p>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-red-500 p-4">
-        <p>{error}</p>
-        <button
-          onClick={() => setSelectedLevel(null)}
-          className="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors duration-200"
-        >
-          Kthehu te Zgjedhja e Nivelit
-        </button>
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-blue-50 flex items-center justify-center p-4">
+        <div className="bg-white border border-red-200 rounded-xl p-8 text-center max-w-md shadow-lg">
+          <div className="flex justify-center mb-4">
+            <AlertCircle className="h-12 w-12 text-red-500" />
+          </div>
+          <p className="text-red-600 mb-6 text-lg">{error}</p>
+          <button
+            onClick={() => setSelectedLevel(null)}
+            className="bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition-colors"
+          >
+            Kthehu te Zgjedhja e Nivelit
+          </button>
+        </div>
       </div>
     )
   }
 
   if (!plan || !plan.topics || plan.topics.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
-        <p className="text-gray-900">Nuk u gjet asnjë plan mësimi i gjermanishtes për nivelin {selectedLevel}.</p>
-        <button
-          onClick={() => setSelectedLevel(null)}
-          className="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors duration-200"
-        >
-          Kthehu te Zgjedhja e Nivelit
-        </button>
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-blue-50 flex items-center justify-center p-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-8 text-center max-w-md shadow-lg">
+          <div className="flex justify-center mb-4">
+            <Search className="h-12 w-12 text-yellow-500" />
+          </div>
+          <p className="text-gray-600 mb-6 text-lg">Nuk u gjet plan për nivelin {selectedLevel}.</p>
+          <button
+            onClick={() => setSelectedLevel(null)}
+            className="bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition-all duration-200 hover:scale-105 shadow-md"
+          >
+            Kthehu te Zgjedhja e Nivelit
+          </button>
+        </div>
       </div>
     )
   }
@@ -179,92 +235,120 @@ export default function PlanPage() {
   const progressPercentage = totalTopicsCount > 0 ? (completedTopicsCount / totalTopicsCount) * 100 : 0
 
   return (
-    <div className="container mx-auto py-8 px-4 md:px-6">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-bold text-gray-900">Plani i Mësimit të Gjermanishtes {plan.level}</h1>
-          <p className="text-gray-700">
-            Ndiqni progresin tuaj përmes temave thelbësore për Gjermanishten {plan.level}.
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setSelectedLevel(null)}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors duration-200"
-          >
-            Ndrysho Nivelin: {plan.level}
-          </button>
-        </div>
-      </div>
-
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-2 text-gray-900">Progresi i Përgjithshëm</h2>
-        <div className="flex items-center gap-4">
-          <div className="relative h-3 w-full overflow-hidden rounded-full bg-primary/20">
-            <div
-              role="progressbar"
-              aria-valuenow={progressPercentage}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              style={{ transform: `translateX(-${100 - progressPercentage}%)` }}
-              className="h-full w-full flex-1 bg-primary transition-all"
-            />
-          </div>
-          <span className="text-sm font-medium text-gray-900">{`${Math.round(progressPercentage)}%`}</span>
-        </div>
-        <p className="text-sm text-gray-700 mt-1">
-          {completedTopicsCount} nga {totalTopicsCount} tema të përfunduara.
-        </p>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {plan.topics.map((topic) => (
-          <div
-            key={topic._id}
-            className={`rounded-lg border bg-card text-card-foreground shadow-sm p-6 ${
-              topic.isCompleted ? "border-green-500 shadow-md" : ""
-            }`}
-          >
-            <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <h3 className="text-lg font-medium text-gray-900">{topic.title}</h3>
-              {topic.isCompleted && <CheckCircle2 className="h-6 w-6 text-green-500" aria-label="Përfunduar" />}
-            </div>
-            <div className="p-0 space-y-4">
-              <p className="text-sm text-gray-700">{topic.description}</p>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id={`topic-${topic._id}`}
-                    checked={topic.isCompleted}
-                    disabled
-                    className="h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
-                  />
-                  <label
-                    htmlFor={`topic-${topic._id}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-900"
-                  >
-                    Përfunduar
-                  </label>
-                </div>
-                {!topic.isCompleted && (
-                  <button
-                    onClick={() => handleMarkAsFinished(topic._id)}
-                    disabled={topic.isCompleted || submittingTopicId === topic._id}
-                    className={`inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-9 px-3
-                      ${
-                        topic.isCompleted || submittingTopicId === topic._id
-                          ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                          : "bg-primary text-primary-foreground hover:bg-primary/90 cursor-pointer"
-                      }`}
-                  >
-                    {submittingTopicId === topic._id ? "Po shënohet..." : "Shëno si Përfunduar"}
-                  </button>
-                )}
+    <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-blue-50">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-8 mb-8 shadow-lg">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
+                <Target className="h-6 w-6 text-teal-600" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Plani i Mësimit - Gjermanisht {plan.level}</h1>
+                <p className="text-gray-600 text-lg">Ndiqni progresin tuaj përmes temave thelbësore.</p>
               </div>
             </div>
+            <button
+              onClick={() => setSelectedLevel(null)}
+              className="inline-flex items-center gap-2 bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition-all duration-200 hover:scale-105 shadow-md"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              Ndrysho Nivelin
+            </button>
           </div>
-        ))}
+
+          {/* Progress */}
+          <div className="bg-gray-50 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Trophy className="h-6 w-6 text-yellow-500" />
+                <span className="text-xl font-semibold text-gray-900">Progresi</span>
+              </div>
+              <span className="text-2xl font-bold text-teal-600">{Math.round(progressPercentage)}%</span>
+            </div>
+            <div className="h-3 bg-gray-200 rounded-full overflow-hidden mb-3">
+              <div
+                className="h-full bg-gradient-to-r from-teal-500 to-teal-600 rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+            <p className="text-gray-600 text-center">
+              <span className="font-semibold text-teal-600">{completedTopicsCount}</span> nga{" "}
+              <span className="font-semibold">{totalTopicsCount}</span> tema të përfunduara
+            </p>
+          </div>
+        </div>
+
+        {/* Topics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {plan.topics.map((topic, index) => {
+            const cardColors = [
+              "border-blue-200 bg-blue-50",
+              "border-green-200 bg-green-50",
+              "border-purple-200 bg-purple-50",
+              "border-orange-200 bg-orange-50",
+            ]
+            const cardColor = topic.isCompleted ? "border-teal-300 bg-teal-50" : cardColors[index % 4]
+
+            return (
+              <div
+                key={topic._id}
+                className={`${cardColor} border-2 rounded-xl p-6 transition-all duration-200 hover:shadow-lg relative group`}
+              >
+                {topic.isCompleted && (
+                  <div className="absolute top-4 right-4">
+                    <CheckCircle className="h-6 w-6 text-teal-600" />
+                  </div>
+                )}
+
+                <div className={`mb-6 ${topic.isCompleted ? "pr-8" : ""}`}>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3 leading-tight">{topic.title}</h3>
+                  <p className="text-gray-600 leading-relaxed">{topic.description}</p>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-5 h-5 border-2 rounded ${
+                        topic.isCompleted ? "border-teal-500 bg-teal-500" : "border-gray-300 bg-white"
+                      } flex items-center justify-center`}
+                    >
+                      {topic.isCompleted && <Check className="h-3 w-3 text-white" />}
+                    </div>
+                    <span className={`font-medium ${topic.isCompleted ? "text-teal-600" : "text-gray-500"}`}>
+                      {topic.isCompleted ? "Përfunduar" : "Jo përfunduar"}
+                    </span>
+                  </div>
+
+                  {!topic.isCompleted && (
+                    <button
+                      onClick={() => handleMarkAsFinished(topic._id)}
+                      disabled={submittingTopicId === topic._id}
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                        submittingTopicId === topic._id
+                          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                          : "bg-teal-600 text-white hover:bg-teal-700 hover:scale-105 shadow-md"
+                      }`}
+                    >
+                      {submittingTopicId === topic._id ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500" />
+                          Po shënohet...
+                        </>
+                      ) : (
+                        <>
+                          <Check className="h-4 w-4" />
+                          Përfundo
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )

@@ -1,17 +1,22 @@
 "use client"
-import { useState } from "react"
-import { Link } from "react-router-dom" // Reverted to react-router-dom
-import { useAuth } from "../context/AuthContext" // Assuming this path is correct for your project
-import { BookOpen, Headphones, Languages, MessageCircle, Star, TrendingUp, Clock, ArrowRight, Play } from "lucide-react"
+import { Link } from "react-router-dom"
+import { useAuth } from "../context/AuthContext"
+import {
+  BookOpen,
+  Headphones,
+  Languages,
+  MessageCircle,
+  Star,
+  TrendingUp,
+  ArrowRight,
+  Play,
+  Award,
+  Target,
+  Zap,
+} from "lucide-react"
 
 const Home = () => {
-  const { isAuthenticated, user } = useAuth()
-  const [stats, setStats] = useState({
-    xp: 0,
-    streak: 0,
-    completedLessons: 0,
-    wordsLearned: 0,
-  })
+  const { isAuthenticated, user, loading } = useAuth()
 
   const features = [
     {
@@ -49,11 +54,34 @@ const Home = () => {
   ]
 
   const quickStats = [
-    { icon: Star, label: "Pikë XP", value: stats.xp, color: "text-yellow-600" },
-    { icon: TrendingUp, label: "Ditë Rresht", value: stats.streak, color: "text-green-600" },
-    { icon: Clock, label: "Mësime", value: stats.completedLessons, color: "text-blue-600" },
-    { icon: BookOpen, label: "Fjalë", value: stats.wordsLearned, color: "text-purple-600" },
+    { icon: Star, label: "Pikë XP", value: user?.xp || 0, color: "text-yellow-600", bgColor: "bg-yellow-50" },
+    {
+      icon: TrendingUp,
+      label: "Ditë Rresht",
+      value: user?.streakCount || 0,
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+    },
+    { icon: Award, label: "Niveli", value: user?.level || "Fillestar", color: "text-blue-600", bgColor: "bg-blue-50" },
+    {
+      icon: Target,
+      label: "Orë Studimi",
+      value: user?.studyHours || 0,
+      color: "text-purple-600",
+      bgColor: "bg-purple-50",
+    },
   ]
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Duke ngarkuar...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 via-white to-blue-50">
@@ -61,11 +89,11 @@ const Home = () => {
       <div className="relative overflow-hidden bg-white">
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-20">
           <div className="text-center">
-            <h1 className="mb-6 text-4xl font-bold text-gray-900 md:text-6xl">
+            <h1 className="mb-6 text-4xl font-bold text-gray-900 md:text-6xl text-balance">
               Mësoni Gjermanisht
               <span className="block text-teal-600">Në Mënyrë Efektive</span>
             </h1>
-            <p className="mx-auto mb-8 max-w-3xl text-xl text-gray-600">
+            <p className="mx-auto mb-8 max-w-3xl text-xl text-gray-600 text-pretty">
               Zotëroni gjermanishten përmes mësimeve interaktive, ushtrimeve të dëgjimit dhe praktikës së personalizuar.
               Filloni udhëtimin tuaj drejt rrjedhshmërisë sot.
             </p>
@@ -73,15 +101,16 @@ const Home = () => {
               <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <Link
                   to="/listen"
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-teal-600 text-white hover:bg-teal-700 h-10 px-8 py-3"
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-teal-600 text-white hover:bg-teal-700 hover:scale-105 h-12 px-8 py-3 shadow-lg hover:shadow-xl"
                 >
-                  <Play className="h-5 w-7" />
+                  <Play className="h-5 w-5" />
                   Vazhdo Mësimin
                 </Link>
                 <Link
                   to="/account"
-                  className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-transparent hover:bg-teal-50 hover:text-teal-700 h-10 px-8 py-3"
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border-2 border-teal-200 bg-white hover:bg-teal-50 hover:text-teal-700 hover:border-teal-300 h-12 px-8 py-3"
                 >
+                  <Target className="h-5 w-5" />
                   Shiko Progresin
                 </Link>
               </div>
@@ -104,23 +133,35 @@ const Home = () => {
           </div>
         </div>
       </div>
+
       {/* Stats Section - Only for authenticated users */}
-      {isAuthenticated && (
-        <div className="mx-auto px-4 py-8 sm:px-6 lg:px-8">
-          <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <div className="mb-4 text-xl font-bold text-gray-900">
-              Mirë se vini përsëri, {user?.firstName || "Nxënës"}!
+      {isAuthenticated && user && (
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-teal-100">
+                <Zap className="h-6 w-6 text-teal-600" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Mirë se vini përsëri, {user.firstName || user.emri || "Nxënës"}!
+                </h2>
+                <p className="text-gray-600">Vazhdoni progresin tuaj të shkëlqyer</p>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
               {quickStats.map((stat, index) => {
                 const Icon = stat.icon
                 return (
-                  <div key={index} className="text-center">
-                    <div className="mb-2 flex justify-center">
-                      <Icon className={`h-6 w-6 ${stat.color}`} />
+                  <div
+                    key={index}
+                    className={`rounded-xl ${stat.bgColor} p-4 text-center transition-transform hover:scale-105`}
+                  >
+                    <div className="mb-3 flex justify-center">
+                      <Icon className={`h-8 w-8 ${stat.color}`} />
                     </div>
-                    <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                    <div className="text-sm text-gray-600">{stat.label}</div>
+                    <div className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</div>
+                    <div className="text-sm font-medium text-gray-600">{stat.label}</div>
                   </div>
                 )
               })}
@@ -128,11 +169,14 @@ const Home = () => {
           </div>
         </div>
       )}
+
       {/* Features Section */}
-      <div className="mx-auto px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-12 text-center">
-          <h2 className="mb-4 text-3xl font-bold text-gray-900">Gjithçka që Ju Duhet për të Mësuar Gjermanisht</h2>
-          <p className="mx-auto max-w-2xl text-lg text-gray-600">
+          <h2 className="mb-4 text-3xl font-bold text-gray-900 text-balance">
+            Gjithçka që Ju Duhet për të Mësuar Gjermanisht
+          </h2>
+          <p className="mx-auto max-w-2xl text-lg text-gray-600 text-pretty">
             Platforma jonë gjithëpërfshirëse ofron metoda të shumta mësimi për t'ju ndihmuar të zotëroni gjermanishten
             me ritmin tuaj.
           </p>
@@ -166,6 +210,7 @@ const Home = () => {
           })}
         </div>
       </div>
+
       {/* CTA Section */}
       <div className="bg-teal-600 py-16 text-white">
         <div className="mx-auto px-4 text-center sm:px-6 lg:px-8">

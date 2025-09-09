@@ -103,7 +103,7 @@ const Navbar = () => {
                 <span className="text-white font-bold text-lg">G</span>
               </div>
               <div className="flex flex-col items-start">
-                <span className="text-xl font-bold text-white hidden sm:block group-hover:text-orange-300 transition-colors">
+                <span className="text-xl font-bold text-white group-hover:text-orange-300 transition-colors">
                   GermanLearner
                 </span>
                 <span className="text-xs text-orange-200 hidden sm:block">Gjermanisht për Shqiptarët</span>

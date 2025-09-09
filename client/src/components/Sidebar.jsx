@@ -18,6 +18,7 @@ import {
   Swords,
   Sparkles,
   MapIcon,
+  TestTube2Icon,
 } from "lucide-react"
 
 const Sidebar = () => {
@@ -37,7 +38,7 @@ const Sidebar = () => {
     { icon: Trophy, label: "Renditja", path: "/leaderboard", requireAuth: false }, // Leaderboard
     { icon: MapIcon, label: "PlanProgrami", path: "/plan", requireAuth: true }, // Account
     { icon: User, label: "Llogaria", path: "/account", requireAuth: true }, // Account
-
+        { icon: TestTube2Icon, label: "Tests", path: "/tests", requireAuth: true }, // Account
 
   ]
 
@@ -70,18 +71,12 @@ const Sidebar = () => {
       )}
       {/* Sidebar */}
       <div
-        className={`
-          fixed left-0 top-16 bottom-0 bg-slate-900 border-r border-slate-800
-          transition-all duration-300 ease-in-out
-          ${isCollapsed ? "-translate-x-full lg:translate-x-0 lg:w-16" : "translate-x-0 w-64"}
-          z-40 lg:z-10
-          flex flex-col
-        `}
+        className={`fixed left-0 top-16 bottom-0 bg-slate-900 border-r border-slate-800 transition-all duration-300 ease-in-out ${isCollapsed ? "-translate-x-full lg:translate-x-0 lg:w-16" : "translate-x-0 w-64"} z-40 lg:z-10 flex flex-col`}
       >
         {/* Toggle button */}
         <button
           onClick={toggleSidebar}
-          className="absolute -right-3 top-6 z-10 hidden rounded-full border border-slate-700 bg-slate-800 p-1 shadow-md transition-shadow hover:shadow-lg lg:block"
+          className="absolute -right-3 top-6 z-10 hidden rounded-full border border-slate-700 bg-slate-800 p-1 shadow-md transition-shadow hover:shadow-lg md:block"
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? (
@@ -101,11 +96,7 @@ const Sidebar = () => {
                   <Link
                     to={item.path}
                     onClick={handleLinkClick}
-                    className={`
-                      flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors
-                      ${isActive ? "bg-green-400/20 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"}
-                      ${isCollapsed ? "justify-center" : "justify-start"}
-                    `}
+                    className={`flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${isActive ? "bg-green-400/20 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"} ${isCollapsed ? "justify-center" : "justify-start"}`}
                     title={isCollapsed ? item.label : ""}
                     aria-current={isActive ? "page" : undefined}
                   >
@@ -129,11 +120,7 @@ const Sidebar = () => {
                   <Link
                     to={item.path}
                     onClick={item.action || handleLinkClick}
-                    className={`
-                      flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors
-                      ${isActive ? "bg-green-400/20 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"}
-                      ${isCollapsed ? "justify-center" : "justify-start"}
-                    `}
+                    className={`flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${isActive ? "bg-green-400/20 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"} ${isCollapsed ? "justify-center" : "justify-start"}`}
                     title={isCollapsed ? item.label : ""}
                     aria-current={isActive ? "page" : undefined}
                   >

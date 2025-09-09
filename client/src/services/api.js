@@ -1,7 +1,7 @@
 import axios from "axios"
 
-const API_BASE_URL = "http://localhost:5000/api"
-export const SOCKET_URL = "http://localhost:5000"
+const API_BASE_URL = "http://192.168.100.159:5000/api"
+export const SOCKET_URL = "http://192.168.100.159:5000"
 
 export const getAbsoluteImageUrl = (relativePath) => {
   if (!relativePath) return "/placeholder.svg?height=40&width=40"
@@ -97,7 +97,7 @@ export const categoriesService = {
 }
 
 export const listenService = {
-  getAllTests: (params = {}) => api.get("/listen", params),
+  getAllTests: (params = {}) => api.get("/listen", { params }),
   getTestsByLevel: (level, params = {}) => api.get(`/listen/level/${level}`, { params }),
   getTestById: (id) => api.get(`/listen/${id}`),
   checkAnswer: (testId, userAnswer) => api.post("/listen/check", { testId, userAnswer }),
@@ -175,6 +175,17 @@ export const planService = {
   getPlanByLevel: (level) => api.get(`/plan/${level}`),
   markTopicAsCompleted: (planId, topicId) => api.put(`/plan/${planId}/topic/${topicId}/complete`),
   createPlan: (level, topics) => api.post("/plan", { level, topics }),
+}
+
+export const testService = {
+  getAllTests: (params = {}) => api.get("/tests", { params }),
+  getTestById: (id) => api.get(`/tests/${id}`),
+  getTestQuestions: (id) => api.get(`/tests/${id}/questions`),
+  getTestStats: () => api.get("/tests/stats"),
+  submitTest: (id, answers, timeSpent) => api.post(`/tests/${id}/submit`, { answers, timeSpent }),
+  createTest: (testData) => api.post("/tests", testData),
+  updateTest: (id, testData) => api.put(`/tests/${id}`, testData),
+  deleteTest: (id) => api.delete(`/tests/${id}`),
 }
 
 export default api
