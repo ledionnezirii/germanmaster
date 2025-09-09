@@ -12,10 +12,14 @@ const normalizeText = (text) => {
       .trim()
       // Remove extra whitespace between words
       .replace(/\s+/g, " ")
-      // Remove common punctuation
-      .replace(/[.,!?;:]/g, "")
-      // Remove quotes and other special characters
-      .replace(/["""'']/g, "")
+      // Keep essential punctuation but normalize quotes
+      .replace(/["""''`]/g, '"') // Normalize different quote types
+      // Remove trailing punctuation that doesn't affect meaning
+      .replace(/[.!?;:]+$/g, "")
+      // Normalize common contractions and apostrophes
+      .replace(/'/g, "'") // Normalize apostrophes
+      // Remove excessive punctuation (multiple consecutive marks)
+      .replace(/[.,!?;:]{2,}/g, (match) => match[0])
       // Trim again after all replacements
       .trim()
   )
@@ -23,21 +27,60 @@ const normalizeText = (text) => {
 
 // Function to calculate Jaccard Similarity between two strings
 const calculateJaccardSimilarity = (text1, text2) => {
-  const words1 = new Set(normalizeText(text1).split(" ").filter(word => word.length > 0));
-  const words2 = new Set(normalizeText(text2).split(" ").filter(word => word.length > 0));
+  const normalizedText1 = normalizeText(text1)
+  const normalizedText2 = normalizeText(text2)
+
+  // Split into words and filter out empty strings and very short words
+  const words1 = new Set(normalizedText1.split(/\s+/).filter((word) => word.length > 0))
+  const words2 = new Set(normalizedText2.split(/\s+/).filter((word) => word.length > 0))
 
   if (words1.size === 0 && words2.size === 0) {
-    return 1; // Both empty, considered 100% similar
+    return 1 // Both empty, considered 100% similar
   }
   if (words1.size === 0 || words2.size === 0) {
-    return 0; // One empty, one not, considered 0% similar
+    return 0 // One empty, one not, considered 0% similar
   }
 
-  const intersection = new Set([...words1].filter(word => words2.has(word)));
-  const union = new Set([...words1, ...words2]);
+  // Calculate exact word matches
+  const exactMatches = new Set([...words1].filter((word) => words2.has(word)))
 
-  return intersection.size / union.size;
-};
+  // Calculate partial matches for common variations
+  const partialMatches = new Set()
+  for (const word1 of words1) {
+    if (!exactMatches.has(word1)) {
+      for (const word2 of words2) {
+        if (!exactMatches.has(word2) && !partialMatches.has(word2)) {
+          // Check for close matches (simple edit distance approximation)
+          if (areWordsClose(word1, word2)) {
+            partialMatches.add(word1)
+            partialMatches.add(word2)
+            break
+          }
+        }
+      }
+    }
+  }
+
+  const union = new Set([...words1, ...words2])
+  const totalMatches = exactMatches.size + partialMatches.size * 0.7 // Partial matches count as 70%
+
+  return Math.min(totalMatches / union.size, 1) // Cap at 1.0
+}
+
+// Helper function for close word matching
+const areWordsClose = (word1, word2) => {
+  // If words are very similar in length and have common characters
+  if (Math.abs(word1.length - word2.length) > 2) return false
+  if (word1.length < 3 || word2.length < 3) return word1 === word2
+
+  // Simple character overlap check
+  const chars1 = new Set(word1.split(""))
+  const chars2 = new Set(word2.split(""))
+  const commonChars = new Set([...chars1].filter((char) => chars2.has(char)))
+
+  const overlapRatio = commonChars.size / Math.max(chars1.size, chars2.size)
+  return overlapRatio >= 0.7 // 70% character overlap
+}
 
 // @desc    Get all listening tests
 // @route   GET /api/listen
@@ -133,17 +176,16 @@ const checkAnswer = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Test not found")
   }
 
-  // Calculate Jaccard Similarity
-  const jaccardSimilarity = calculateJaccardSimilarity(userAnswer, test.correctText);
-  const score = Math.round(jaccardSimilarity * 100);
+  // Calculate enhanced similarity
+  const jaccardSimilarity = calculateJaccardSimilarity(userAnswer, test.correctText)
+  const score = Math.round(jaccardSimilarity * 100)
 
-  // Define the passing threshold
-  const PASSING_THRESHOLD = 75;
-  const isCorrect = score >= PASSING_THRESHOLD;
+  const PASSING_THRESHOLD = 65 // Reduced from 75 to 65
+  const isCorrect = score >= PASSING_THRESHOLD
 
   console.log("User answer (normalized):", normalizeText(userAnswer))
   console.log("Correct answer (normalized):", normalizeText(test.correctText))
-  console.log("Final score (Jaccard):", score, "Is correct:", isCorrect)
+  console.log("Final score (Enhanced Jaccard):", score, "Is correct:", isCorrect)
 
   let xpAwarded = 0
   if (isCorrect) {
@@ -175,11 +217,11 @@ const checkAnswer = asyncHandler(async (req, res) => {
     }
   }
 
-  // Determine message based on score
   let message
   if (isCorrect) {
     message = "Excellent! You passed with a great score!"
-  } else if (score >= 60) { // Adjusted for new threshold
+  } else if (score >= 50) {
+    // Adjusted threshold for encouragement
     message = "Good effort! You were close, keep practicing."
   } else {
     message = "Keep practicing! You'll get there."
@@ -193,7 +235,7 @@ const checkAnswer = asyncHandler(async (req, res) => {
       userAnswer,
       xpAwarded,
       message,
-      similarityMetric: "Jaccard", // Indicate which metric was used
+      similarityMetric: "Enhanced Jaccard", // Updated metric name
     }),
   )
 })

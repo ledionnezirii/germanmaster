@@ -19,6 +19,11 @@ const categorySchema = new mongoose.Schema(
       enum: ["A1", "A2", "B1", "B2", "C1", "C2"],
       default: "A1",
     },
+    type: {
+      type: String,
+      default: "other",
+      required: [true, "Category type is required"],
+    },
     words: [
       {
         word: {
@@ -68,8 +73,9 @@ const categorySchema = new mongoose.Schema(
 
 // Validate that words array is not empty
 categorySchema.pre("save", function (next) {
-  if (this.words.length === 0) {
-    next(new Error("Category must have at least one word"))
+  // Only validate words if this is not a new document or if words are being explicitly modified
+  if (!this.isNew && this.isModified("words") && this.words.length === 0) {
+    return next(new Error("Category must have at least one word when updating"))
   }
   next()
 })

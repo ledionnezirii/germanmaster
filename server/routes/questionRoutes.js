@@ -9,6 +9,7 @@ const {
   updateQuestion,
   deleteQuestion,
   getQuestionsByCategory,
+  createQuestionsBulk,
 } = require("../controllers/questionController")
 const  auth  = require("../middleware/auth")
 const isAdmin = require("../middleware/isAdmin")
@@ -29,5 +30,7 @@ router.post("/:id/answer", auth, answerQuestion)
 router.post("/", auth, isAdmin, createQuestion)
 router.put("/:id", auth, isAdmin, updateQuestion)
 router.delete("/:id", auth, isAdmin, deleteQuestion)
+
+router.post("/bulk", auth, isAdmin, createQuestionsBulk)
 
 module.exports = router

@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
-    xp: { // This is the general XP field
+    xp: {
       type: Number,
       default: 0,
     },
@@ -89,13 +89,11 @@ const userSchema = new mongoose.Schema(
       default: true,
     },
     lastLogin: Date,
-    // NEW: Quiz specific stats (already present, but ensure structure)
     quizStats: {
       totalQuizzes: { type: Number, default: 0 },
       wins: { type: Number, default: 0 },
       correctAnswers: { type: Number, default: 0 },
     },
-    // NEW: Word Race specific stats
     wordRaceStats: {
       totalRaces: { type: Number, default: 0 },
       wins: { type: Number, default: 0 },
@@ -107,28 +105,37 @@ const userSchema = new mongoose.Schema(
   },
 )
 
-// 24-hour streak update method
 userSchema.methods.updateStreakOnLogin = async function () {
   const now = new Date()
+  let shouldUpdateLastLoginDate = false
+
   if (this.lastLoginDate) {
     // Calculate hours difference
     const diffTime = now.getTime() - this.lastLoginDate.getTime()
     const diffHours = diffTime / (1000 * 60 * 60) // Convert to hours
+
     if (diffHours >= 24 && diffHours < 48) {
       // Between 24-48 hours - increment streak
       this.streakCount = (this.streakCount || 0) + 1
+      shouldUpdateLastLoginDate = true
     } else if (diffHours >= 48) {
       // More than 48 hours - reset streak
       this.streakCount = 1
-    } else if (diffHours < 24) {
-      // Less than 24 hours - no change (same session)
-      // Don't update streak count
+      shouldUpdateLastLoginDate = true
     }
+    // If diffHours < 24, don't change streak or lastLoginDate (same day login)
   } else {
     // First login ever
     this.streakCount = 1
+    shouldUpdateLastLoginDate = true
   }
-  this.lastLoginDate = now
+
+  // Only update lastLoginDate when we actually change the streak
+  if (shouldUpdateLastLoginDate) {
+    this.lastLoginDate = now
+  }
+
+  // Always update lastLogin for general tracking
   this.lastLogin = now
   await this.save()
 }

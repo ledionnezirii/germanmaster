@@ -70,7 +70,11 @@ const getCategoryById = asyncHandler(async (req, res) => {
 // @route   POST /api/categories
 // @access  Private (Admin)
 const createCategory = asyncHandler(async (req, res) => {
-  const { category, description, level, words, icon, color } = req.body
+  const { category, description, level, words, icon, color, type } = req.body
+
+  console.log("[DEBUG] Received type from request body:", type)
+  console.log("[DEBUG] Type of received type:", typeof type)
+  console.log("[DEBUG] Full request body:", JSON.stringify(req.body, null, 2))
 
   // Check if category already exists
   const existingCategory = await Category.findOne({
@@ -81,15 +85,22 @@ const createCategory = asyncHandler(async (req, res) => {
     throw new ApiError(400, `Category "${category}" already exists`)
   }
 
-  const newCategory = await Category.create({
+  const categoryData = {
     category,
     description,
     level,
     words,
     icon,
     color,
+    type,
     createdBy: req.user.id,
-  })
+  }
+  console.log("[DEBUG] Data being passed to Category.create:", JSON.stringify(categoryData, null, 2))
+
+  const newCategory = await Category.create(categoryData)
+
+  console.log("[DEBUG] Created category type:", newCategory.type)
+  console.log("[DEBUG] Full created category:", JSON.stringify(newCategory.toObject(), null, 2))
 
   res.status(201).json(new ApiResponse(201, newCategory, "Category created successfully"))
 })
@@ -133,7 +144,7 @@ const deleteCategory = asyncHandler(async (req, res) => {
 // @route   POST /api/categories/:id/words
 // @access  Private (Admin)
 const addWordToCategory = asyncHandler(async (req, res) => {
-  const { word, translation, examples, pronunciation } = req.body
+  const { word, translation, examples, pronunciation, type } = req.body
 
   const category = await Category.findById(req.params.id)
 
@@ -153,6 +164,7 @@ const addWordToCategory = asyncHandler(async (req, res) => {
     translation,
     examples,
     pronunciation,
+    type,
   })
 
   await category.save()

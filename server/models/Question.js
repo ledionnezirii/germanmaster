@@ -24,7 +24,7 @@ const questionSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ["grammar", "vocabulary", "pronunciation", "culture"],
+      enum: ["grammar", "vocabulary", "pronunciation", "culture","articles","translation","Begginers","Präpositionen","Adjectives","Perfekt"],
       default: "grammar",
     },
     difficulty: {
