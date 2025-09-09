@@ -29,15 +29,27 @@ const Listen = () => {
     }
   }, [selectedTest])
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }, [selectedTest])
+
   const fetchTests = async () => {
     try {
       setLoading(true)
-      const params = { page: 1, limit: 50 }
+      const params = { page: 1, limit: 100 }
       if (selectedLevel !== "all") {
         params.level = selectedLevel
       }
+      console.log("[v0] Fetching tests with params:", params)
       const response = await listenService.getAllTests(params)
+      console.log("[v0] Raw API response:", response)
       console.log("Fetched tests:", response.data)
+      console.log("Total tests received:", response.data?.tests?.length || response.data?.length || 0)
+
+      if (response.data) {
+        console.log("[v0] Response data structure:", Object.keys(response.data))
+      }
+
       setTests(response.data.tests || response.data || [])
     } catch (error) {
       console.error("Error fetching tests:", error)
@@ -112,7 +124,10 @@ const Listen = () => {
       })
       console.log("Completed tests from test data:", Array.from(completedTests))
       if (completedTests.size > 0) {
-        setUserProgress({ completedTests })
+        setUserProgress((prev) => ({
+          ...prev,
+          completedTests: new Set([...prev.completedTests, ...completedTests]),
+        }))
       }
     } catch (error) {
       console.error("Error checking completion status from tests:", error)
@@ -182,6 +197,7 @@ const Listen = () => {
     setSelectedTest(null)
     setFailedAttempts(0) // Reset attempts when going back to test list
     setShowFullText(false) // Hide full text when going back to test list
+    window.scrollTo({ top: 0, behavior: "smooth" })
     fetchUserProgress()
     fetchTests()
   }
@@ -209,46 +225,76 @@ const Listen = () => {
 
   if (selectedTest) {
     return (
-      <div className="h-[700px] bg-white p-4 rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="max-w-4xl mx-auto space-y-6 h-full">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h1 className="text-xl font-bold text-gray-900">{selectedTest.title}</h1>
-              <button onClick={resetTest} className="text-gray-600 hover:text-gray-900" aria-label="Kthehu te Testet">
-                <X className="h-6 w-6" />
+      <div className="h-[700px] bg-white p-2 sm:p-4 rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 h-full">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{selectedTest.title}</h1>
+              <button
+                onClick={resetTest}
+                className="text-gray-600 hover:text-gray-900 p-1"
+                aria-label="Kthehu te Testet"
+              >
+                <X className="h-5 w-5 sm:h-6 sm:w-6" />
               </button>
             </div>
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Audio Controls */}
-              <div className="bg-gray-50 rounded-lg p-6 text-center">
+              <div className="bg-gray-50 rounded-lg p-4 sm:p-6 text-center">
                 <button
                   onClick={() => playAudio(selectedTest.text)}
-                  className="bg-teal-600 text-white p-4 rounded-full hover:bg-teal-700 transition-colors"
+                  className="bg-teal-600 text-white p-3 sm:p-4 rounded-full hover:bg-teal-700 transition-colors"
                   aria-label={isPlaying ? "Pauzë" : "Luaj"}
                 >
-                  {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
+                  {isPlaying ? <Pause className="h-6 w-6 sm:h-8 sm:w-8" /> : <Play className="h-6 w-6 sm:h-8 sm:w-8" />}
                 </button>
-                <p className="mt-4 text-gray-600">Klikoni për të dëgjuar tekstin gjermanisht</p>
+                <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-600">
+                  Klikoni për të dëgjuar tekstin gjermanisht
+                </p>
               </div>
 
               {/* Answer Input */}
               {!showResult && (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                   <label htmlFor="user-answer" className="block text-sm font-medium text-gray-700">
                     Shkruani atë që dëgjuat:
                   </label>
+                  <div className="flex flex-wrap gap-1 sm:gap-2 mb-2 sm:mb-3">
+                    <span className="text-xs sm:text-sm text-gray-600 mr-1 sm:mr-2">Karaktere gjermane:</span>
+                    {["ä", "ö", "ü", "Ä", "Ö", "Ü", "ß"].map((char) => (
+                      <button
+                        key={char}
+                        type="button"
+                        onClick={() => {
+                          const textarea = document.getElementById("user-answer")
+                          const start = textarea.selectionStart
+                          const end = textarea.selectionEnd
+                          const newValue = userAnswer.substring(0, start) + char + userAnswer.substring(end)
+                          setUserAnswer(newValue)
+                          // Set cursor position after the inserted character
+                          setTimeout(() => {
+                            textarea.focus()
+                            textarea.setSelectionRange(start + 1, start + 1)
+                          }, 0)
+                        }}
+                        className="px-2 py-1 sm:px-3 sm:py-1 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-xs sm:text-sm font-medium text-gray-700 transition-colors"
+                      >
+                        {char}
+                      </button>
+                    ))}
+                  </div>
                   <textarea
                     id="user-answer"
                     value={userAnswer}
                     onChange={(e) => setUserAnswer(e.target.value)}
-                    className="w-full p-3 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-gray-800 placeholder-gray-500"
-                    rows="8" // Increased rows for more space
+                    className="w-full p-3 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base"
+                    rows="10" // Increased from 8 to 10 for more space on mobile
                     placeholder="Shkruani tekstin gjermanisht që dëgjuat..."
                   />
                   <button
                     onClick={handleSubmit}
                     disabled={!userAnswer.trim()}
-                    className="w-full bg-gray-800 text-white py-3 rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
+                    className="w-full bg-gray-800 text-white py-2.5 sm:py-3 rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold text-sm sm:text-base"
                   >
                     Kontrollo Përgjigjen
                   </button>
@@ -258,23 +304,24 @@ const Listen = () => {
               {/* Result */}
               {showResult && (
                 <div
-                  className={`p-4 rounded-lg ${result.correct ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}
+                  className={`p-3 sm:p-4 rounded-lg ${result.correct ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}
                 >
                   <div className="flex items-center gap-2 mb-2">
                     {result.correct ? (
-                      <Check className="h-5 w-5 text-green-600" />
+                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                     ) : (
-                      <X className="h-5 w-5 text-red-600" />
+                      <X className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                     )}
-                    <p className={`font-medium ${result.correct ? "text-green-800" : "text-red-800"}`}>
+                    <p
+                      className={`font-medium text-sm sm:text-base ${result.correct ? "text-green-800" : "text-red-800"}`}
+                    >
                       {result.message}
                     </p>
                   </div>
-                  {/* Removed the display of result.correctAnswer here */}
-                  <div className="mt-4 flex gap-3">
+                  <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <button
                       onClick={resetTest}
-                      className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors font-semibold"
+                      className="bg-gray-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors font-semibold text-sm sm:text-base"
                     >
                       Kthehu te Testet
                     </button>
@@ -284,7 +331,7 @@ const Listen = () => {
                           setShowResult(false)
                           setUserAnswer("")
                         }}
-                        className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors font-semibold"
+                        className="bg-teal-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors font-semibold text-sm sm:text-base"
                       >
                         Provoni Përsëri
                       </button>
@@ -295,18 +342,18 @@ const Listen = () => {
 
               {/* Show Full Text after 4 failed attempts */}
               {showResult && !result.correct && failedAttempts >= 4 && (
-                <div className="mt-4 text-center">
+                <div className="mt-3 sm:mt-4 text-center">
                   {!showFullText ? (
                     <button
                       onClick={() => setShowFullText(true)}
-                      className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors font-semibold"
+                      className="bg-gray-700 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors font-semibold text-sm sm:text-base"
                     >
                       Shfaq Tekstin e Plotë ({failedAttempts} tentativa)
                     </button>
                   ) : (
-                    <div className="bg-gray-100 p-4 rounded-lg border border-gray-200 text-gray-800 text-left">
-                      <p className="font-semibold mb-2">Teksti Origjinal:</p>
-                      <p>{selectedTest.text}</p>
+                    <div className="bg-gray-100 p-3 sm:p-4 rounded-lg border border-gray-200 text-gray-800 text-left">
+                      <p className="font-semibold mb-2 text-sm sm:text-base">Teksti Origjinal:</p>
+                      <p className="text-sm sm:text-base">{selectedTest.text}</p>
                     </div>
                   )}
                 </div>
@@ -399,7 +446,7 @@ const Listen = () => {
                     />
                     <div className="relative z-10">
                       <h3
-                        className={`text-sm font-semibold mb-1 pr-12 ${
+                        className={`text-sm font-semibold mb-1 pr-12 truncate ${
                           isCompleted
                             ? "text-green-800 group-hover:text-green-900"
                             : "text-gray-800 group-hover:text-teal-700"
@@ -430,7 +477,7 @@ const Listen = () => {
               <div className="col-span-full text-center py-8">
                 <div className="bg-gray-50 rounded-lg p-6 inline-block">
                   <Volume2 className="text-teal-600 w-10 h-10 mx-auto mb-3" />
-                  <h3 className="text-sm font-medium text-gray-800 mb-1">Nuk u gjetën teste</h3>
+                  <h3 className="text-sm font-medium text-gray-800 mb-2">Nuk u gjetën teste</h3>
                   <p className="text-gray-500 text-xs">
                     Provoni të zgjidhni nivele të ndryshme ose kontrolloni më vonë
                   </p>

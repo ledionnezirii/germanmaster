@@ -16,6 +16,7 @@ import SignIn from "./auth/SignIn"
 import SignUp from "./auth/SignUp"
 import Challenge from "./pages/Challenge"
 import Plan from "./pages/Plan"
+import Tests from "./pages/Tests"
 
 const AppContent = () => {
   const { isCollapsed } = useSidebar()
@@ -48,6 +49,7 @@ const AppContent = () => {
               <Route path="/signup" element={<SignUp />} />
                 <Route path="/challenge" element={<Challenge />} />
                 <Route path="/plan" element={<Plan />} />
+                <Route path="tests" element={<Tests />} />
             </Routes>
           </div>
         </main>
