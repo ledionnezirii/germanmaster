@@ -20,6 +20,14 @@ import {
   Film,
   TreePine,
   Filter,
+  Guitar,
+  HardHat,
+  Book,
+  Sword,
+  BellRing,
+  Castle,
+  Swords,
+  Hammer,
 } from "lucide-react"
 
 const iconMap = {
@@ -38,6 +46,14 @@ const iconMap = {
   coffee: Coffee,
   film: Film,
   tree: TreePine,
+  guitar:Guitar,
+  clothes:HardHat,
+  book:Book,
+  sword:Sword,
+  ring:BellRing,
+  haus:Castle,
+  sport:Swords,
+  hammer:Hammer
 }
 
 const Category = () => {
