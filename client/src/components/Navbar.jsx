@@ -104,7 +104,7 @@ const Navbar = () => {
               </div>
               <div className="flex flex-col items-start">
                 <span className="text-xl font-bold text-white group-hover:text-orange-300 transition-colors">
-                  GermanLearner
+                  deutschshqip
                 </span>
                 <span className="text-xs text-orange-200 hidden sm:block">Gjermanisht për Shqiptarët</span>
               </div>
