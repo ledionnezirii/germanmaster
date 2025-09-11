@@ -108,7 +108,7 @@ const Challenge = () => {
     if (!user) return;
 
     const token = localStorage.getItem("authToken");
-    const newSocket = io("http://192.168.100.159:5000", {
+    const newSocket = io("http://192.168.1.48:5000", {
       auth: {
         token: token,
       },
