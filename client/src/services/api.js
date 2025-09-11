@@ -1,7 +1,7 @@
 import axios from "axios"
 
-const API_BASE_URL = "http://192.168.100.159:5000/api"
-export const SOCKET_URL = "http://192.168.100.159:5000"
+const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api"
+export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com"
 
 export const getAbsoluteImageUrl = (relativePath) => {
   if (!relativePath) return "/placeholder.svg?height=40&width=40"
