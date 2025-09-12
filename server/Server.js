@@ -151,7 +151,8 @@ app.use(
           "http://localhost:5173",
           "http://192.168.1.48:3000",
           "http://192.168.1.48:3001",
-          "http://192.168.1.48:5173"
+          "http://192.168.1.48:5173",
+          "https://3651706.netlify.app"
         ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
