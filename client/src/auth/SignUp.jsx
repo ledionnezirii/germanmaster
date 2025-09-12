@@ -36,7 +36,14 @@ const SignUp = () => {
       await register(formData)
       navigate("/signin")
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed. Please try again.")
+      const errorMessage = err.response?.data?.message || ""
+      if (errorMessage.toLowerCase().includes("email") && errorMessage.toLowerCase().includes("exists")) {
+        setError("Ky email është tashmë i regjistruar. Ju lutemi përdorni një email tjetër.")
+      } else if (errorMessage.toLowerCase().includes("password")) {
+        setError("Fjalëkalimi nuk është i vlefshëm. Ju lutemi provoni një fjalëkalim tjetër.")
+      } else {
+        setError("Regjistrimi dështoi. Ju lutemi provoni përsëri.")
+      }
     } finally {
       setLoading(false)
     }
@@ -49,11 +56,11 @@ const SignUp = () => {
           <div className="mx-auto w-12 h-12 bg-teal-600 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-xl">G</span>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">Create your account</h2>
+          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">Krijoni llogarinë tuaj</h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Or{" "}
+            Ose{" "}
             <Link to="/signin" className="font-medium text-teal-600 hover:text-teal-500">
-              sign in to your existing account
+              hyni në llogarinë tuaj ekzistuese
             </Link>
           </p>
         </div>
@@ -76,7 +83,7 @@ const SignUp = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                  First name
+                  Emri
                 </label>
                 <div className="mt-1 relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -90,14 +97,14 @@ const SignUp = () => {
                     value={formData.firstName}
                     onChange={handleChange}
                     className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
-                    placeholder="First name"
+                    placeholder="Emri"
                   />
                 </div>
               </div>
 
               <div>
                 <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                  Last name
+                  Mbiemri
                 </label>
                 <div className="mt-1">
                   <input
@@ -108,7 +115,7 @@ const SignUp = () => {
                     value={formData.lastName}
                     onChange={handleChange}
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
-                    placeholder="Last name"
+                    placeholder="Mbiemri"
                   />
                 </div>
               </div>
@@ -116,7 +123,7 @@ const SignUp = () => {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
+                Adresa e email-it
               </label>
               <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -131,14 +138,14 @@ const SignUp = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="Enter your email"
+                  placeholder="Shkruani email-in tuaj"
                 />
               </div>
             </div>
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
+                Fjalëkalimi
               </label>
               <div className="mt-1 relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -153,7 +160,7 @@ const SignUp = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="Create a password"
+                  placeholder="Krijoni një fjalëkalim"
                 />
                 <button
                   type="button"
@@ -175,7 +182,7 @@ const SignUp = () => {
                 disabled={loading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Create account"}
+                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Krijoni llogarinë"}
               </button>
             </div>
           </form>
