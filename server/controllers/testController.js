@@ -339,16 +339,41 @@ class TestController {
             questionNumber: question.questionNumber,
           })
 
-          const userAnswer = answers.find(
-            (a) =>
-              a.questionId === question._id.toString() ||
-              a.questionId === question._id ||
-              a.questionNumber === question.questionNumber,
-          )
+          const userAnswer = answers.find((a) => {
+            // Convert both IDs to strings for comparison
+            const answerQuestionId = String(a.questionId)
+            const testQuestionId = String(question._id)
+
+            console.log(`[v0] Comparing IDs: ${answerQuestionId} === ${testQuestionId}`)
+
+            return answerQuestionId === testQuestionId
+          })
 
           console.log(`[v0] User answer for question ${index + 1}:`, userAnswer)
 
-          const isCorrect = userAnswer && userAnswer.answer === question.correctAnswer
+          let isCorrect = false
+          let userAnswerValue = null
+
+          if (userAnswer) {
+            userAnswerValue = userAnswer.selectedAnswer || userAnswer.answer
+
+            const userAnswerStr = String(userAnswerValue || "").trim()
+            const correctAnswerStr = String(question.correctAnswer || "").trim()
+
+            isCorrect = userAnswerStr === correctAnswerStr
+
+            console.log(`[v0] Answer comparison:`, {
+              userAnswerStr,
+              correctAnswerStr,
+              isCorrect,
+            })
+          }
+
+          console.log(`[v0] Question ${index + 1} final result:`, {
+            userAnswerValue: userAnswerValue,
+            correctAnswer: question.correctAnswer,
+            isCorrect: isCorrect,
+          })
 
           totalPoints += question.points
           if (isCorrect) {
@@ -358,7 +383,7 @@ class TestController {
           results.push({
             questionId: question._id,
             questionNumber: question.questionNumber,
-            userAnswer: userAnswer ? userAnswer.answer : null,
+            userAnswer: userAnswerValue,
             correctAnswer: question.correctAnswer,
             isCorrect,
             points: isCorrect ? question.points : 0,
@@ -389,6 +414,12 @@ class TestController {
           userId,
           testId: test._id,
           level: test.level,
+          answers: results.map((r) => ({
+            questionId: r.questionId,
+            selectedAnswer: r.userAnswer,
+            isCorrect: r.isCorrect,
+            points: r.points,
+          })),
           score,
           totalPoints,
           percentage,
