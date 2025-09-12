@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useSidebar } from "../context/SidebarContext"
 import { Menu, User, LogOut, ChevronDown } from "lucide-react"
+import logoImage from "../images/logoIMG.jpeg"
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth()
@@ -99,8 +100,14 @@ const Navbar = () => {
               <span className="sr-only">Toggle sidebar</span>
             </Button>
             <Link to="/" className="flex items-center space-x-2 group">
-              <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center group-hover:bg-orange-600 transition-colors">
-                <span className="text-white font-bold text-lg">G</span>
+              <div className="flex items-center justify-center group-hover:bg-orange-900 rounded-4xl transition-colors">
+                {/* <span className="text-white font-bold text-lg">G</span> */}
+                <img 
+                src={logoImage}
+                width={55}
+                height={55}
+                className="rounded-4xl cursor-pointer"  
+                alt="logo" />
               </div>
               <div className="flex flex-col items-start">
                 <span className="text-xl font-bold text-white group-hover:text-orange-300 transition-colors">
