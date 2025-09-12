@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api"
+const API_BASE_URL = "/api"
 export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com"
 
 export const getAbsoluteImageUrl = (relativePath) => {
@@ -33,7 +33,11 @@ api.interceptors.response.use(
     }
   },
   (error) => {
-    if (error.response?.status === 401) {
+    if (
+      error.response?.status === 401 &&
+      !window.location.pathname.includes("/signin") &&
+      !window.location.pathname.includes("/signup")
+    ) {
       localStorage.removeItem("authToken")
       window.location.href = "/signin"
     }
@@ -182,7 +186,8 @@ export const testService = {
   getTestById: (id) => api.get(`/tests/${id}`),
   getTestQuestions: (id) => api.get(`/tests/${id}/questions`),
   getTestStats: () => api.get("/tests/stats"),
-  submitTest: (id, answers, timeSpent) => api.post(`/tests/${id}/submit`, { answers, timeSpent }),
+  submitTest: (id, answers, timeSpent, userId) => api.post(`/tests/${id}/submit`, { answers, timeSpent, userId }),
+  getTestAvailability: (userId) => api.get(`/tests/availability?userId=${userId}`),
   createTest: (testData) => api.post("/tests", testData),
   updateTest: (id, testData) => api.put(`/tests/${id}`, testData),
   deleteTest: (id) => api.delete(`/tests/${id}`),

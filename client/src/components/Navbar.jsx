@@ -173,18 +173,20 @@ const Navbar = () => {
                 )}
               </div>
             ) : (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1 sm:space-x-2">
                 <Link
                   to="/signin"
-                  className="text-slate-200 hover:text-white hover:bg-slate-700 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="text-slate-200 hover:text-white hover:bg-slate-700 px-2 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors"
                 >
-                  Hyni
+                  <span className="hidden xs:inline">Hyni</span>
+                  <span className="xs:hidden">Hyr</span>
                 </Link>
                 <Link
                   to="/signup"
-                  className="bg-orange-500 text-white hover:bg-orange-600 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="bg-orange-500 text-white hover:bg-orange-600 px-2 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
                 >
-                  Regjistrohuni
+                  <span className="hidden xs:inline">Regjistrohuni</span>
+                  <span className="xs:hidden">Regjistro</span>
                 </Link>
               </div>
             )}
