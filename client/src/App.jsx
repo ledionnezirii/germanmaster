@@ -17,6 +17,9 @@ import SignUp from "./auth/SignUp"
 import Challenge from "./pages/Challenge"
 import Plan from "./pages/Plan"
 import Tests from "./pages/Tests"
+import ForgotPassword from "./auth/ForgotPassword"
+import ResetPassword from "./auth/ResetPassword"
+import VerifyEmail from "./auth/VerifyEmail"
 
 const AppContent = () => {
   const { isCollapsed } = useSidebar()
@@ -47,6 +50,9 @@ const AppContent = () => {
               <Route path="/grammar" element={<Grammar />} />
               <Route path="/signin" element={<SignIn />} />
               <Route path="/signup" element={<SignUp />} />
+              <Route path="/forgotpassword" element={<ForgotPassword />} />
+              <Route path="resetpassword" element={<ResetPassword />} />
+              <Route path="verifyemail" element={<VerifyEmail />} />
                 <Route path="/challenge" element={<Challenge />} />
                 <Route path="/plan" element={<Plan />} />
                 <Route path="tests" element={<Tests />} />

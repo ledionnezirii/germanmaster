@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api"
+const API_BASE_URL = "/api"
 export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com"
 
 export const getAbsoluteImageUrl = (relativePath) => {
@@ -67,6 +67,10 @@ export const authService = {
   updateStudyHours: (hours) => api.put("/users/study-hours", { hours }),
   getUserXp: () => api.get("/users/xp"),
   addXp: (xp, reason) => api.post("/users/add-xp", { xp, reason }),
+
+  forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
+  resetPassword: (token, newPassword) => api.post(`/auth/reset-password/${token}`, { newPassword }),
+  verifyEmail: (token) => api.get(`/auth/verify/${token}`),
 }
 
 export const dictionaryService = {
