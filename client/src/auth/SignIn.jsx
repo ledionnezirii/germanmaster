@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom" // Using React Router instead of Next.js
+import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
-import { Mail, Lock, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react"
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
+import webLogo from "../images/logoIMG.jpeg"
 
 const SignIn = () => {
   const [formData, setFormData] = useState({
@@ -15,7 +16,7 @@ const SignIn = () => {
   const [error, setError] = useState("")
 
   const { login } = useAuth()
-  const navigate = useNavigate() // Using React Router navigate instead of Next.js router
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
     setFormData({
@@ -27,142 +28,146 @@ const SignIn = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    console.log("[v0] Form submitted, preventDefault called")
     setLoading(true)
     setError("")
 
     try {
-      console.log("[v0] Attempting login with:", formData.email)
       await login(formData)
-      console.log("[v0] Login successful, navigating to home")
       navigate("/")
     } catch (err) {
-      console.log("[v0] Login error caught:", err)
       const errorMessage = err.response?.data?.message || ""
-      console.log("[v0] Error message:", errorMessage)
 
       if (
         errorMessage.toLowerCase().includes("password") ||
         errorMessage.toLowerCase().includes("invalid") ||
         errorMessage.toLowerCase().includes("wrong")
       ) {
-        console.log("[v0] Setting password error message")
         setError("Fjalëkalimi është i pasaktë. Ju lutemi provoni përsëri.")
       } else if (
         errorMessage.toLowerCase().includes("email") ||
         errorMessage.toLowerCase().includes("user not found")
       ) {
-        console.log("[v0] Setting email error message")
         setError("Email-i nuk u gjet. Ju lutemi kontrolloni email-in tuaj.")
+      } else if (errorMessage.toLowerCase().includes("verify")) {
+        setError("Ju lutemi verifikoni email-in tuaj para se të hyni.")
       } else {
-        console.log("[v0] Setting generic error message")
         setError("Hyrja dështoi. Ju lutemi provoni përsëri.")
       }
-      return
     } finally {
-      console.log("[v0] Setting loading to false")
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="text-center">
-          <div className="mx-auto w-12 h-12 bg-teal-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xl">G</span>
+    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-600 to-purple-700 flex items-center justify-center p-5">
+      <div className="bg-white/95 backdrop-blur-lg rounded-3xl p-10 w-full max-w-md shadow-2xl border border-white/20">
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-6">
+            <img
+              src={webLogo}
+              alt="Logo"
+              className="w-20 h-20 rounded-full shadow-lg object-cover"
+            />
           </div>
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">Hyni në llogarinë tuaj</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Ose{" "}
-            <Link to="/signup" className="font-medium text-teal-600 hover:text-teal-500">
-              {" "}
-              krijoni një llogari të re
-            </Link>
-          </p>
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">Hyr në llogari</h1>
+          <p className="text-gray-600 text-base">Mirë se erdhe përsëri!</p>
         </div>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-4">
-                <div className="flex">
-                  <AlertCircle className="h-5 w-5 text-red-400" />
-                  <div className="ml-3">
-                    <p className="text-sm text-red-800">{error}</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Adresa e email-it
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="Shkruani email-in tuaj"
-                />
-              </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start">
+              <span className="text-red-500 mr-3 text-xl">⚠️</span>
+              <p className="text-red-700 text-sm">{error}</p>
             </div>
+          )}
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Fjalëkalimi
-              </label>
-              <div className="mt-1 relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="appearance-none block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500"
-                  placeholder="Shkruani fjalëkalimin tuaj"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Adresa e email-it</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
+                  />
+                </svg>
               </div>
+              <input
+                name="email"
+                type="email"
+                required
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="Shkruani email-in tuaj"
+                className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-base bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200"
+              />
             </div>
+          </div>
 
-            <div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Fjalëkalimi</label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
+                </svg>
+              </div>
+              <input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                required
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Shkruani fjalëkalimin tuaj"
+                className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg text-base bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200"
+              />
               <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
               >
-                {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "Hyni"}
+                {showPassword ? (
+                  <EyeSlashIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                ) : (
+                  <EyeIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                )}
               </button>
             </div>
-          </form>
-        </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Link
+              to="/forgotpassword"
+              className="text-cyan-600 hover:text-cyan-700 text-sm font-medium transition-colors duration-200"
+            >
+              Keni harruar fjalëkalimin?
+            </Link>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full py-3.5 px-4 rounded-lg text-base font-semibold transition-all duration-200 flex items-center justify-center ${
+              loading ? "bg-gray-400 cursor-not-allowed" : "bg-amber-600 hover:bg-amber-700 active:bg-amber-800"
+            } text-white shadow-lg hover:shadow-xl`}
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                Duke u kyçur...
+              </>
+            ) : (
+              "Hyni"
+            )}
+          </button>
+        </form>
       </div>
     </div>
   )

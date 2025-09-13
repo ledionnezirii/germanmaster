@@ -8,7 +8,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target: "https://gjuhagjermaneserver.onrender.com",
+        target: "http://localhost:5000", // <-- Change this for local dev
         changeOrigin: true,
       },
     },
