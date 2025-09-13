@@ -1,6 +1,8 @@
 "use client"
 import { Link } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
+import { useState, useEffect } from "react"
+import { favoritesService } from "../services/api"
 import {
   BookOpen,
   Headphones,
@@ -13,10 +15,36 @@ import {
   Award,
   Target,
   Zap,
+  Heart,
 } from "lucide-react"
 
 const Home = () => {
   const { isAuthenticated, user, loading } = useAuth()
+  const [favoriteWords, setFavoriteWords] = useState([])
+  const [favoriteCount, setFavoriteCount] = useState(0)
+  const [loadingFavorites, setLoadingFavorites] = useState(false)
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      fetchFavoriteWords()
+    }
+  }, [isAuthenticated, user])
+
+  const fetchFavoriteWords = async () => {
+    try {
+      setLoadingFavorites(true)
+      const response = await favoritesService.getFavorites({ limit: 10 })
+      const favoriteWords = response.data.favorites || response.data || []
+      setFavoriteWords(favoriteWords)
+      setFavoriteCount(favoriteWords.length)
+    } catch (error) {
+      console.error("Error fetching favorite words:", error)
+      setFavoriteWords([])
+      setFavoriteCount(0)
+    } finally {
+      setLoadingFavorites(false)
+    }
+  }
 
   const features = [
     {
@@ -64,11 +92,11 @@ const Home = () => {
     },
     { icon: Award, label: "Niveli", value: user?.level || "Fillestar", color: "text-blue-600", bgColor: "bg-blue-50" },
     {
-      icon: Target,
-      label: "Orë Studimi",
-      value: user?.studyHours || 0,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
+      icon: Heart,
+      label: "Fjalë të Mësuara",
+      value: favoriteCount,
+      color: "text-red-600",
+      bgColor: "bg-red-50",
     },
   ]
 
@@ -166,6 +194,76 @@ const Home = () => {
                 )
               })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {isAuthenticated && user && (
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+                <Heart className="h-6 w-6 text-red-600" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Fjalët e Mësuara</h2>
+                <p className="text-gray-600">Fjalët që keni shënuar si të preferuara</p>
+              </div>
+            </div>
+
+            {loadingFavorites ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+              </div>
+            ) : favoriteWords.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {favoriteWords.slice(0, 6).map((favorite, index) => {
+                  const word = favorite.wordId || favorite
+                  return (
+                    <div
+                      key={index}
+                      className="bg-gradient-to-r from-red-50 to-pink-50 rounded-lg p-4 border border-red-200 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <h3 className="text-lg font-bold text-gray-900">{word.word}</h3>
+                        <Heart className="h-5 w-5 text-red-500 fill-current" />
+                      </div>
+                      <p className="text-gray-700 mb-2">{word.translation}</p>
+                      {word.level && (
+                        <span className="inline-block px-2 py-1 bg-teal-100 text-teal-800 text-xs font-medium rounded-full">
+                          {word.level}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Heart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Asnjë fjalë e preferuar</h3>
+                <p className="text-gray-600 mb-4">Filloni të shtoni fjalë në listën tuaj të preferuarve</p>
+                <Link
+                  to="/dictionary"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+                >
+                  <BookOpen className="h-4 w-4" />
+                  Shko te Fjalori
+                </Link>
+              </div>
+            )}
+
+            {favoriteWords.length > 6 && (
+              <div className="mt-6 text-center">
+                <Link
+                  to="/dictionary"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-teal-600 hover:text-teal-700 font-medium"
+                >
+                  Shiko të gjitha fjalët e preferuara
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}
