@@ -62,6 +62,11 @@ const userSchema = new mongoose.Schema(
     },
     // Other existing fields
     achievements: [String],
+    newAchievements: {
+      type: [String],
+      default: [],
+    },
+
     listenTestsPassed: [
       {
         type: mongoose.Schema.Types.ObjectId,
