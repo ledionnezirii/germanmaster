@@ -2,6 +2,7 @@ const User = require("../models/User")
 const { ApiError } = require("../utils/ApiError")
 const { ApiResponse } = require("../utils/ApiResponse")
 const { asyncHandler } = require("../utils/asyncHandler")
+const achievementsService = require("../services/achievementService");
 const multer = require("multer")
 const path = require("path")
 const fs = require("fs")
@@ -70,24 +71,26 @@ const getProfile = asyncHandler(async (req, res) => {
   }
 
   res.json(
-    new ApiResponse(200, {
-      id: user._id, // Ensure ID is included for consistency with frontend
-      firstName: user.emri,
-      lastName: user.mbiemri,
-      email: user.email,
-      profilePicture: fullProfilePictureUrl, // Send the full URL
-      xp: user.xp,
-      level: user.level,
-      studyHours: user.studyHours,
-      completedTests: user.completedTests,
-      achievements: user.achievements,
-      listenTestsPassed: user.listenTestsPassed,
-      passedTranslatedTexts: user.passedTranslatedTexts,
-      isPaid: user.isPaid,
-      lastLogin: user.lastLogin,
-      streakCount: user.streakCount, // Ensure streakCount is included here
-    }),
-  )
+  new ApiResponse(200, {
+    id: user._id,
+    firstName: user.emri,
+    lastName: user.mbiemri,
+    email: user.email,
+    profilePicture: fullProfilePictureUrl,
+    xp: user.xp,
+    level: user.level,
+    studyHours: user.studyHours,
+    completedTests: user.completedTests,
+    achievements: user.achievements,
+    newAchievements: user.newAchievements || [], // Add this line
+    listenTestsPassed: user.listenTestsPassed,
+    passedTranslatedTexts: user.passedTranslatedTexts,
+    isPaid: user.isPaid,
+    lastLogin: user.lastLogin,
+    streakCount: user.streakCount,
+  })
+)
+
 })
 
 // @desc    Get user XP
@@ -191,35 +194,52 @@ const updateProfile = asyncHandler(async (req, res) => {
   )
 })
 
-// @desc    Add XP to user
-// @route   POST /api/users/add-xp
-// @access  Private
 const addXp = asyncHandler(async (req, res) => {
-  const { xp, reason } = req.body
+  const { xp, reason } = req.body;
   if (typeof xp !== "number" || xp <= 0) {
-    throw new ApiError(400, "XP must be a positive number")
+    throw new ApiError(400, "XP must be a positive number");
   }
-  const user = await User.findById(req.user.id)
+
+  const user = await User.findById(req.user.id);
   if (!user) {
-    throw new ApiError(404, "User not found")
+    throw new ApiError(404, "User not found");
   }
-  const oldLevel = user.level
-  user.xp += xp
-  await user.save()
-  const leveledUp = oldLevel !== user.level
+
+  // Use service to evaluate milestones and add achievements
+  const newAchievements = await achievementsService.evaluateXpMilestones(user, xp);
+
   res.json(
     new ApiResponse(
       200,
       {
         xp: user.xp,
         level: user.level,
-        leveledUp,
+        achievements: user.achievements,
+        newAchievements,
         reason: reason || "XP added",
       },
-      leveledUp ? "Congratulations! You leveled up!" : "XP added successfully",
-    ),
-  )
-})
+      newAchievements.length
+        ? `Congratulations! You earned new achievements: ${newAchievements.join(", ")}`
+        : "XP added successfully"
+    )
+  );
+});
+const handleAddXp = async () => {
+  try {
+    const apiResponse = await authService.addXp({ xp: 150, reason: "Complete lesson 1" });
+    // Update React user state with latest achievements and XP
+    updateUser(prevUser => ({
+      ...prevUser,
+      xp: apiResponse.data.xp,
+      level: apiResponse.data.level,
+      achievements: apiResponse.data.achievements,
+      newAchievements: apiResponse.data.newAchievements,
+    }));
+  } catch (error) {
+    console.error("Failed to add XP:", error);
+  }
+}
+
 
 module.exports = {
   getProfile,
@@ -228,4 +248,5 @@ module.exports = {
   uploadProfilePicture,
   updateProfile,
   addXp,
+  handleAddXp
 }
