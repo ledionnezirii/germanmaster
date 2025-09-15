@@ -196,5 +196,12 @@ export const testService = {
   updateTest: (id, testData) => api.put(`/tests/${id}`, testData),
   deleteTest: (id) => api.delete(`/tests/${id}`),
 }
+export const pronunciationService = {
+  getWords: (params = {}) => api.get("/pronunciation", { params }),
+  addWord: (wordData) => api.post("/pronunciation", wordData),
+  checkPronunciation: (wordId, spokenWord) =>
+    api.post("/pronunciation/check", { wordId, spokenWord }),
+}
+
 
 export default api

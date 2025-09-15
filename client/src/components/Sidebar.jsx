@@ -20,6 +20,7 @@ import {
   MapIcon,
   TestTube2Icon,
 } from "lucide-react"
+import { MicrophoneIcon } from "@heroicons/react/24/outline"
 
 const Sidebar = () => {
   const { isCollapsed, toggleSidebar } = useSidebar()
@@ -33,12 +34,13 @@ const Sidebar = () => {
     { icon: BookOpen, label: "Fjalor", path: "/dictionary", requireAuth: true }, // Dictionary
     { icon: FolderOpen, label: "Kategori", path: "/category", requireAuth: true }, // Category
     { icon: MessageCircle, label: "Bisedo", path: "/chat", requireAuth: true }, // Chat
-    { icon: Swords, label: "Sfidë", path: "/challenge", requireAuth: true }, // Challenge
+    // { icon: Swords, label: "Sfidë", path: "/challenge", requireAuth: true }, Challenge
     { icon: GraduationCap, label: "Gramatikë", path: "/grammar", requireAuth: true }, // Grammar
     { icon: Trophy, label: "Renditja", path: "/leaderboard", requireAuth: false }, // Leaderboard
-    { icon: MapIcon, label: "PlanProgrami", path: "/plan", requireAuth: true }, // Account
-    { icon: User, label: "Llogaria", path: "/account", requireAuth: true }, // Account
-        { icon: TestTube2Icon, label: "Tests", path: "/tests", requireAuth: true }, // Account
+    { icon: MapIcon, label: "PlanProgrami", path: "/plan", requireAuth: true }, // 
+    { icon: TestTube2Icon, label: "Tests", path: "/tests", requireAuth: true }, // 
+    { icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation", requireAuth: true }, // 
+    { icon: User, label: "Llogaria", path: "/account", requireAuth: true }, // 
 
   ]
 
