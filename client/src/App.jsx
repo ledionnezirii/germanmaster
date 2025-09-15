@@ -53,7 +53,7 @@ const AppContent = () => {
               <Route path="/forgotpassword" element={<ForgotPassword />} />
               <Route path="resetpassword" element={<ResetPassword />} />
               <Route path="verifyemail" element={<VerifyEmail />} />
-                <Route path="/challenge" element={<Challenge />} />
+                {/* <Route path="/challenge" element={<Challenge />} /> */}
                 <Route path="/plan" element={<Plan />} />
                 <Route path="tests" element={<Tests />} />
             </Routes>
