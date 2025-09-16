@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const API_BASE_URL = "/api"
+const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api"
 export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com"
 
 export const getAbsoluteImageUrl = (relativePath) => {
@@ -198,10 +198,11 @@ export const testService = {
 }
 export const pronunciationService = {
   getWords: (params = {}) => api.get("/pronunciation", { params }),
-  addWord: (wordData) => api.post("/pronunciation", wordData),
-  checkPronunciation: (wordId, spokenWord) =>
-    api.post("/pronunciation/check", { wordId, spokenWord }),
-}
+  addPackage: (packageData) => api.post("/pronunciation", packageData),
+  checkPronunciation: (packageId, wordIndex, spokenWord) =>
+    api.post("/pronunciation/check", { packageId, wordIndex, spokenWord }),
+};
+
 
 
 export default api
