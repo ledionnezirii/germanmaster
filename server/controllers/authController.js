@@ -37,7 +37,7 @@ const signup = asyncHandler(async (req, res) => {
   // Check if user exists with normalized email
   const userExists = await User.findOne({ email: normalizedEmail })
   if (userExists) {
-    throw new ApiError(400, "User already exists with this email")
+    throw new ApiError(400, "Përdoruesi ekziston tashmë me këtë email")
   }
 
   // Set role (admin or user)
@@ -61,14 +61,14 @@ const signup = asyncHandler(async (req, res) => {
     // Send verification email
     const verificationUrl = `${req.protocol}://${req.get("host")}/api/auth/verify/${verificationToken}`
     const message = `
-      <h1>Email Verification</h1>
-      <p>Hello ${user.emri},</p>
-      <p>Please verify your email by clicking the link below:</p>
-      <a href="${verificationUrl}" target="_blank">Verify Email</a>
+      <h1>Verifikimi i Email-it</h1>
+      <p>Përshëndetje ${user.emri},</p>
+      <p>Ju lutem verifikoni email-in tuaj duke klikuar në lidhjen më poshtë:</p>
+      <a href="${verificationUrl}" target="_blank">Verifiko Email-in</a>
     `
     await sendEmail({
       email: user.email,
-      subject: "Verify your email",
+      subject: "Verifikoni email-in tuaj",
       message,
     })
 
@@ -76,15 +76,15 @@ const signup = asyncHandler(async (req, res) => {
     try {
       await user.updateStreakOnLogin()
     } catch (error) {
-      console.error("Error updating streak on signup:", error)
+      console.error("Gabim gjatë përditësimit të streak në regjistrim:", error)
     }
 
     // Respond without token yet, user must verify first
     res
       .status(201)
-      .json(new ApiResponse(201, {}, "User registered successfully. Please check your email to verify your account."))
+      .json(new ApiResponse(201, {}, "Përdoruesi u regjistrua me sukses. Ju lutem kontrolloni email-in për të verifikuar llogarinë tuaj."))
   } else {
-    throw new ApiError(400, "Invalid user data")
+    throw new ApiError(400, "Të dhënat e përdoruesit janë jo të vlefshme")
   }
 })
 
@@ -99,25 +99,25 @@ const login = asyncHandler(async (req, res) => {
   // Find user with normalized email and include password
   const user = await User.findOne({ email: normalizedEmail }).select("+password")
   if (!user) {
-    throw new ApiError(401, "Invalid credentials")
+    throw new ApiError(401, "Kredenciale të pavlefshme")
   }
 
   // Check if user verified email
   if (!user.isVerified) {
-    throw new ApiError(401, "Please verify your email before logging in")
+    throw new ApiError(401, "Ju lutem verifikoni email-in tuaj para se të hyni")
   }
 
   // Check password
   const isMatch = await user.comparePassword(password)
   if (!isMatch) {
-    throw new ApiError(401, "Invalid credentials")
+    throw new ApiError(401, "Kredenciale të pavlefshme")
   }
 
   try {
     // Update streak on login
     await user.updateStreakOnLogin()
   } catch (error) {
-    console.error("Error updating streak on login:", error)
+    console.error("Gabim gjatë përditësimit të streak në hyrje:", error)
   }
 
   // Generate token
@@ -146,7 +146,7 @@ const login = asyncHandler(async (req, res) => {
           streakCount: user.streakCount || 0,
         },
       },
-      "Login successful",
+      "Hyrje me sukses",
     ),
   )
 })
@@ -190,7 +190,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   const user = await User.findOne({ email: normalizedEmail })
 
-  if (!user) throw new ApiError(404, "User not found")
+  if (!user) throw new ApiError(404, "Përdoruesi nuk u gjet")
 
   // Generate reset token
   const resetToken = crypto.randomBytes(32).toString("hex")
@@ -201,19 +201,19 @@ const forgotPassword = asyncHandler(async (req, res) => {
   // Send reset email
   const resetUrl = `${req.protocol}://${req.get("host")}/api/auth/reset-password/${resetToken}`
   const message = `
-    <h1>Password Reset</h1>
-    <p>Hello ${user.emri},</p>
-    <p>You requested a password reset. Click the link below to set a new password:</p>
-    <a href="${resetUrl}" target="_blank">Reset Password</a>
+    <h1>Rivendosja e Fjalëkalimit</h1>
+    <p>Përshëndetje ${user.emri},</p>
+    <p>Keni kërkuar rivendosjen e fjalëkalimit. Klikoni në lidhjen më poshtë për të vendosur një fjalëkalim të ri:</p>
+    <a href="${resetUrl}" target="_blank">Rivendos Fjalëkalimin</a>
   `
 
   await sendEmail({
     email: user.email,
-    subject: "Password Reset Request",
+    subject: "Kërkesa për rivendosjen e fjalëkalimit",
     message,
   })
 
-  res.json(new ApiResponse(200, {}, "Password reset email sent"))
+  res.json(new ApiResponse(200, {}, "Email për rivendosjen e fjalëkalimit dërguar"))
 })
 
 const resetPassword = asyncHandler(async (req, res) => {
@@ -227,27 +227,27 @@ const resetPassword = asyncHandler(async (req, res) => {
     resetPasswordExpires: { $gt: Date.now() },
   })
 
-  if (!user) throw new ApiError(400, "Invalid or expired reset token")
+  if (!user) throw new ApiError(400, "Token i pavlefshëm ose ka skaduar")
 
   user.password = newPassword
   user.resetPasswordToken = undefined
   user.resetPasswordExpires = undefined
   await user.save()
 
-  res.json(new ApiResponse(200, {}, "Password reset successfully"))
+  res.json(new ApiResponse(200, {}, "Fjalëkalimi u rivendos me sukses"))
 })
 
 const verifyEmail = asyncHandler(async (req, res) => {
   const { token } = req.params
 
   const user = await User.findOne({ verificationToken: token })
-  if (!user) throw new ApiError(400, "Invalid or expired verification token")
+  if (!user) throw new ApiError(400, "Token verifikimi i pavlefshëm ose ka skaduar")
 
   user.isVerified = true
   user.verificationToken = undefined
   await user.save()
 
-  res.json(new ApiResponse(200, {}, "Email verified successfully"))
+  res.json(new ApiResponse(200, {}, "Email-i u verifikua me sukses"))
 })
 
 module.exports = {

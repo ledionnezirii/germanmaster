@@ -85,6 +85,8 @@ const userSchema = new mongoose.Schema(
         ref: "Quiz",
       },
     ],
+    completedPronunciationPackages: [{ type: mongoose.Schema.Types.ObjectId, ref: "PronunciationPackage" }],
+
     isPaid: {
       type: Boolean,
       default: false,
