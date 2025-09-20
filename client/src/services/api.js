@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api"
+const API_BASE_URL = "/api"
 export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com"
 
 export const getAbsoluteImageUrl = (relativePath) => {
@@ -27,6 +27,12 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => {
+    if (response.config.url?.includes("completed-pronunciation-packages")) {
+      console.log("[v0] API Response interceptor - Original response.data:", response.data)
+      console.log("[v0] API Response interceptor - response.data.data:", response.data.data)
+      console.log("[v0] API Response interceptor - Final data will be:", response.data.data || response.data)
+    }
+
     return {
       ...response,
       data: response.data.data || response.data,
@@ -206,11 +212,6 @@ export const pronunciationService = {
   checkPronunciation: (packageId, wordIndex, spokenWord, userId) =>
     api.post("/pronunciation/check", { packageId, wordIndex, spokenWord, userId }),
   getUserCompletedPackages: () => {
-    console.log("[v0] Calling getUserCompletedPackages API...")
-    console.log("[v0] API_BASE_URL:", API_BASE_URL)
-    console.log("[v0] Full URL will be:", `${API_BASE_URL}/pronunciation/completed-pronunciation-packages`)
-    console.log("[v0] Current window location:", window.location.origin)
-    console.log("[v0] Expected backend URL: http://localhost:5000/api/pronunciation/completed-pronunciation-packages")
     return api.get("/pronunciation/completed-pronunciation-packages")
   },
 }
