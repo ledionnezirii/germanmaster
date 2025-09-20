@@ -1,8 +1,8 @@
 "use client"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "../context/AuthContext"
 import { authService } from "../services/api"
-import { User, Star, Trophy, Clock, BookOpen, Camera, Loader2, Flame } from "lucide-react"
+import { User, Star, Trophy, BookOpen, Camera, Loader2, Flame, Award, Crown, Gem } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 const Account = () => {
@@ -48,9 +48,40 @@ const Account = () => {
     }
   }
 
-  const lastAchievement = user?.newAchievements && user.newAchievements.length > 0
-    ? user.newAchievements[user.newAchievements.length - 1]
-    : null
+  const getAchievementIcon = (achievementName) => {
+    if (achievementName.includes("500") || achievementName.includes("1000"))
+      return <Star className="h-5 w-5 text-yellow-500" />
+    if (achievementName.includes("1500") || achievementName.includes("2000"))
+      return <Award className="h-5 w-5 text-gray-400" />
+    if (achievementName.includes("2500") || achievementName.includes("3000"))
+      return <Trophy className="h-5 w-5 text-yellow-600" />
+    if (achievementName.includes("5000") || achievementName.includes("7000"))
+      return <Crown className="h-5 w-5 text-purple-600" />
+    if (achievementName.includes("9000") || achievementName.includes("10000"))
+      return <Gem className="h-5 w-5 text-blue-600" />
+    return <Trophy className="h-5 w-5 text-yellow-600" />
+  }
+
+  const getAchievementColor = (achievementName) => {
+    if (achievementName.includes("500") || achievementName.includes("1000"))
+      return "from-yellow-50 to-yellow-100 border-yellow-200"
+    if (achievementName.includes("1500") || achievementName.includes("2000"))
+      return "from-gray-50 to-gray-100 border-gray-200"
+    if (achievementName.includes("2500") || achievementName.includes("3000"))
+      return "from-yellow-50 to-orange-100 border-orange-200"
+    if (achievementName.includes("5000") || achievementName.includes("7000"))
+      return "from-purple-50 to-purple-100 border-purple-200"
+    if (achievementName.includes("9000") || achievementName.includes("10000"))
+      return "from-blue-50 to-blue-100 border-blue-200"
+    return "from-yellow-50 to-orange-100 border-orange-200"
+  }
+
+  const lastAchievement =
+    user?.newAchievements && user.newAchievements.length > 0
+      ? user.newAchievements[user.newAchievements.length - 1]
+      : user?.achievements && user.achievements.length > 0
+        ? user.achievements[user.achievements.length - 1]
+        : null
 
   if (authLoading || !user) {
     return (
@@ -73,7 +104,7 @@ const Account = () => {
               {profilePictureDisplayUrl && !imageError ? (
                 <img
                   key={profilePictureDisplayUrl}
-                  src={profilePictureDisplayUrl}
+                  src={profilePictureDisplayUrl || "/placeholder.svg"}
                   alt="Profili"
                   className="w-full h-full object-cover"
                   onError={() => setImageError(true)}
@@ -154,15 +185,20 @@ const Account = () => {
           </div>
         </div>
 
-        {/* Last Achievement Box */}
-        <div className="bg-gradient-to-r from-yellow-50 to-orange-100 rounded-xl p-6 hover:shadow-md transition-shadow">
+        <div
+          className={`bg-gradient-to-r ${lastAchievement ? "from-purple-50 to-purple-100" : "from-gray-50 to-gray-100"} rounded-xl p-6 hover:shadow-md transition-shadow`}
+        >
           <div className="flex items-center gap-3">
-            <div className="bg-yellow-100 p-3 rounded-lg">
-              <Trophy className="h-6 w-6 text-yellow-600" />
+            <div className={`${lastAchievement ? "bg-purple-100" : "bg-gray-100"} p-3 rounded-lg`}>
+              {lastAchievement ? getAchievementIcon(lastAchievement) : <Trophy className="h-6 w-6 text-gray-400" />}
             </div>
             <div>
               <p className="text-sm text-gray-600 font-medium">Arritja e fundit</p>
-              <p className="text-2xl font-bold text-gray-900">{lastAchievement || "Asnjë arritje"}</p>
+              <p className="text-lg font-bold text-gray-900 leading-tight">
+                {lastAchievement
+                  ? lastAchievement.replace(" XP Master", "").replace(" XP Legend", "") + " XP"
+                  : "Asnjë arritje"}
+              </p>
             </div>
           </div>
         </div>
@@ -192,35 +228,51 @@ const Account = () => {
         </div>
       </div>
 
-      {/* Achievements Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Trophy className="h-5 w-5 text-yellow-600" />
+        <div className="flex items-center gap-2 mb-6">
+          <Trophy className="h-6 w-6 text-yellow-600" />
           <h2 className="text-xl font-bold text-gray-900">Arritjet</h2>
+          <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-sm font-medium ml-2">
+            {user.achievements ? user.achievements.length : 0}
+          </span>
         </div>
         {user.achievements && user.achievements.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {user.achievements.map((achievement, index) => (
               <div
                 key={index}
-                className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg p-4 border border-yellow-200"
+                className={`bg-gradient-to-r ${getAchievementColor(achievement)} rounded-xl p-5 border hover:shadow-md transition-all duration-200`}
               >
-                <div className="flex items-start gap-3">
-                  <div className="bg-yellow-100 p-2 rounded-full">
-                    <Trophy className="h-4 w-4 text-yellow-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{achievement}</h3>
+                <div className="flex items-center gap-4">
+                  <div className="bg-white p-3 rounded-full shadow-sm">{getAchievementIcon(achievement)}</div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900 text-sm leading-tight">
+                      {achievement.replace(" XP Master", "").replace(" XP Legend", "")} XP
+                    </h3>
+                    <p className="text-xs text-gray-600 mt-1">
+                      {achievement.includes("Legend")
+                        ? "Legjendë"
+                        : achievement.includes("Master")
+                          ? "Mjeshtër"
+                          : "Arritje"}
+                    </p>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-8">
-            <Trophy className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-600 mb-2">Ende nuk ka arritje</p>
-            <p className="text-sm text-gray-500">Vazhdoni të mësoni për të fituar arritjen tuaj të parë!</p>
+          <div className="text-center py-12">
+            <div className="bg-gray-50 rounded-full p-6 w-24 h-24 mx-auto mb-4 flex items-center justify-center">
+              <Trophy className="h-12 w-12 text-gray-300" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Ende nuk ka arritje</h3>
+            <p className="text-gray-600 mb-4">Vazhdoni të mësoni për të fituar arritjen tuaj të parë!</p>
+            <div className="bg-blue-50 rounded-lg p-4 max-w-md mx-auto">
+              <p className="text-sm text-blue-800">
+                <strong>Arritja e ardhshme:</strong> 500 XP Master në {500 - user.xp} XP
+              </p>
+            </div>
           </div>
         )}
       </div>
