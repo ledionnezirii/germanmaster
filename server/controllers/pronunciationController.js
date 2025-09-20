@@ -106,19 +106,31 @@ exports.checkPronunciation = async (req, res) => {
 exports.getUserCompletedPackages = async (req, res) => {
   try {
     const userId = req.user.id
-    const user = await User.findById(userId).populate("completedPronunciationPackages", "_id title level")
+    const user = await User.findById(userId).select("completedPronunciationPackages").populate({
+      path: "completedPronunciationPackages",
+      select: "_id title level",
+    })
 
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" })
     }
 
+    const completedPackages = (user.completedPronunciationPackages || []).map((pkg) => ({
+      _id: pkg._id.toString(),
+      title: pkg.title,
+      level: pkg.level,
+    }))
+
+    console.log("[v0] Backend - Found completed packages:", completedPackages)
+
     res.status(200).json({
       success: true,
       data: {
-        completedPronunciationPackages: user.completedPronunciationPackages || [],
+        completedPronunciationPackages: completedPackages,
       },
     })
   } catch (err) {
+    console.error("[v0] Backend - Error in getUserCompletedPackages:", err)
     res.status(500).json({ success: false, message: err.message })
   }
 }
