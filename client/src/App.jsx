@@ -53,11 +53,11 @@ const AppContent = () => {
               <Route path="/signup" element={<SignUp />} />
               <Route path="/forgotpassword" element={<ForgotPassword />} />
               <Route path="resetpassword" element={<ResetPassword />} />
-              <Route path="verifyemail" element={<VerifyEmail />} />
-                {/* <Route path="/challenge" element={<Challenge />} /> */}
-                <Route path="/plan" element={<Plan />} />
-                <Route path="tests" element={<Tests />} />
-                <Route path="/pronunciation" element={<Pronunciation />} />
+              <Route path="verifyemail/:token" element={<VerifyEmail />} />
+              {/* <Route path="/challenge" element={<Challenge />} /> */}
+              <Route path="/plan" element={<Plan />} />
+              <Route path="tests" element={<Tests />} />
+              <Route path="/pronunciation" element={<Pronunciation />} />
             </Routes>
           </div>
         </main>
