@@ -198,8 +198,10 @@ const forgotPassword = asyncHandler(async (req, res) => {
   user.resetPasswordExpires = Date.now() + 60 * 60 * 1000 // 1 hour
   await user.save({ validateBeforeSave: false })
 
+  console.log("RESET TOKEN:", resetToken)
+
   // Send reset email
-  const resetUrl = `${req.protocol}://${req.get("host")}/api/auth/reset-password/${resetToken}`
+const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`
   const message = `
     <h1>Rivendosja e Fjalëkalimit</h1>
     <p>Përshëndetje ${user.emri},</p>

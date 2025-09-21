@@ -32,7 +32,7 @@ const ResetPassword = () => {
     setError("")
 
     try {
-      await authService.resetPassword(token, { newPassword: password })
+await authService.resetPassword(token, password)
       setSuccess(true)
       setTimeout(() => navigate("/signin"), 3000)
     } catch (err) {
