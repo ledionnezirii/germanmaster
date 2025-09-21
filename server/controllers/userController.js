@@ -218,9 +218,10 @@ const addXp = asyncHandler(async (req, res) => {
         newAchievements,
         reason: reason || "XP added",
       },
-      newAchievements.length
-        ? `Congratulations! You earned new achievements: ${newAchievements.join(", ")}`
-        : "XP added successfully"
+     newAchievements.length
+  ? `Congratulations! You earned new achievements: ${newAchievements.map(a => a.name).join(", ")}`
+  : "XP added successfully"
+
     )
   );
 });

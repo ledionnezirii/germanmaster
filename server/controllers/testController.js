@@ -228,7 +228,7 @@ class TestController {
   }
 
   // Submit test answers and get results
-  async submitTest(req, res) {
+  submitTest = async (req, res) => {
     let responseSent = false // Track if response has been sent to prevent multiple responses
 
     try {
