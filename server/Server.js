@@ -50,7 +50,9 @@ const io = new Server(server, {
         "http://localhost:5173",
         "http://192.168.1.48:3000",
         "http://192.168.1.48:3001",
-        "http://192.168.1.48:5173"
+        "http://192.168.1.48:5173",
+        "https://17061968.netlify.app"
+        
       ],
 
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
