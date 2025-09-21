@@ -6,6 +6,9 @@ import { useAuth } from "../context/AuthContext"
 import { useSidebar } from "../context/SidebarContext"
 import { Menu, User, LogOut, ChevronDown } from "lucide-react"
 import logoImage from "../images/logoIMG.jpeg"
+import mainLogo from "../../public/gjuhagjermanelogo.png"
+
+
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth()
@@ -103,15 +106,15 @@ const Navbar = () => {
               <div className="flex items-center justify-center group-hover:bg-orange-900 rounded-4xl transition-colors">
                 {/* <span className="text-white font-bold text-lg">G</span> */}
                 <img 
-                src={logoImage}
+                src={mainLogo}
                 width={55}
                 height={55}
-                className="rounded-4xl cursor-pointer"  
+                className="rounded-4xl cursor-pointer p-0 m-0"  
                 alt="logo" />
               </div>
               <div className="flex flex-col items-start">
                 <span className="text-xl font-bold text-white group-hover:text-orange-300 transition-colors">
-                  deutschshqip
+                  gjuhagjermane
                 </span>
                 <span className="text-xs text-orange-200 hidden sm:block">Gjermanisht për Shqiptarët</span>
               </div>

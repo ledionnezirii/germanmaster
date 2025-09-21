@@ -50,7 +50,6 @@ const Sidebar = () => {
       label: "Kaloni në Premium", // Upgrade to Premium
       path: "/premium",
       requireAuth: false,
-      description: "Përfitoni më shumë me veçori ekskluzive!", // Get more with exclusive features!
     },
   ]
 
@@ -122,7 +121,7 @@ const Sidebar = () => {
                   <Link
                     to={item.path}
                     onClick={item.action || handleLinkClick}
-                    className={`flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${isActive ? "bg-green-400/20 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"} ${isCollapsed ? "justify-center" : "justify-start"}`}
+                    className={`flex items-center text-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${isActive ? "bg-green-400/20 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"} ${isCollapsed ? "justify-center" : "justify-start"}`}
                     title={isCollapsed ? item.label : ""}
                     aria-current={isActive ? "page" : undefined}
                   >
