@@ -153,7 +153,7 @@ app.use(
           "http://192.168.1.48:3000",
           "http://192.168.1.48:3001",
           "http://192.168.1.48:5173",
-          "https://3651706.netlify.app"
+          "https://17061968.netlify.app"
         ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
@@ -173,7 +173,7 @@ app.use("/uploads", (req, res, next) => {
   const allowedOrigins =
     process.env.NODE_ENV === "production"
       ? [process.env.FRONTEND_URL]
-      : ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"]
+      : ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173","https://17061968.netlify.app"]
   const origin = req.headers.origin
   if (allowedOrigins.includes(origin)) {
     res.header("Access-Control-Allow-Origin", origin)
