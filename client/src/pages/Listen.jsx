@@ -12,7 +12,7 @@ const Listen = () => {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedLevel, setSelectedLevel] = useState("all")
-  const [userProgress, setUserProgress] = useState({})
+  const [userProgress, setUserProgress] = useState({ completedTests: new Set() })
   const [failedAttempts, setFailedAttempts] = useState(0) // State for failed attempts
   const [showFullText, setShowFullText] = useState(false) // State to show full text
 
@@ -21,7 +21,6 @@ const Listen = () => {
     fetchUserProgress()
   }, [selectedLevel])
 
-  // Reset failed attempts and showFullText when a new test is selected
   useEffect(() => {
     if (selectedTest) {
       setFailedAttempts(0)
@@ -126,7 +125,7 @@ const Listen = () => {
       if (completedTests.size > 0) {
         setUserProgress((prev) => ({
           ...prev,
-          completedTests: new Set([...prev.completedTests, ...completedTests]),
+          completedTests: new Set([...(prev.completedTests || []), ...completedTests]),
         }))
       }
     } catch (error) {
@@ -167,7 +166,7 @@ const Listen = () => {
         console.log("Test completed successfully, updating local state")
         setUserProgress((prev) => ({
           ...prev,
-          completedTests: new Set([...prev.completedTests, selectedTest._id]),
+          completedTests: new Set([...(prev.completedTests || []), selectedTest._id]),
         }))
         setTimeout(() => {
           console.log("Refreshing progress data after completion")
@@ -271,7 +270,6 @@ const Listen = () => {
                           const end = textarea.selectionEnd
                           const newValue = userAnswer.substring(0, start) + char + userAnswer.substring(end)
                           setUserAnswer(newValue)
-                          // Set cursor position after the inserted character
                           setTimeout(() => {
                             textarea.focus()
                             textarea.setSelectionRange(start + 1, start + 1)
@@ -288,7 +286,7 @@ const Listen = () => {
                     value={userAnswer}
                     onChange={(e) => setUserAnswer(e.target.value)}
                     className="w-full p-3 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base"
-                    rows="10" // Increased from 8 to 10 for more space on mobile
+                    rows="10"
                     placeholder="Shkruani tekstin gjermanisht që dëgjuat..."
                   />
                   <button
