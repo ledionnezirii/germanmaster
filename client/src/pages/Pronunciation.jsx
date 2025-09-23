@@ -1,31 +1,19 @@
+"use client"
 import { useState, useEffect } from "react"
 import {
   Mic,
   MicOff,
   Volume2,
   Check,
-  Star,
-  RotateCcw,
   ArrowLeft,
   ArrowRight,
   Filter,
   ChevronLeft,
   ChevronRight,
-  BookOpen,
   Target,
-  CheckCircle,
-  Zap,
-  Trophy,
-  Languages,
-  Play,
-  Award,
-  TrendingUp,
-  GraduationCap,
-  BarChart3,
-  Clock,
+  X,
 } from "lucide-react"
 import { pronunciationService } from "../services/api"
-
 
 const PronunciationPractice = () => {
   const [packages, setPackages] = useState([])
@@ -145,7 +133,7 @@ const PronunciationPractice = () => {
 
       recognition.onerror = () => {
         setIsListening(false)
-        setFeedback("Error with speech recognition. Please try again.")
+        setFeedback("Gabim me njohjen e zërit. Ju lutem provoni përsëri.")
       }
 
       recognition.onend = () => {
@@ -176,15 +164,15 @@ const PronunciationPractice = () => {
       }))
 
       if (alreadyCompleted) {
-        setFeedback("Already completed! No additional XP.")
+        setFeedback("Tashmë e përfunduar! Nuk ka XP shtesë.")
       } else if (correct) {
-        setFeedback(`Excellent! +${xpAdded} XP`)
+        setFeedback(`Shkëlqyeshëm! +${xpAdded} XP`)
       } else {
-        setFeedback("Try again! Listen to the pronunciation.")
+        setFeedback("Provoni përsëri! Dëgjoni shqiptimin.")
       }
     } catch (error) {
       console.error("Error checking pronunciation:", error)
-      setFeedback("Error checking pronunciation. Please try again.")
+      setFeedback("Gabim në kontrollimin e shqiptimit. Ju lutem provoni përsëri.")
     }
   }
 
@@ -235,6 +223,31 @@ const PronunciationPractice = () => {
     resetSession()
   }
 
+  const resetTest = () => {
+    setSelectedPackage(null)
+    resetSession()
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const getLevelColor = (level) => {
+    switch (level) {
+      case "A1":
+        return "bg-teal-100 text-teal-800 border-teal-200"
+      case "A2":
+        return "bg-teal-200 text-teal-800 border-teal-300"
+      case "B1":
+        return "bg-teal-300 text-teal-800 border-teal-400"
+      case "B2":
+        return "bg-teal-400 text-teal-800 border-teal-500"
+      case "C1":
+        return "bg-teal-500 text-white border-teal-600"
+      case "C2":
+        return "bg-teal-600 text-white border-teal-700"
+      default:
+        return "bg-gray-200 text-gray-800 border-gray-300"
+    }
+  }
+
   const uniqueLevels = Array.from(new Set(packages.map((pkg) => pkg.level))).sort()
   const totalPages = Math.ceil(filteredPackages.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
@@ -261,14 +274,14 @@ const PronunciationPractice = () => {
         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
           const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i
           if (pageNum > totalPages) return null
-          
+
           return (
             <button
               key={pageNum}
               onClick={() => setCurrentPage(pageNum)}
               className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
                 currentPage === pageNum
-                  ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                  ? "bg-teal-600 text-white border-teal-600 shadow-sm"
                   : "border-slate-300 text-slate-600 hover:bg-slate-50 hover:border-slate-400"
               }`}
               data-testid={`pagination-page-${pageNum}`}
@@ -301,467 +314,291 @@ const PronunciationPractice = () => {
   const passThreshold = selectedPackage ? Math.ceil(selectedPackage.words.length * 0.7) : 0
   const hasPassed = sessionStats.completedWords.length >= passThreshold
 
-  // Loading State
-  if (loading) {
+  // Practice Interface - Similar to Listen component structure
+  if (selectedPackage) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center mb-8">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600 font-medium">Loading pronunciation packages...</p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm animate-pulse">
-              <div className="h-6 bg-slate-200 rounded w-3/4 mb-4"></div>
-              <div className="flex gap-2 mb-4">
-                <div className="h-5 bg-slate-200 rounded-full w-16"></div>
-                <div className="h-5 bg-slate-200 rounded w-12"></div>
-              </div>
-              <div className="h-2 bg-slate-200 rounded w-full mb-1"></div>
-              <div className="h-2 bg-slate-200 rounded w-1/4 mb-4"></div>
-              <div className="h-10 bg-slate-200 rounded w-full"></div>
+      <div className="h-[700px] bg-white p-2 sm:p-4 rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 h-full">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-6">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <h1 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{selectedPackage.title}</h1>
+              <button
+                onClick={resetTest}
+                className="text-gray-600 hover:text-gray-900 p-1"
+                aria-label="Kthehu te Paketat"
+              >
+                <X className="h-5 w-5 sm:h-6 sm:w-6" />
+              </button>
             </div>
-          ))}
+            <div className="space-y-4 sm:space-y-6">
+              {/* Progress Section */}
+              <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Target className="w-5 h-5 text-teal-600" />
+                      <span className="font-medium text-gray-700 text-sm sm:text-base">
+                        Progresi: {sessionStats.completedWords.length}/{selectedPackage.words.length}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-gray-600 font-medium text-sm sm:text-base">
+                    {Math.round(progressPercentage)}% E përfunduar
+                  </div>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div
+                    className="bg-teal-600 h-3 rounded-full transition-all duration-500"
+                    style={{ width: `${progressPercentage}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Current Word Display */}
+              {selectedPackage.words[currentWordIndex] && (
+                <div className="text-center space-y-4">
+                  <h2 className="text-3xl sm:text-5xl font-bold text-gray-900">
+                    {selectedPackage.words[currentWordIndex].word}
+                  </h2>
+                  <p className="text-lg sm:text-xl text-gray-600 font-medium">
+                    [{selectedPackage.words[currentWordIndex].pronunciation}]
+                  </p>
+                  <p className="text-base sm:text-lg text-gray-600">
+                    {selectedPackage.words[currentWordIndex].translation}
+                  </p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex justify-center gap-4 sm:gap-6">
+                <button
+                  onClick={() => playPronunciation(selectedPackage.words[currentWordIndex]?.word)}
+                  className="w-12 h-12 sm:w-16 sm:h-16 bg-teal-600 hover:bg-teal-700 text-white rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg"
+                >
+                  <Volume2 className="w-5 h-5 sm:w-6 sm:w-6" />
+                </button>
+
+                <button
+                  onClick={startListening}
+                  disabled={isListening || sessionStats.completedWords.includes(currentWordIndex)}
+                  className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg ${
+                    isListening
+                      ? "bg-red-500 hover:bg-red-600 text-white"
+                      : sessionStats.completedWords.includes(currentWordIndex)
+                        ? "bg-green-500 text-white cursor-default"
+                        : "bg-green-500 hover:bg-green-600 text-white"
+                  }`}
+                >
+                  {sessionStats.completedWords.includes(currentWordIndex) ? (
+                    <Check className="w-6 h-6 sm:w-7 sm:h-7" />
+                  ) : isListening ? (
+                    <MicOff className="w-6 h-6 sm:w-7 sm:h-7" />
+                  ) : (
+                    <Mic className="w-6 h-6 sm:w-7 sm:h-7" />
+                  )}
+                </button>
+              </div>
+
+              {/* Feedback */}
+              {feedback && (
+                <div
+                  className={`p-3 sm:p-4 rounded-lg text-center font-medium ${
+                    feedback.includes("Shkëlqyeshëm") || feedback.includes("correct")
+                      ? "bg-green-50 border border-green-200 text-green-800"
+                      : feedback.includes("Tashmë")
+                        ? "bg-amber-50 border border-amber-200 text-amber-800"
+                        : "bg-red-50 border border-red-200 text-red-800"
+                  }`}
+                >
+                  <p className="text-sm sm:text-base">{feedback}</p>
+                </div>
+              )}
+
+              {/* Navigation Buttons */}
+              <div className="flex justify-between">
+                <button
+                  onClick={prevWord}
+                  disabled={currentWordIndex === 0}
+                  className={`flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-colors text-sm sm:text-base ${
+                    currentWordIndex === 0
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  <ArrowLeft className="w-4 h-4" />E mëparshme
+                </button>
+
+                <button
+                  onClick={nextWord}
+                  className="flex items-center gap-2 bg-teal-600 text-white px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-medium hover:bg-teal-700 transition-colors text-sm sm:text-base"
+                >
+                  {currentWordIndex === selectedPackage.words.length - 1 ? "Përfundo" : "Tjetër"}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )
   }
 
-  // Package Selection Screen
-  if (!selectedPackage) {
+  // Loading State
+  if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Professional Header Section */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center mb-4">
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <Languages className="w-8 h-8 text-blue-600" />
-            </div>
+      <div className="h-min-screen p-4 flex flex-col">
+        <div className="max-w-6xl mx-auto w-full">
+          <div className="text-center mb-8">
+            <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">Duke ngarkuar paketat e shqiptimit...</p>
           </div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-4">Pronunciation Practice</h1>
-          <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-            Master German pronunciation with interactive practice sessions. Choose a package to begin your learning journey.
-          </p>
-        </div>
 
-        {/* Stats Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <Target className="w-6 h-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-3xl font-bold text-slate-900">{packages.length}</p>
-                <p className="text-slate-600 font-medium">Available Packages</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="p-3 bg-emerald-100 rounded-lg">
-                <CheckCircle className="w-6 h-6 text-emerald-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-3xl font-bold text-slate-900">{completedPackages.size}</p>
-                <p className="text-slate-600 font-medium">Completed</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="p-3 bg-amber-100 rounded-lg">
-                <Zap className="w-6 h-6 text-amber-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-3xl font-bold text-slate-900">1,240</p>
-                <p className="text-slate-600 font-medium">Total XP Earned</p>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="bg-gray-100 animate-pulse h-32 rounded-lg"></div>
+            ))}
           </div>
         </div>
+      </div>
+    )
+  }
+
+  // Package Selection Screen - Similar to Listen component structure
+  return (
+    <div className="h-min-screen p-4 flex flex-col">
+      <div className="max-w-6xl mx-auto w-full">
+        {/* Header */}
+        <header className="mb-4 flex-shrink-0">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Praktikë Shqiptimi</h1>
+            <p className="text-gray-600">Përmirësoni aftësitë tuaja të shqiptimit në gjermanisht me ushtrime audio</p>
+            {/* Debug info */}
+            <p className="text-xs text-gray-400 mt-2">Paketa të përfunduara: {completedPackages.size}</p>
+          </div>
+        </header>
 
         {/* Level Filter */}
-        <div className="flex flex-wrap justify-center items-center gap-4 mb-8">
-          <div className="flex items-center gap-3 text-slate-700">
-            <Filter className="w-5 h-5" />
-            <span className="font-medium">Filter by Level:</span>
+        <div className="bg-gray-50 p-3 rounded-lg mb-4 border border-gray-200 flex-shrink-0">
+          <div className="flex items-center gap-2 mb-2">
+            <Filter size={16} className="text-teal-600" />
+            <h2 className="text-sm font-medium text-gray-800">Filtro sipas Nivelit</h2>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setSelectedLevel("all")}
-              className={`px-6 py-2 rounded-full font-medium transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
                 selectedLevel === "all"
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 hover:border-slate-300"
+                  ? "bg-teal-600 text-white border-teal-700"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200"
               }`}
-              data-testid="filter-all"
             >
-              All Levels
+              Të gjitha Nivelet
+              {selectedLevel === "all" && (
+                <span className="ml-1 inline-flex items-center justify-center w-4 h-4 bg-white/50 rounded-full text-xs">
+                  ✓
+                </span>
+              )}
             </button>
             {uniqueLevels.map((level) => (
               <button
                 key={level}
                 onClick={() => setSelectedLevel(level)}
-                className={`px-6 py-2 rounded-full font-medium transition-all ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
                   selectedLevel === level
-                    ? "bg-blue-600 text-white shadow-md"
-                    : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 hover:border-slate-300"
+                    ? getLevelColor(level)
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200"
                 }`}
-                data-testid={`filter-${level.toLowerCase()}`}
               >
                 {level}
+                {selectedLevel === level && (
+                  <span className="ml-1 inline-flex items-center justify-center w-4 h-4 bg-white/50 rounded-full text-xs">
+                    ✓
+                  </span>
+                )}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Package Grid */}
-        {!Array.isArray(filteredPackages) || filteredPackages.length === 0 ? (
-          <div className="bg-white rounded-xl p-8 text-center shadow-sm border border-slate-200">
-            <div className="p-4 bg-slate-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <BookOpen className="w-8 h-8 text-slate-500" />
-            </div>
-            <p className="text-slate-600 text-lg font-medium">
-              {!Array.isArray(filteredPackages)
-                ? "Error loading packages. Please refresh the page."
-                : selectedLevel === "all"
-                ? "No pronunciation packages available."
-                : `No packages found for level "${selectedLevel}".`}
-            </p>
+        {/* Packages Grid */}
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 flex-1 overflow-y-auto">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-gray-100 animate-pulse h-32 rounded-lg"></div>
+            ))}
           </div>
         ) : (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {currentPackages.map((pkg) => {
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 flex-1 overflow-y-auto">
+            {currentPackages.length > 0 ? (
+              currentPackages.map((pkg) => {
                 const isCompleted = completedPackages.has(pkg._id.toString())
                 const wordCount = pkg.words?.length || 0
-                const totalXP = pkg.words?.reduce((sum, word) => sum + (word.xp || 5), 0) || 0
-                
                 return (
                   <div
                     key={pkg._id}
+                    className={`p-3 rounded-lg shadow-sm border transition-all cursor-pointer overflow-hidden relative group h-fit ${
+                      isCompleted
+                        ? "bg-gradient-to-br from-green-50 to-emerald-50 border-green-300 hover:border-green-400 hover:shadow-lg"
+                        : "bg-white border-gray-200 hover:border-teal-300 hover:shadow-md"
+                    }`}
                     onClick={() => selectPackage(pkg)}
-                    className="group cursor-pointer bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:border-blue-200 transition-all duration-300 relative"
-                    data-testid={`package-card-${pkg._id}`}
                   >
-                    {isCompleted && (
-                      <div className="absolute top-4 right-4">
-                        <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center shadow-md">
-                          <Check className="w-5 h-5 text-white" />
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className="mb-6">
-                      <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-blue-600 transition-colors">
+                    {/* Level Badge */}
+                    <div
+                      className={`absolute top-2 right-2 ${getLevelColor(pkg.level)} px-1.5 py-0.5 rounded text-xs font-medium`}
+                    >
+                      {pkg.level}
+                    </div>
+                    {/* Background Icon */}
+                    <Mic
+                      className={`absolute -bottom-4 -right-4 w-16 h-16 ${
+                        isCompleted ? "text-green-200" : "text-gray-200"
+                      }`}
+                    />
+                    <div className="relative z-10">
+                      <h3
+                        className={`text-sm font-semibold mb-1 pr-12 truncate ${
+                          isCompleted
+                            ? "text-green-800 group-hover:text-green-900"
+                            : "text-gray-800 group-hover:text-teal-700"
+                        }`}
+                      >
                         {pkg.title}
                       </h3>
-                      <div className="flex items-center gap-3 mb-4">
-                        <span className={`px-3 py-1 text-sm font-medium rounded-full ${
-                          pkg.level === 'Beginner' ? 'bg-green-100 text-green-700' :
-                          pkg.level === 'Intermediate' ? 'bg-blue-100 text-blue-700' :
-                          'bg-purple-100 text-purple-700'
-                        }`}>
-                          {pkg.level}
+                      <p className={`text-xs line-clamp-2 ${isCompleted ? "text-green-700" : "text-gray-600"}`}>
+                        {wordCount} fjalë për praktikë shqiptimi
+                      </p>
+                      <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center">
+                        <span className={`text-xs ${isCompleted ? "text-green-600" : "text-gray-500"}`}>
+                          Gjermanisht • Ushtrim Shqiptimi
                         </span>
-                        <div className="flex items-center gap-1 text-slate-500">
-                          <BookOpen className="w-4 h-4" />
-                          <span className="text-sm font-medium">{wordCount} words</span>
-                        </div>
+                        <span
+                          className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                            isCompleted ? "bg-green-200 text-green-800" : "bg-teal-100 text-teal-800"
+                          }`}
+                        >
+                          {isCompleted ? "Përfunduar" : "Praktiko"}
+                        </span>
                       </div>
                     </div>
-                    
-                    <div className="mb-6">
-                      <div className="flex justify-between text-sm text-slate-600 mb-2">
-                        <span className="font-medium">Progress</span>
-                        <span className="font-medium">{isCompleted ? '100%' : '0%'}</span>
-                      </div>
-                      <div className="w-full bg-slate-200 rounded-full h-3">
-                        <div className={`h-3 rounded-full transition-all duration-500 ${
-                          isCompleted ? 'bg-emerald-500 w-full' : 'bg-slate-400 w-0'
-                        }`}></div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center gap-2">
-                        <Star className="w-5 h-5 text-amber-500" />
-                        <span className="font-bold text-slate-700">{totalXP} XP</span>
-                      </div>
-                      {isCompleted && (
-                        <div className="flex items-center gap-1 text-emerald-600">
-                          <Award className="w-4 h-4" />
-                          <span className="text-sm font-medium">Complete</span>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <button className={`w-full py-3 rounded-lg font-medium transition-all duration-200 ${
-                      isCompleted 
-                        ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'
-                        : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg'
-                    }`}>
-                      {isCompleted ? 'Review Package' : 'Start Practice'}
-                    </button>
                   </div>
                 )
-              })}
-            </div>
-
-            <Pagination />
-          </>
-        )}
-      </div>
-    )
-  }
-
-  // Results Screen
-  if (showResults) {
-    return (
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Results Header */}
-        <div className="text-center mb-12">
-          <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-            {hasPassed ? <Trophy className="w-12 h-12 text-white" /> : <TrendingUp className="w-12 h-12 text-white" />}
-          </div>
-          <h2 className="text-4xl font-bold text-slate-900 mb-4">
-            {hasPassed ? "Excellent Work!" : "Keep Practicing!"}
-          </h2>
-          <p className="text-xl text-slate-600">
-            {hasPassed
-              ? "Congratulations on completing this pronunciation practice session"
-              : `You're making great progress. Need ${passThreshold} correct to pass this level.`}
-          </p>
-        </div>
-
-        {/* Results Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-8 border border-slate-200 shadow-sm text-center">
-            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-8 h-8 text-emerald-600" />
-            </div>
-            <p className="text-4xl font-bold text-emerald-600 mb-2">{sessionStats.correctAnswers}</p>
-            <p className="text-slate-600 font-medium">Words Completed</p>
-          </div>
-          
-          <div className="bg-white rounded-xl p-8 border border-slate-200 shadow-sm text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Zap className="w-8 h-8 text-blue-600" />
-            </div>
-            <p className="text-4xl font-bold text-blue-600 mb-2">{sessionStats.totalXP}</p>
-            <p className="text-slate-600 font-medium">XP Earned</p>
-          </div>
-          
-          <div className="bg-white rounded-xl p-8 border border-slate-200 shadow-sm text-center">
-            <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <BarChart3 className="w-8 h-8 text-amber-600" />
-            </div>
-            <p className="text-4xl font-bold text-amber-600 mb-2">
-              {selectedPackage ? Math.round((sessionStats.correctAnswers / selectedPackage.words.length) * 100) : 0}%
-            </p>
-            <p className="text-slate-600 font-medium">Accuracy Rate</p>
-          </div>
-          
-          <div className="bg-white rounded-xl p-8 border border-slate-200 shadow-sm text-center">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <GraduationCap className="w-8 h-8 text-purple-600" />
-            </div>
-            <p className="text-4xl font-bold text-purple-600 mb-2">
-              {hasPassed ? "Passed" : "In Progress"}
-            </p>
-            <p className="text-slate-600 font-medium">Status</p>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            onClick={resetSession}
-            className="flex items-center justify-center gap-2 bg-white border border-slate-300 text-slate-700 px-8 py-3 rounded-lg font-medium hover:bg-slate-50 hover:border-slate-400 transition-colors"
-            data-testid="button-try-again"
-          >
-            <RotateCcw className="w-5 h-5" />
-            Practice Again
-          </button>
-          
-          <button
-            onClick={() => setSelectedPackage(null)}
-            className="flex items-center justify-center gap-2 bg-blue-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-md"
-            data-testid="button-back-to-packages"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Packages
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  // Practice Interface
-  if (!selectedPackage) return null
-  const currentWord = selectedPackage.words[currentWordIndex]
-  const isWordCompleted = sessionStats.completedWords.includes(currentWordIndex)
-
-  return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header Navigation */}
-      <div className="flex items-center justify-between mb-8">
-        <button
-          onClick={() => setSelectedPackage(null)}
-          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors group"
-          data-testid="button-back"
-        >
-          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          <span className="font-medium">Back to Packages</span>
-        </button>
-
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-slate-900">{selectedPackage.title}</h1>
-          <p className="text-slate-600">Practice Session</p>
-        </div>
-
-        <div className="flex items-center gap-2 bg-amber-50 px-4 py-2 rounded-lg border border-amber-200">
-          <Star className="w-5 h-5 text-amber-600" />
-          <span className="font-bold text-amber-700">{sessionStats.totalXP} XP</span>
-        </div>
-      </div>
-
-      {/* Progress Section */}
-      <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-blue-600" />
-              <span className="font-medium text-slate-700">
-                Progress: {sessionStats.completedWords.length}/{selectedPackage.words.length}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-amber-600" />
-              <span className="font-medium text-slate-700">Need {passThreshold} to pass</span>
-            </div>
-          </div>
-          <div className="text-slate-600 font-medium">
-            {Math.round(progressPercentage)}% Complete
-          </div>
-        </div>
-        <div className="w-full bg-slate-200 rounded-full h-3">
-          <div
-            className="bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-500"
-            style={{ width: `${progressPercentage}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Word Navigation */}
-      <div className="grid grid-cols-8 sm:grid-cols-12 lg:grid-cols-16 gap-2 mb-8">
-        {selectedPackage.words.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentWordIndex(index)}
-            className={`aspect-square rounded-lg text-sm font-bold transition-all flex items-center justify-center ${
-              sessionStats.completedWords.includes(index)
-                ? "bg-emerald-500 text-white shadow-md hover:bg-emerald-600"
-                : currentWordIndex === index
-                ? "bg-blue-600 text-white shadow-md ring-2 ring-blue-200"
-                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:border-slate-300"
-            }`}
-            data-testid={`word-${index}`}
-          >
-            {sessionStats.completedWords.includes(index) ? <Check size={14} /> : index + 1}
-          </button>
-        ))}
-      </div>
-
-      {/* Main Practice Card */}
-      <div className="bg-white rounded-xl p-8 shadow-lg border border-slate-200">
-        {/* Word Display */}
-        <div className="text-center mb-8">
-          <h2 className="text-5xl font-bold text-slate-900 mb-4">
-            {currentWord.word}
-          </h2>
-          <p className="text-xl text-slate-600 mb-2 font-medium">
-            [{currentWord.pronunciation}]
-          </p>
-          <p className="text-lg text-slate-600">
-            {currentWord.translation}
-          </p>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex justify-center gap-6 mb-8">
-          <button
-            onClick={() => playPronunciation(currentWord.word)}
-            className="w-16 h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg"
-            data-testid="button-play-pronunciation"
-          >
-            <Volume2 size={24} />
-          </button>
-
-          <button
-            onClick={startListening}
-            disabled={isListening || isWordCompleted}
-            className={`w-20 h-20 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg ${
-              isListening
-                ? "bg-red-500 hover:bg-red-600 text-white"
-                : isWordCompleted
-                ? "bg-emerald-500 text-white cursor-default"
-                : "bg-green-500 hover:bg-green-600 text-white"
-            }`}
-            data-testid="button-microphone"
-          >
-            {isWordCompleted ? (
-              <Check size={28} />
-            ) : isListening ? (
-              <MicOff size={28} />
+              })
             ) : (
-              <Mic size={28} />
+              <div className="col-span-full text-center py-8">
+                <div className="bg-gray-50 rounded-lg p-6 inline-block">
+                  <Mic className="text-teal-600 w-10 h-10 mx-auto mb-3" />
+                  <h3 className="text-sm font-medium text-gray-800 mb-2">Nuk u gjetën paketa</h3>
+                  <p className="text-gray-500 text-xs">
+                    Provoni të zgjidhni nivele të ndryshme ose kontrolloni më vonë
+                  </p>
+                </div>
+              </div>
             )}
-          </button>
-        </div>
-
-        {/* Feedback */}
-        {feedback && (
-          <div className={`p-4 rounded-lg text-center font-medium mb-6 ${
-            feedback.includes("Excellent") || feedback.includes("correct")
-              ? "bg-emerald-100 text-emerald-800 border border-emerald-200"
-              : feedback.includes("Already completed")
-              ? "bg-amber-100 text-amber-800 border border-amber-200"
-              : "bg-red-100 text-red-800 border border-red-200"
-          }`}>
-            {feedback}
           </div>
         )}
 
-        {/* Navigation Buttons */}
-        <div className="flex justify-between">
-          <button
-            onClick={prevWord}
-            disabled={currentWordIndex === 0}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
-              currentWordIndex === 0
-                ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-            }`}
-            data-testid="button-prev-word"
-          >
-            <ArrowLeft size={16} />
-            Previous
-          </button>
-
-          <button
-            onClick={nextWord}
-            className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-            data-testid="button-next-word"
-          >
-            {currentWordIndex === selectedPackage.words.length - 1 ? "Finish" : "Next"}
-            <ArrowRight size={16} />
-          </button>
-        </div>
+        <Pagination />
       </div>
     </div>
   )
