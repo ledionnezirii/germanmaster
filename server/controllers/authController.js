@@ -58,8 +58,7 @@ const signup = asyncHandler(async (req, res) => {
     user.verificationTokenExpires = Date.now() + 60 * 60 * 1000 // 1 hour
     await user.save({ validateBeforeSave: false })
 
-    // Send verification email
-    const verificationUrl = `${req.protocol}://${req.get("host")}/api/auth/verify/${verificationToken}`
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`
     const message = `
       <h1>Verifikimi i Email-it</h1>
       <p>Përshëndetje ${user.emri},</p>
@@ -82,7 +81,13 @@ const signup = asyncHandler(async (req, res) => {
     // Respond without token yet, user must verify first
     res
       .status(201)
-      .json(new ApiResponse(201, {}, "Përdoruesi u regjistrua me sukses. Ju lutem kontrolloni email-in për të verifikuar llogarinë tuaj."))
+      .json(
+        new ApiResponse(
+          201,
+          {},
+          "Përdoruesi u regjistrua me sukses. Ju lutem kontrolloni email-in për të verifikuar llogarinë tuaj.",
+        ),
+      )
   } else {
     throw new ApiError(400, "Të dhënat e përdoruesit janë jo të vlefshme")
   }
@@ -201,7 +206,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
   console.log("RESET TOKEN:", resetToken)
 
   // Send reset email
-const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`
+  const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`
   const message = `
     <h1>Rivendosja e Fjalëkalimit</h1>
     <p>Përshëndetje ${user.emri},</p>
