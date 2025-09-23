@@ -32,6 +32,7 @@ const leaderboardRoutes = require("./routes/leaderboardRoutes")
 const planRoutes = require("./routes/planRoutes")
 const testRoutes = require("./routes/testRoutes");
 const pronunciationRoutes = require('./routes/pronunciationRoutes')
+const paymentRoutes = require("./routes/paymentRoutes");
 
 const { errorHandler, notFound } = require("./middleware/errorMiddleware")
 const { requestLogger } = require("./middleware/loggerMiddleware")
@@ -215,6 +216,7 @@ app.use("/api/leaderboard", leaderboardRoutes)
 app.use("/api/plan", planRoutes)
 app.use("/api/tests",testRoutes)
 app.use("/api/pronunciation",pronunciationRoutes)
+app.use("/api/payments",paymentRoutes)
 
 app.use(notFound)
 app.use(errorHandler)
