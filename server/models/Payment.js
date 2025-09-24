@@ -16,6 +16,11 @@ const paymentSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    subscriptionType: {
+      type: String,
+      enum: ["1_month", "3_months", "1_year"],
+      required: true
+    },
     status: {
       type: String,
       enum: ["pending", "success", "cancelled"],

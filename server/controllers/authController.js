@@ -13,6 +13,12 @@ const getBaseUrl = (req) => {
   return `${protocol}://${host}`
 }
 
+// Helper to get full profile picture URL
+const getProfilePictureUrl = (req, user) => {
+  if (!user.profilePicture) return null
+  return `${getBaseUrl(req)}${user.profilePicture}`
+}
+
 const normalizeGmailAddress = (email) => {
   if (!email) return email
 
@@ -26,7 +32,7 @@ const normalizeGmailAddress = (email) => {
   return email.toLowerCase()
 }
 
-// @desc    Register user
+// @desc    Register user with 2-day free trial
 // @route   POST /api/auth/signup
 // @access  Public
 const signup = asyncHandler(async (req, res) => {
@@ -43,12 +49,19 @@ const signup = asyncHandler(async (req, res) => {
   // Set role (admin or user)
   const role = normalizedEmail === process.env.ADMIN_EMAIL ? "admin" : "user"
 
+  // Set free trial start and expiry (2 days from now)
+  const now = new Date()
+  const trialExpiry = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000) // 2 days later
+
   const user = await User.create({
     emri,
     mbiemri,
     email: normalizedEmail,
     password,
     role,
+    subscriptionType: "free_trial",
+    trialStartedAt: now,
+    subscriptionExpiresAt: trialExpiry,
   })
 
   if (user) {
@@ -93,7 +106,7 @@ const signup = asyncHandler(async (req, res) => {
   }
 })
 
-// @desc    Authenticate user (Login)
+// @desc    Authenticate user (Login) and return subscription info
 // @route   POST /api/auth/login
 // @access  Public
 const login = asyncHandler(async (req, res) => {
@@ -129,9 +142,17 @@ const login = asyncHandler(async (req, res) => {
   const token = generateToken(user._id, user.emri)
 
   // Construct full profile picture URL for login response
-  let fullProfilePictureUrl = null
-  if (user.profilePicture) {
-    fullProfilePictureUrl = `${getBaseUrl(req)}${user.profilePicture}`
+  const fullProfilePictureUrl = getProfilePictureUrl(req, user)
+
+  // Calculate subscription status info
+  const now = new Date()
+  const isSubscriptionActive =
+    user.subscriptionExpiresAt && user.subscriptionExpiresAt > now
+
+  const subscriptionStatus = {
+    active: isSubscriptionActive,
+    type: user.subscriptionType,
+    expiresAt: user.subscriptionExpiresAt,
   }
 
   res.json(
@@ -149,6 +170,7 @@ const login = asyncHandler(async (req, res) => {
           level: user.level,
           profilePicture: fullProfilePictureUrl,
           streakCount: user.streakCount || 0,
+          subscription: subscriptionStatus,
         },
       },
       "Hyrje me sukses",
@@ -199,7 +221,10 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   // Generate reset token
   const resetToken = crypto.randomBytes(32).toString("hex")
-  user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex")
+  user.resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex")
   user.resetPasswordExpires = Date.now() + 60 * 60 * 1000 // 1 hour
   await user.save({ validateBeforeSave: false })
 

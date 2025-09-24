@@ -4,6 +4,8 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import webLogo from "../images/logoIMG.jpeg"
+import { LockIcon, Mail, User } from 'lucide-react';
+
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -86,7 +88,7 @@ const SignUp = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-5">
+    <div className="flex items-center justify-center p-5">
       <div className="bg-white/95  backdrop-blur-lg rounded-3xl p-10 w-full max-w-md shadow-2xl border border-white/20">
         <div className="text-center mb-8">
           <img
@@ -110,7 +112,6 @@ const SignUp = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Emri</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl">👤</span>
                 <input
                   name="firstName"
                   type="text"
@@ -118,8 +119,7 @@ const SignUp = () => {
                   value={formData.firstName}
                   onChange={handleChange}
                   placeholder="Emri"
-                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-base bg-gray-50 outline-none transition-all duration-200 focus:border-amber-600 focus:ring-4 focus:ring-amber-600/10"
-                />
+ className="w-full p-3 border border-gray-300 rounded-lg text-base bg-gray-50 outline-none transition-all duration-200 focus:border-amber-600 focus:ring-4 focus:ring-amber-600/10"                />
               </div>
             </div>
 
@@ -140,7 +140,6 @@ const SignUp = () => {
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Adresa e email-it</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl">📧</span>
               <input
                 name="email"
                 type="email"
@@ -148,15 +147,13 @@ const SignUp = () => {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Shkruani email-in tuaj"
-                className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-base bg-gray-50 outline-none transition-all duration-200 focus:border-amber-600 focus:ring-4 focus:ring-amber-600/10"
-              />
+ className="w-full p-3 border border-gray-300 rounded-lg text-base bg-gray-50 outline-none transition-all duration-200 focus:border-amber-600 focus:ring-4 focus:ring-amber-600/10"              />
             </div>
           </div>
 
           <div className="mb-8">
             <label className="block text-sm font-medium text-gray-700 mb-2">Fjalëkalimi</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl">🔒</span>
               <input
                 name="password"
                 type={showPassword ? "text" : "password"}
@@ -164,8 +161,7 @@ const SignUp = () => {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Krijoni një fjalëkalim"
-                className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg text-base bg-gray-50 outline-none transition-all duration-200 focus:border-amber-600 focus:ring-4 focus:ring-amber-600/10"
-              />
+ className="w-full p-3 border border-gray-300 rounded-lg text-base bg-gray-50 outline-none transition-all duration-200 focus:border-amber-600 focus:ring-4 focus:ring-amber-600/10"              />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}

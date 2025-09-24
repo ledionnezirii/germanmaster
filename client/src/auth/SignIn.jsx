@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"
-import webLogo from "../images/logoIMG.jpeg"
+import webLogo from "../../public/gjuhagjermanelogo.png"
 
 const SignIn = () => {
   const [formData, setFormData] = useState({
@@ -59,7 +59,7 @@ const SignIn = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500 via-purple-600 to-purple-700 flex items-center justify-center p-5">
+    <div className="flex items-center justify-center p-5 mt-5">
       <div className="bg-white/95 backdrop-blur-lg rounded-3xl p-10 w-full max-w-md shadow-2xl border border-white/20">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">

@@ -4,6 +4,8 @@ import { useState } from "react"
 import { useParams, useNavigate, Link } from "react-router-dom"
 import { authService } from "../services/api"
 
+
+
 const ResetPassword = () => {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -44,13 +46,9 @@ await authService.resetPassword(token, password)
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-white flex items-center justify-center p-4">
+      <div className="bg-gradient-to-br from-yellow-50 to-white flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-12 text-center">
-          <img
-            src="/albanian-language-learning-app-logo.jpg"
-            alt="Logo"
-            className="w-16 h-16 mx-auto mb-6 rounded-full shadow-lg"
-          />
+          
 
           <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-8 text-2xl text-white">
             ✅
@@ -74,14 +72,10 @@ await authService.resetPassword(token, password)
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-white flex items-center justify-center p-4">
+    <div className="bg-gradient-to-br from-yellow-50 to-white flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <img
-            src="/albanian-language-learning-app-logo.jpg"
-            alt="Logo"
-            className="w-16 h-16 mx-auto mb-6 rounded-full shadow-lg"
-          />
+          
 
           <div className="w-12 h-12 bg-amber-600 rounded-xl flex items-center justify-center mx-auto mb-6 text-xl">
             🔒
