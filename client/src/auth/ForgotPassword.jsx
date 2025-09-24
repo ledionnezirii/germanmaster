@@ -36,13 +36,9 @@ const ForgotPassword = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-white flex items-center justify-center p-4">
+      <div className="flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-12 text-center">
-          <img
-            src="/albanian-language-learning-app-logo.jpg"
-            alt="Logo"
-            className="w-16 h-16 mx-auto mb-6 rounded-full shadow-lg"
-          />
+          
 
           <div className="w-16 h-16 bg-cyan-600 rounded-full flex items-center justify-center mx-auto mb-8 text-2xl">
             📧
@@ -80,12 +76,7 @@ const ForgotPassword = () => {
     <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-white flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <img
-            src="/albanian-language-learning-app-logo.jpg"
-            alt="Logo"
-            className="w-16 h-16 mx-auto mb-6 rounded-full shadow-lg"
-          />
-
+         
           <div className="w-12 h-12 bg-cyan-600 rounded-xl flex items-center justify-center mx-auto mb-6 text-xl">
             🔑
           </div>
@@ -129,9 +120,8 @@ const ForgotPassword = () => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full ${
-                loading ? "bg-gray-400 cursor-not-allowed" : "bg-cyan-600 hover:bg-cyan-700"
-              } text-white border-none rounded-lg py-3.5 px-4 text-base font-semibold transition-all flex items-center justify-center mb-4`}
+              className={`w-full ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-cyan-600 hover:bg-cyan-700"
+                } text-white border-none rounded-lg py-3.5 px-4 text-base font-semibold transition-all flex items-center justify-center mb-4`}
             >
               {loading ? (
                 <>
