@@ -23,8 +23,6 @@ import {
   RotateCcw,
   Award,
   Brain,
-  Zap,
-  Trophy,
   Clock,
   MessageCircle,
   Users,
@@ -167,6 +165,7 @@ const Grammar = () => {
     setSelectedAnswers({})
     setShowResults({})
     setShowDetailedContent(false)
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }, [])
 
   const handleAnswerSelect = useCallback(
@@ -290,7 +289,6 @@ const Grammar = () => {
                     {selectedTopic.description}
                   </p>
                 </div>
-
               </div>
 
               {selectedTopic.tags && selectedTopic.tags.length > 0 && (
@@ -320,7 +318,10 @@ const Grammar = () => {
           <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <div className="flex border-b border-gray-200 overflow-x-auto bg-gray-50/50">
               <button
-                onClick={() => setActiveTab("content")}
+                onClick={() => {
+                  setActiveTab("content")
+                  window.scrollTo({ top: 0, behavior: "smooth" })
+                }}
                 className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all whitespace-nowrap relative text-sm ${
                   activeTab === "content"
                     ? "text-blue-700 bg-white border-b-2 border-blue-600 shadow-sm"
@@ -337,7 +338,10 @@ const Grammar = () => {
 
               {hasNumbers(selectedTopic) && (
                 <button
-                  onClick={() => setActiveTab("numbers")}
+                  onClick={() => {
+                    setActiveTab("numbers")
+                    window.scrollTo({ top: 0, behavior: "smooth" })
+                  }}
                   className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all whitespace-nowrap relative text-sm ${
                     activeTab === "numbers"
                       ? "text-teal-700 bg-white border-b-2 border-teal-600 shadow-sm"
@@ -354,7 +358,10 @@ const Grammar = () => {
               )}
 
               <button
-                onClick={() => setActiveTab("examples")}
+                onClick={() => {
+                  setActiveTab("examples")
+                  window.scrollTo({ top: 0, behavior: "smooth" })
+                }}
                 className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all whitespace-nowrap relative text-sm ${
                   activeTab === "examples"
                     ? "text-amber-700 bg-white border-b-2 border-amber-600 shadow-sm"
@@ -370,7 +377,10 @@ const Grammar = () => {
               </button>
 
               <button
-                onClick={() => setActiveTab("exercises")}
+                onClick={() => {
+                  setActiveTab("exercises")
+                  window.scrollTo({ top: 0, behavior: "smooth" })
+                }}
                 className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all whitespace-nowrap relative text-sm ${
                   activeTab === "exercises"
                     ? "text-purple-700 bg-white border-b-2 border-purple-600 shadow-sm"
@@ -402,7 +412,7 @@ const Grammar = () => {
                   {typeof selectedTopic.content === "string" ? (
                     <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-6 rounded-xl border-2 border-blue-200/50 shadow-md">
                       <div className="prose prose-blue max-w-none">
-                        <div className="bg-blue-100/50 p-2 rounded-lg w-fit mb-4">
+                        <div className="bg-blue-100 p-2 rounded-lg w-fit mb-4">
                           <MessageCircle className="h-4 w-4 text-blue-600 inline mr-2" />
                           <span className="font-bold text-blue-800 text-sm">Shpjegimi kryesor:</span>
                         </div>
@@ -656,9 +666,7 @@ const Grammar = () => {
                                   <div className="bg-blue-200 p-2 rounded-lg">
                                     <Globe className="h-4 w-4 text-blue-700" />
                                   </div>
-                                  <span className="text-xs font-bold text-blue-700 uppercase tracking-wide">
-                                    Shqip
-                                  </span>
+                                  <span className="text-xs font-bold text-blue-700 uppercase tracking-wide">Shqip</span>
                                 </div>
                                 <p className="text-blue-900 text-base leading-relaxed font-medium bg-white/60 p-4 rounded-lg">
                                   {example.english}
@@ -748,7 +756,6 @@ const Grammar = () => {
                               <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl font-bold text-base shadow-md">
                                 Ushtrimi {index + 1}
                               </div>
-                            
                             </div>
                             {showResults[index] && (
                               <div
