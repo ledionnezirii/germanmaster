@@ -100,9 +100,8 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         {" "}
         {/* Reduced mobile padding */}
-        <div className="flex justify-between items-center h-14 md:h-16">
+        <div className="flex justify-between items-center h-16">
           {" "}
-          {/* Smaller height on mobile */}
           {/* Left side - Logo and menu toggle */}
           <div className="flex items-center space-x-2 md:space-x-4">
             {" "}
