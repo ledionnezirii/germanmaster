@@ -15,7 +15,6 @@ import {
   GraduationCap,
   ChevronLeft,
   ChevronRight,
-  Swords,
   Sparkles,
   MapIcon,
   TestTube2Icon,
@@ -37,11 +36,10 @@ const Sidebar = () => {
     // { icon: Swords, label: "Sfidë", path: "/challenge", requireAuth: true }, Challenge
     { icon: GraduationCap, label: "Gramatikë", path: "/grammar", requireAuth: true }, // Grammar
     { icon: Trophy, label: "Renditja", path: "/leaderboard", requireAuth: false }, // Leaderboard
-    { icon: MapIcon, label: "PlanProgrami", path: "/plan", requireAuth: true }, // 
-    { icon: TestTube2Icon, label: "Tests", path: "/tests", requireAuth: true }, // 
-    { icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation", requireAuth: true }, // 
-    { icon: User, label: "Llogaria", path: "/account", requireAuth: true }, // 
-
+    { icon: MapIcon, label: "PlanProgrami", path: "/plan", requireAuth: true }, //
+    { icon: TestTube2Icon, label: "Tests", path: "/tests", requireAuth: true }, //
+    { icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation", requireAuth: true }, //
+    { icon: User, label: "Llogaria", path: "/account", requireAuth: true }, //
   ]
 
   const footerMenuItems = [
@@ -58,6 +56,8 @@ const Sidebar = () => {
 
   // Handle link click - close sidebar on mobile
   const handleLinkClick = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" })
+
     // Close sidebar on mobile when link is clicked
     if (window.innerWidth < 1024 && !isCollapsed) {
       toggleSidebar()
