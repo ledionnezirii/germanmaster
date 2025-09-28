@@ -18,6 +18,7 @@ import {
   Sparkles,
   MapIcon,
   TestTube2Icon,
+  LightbulbIcon,
 } from "lucide-react"
 import { MicrophoneIcon } from "@heroicons/react/24/outline"
 
@@ -37,8 +38,11 @@ const Sidebar = () => {
     { icon: GraduationCap, label: "Gramatikë", path: "/grammar", requireAuth: true }, // Grammar
     { icon: Trophy, label: "Renditja", path: "/leaderboard", requireAuth: false }, // Leaderboard
     { icon: MapIcon, label: "PlanProgrami", path: "/plan", requireAuth: true }, //
+
     { icon: TestTube2Icon, label: "Tests", path: "/tests", requireAuth: true }, //
     { icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation", requireAuth: true }, //
+    { icon: LightbulbIcon, label: "Kuizet", path: "/quizes", requireAuth: true }, //
+
     { icon: User, label: "Llogaria", path: "/account", requireAuth: true }, //
   ]
 
@@ -87,7 +91,7 @@ const Sidebar = () => {
           )}
         </button>
         {/* Menu items */}
-        <nav className="mt-8 px-3 pb-6 flex-1 overflow-y-auto">
+        <nav className="mt-8 px-3 pb-6 flex-1 overflow-y-auto scrollbar-hide">
           <ul className="space-y-2">
             {filteredMenuItems.map((item) => {
               const Icon = item.icon

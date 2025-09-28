@@ -128,7 +128,7 @@ const Home = () => {
             {isAuthenticated ? (
               <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <Link
-                  to="/listen"
+                  to="/translate"
                   className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-teal-600 text-white hover:bg-teal-700 hover:scale-105 h-12 px-8 py-3 shadow-lg hover:shadow-xl"
                 >
                   <Play className="h-5 w-5" />
@@ -207,7 +207,7 @@ const Home = () => {
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">Fjalët e Mësuara</h2>
-                <p className="text-gray-600">Fjalët që keni shënuar si të preferuara</p>
+                <p className="text-gray-600">Fjalët që keni shënuar si të mësuara</p>
               </div>
             </div>
 
@@ -241,8 +241,8 @@ const Home = () => {
             ) : (
               <div className="text-center py-8">
                 <Heart className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Asnjë fjalë e preferuar</h3>
-                <p className="text-gray-600 mb-4">Filloni të shtoni fjalë në listën tuaj të preferuarve</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Asnjë fjalë e mësuara</h3>
+                <p className="text-gray-600 mb-4">Filloni të shtoni fjalë në listën tuaj</p>
                 <Link
                   to="/dictionary"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
@@ -259,7 +259,7 @@ const Home = () => {
                   to="/dictionary"
                   className="inline-flex items-center gap-2 px-4 py-2 text-teal-600 hover:text-teal-700 font-medium"
                 >
-                  Shiko të gjitha fjalët e preferuara
+                  Shiko të gjitha fjalët e mësuara
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
