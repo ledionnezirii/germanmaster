@@ -52,7 +52,7 @@ const PronunciationPractice = () => {
 
   useEffect(() => {
     if ("webkitSpeechRecognition" in window) {
-const recognitionInstance = new window.webkitSpeechRecognition()
+      const recognitionInstance = new window.webkitSpeechRecognition()
       recognitionInstance.continuous = false
       recognitionInstance.interimResults = false
       recognitionInstance.lang = "de-DE"
@@ -534,7 +534,7 @@ const recognitionInstance = new window.webkitSpeechRecognition()
       <div className="h-min-screen p-4 flex flex-col">
         <div className="max-w-6xl mx-auto w-full">
           <div className="text-center mb-8">
-            <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mx-auto mb-4"></div>
             <p className="text-gray-600 font-medium">Duke ngarkuar paketat e shqiptimit...</p>
           </div>
 
