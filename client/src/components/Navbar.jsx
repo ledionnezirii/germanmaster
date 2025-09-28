@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useSidebar } from "../context/SidebarContext"
 import { Menu, User, LogOut, ChevronDown, Star } from "lucide-react"
-import mainLogo from "../../public/gjuhagjermanelogo.png"
+import mainLogo from "../../public/logoT.png"
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth()

@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api"
+const API_BASE_URL = "/api"
 export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com"
 
 export const getAbsoluteImageUrl = (relativePath) => {
@@ -215,5 +215,22 @@ export const pronunciationService = {
     return api.get("/pronunciation/completed-pronunciation-packages")
   },
 }
+
+export const quizService = {
+  getAllQuizzes: () => api.get("/quizes"),
+  getQuizById: (id) => api.get(`/quizes/${id}`),
+  createQuiz: (quizData) => api.post("/quizes", quizData),
+  createBulkQuizzes: (quizzes) => api.post("/quizes/bulk", quizzes),
+  updateQuiz: (id, quizData) => api.put(`/quizes/${id}`, quizData),
+  deleteQuiz: (id) => api.delete(`/quizes/${id}`),
+
+  // SUBMIT QUIZ
+  submitQuiz: (quizId, answers) => 
+    api.post(`/quizes/${quizId}/submit`, { answers }),
+
+  // GET ALL COMPLETED QUIZZES FOR LOGGED-IN USER
+  getCompletedQuizzes: () => api.get("/quizes/completed/user"),
+}
+
 
 export default api

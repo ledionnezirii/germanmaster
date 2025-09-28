@@ -317,18 +317,8 @@ const Translate = () => {
                   </div>
                 </div>
 
-                {/* Reading Tips */}
-                <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-teal-50 border border-teal-200 rounded-xl">
-                  <h3 className="font-semibold text-teal-800 mb-2 flex items-center gap-2 text-sm sm:text-base">
-                    <Volume2 className="h-3 w-3 sm:h-4 sm:w-4" />
-                    Këshilla për Lexim
-                  </h3>
-                  <ul className="text-xs sm:text-sm text-teal-700 space-y-1">
-                    <li>• Lexoni tekstin me kujdes dhe përqendrohuni në detajet</li>
-                    <li>• Përdorni butonin "Dëgjo" për të dëgjuar shqiptimin e saktë</li>
-                    <li>• Mund të lexoni tekstin disa herë para se të filloni pyetjet</li>
-                  </ul>
-                </div>
+                {/* Reading Tips Removed*/}
+              
               </div>
             </div>
 
