@@ -46,14 +46,14 @@ const iconMap = {
   coffee: Coffee,
   film: Film,
   tree: TreePine,
-  guitar:Guitar,
-  clothes:HardHat,
-  book:Book,
-  sword:Sword,
-  ring:BellRing,
-  haus:Castle,
-  sport:Swords,
-  hammer:Hammer
+  guitar: Guitar,
+  clothes: HardHat,
+  book: Book,
+  sword: Sword,
+  ring: BellRing,
+  haus: Castle,
+  sport: Swords,
+  hammer: Hammer,
 }
 
 const Category = () => {
@@ -237,7 +237,7 @@ const Category = () => {
             {loading ? (
               <div className="flex items-center justify-center min-h-64">
                 <div className="flex flex-col items-center gap-3">
-                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-teal-600 border-t-transparent"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
                   <p className="text-sm text-gray-600">Duke ngarkuar detajet...</p>
                 </div>
               </div>
@@ -331,7 +331,7 @@ const Category = () => {
         {loading ? (
           <div className="flex items-center justify-center min-h-64">
             <div className="flex flex-col items-center gap-3">
-              <div className="animate-spin rounded-full h-6 w-6 border-2 border-teal-600 border-t-transparent"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
               <p className="text-sm text-gray-600">Duke ngarkuar kategoritë...</p>
             </div>
           </div>
@@ -395,7 +395,7 @@ const Category = () => {
               <div id="load-more-sentinel" className="mt-8 flex justify-center">
                 {loadingMore ? (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-teal-600 border-t-transparent"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-teal-600"></div>
                     Duke ngarkuar më shumë...
                   </div>
                 ) : (

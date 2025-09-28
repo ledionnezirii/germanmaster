@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect, useRef } from "react"
 import { quizService } from "../services/api"
 import {
@@ -26,7 +24,7 @@ const Quizes = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [quizzesPerPage] = useState(20) // Changed to 20 for better grid layout
+  const [quizzesPerPage] = useState(20)
   const [showResults, setShowResults] = useState(false)
   const [quizResults, setQuizResults] = useState(null)
 
@@ -131,12 +129,12 @@ const Quizes = () => {
 
   const getLevelColor = (level) => {
     const colors = {
-      A1: "bg-teal-100 text-teal-800 border-teal-200",
-      A2: "bg-teal-200 text-teal-800 border-teal-300",
-      B1: "bg-teal-300 text-teal-800 border-teal-400",
-      B2: "bg-teal-400 text-teal-800 border-teal-500",
-      C1: "bg-teal-500 text-white border-teal-600",
-      C2: "bg-teal-600 text-white border-teal-700",
+      A1: "bg-gradient-to-r from-cyan-100 to-teal-100 text-teal-800 border-teal-200",
+      A2: "bg-gradient-to-r from-teal-100 to-emerald-100 text-emerald-800 border-emerald-200",
+      B1: "bg-gradient-to-r from-emerald-100 to-green-100 text-green-800 border-green-200",
+      B2: "bg-gradient-to-r from-blue-100 to-indigo-100 text-indigo-800 border-indigo-200",
+      C1: "bg-gradient-to-r from-purple-100 to-violet-100 text-violet-800 border-violet-200",
+      C2: "bg-gradient-to-r from-pink-100 to-rose-100 text-rose-800 border-rose-200",
     }
     return colors[level] || colors.A1
   }
@@ -498,20 +496,20 @@ const Quizes = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-white">
-      <div className="max-w-5xl mx-auto p-3 sm:p-6">
-        <div className="text-center mb-6 sm:mb-10">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 sm:mb-3">Kuizet e Mësimit të Gjuhës</h1>
-          <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto font-medium">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6">
+        <div className="text-center mb-8 sm:mb-12">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-800 mb-3 sm:mb-4">Kuizet e Mësimit të Gjuhës</h1>
+          <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto font-medium leading-relaxed">
             Testoni aftësitë tuaja në gjuhën gjermane me kuize interaktive dhe ndiqni përparimin tuaj.
           </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
-          <div className="flex items-center gap-2 mb-3 sm:mb-4">
-            <BookOpen className="h-4 sm:h-5 w-4 sm:w-5 text-gray-600" />
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Filtro sipas Nivelit</h2>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 mb-8 sm:mb-12">
+          <div className="flex items-center gap-3 mb-4 sm:mb-6">
+            <BookOpen className="h-5 sm:h-6 w-5 sm:w-6 text-gray-600" />
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Filtro sipas Nivelit</h2>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3">
             {levels.map((level) => (
               <button
                 key={level}
@@ -519,10 +517,10 @@ const Quizes = () => {
                   setSelectedLevel(level)
                   setCurrentPage(1)
                 }}
-                className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl text-sm sm:text-base font-medium transition-all duration-300 ${
                   selectedLevel === level
-                    ? "bg-teal-600 text-white shadow-md"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    ? "bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg transform scale-105"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200 hover:shadow-md"
                 }`}
               >
                 {level === "all" ? "Të Gjitha Nivelet" : level}
@@ -531,105 +529,113 @@ const Quizes = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-10">
-          <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-3 sm:p-6 text-center shadow-sm">
-            <div className="w-8 sm:w-12 h-8 sm:h-12 bg-teal-100 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4">
-              <BookOpen className="w-4 sm:w-6 h-4 sm:h-6 text-teal-600" />
+        <div className="grid grid-cols-3 gap-4 sm:gap-8 mb-8 sm:mb-12">
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-8 text-center shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-teal-100 to-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <BookOpen className="w-6 sm:w-8 h-6 sm:h-8 text-teal-600" />
             </div>
-            <h3 className="text-xs sm:text-sm font-bold text-gray-600 mb-1 sm:mb-2">Kuize Gjithsej</h3>
-            <p className="text-lg sm:text-2xl font-bold text-gray-800">{filteredQuizzes.length}</p>
+            <h3 className="text-sm sm:text-base font-bold text-gray-600 mb-2 sm:mb-3">Kuize Gjithsej</h3>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-800">{filteredQuizzes.length}</p>
           </div>
 
-          <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-3 sm:p-6 text-center shadow-sm">
-            <div className="w-8 sm:w-12 h-8 sm:h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4">
-              <Trophy className="w-4 sm:w-6 h-4 sm:h-6 text-green-600" />
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-8 text-center shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-emerald-100 to-green-100 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <Trophy className="w-6 sm:w-8 h-6 sm:h-8 text-emerald-600" />
             </div>
-            <h3 className="text-xs sm:text-sm font-bold text-gray-600 mb-1 sm:mb-2">Të Përfunduara</h3>
-            <p className="text-lg sm:text-2xl font-bold text-gray-800">{completedQuizzes.length}</p>
+            <h3 className="text-sm sm:text-base font-bold text-gray-600 mb-2 sm:mb-3">Të Përfunduara</h3>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-800">{completedQuizzes.length}</p>
           </div>
 
-          <div className="bg-white rounded-xl sm:rounded-2xl border border-gray-200 p-3 sm:p-6 text-center shadow-sm">
-            <div className="w-8 sm:w-12 h-8 sm:h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-4">
-              <Clock className="w-4 sm:w-6 h-4 sm:h-6 text-orange-600" />
+          <div className="bg-white rounded-2xl sm:rounded-3xl border border-gray-200 p-4 sm:p-8 text-center shadow-lg hover:shadow-xl transition-all duration-300">
+            <div className="w-12 sm:w-16 h-12 sm:h-16 bg-gradient-to-br from-orange-100 to-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <Clock className="w-6 sm:w-8 h-6 sm:h-8 text-orange-600" />
             </div>
-            <h3 className="text-xs sm:text-sm font-bold text-gray-600 mb-1 sm:mb-2">Në Progres</h3>
-            <p className="text-lg sm:text-2xl font-bold text-gray-800">
+            <h3 className="text-sm sm:text-base font-bold text-gray-600 mb-2 sm:mb-3">Në Progres</h3>
+            <p className="text-2xl sm:text-3xl font-bold text-gray-800">
               {filteredQuizzes.length - completedQuizzes.length}
             </p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12">
           {currentQuizzes.map((quiz) => {
             const isCompleted = completedQuizzes.includes(quiz._id)
 
             return (
               <div
                 key={quiz._id}
-                className={`relative rounded-xl sm:rounded-2xl transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1 cursor-pointer overflow-hidden group h-28 sm:h-32 ${
-                  // reduced height from h-32 sm:h-36 to h-28 sm:h-32
+                className={`relative rounded-3xl transition-all duration-500 hover:shadow-2xl transform hover:-translate-y-2 cursor-pointer overflow-hidden group h-56 sm:h-64 ${
                   isCompleted
-                    ? "bg-[#a8e6cf] border-2 border-green-300 shadow-md" // using soft mint color #a8e6cf for completed boxes
-                    : "bg-white border-2 border-gray-200 hover:border-teal-300 shadow-sm"
+                    ? "bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 border border-emerald-200 shadow-lg hover:shadow-emerald-200/50"
+                    : "bg-gradient-to-br from-white via-blue-50/30 to-indigo-50/30 border border-gray-200 hover:border-teal-300 shadow-lg hover:shadow-teal-200/40"
                 }`}
                 onClick={() => startQuiz(quiz)}
               >
                 {isCompleted && (
-                  <div className="absolute -top-1 -right-1 z-10">
-                    <div className="w-2 sm:w-3 h-2 sm:h-3 bg-green-600 rounded-full shadow-lg">
-                      {" "}
-                      {/* removed tick icon, made dot smaller */}
+                  <div className="absolute top-5 right-5 z-10">
+                    <div className="w-8 h-8 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full shadow-lg flex items-center justify-center">
+                      <div className="w-3 h-3 bg-white rounded-full"></div>
                     </div>
                   </div>
                 )}
 
+                <div className={`absolute inset-0 bg-gradient-to-br opacity-5 ${
+                  isCompleted ? "from-emerald-400 to-teal-500" : "from-teal-400 to-blue-500"
+                }`}></div>
+
                 <BookOpen
-                  className={`absolute -bottom-2 -right-2 w-6 sm:w-8 h-6 sm:h-8 ${
-                    isCompleted ? "text-green-300" : "text-gray-200"
-                  } group-hover:scale-110 transition-transform duration-300`}
+                  className={`absolute -bottom-4 -right-4 w-16 h-16 ${
+                    isCompleted ? "text-emerald-200" : "text-gray-200"
+                  } group-hover:scale-110 group-hover:rotate-6 transition-all duration-500`}
                 />
 
-                <div className="relative z-10 p-2 sm:p-3 h-full flex flex-col justify-between">
-                  <div className="mb-2">
+                <div className="relative z-10 p-6 sm:p-8 h-full flex flex-col justify-between">
+                  <div className="mb-6">
                     <h3
-                      className={`text-xs sm:text-sm font-bold mb-1 line-clamp-2 ${
-                        isCompleted ? "text-green-800" : "text-gray-800 group-hover:text-teal-700"
+                      className={`text-lg sm:text-xl font-bold mb-3 line-clamp-2 leading-relaxed ${
+                        isCompleted ? "text-emerald-800" : "text-gray-800 group-hover:text-teal-700"
                       }`}
                     >
                       {quiz.title}
                     </h3>
-                    <p className={`text-xs font-medium ${isCompleted ? "text-green-600" : "text-gray-500"}`}>
+                    <p className={`text-base font-medium ${isCompleted ? "text-emerald-600" : "text-gray-500"}`}>
                       {quiz.questions.length} pyetje
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between mb-2">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-xs font-bold border ${
-                        isCompleted ? "bg-green-200 text-green-800 border-green-300" : getLevelColor(quiz.level)
-                      }`}
-                    >
-                      {quiz.level}
-                    </span>
-                    <div
-                      className={`flex items-center gap-1 text-xs font-medium ${
-                        isCompleted ? "text-green-600" : "text-gray-500"
-                      }`}
-                    >
-                      <Star className="w-2.5 h-2.5" />
-                      {quiz.xp}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={`px-4 py-2 rounded-2xl text-sm font-bold border ${
+                          isCompleted 
+                            ? "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-800 border-emerald-200" 
+                            : getLevelColor(quiz.level)
+                        }`}
+                      >
+                        {quiz.level}
+                      </span>
+                      <div
+                        className={`flex items-center gap-2 text-base font-medium px-4 py-2 rounded-2xl ${
+                          isCompleted 
+                            ? "bg-emerald-100 text-emerald-700" 
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        <Star className="w-5 h-5" />
+                        {quiz.xp}
+                      </div>
                     </div>
-                  </div>
 
-                  <button
-                    className={`w-full py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg text-xs font-bold transition-all duration-200 ${
-                      isCompleted
-                        ? "bg-green-600 text-white hover:bg-green-700 shadow-sm hover:shadow-md"
-                        : "bg-gradient-to-r from-teal-600 to-teal-700 text-white hover:from-teal-700 hover:to-teal-800 shadow-sm hover:shadow-md"
-                    }`}
-                  >
-                    {isCompleted ? "Përsërit" : "Fillo"}
-                  </button>
+                    <button
+                      className={`w-full py-4 px-6 rounded-2xl text-base font-bold transition-all duration-300 ${
+                        isCompleted
+                          ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-lg hover:shadow-xl transform hover:scale-105"
+                          : "bg-gradient-to-r from-teal-500 to-blue-600 text-white hover:from-teal-600 hover:to-blue-700 shadow-lg hover:shadow-xl transform hover:scale-105"
+                      }`}
+                    >
+                      {isCompleted ? "Përsërit Kuizin" : "Fillo Kuizin"}
+                    </button>
+                  </div>
                 </div>
               </div>
             )
@@ -637,17 +643,17 @@ const Quizes = () => {
         </div>
 
         {totalPages > 1 && (
-          <div className="flex justify-center items-center space-x-2">
+          <div className="flex justify-center items-center space-x-3 mb-8">
             <button
               onClick={() => paginate(currentPage - 1)}
               disabled={currentPage === 1}
-              className={`p-2 sm:p-3 rounded-xl transition-all ${
+              className={`p-3 sm:p-4 rounded-2xl transition-all ${
                 currentPage === 1
                   ? "text-gray-300 cursor-not-allowed"
-                  : "text-gray-600 hover:bg-white hover:shadow-md bg-gray-50"
+                  : "text-gray-600 hover:bg-white hover:shadow-lg bg-gray-50"
               }`}
             >
-              <ChevronLeft className="w-4 sm:w-5 h-4 sm:h-5" />
+              <ChevronLeft className="w-5 sm:w-6 h-5 sm:h-6" />
             </button>
 
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -668,10 +674,10 @@ const Quizes = () => {
                 <button
                   key={pageNumber}
                   onClick={() => paginate(pageNumber)}
-                  className={`w-8 sm:w-10 h-8 sm:h-10 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                  className={`w-12 sm:w-14 h-12 sm:h-14 rounded-2xl text-sm sm:text-base font-bold transition-all ${
                     currentPage === pageNumber
-                      ? "bg-teal-600 text-white shadow-lg"
-                      : "text-gray-600 hover:bg-white hover:shadow-md bg-gray-50"
+                      ? "bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg transform scale-105"
+                      : "text-gray-600 hover:bg-white hover:shadow-lg bg-gray-50"
                   }`}
                 >
                   {pageNumber}
@@ -682,20 +688,20 @@ const Quizes = () => {
             <button
               onClick={() => paginate(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className={`p-2 sm:p-3 rounded-xl transition-all ${
+              className={`p-3 sm:p-4 rounded-2xl transition-all ${
                 currentPage === totalPages
                   ? "text-gray-300 cursor-not-allowed"
-                  : "text-gray-600 hover:bg-white hover:shadow-md bg-gray-50"
+                  : "text-gray-600 hover:bg-white hover:shadow-lg bg-gray-50"
               }`}
             >
-              <ChevronRight className="w-4 sm:w-5 h-4 sm:h-5" />
+              <ChevronRight className="w-5 sm:w-6 h-5 sm:h-6" />
             </button>
           </div>
         )}
 
         {filteredQuizzes.length > 0 && (
-          <div className="text-center mt-4 sm:mt-6">
-            <p className="text-xs sm:text-sm text-gray-500 font-medium">
+          <div className="text-center">
+            <p className="text-sm sm:text-base text-gray-500 font-medium">
               Duke treguar {indexOfFirstQuiz + 1}-{Math.min(indexOfLastQuiz, filteredQuizzes.length)} nga{" "}
               {filteredQuizzes.length} kuize
             </p>
@@ -703,11 +709,11 @@ const Quizes = () => {
         )}
 
         {filteredQuizzes.length === 0 && !loading && (
-          <div className="text-center py-8 sm:py-12">
-            <div className="bg-gray-50 rounded-lg p-4 sm:p-6 inline-block">
-              <BookOpen className="h-8 sm:h-10 w-8 sm:w-10 text-teal-600 mx-auto mb-3" />
-              <h3 className="text-sm font-medium text-gray-800 mb-1">Nuk ka kuize të disponueshme</h3>
-              <p className="text-gray-500 text-xs">
+          <div className="text-center py-12 sm:py-16">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-3xl p-8 sm:p-12 inline-block">
+              <BookOpen className="h-12 sm:h-16 w-12 sm:w-16 text-teal-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-800 mb-2">Nuk ka kuize të disponueshme</h3>
+              <p className="text-gray-500 text-base">
                 {selectedLevel === "all" ? "Nuk u gjetën kuize." : `Nuk ka kuize për nivelin ${selectedLevel}.`}
               </p>
             </div>
