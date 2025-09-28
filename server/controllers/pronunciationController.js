@@ -47,6 +47,49 @@ exports.addWord = async (req, res) => {
   }
 }
 
+function calculateSimilarity(str1, str2) {
+  const s1 = str1.toLowerCase().trim()
+  const s2 = str2.toLowerCase().trim()
+
+  // Exact match
+  if (s1 === s2) return 1.0
+
+  // Remove common German articles and particles that might be missed
+  const cleanS1 = s1.replace(/^(der|die|das|ein|eine|einen)\s+/i, "").trim()
+  const cleanS2 = s2.replace(/^(der|die|das|ein|eine|einen)\s+/i, "").trim()
+
+  if (cleanS1 === cleanS2) return 0.95
+
+  // Check if one contains the other (for compound words)
+  if (s1.includes(s2) || s2.includes(s1)) return 0.9
+
+  // Levenshtein distance for similarity
+  const matrix = []
+  const len1 = s1.length
+  const len2 = s2.length
+
+  for (let i = 0; i <= len2; i++) {
+    matrix[i] = [i]
+  }
+
+  for (let j = 0; j <= len1; j++) {
+    matrix[0][j] = j
+  }
+
+  for (let i = 1; i <= len2; i++) {
+    for (let j = 1; j <= len1; j++) {
+      if (s2.charAt(i - 1) === s1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1]
+      } else {
+        matrix[i][j] = Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1)
+      }
+    }
+  }
+
+  const maxLen = Math.max(len1, len2)
+  return maxLen === 0 ? 1 : (maxLen - matrix[len2][len1]) / maxLen
+}
+
 exports.checkPronunciation = async (req, res) => {
   try {
     const { packageId, wordIndex, spokenWord } = req.body
@@ -63,20 +106,24 @@ exports.checkPronunciation = async (req, res) => {
     const wordKey = `${packageId}_${wordIndex}`
     const alreadyCompleted = user.completedWords && user.completedWords.includes(wordKey)
 
-    const correct = wordObj.word.toLowerCase() === spokenWord.toLowerCase()
+    const similarity = calculateSimilarity(wordObj.word, spokenWord)
+    const correct = similarity >= 0.6 // Much more forgiving like Duolingo
+
     let xpAdded = 0
 
-    if (correct && !alreadyCompleted) {
-      xpAdded = wordObj.xp || 5
+    if (correct) {
+      const baseXp = wordObj.xp || 5
+      xpAdded = similarity >= 0.95 ? baseXp : Math.ceil(baseXp * 0.8)
       user.xp += xpAdded
 
       if (!user.completedWords) user.completedWords = []
-      user.completedWords.push(wordKey)
+      if (!user.completedWords.includes(wordKey)) {
+        user.completedWords.push(wordKey)
+      }
 
       await user.save()
     }
 
-    // Check if package is completed (70% threshold)
     const completedWordsInPackage = user.completedWords
       ? user.completedWords.filter((w) => w.startsWith(packageId)).length
       : 0
@@ -92,11 +139,12 @@ exports.checkPronunciation = async (req, res) => {
       success: true,
       correct,
       xpAdded,
-      alreadyCompleted,
+      alreadyCompleted: false, // Always return false so users always get XP
       completed: packageCompleted,
       userXp: user.xp,
       completedWordsCount: completedWordsInPackage,
       passThreshold,
+      similarity: Math.round(similarity * 100),
     })
   } catch (err) {
     res.status(500).json({ success: false, message: err.message })
