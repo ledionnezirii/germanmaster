@@ -92,6 +92,12 @@ const userSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    finishedQuizzes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Quiz",
+      },
+    ],
 
     isPaid: {
       type: Boolean,
