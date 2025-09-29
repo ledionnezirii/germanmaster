@@ -1,33 +1,23 @@
-const nodemailer = require("nodemailer")
+const sgMail = require("@sendgrid/mail");
+
+// Set the API Key
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const sendEmail = async (options) => {
   try {
-    // Create a transporter
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,       // e.g. smtp.gmail.com
-      port: process.env.EMAIL_PORT,       // e.g. 587
-      secure: false,                      // true for 465, false for other ports
-      auth: {
-        user: process.env.EMAIL_USER,     // your email
-        pass: process.env.EMAIL_PASS,     // your app password from Gmail
-      },
-    })
-
-    // Define email options
-    const mailOptions = {
-      from: `"German Learning App" <${process.env.EMAIL_USER}>`, // sender
-      to: options.email,               // receiver
+    const msg = {
+      to: options.email, // recipient
+      from: process.env.EMAIL_FROM, // must be verified in SendGrid
       subject: options.subject,
-      html: options.message,           // HTML email body
-    }
+      html: options.message,
+    };
 
-    // Send the email
-    const info = await transporter.sendMail(mailOptions)
-    console.log("Email dërguar: %s", info.messageId)
+    await sgMail.send(msg);
+    console.log("✅ Email sent to:", options.email);
   } catch (error) {
-    console.error("Gabim gjatë dërgimit të email-it:", error)
-    throw new Error("Gabim gjatë dërgimit të email-it") // ose ApiError nëse ke
+    console.error("❌ Error sending email:", error.response?.body || error);
+    throw new Error("Gabim gjatë dërgimit të email-it");
   }
-}
+};
 
-module.exports = sendEmail
+module.exports = sendEmail;
