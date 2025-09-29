@@ -7,7 +7,10 @@ const sendEmail = async (options) => {
   try {
     const msg = {
       to: options.email, // recipient
-      from: process.env.EMAIL_FROM, // must be verified in SendGrid
+      from: { 
+        email: process.env.EMAIL_FROM, // must be verified in SendGrid
+        name: "GjuhëGjerma App"      // mund ta ndryshosh si do
+      },
       subject: options.subject,
       html: options.message,
     };
