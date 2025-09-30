@@ -55,7 +55,7 @@ const SignUp = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-5">
+      <div className="min-h-screen flex items-center justify-center p-5">
         <div className="bg-white/95 backdrop-blur-lg rounded-3xl p-10 w-full max-w-md shadow-2xl border border-white/20 text-center">
           <div className="w-16 h-16 bg-amber-600 rounded-full flex items-center justify-center mx-auto mb-8 text-2xl">
             ✉️
