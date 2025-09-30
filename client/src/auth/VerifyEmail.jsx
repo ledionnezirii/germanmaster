@@ -12,14 +12,16 @@ const VerifyEmail = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
+    let timer
+
     const verifyEmail = async () => {
       try {
         const response = await authService.verifyEmail(token)
         setStatus("success")
         setMessage("Email-i juaj u verifikua me sukses!")
 
-        // Start countdown and redirect to login
-        const timer = setInterval(() => {
+        // Start countdown
+        timer = setInterval(() => {
           setCountdown((prev) => {
             if (prev <= 1) {
               clearInterval(timer)
@@ -29,8 +31,6 @@ const VerifyEmail = () => {
             return prev - 1
           })
         }, 1000)
-
-        return () => clearInterval(timer)
       } catch (error) {
         setStatus("error")
         setMessage(error.response?.data?.message || "Gabim gjatë verifikimit të email-it")
@@ -40,18 +40,20 @@ const VerifyEmail = () => {
     if (token) {
       verifyEmail()
     }
+
+    // Cleanup
+    return () => clearInterval(timer)
   }, [token, navigate])
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-5">
+      <div className="min-h-screen  flex items-center justify-center p-5">
         <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-15 text-center max-w-lg shadow-2xl">
           <img
             src="/albanian-language-learning-app-logo.jpg"
             alt="Logo"
             className="w-20 h-20 mx-auto mb-6 rounded-full shadow-lg"
           />
-
           <div className="w-15 h-15 border-4 border-gray-200 border-t-indigo-500 rounded-full animate-spin mx-auto mb-8"></div>
           <h2 className="text-2xl font-bold text-gray-700 mb-4">Duke verifikuar email-in...</h2>
           <p className="text-gray-600 text-base">Ju lutemi prisni ndërsa verifikojmë llogarinë tuaj</p>
@@ -61,7 +63,7 @@ const VerifyEmail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center p-5">
+    <div className="min-h-screen  flex items-center justify-center p-5">
       <div className="bg-white/95 backdrop-blur-sm rounded-3xl p-15 text-center max-w-lg shadow-2xl">
         <img
           src="/albanian-language-learning-app-logo.jpg"
