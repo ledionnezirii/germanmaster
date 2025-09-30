@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api"
+const API_BASE_URL = "/api"
 export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com"
 
 export const getAbsoluteImageUrl = (relativePath) => {
@@ -231,6 +231,18 @@ export const quizService = {
   // GET ALL COMPLETED QUIZZES FOR LOGGED-IN USER
   getCompletedQuizzes: () => api.get("/quizes/completed/user"),
 }
+
+
+export const certificatesService = {
+  getUserCertificates: () => api.get("/certificates"),
+  issueCertificate: () => api.post("/certificates/issue"),
+  downloadCertificate: (certificateId) =>
+    api.get(`/certificates/download/${certificateId}`, {
+      responseType: "blob",
+    }),
+  generateCertificateForLevel: (userId, level) => api.post("/certificates/generate", { userId, level }),
+}
+
 
 
 export default api

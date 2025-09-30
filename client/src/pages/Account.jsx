@@ -1,8 +1,8 @@
 "use client"
 import { useState, useEffect } from "react"
 import { useAuth } from "../context/AuthContext"
-import { authService } from "../services/api"
-import { User, Star, Trophy, BookOpen, Camera, Loader2, Flame, Award, Crown, Gem } from "lucide-react"
+import { authService, certificatesService } from "../services/api"
+import { User, Star, Trophy, BookOpen, Camera, Loader2, Flame, Award, Download, FileText } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 const Account = () => {
@@ -12,11 +12,56 @@ const Account = () => {
   const [profilePictureDisplayUrl, setProfilePictureDisplayUrl] = useState(user?.profilePicture || null)
   const [uploading, setUploading] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [certificates, setCertificates] = useState([])
+  const [loadingCertificates, setLoadingCertificates] = useState(true)
+  const [downloadingCert, setDownloadingCert] = useState(null)
+  const [issuingCertificate, setIssuingCertificate] = useState(false)
 
   useEffect(() => {
     setProfilePictureDisplayUrl(user?.profilePicture || null)
     if (user?.profilePicture) setImageError(false)
   }, [user?.profilePicture, user])
+
+  useEffect(() => {
+    const fetchCertificates = async () => {
+      try {
+        setLoadingCertificates(true)
+        const response = await certificatesService.getUserCertificates()
+        const userCertificates = response.data.certificates || []
+        setCertificates(userCertificates)
+
+        if (user && user.level && user.level !== "A1") {
+          const hasCertificateForCurrentLevel = userCertificates.some((cert) => cert.level === user.level)
+
+          if (!hasCertificateForCurrentLevel && !issuingCertificate) {
+            setIssuingCertificate(true)
+            try {
+              const issueResponse = await certificatesService.issueCertificate()
+              if (issueResponse.data.success) {
+                const refreshResponse = await certificatesService.getUserCertificates()
+                setCertificates(refreshResponse.data.certificates || [])
+              }
+            } catch (issueError) {
+              console.error("Error auto-issuing certificate:", issueError)
+            } finally {
+              setIssuingCertificate(false)
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching certificates:", error)
+        if (error.response?.status !== 404) {
+          console.error("Unexpected error:", error)
+        }
+      } finally {
+        setLoadingCertificates(false)
+      }
+    }
+
+    if (user) {
+      fetchCertificates()
+    }
+  }, [user])
 
   const handleProfilePictureUpload = async (event) => {
     const file = event.target.files[0]
@@ -48,40 +93,51 @@ const Account = () => {
     }
   }
 
-  const getAchievementIcon = (achievementName) => {
-    if (achievementName.includes("500") || achievementName.includes("1000"))
-      return <Star className="h-5 w-5 text-yellow-500" />
-    if (achievementName.includes("1500") || achievementName.includes("2000"))
-      return <Award className="h-5 w-5 text-gray-400" />
-    if (achievementName.includes("2500") || achievementName.includes("3000"))
-      return <Trophy className="h-5 w-5 text-yellow-600" />
-    if (achievementName.includes("5000") || achievementName.includes("7000"))
-      return <Crown className="h-5 w-5 text-purple-600" />
-    if (achievementName.includes("9000") || achievementName.includes("10000"))
-      return <Gem className="h-5 w-5 text-blue-600" />
-    return <Trophy className="h-5 w-5 text-yellow-600" />
+  const handleDownloadCertificate = async (certificateId, level) => {
+    try {
+      setDownloadingCert(certificateId)
+      const response = await certificatesService.downloadCertificate(certificateId)
+
+      const blob = new Blob([response.data], { type: "application/pdf" })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `Certifikata_${level}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error("Error downloading certificate:", error)
+      alert("Gabim në shkarkimin e certifikatës. Ju lutemi provoni përsëri.")
+    } finally {
+      setDownloadingCert(null)
+    }
   }
 
-  const getAchievementColor = (achievementName) => {
-    if (achievementName.includes("500") || achievementName.includes("1000"))
-      return "from-yellow-50 to-yellow-100 border-yellow-200"
-    if (achievementName.includes("1500") || achievementName.includes("2000"))
-      return "from-gray-50 to-gray-100 border-gray-200"
-    if (achievementName.includes("2500") || achievementName.includes("3000"))
-      return "from-yellow-50 to-orange-100 border-orange-200"
-    if (achievementName.includes("5000") || achievementName.includes("7000"))
-      return "from-purple-50 to-purple-100 border-purple-200"
-    if (achievementName.includes("9000") || achievementName.includes("10000"))
-      return "from-blue-50 to-blue-100 border-blue-200"
-    return "from-yellow-50 to-orange-100 border-orange-200"
+  const getCertificateBadgeColor = (level) => {
+    const colors = {
+      A1: "from-green-50 to-green-100 border-green-300",
+      A2: "from-blue-50 to-blue-100 border-blue-300",
+      B1: "from-purple-50 to-purple-100 border-purple-300",
+      B2: "from-orange-50 to-orange-100 border-orange-300",
+      C1: "from-red-50 to-red-100 border-red-300",
+      C2: "from-yellow-50 to-yellow-100 border-yellow-300",
+    }
+    return colors[level] || "from-gray-50 to-gray-100 border-gray-300"
   }
 
-  const lastAchievement =
-    user?.newAchievements && user.newAchievements.length > 0
-      ? user.newAchievements[user.newAchievements.length - 1]
-      : user?.achievements && user.achievements.length > 0
-        ? user.achievements[user.achievements.length - 1]
-        : null
+  const getCertificateIconColor = (level) => {
+    const colors = {
+      A1: "text-green-600",
+      A2: "text-blue-600",
+      B1: "text-purple-600",
+      B2: "text-orange-600",
+      C1: "text-red-600",
+      C2: "text-yellow-600",
+    }
+    return colors[level] || "text-gray-600"
+  }
 
   if (authLoading || !user) {
     return (
@@ -96,7 +152,6 @@ const Account = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 p-4">
-      {/* Profile Header */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex flex-col md:flex-row items-center gap-6">
           <div className="relative">
@@ -159,8 +214,7 @@ const Account = () => {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 rounded-xl p-6 hover:shadow-md transition-shadow">
           <div className="flex items-center gap-3">
             <div className="bg-yellow-100 p-3 rounded-lg">
@@ -181,24 +235,6 @@ const Account = () => {
             <div>
               <p className="text-sm text-gray-600 font-medium">Niveli Aktual</p>
               <p className="text-2xl font-bold text-gray-900">{user.level}</p>
-            </div>
-          </div>
-        </div>
-
-        <div
-          className={`bg-gradient-to-r ${lastAchievement ? "from-purple-50 to-purple-100" : "from-gray-50 to-gray-100"} rounded-xl p-6 hover:shadow-md transition-shadow`}
-        >
-          <div className="flex items-center gap-3">
-            <div className={`${lastAchievement ? "bg-purple-100" : "bg-gray-100"} p-3 rounded-lg`}>
-              {lastAchievement ? getAchievementIcon(lastAchievement) : <Trophy className="h-6 w-6 text-gray-400" />}
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 font-medium">Arritja e fundit</p>
-              <p className="text-lg font-bold text-gray-900 leading-tight">
-                {lastAchievement
-                  ? lastAchievement.replace(" XP Master", "").replace(" XP Legend", "") + " XP"
-                  : "Asnjë arritje"}
-              </p>
             </div>
           </div>
         </div>
@@ -230,33 +266,59 @@ const Account = () => {
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center gap-2 mb-6">
-          <Trophy className="h-6 w-6 text-yellow-600" />
-          <h2 className="text-xl font-bold text-gray-900">Arritjet</h2>
+          <Award className="h-6 w-6 text-teal-600" />
+          <h2 className="text-xl font-bold text-gray-900">Certifikatat</h2>
           <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-full text-sm font-medium ml-2">
-            {user.achievements ? user.achievements.length : 0}
+            {certificates.length}
           </span>
         </div>
-        {user.achievements && user.achievements.length > 0 ? (
+
+        {loadingCertificates || issuingCertificate ? (
+          <div className="text-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-teal-600 mx-auto mb-4" />
+            <p className="text-gray-600">
+              {issuingCertificate ? "Duke krijuar certifikatën tuaj..." : "Duke ngarkuar certifikatat..."}
+            </p>
+          </div>
+        ) : certificates.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {user.achievements.map((achievement, index) => (
+            {certificates.map((certificate) => (
               <div
-                key={index}
-                className={`bg-gradient-to-r ${getAchievementColor(achievement)} rounded-xl p-5 border hover:shadow-md transition-all duration-200`}
+                key={certificate._id}
+                className={`bg-gradient-to-r ${getCertificateBadgeColor(certificate.level)} rounded-xl p-6 border-2 hover:shadow-lg transition-all duration-200`}
               >
-                <div className="flex items-center gap-4">
-                  <div className="bg-white p-3 rounded-full shadow-sm">{getAchievementIcon(achievement)}</div>
+                <div className="flex flex-col items-center text-center gap-4">
+                  <div className="bg-white p-4 rounded-full shadow-md">
+                    <Award className={`h-10 w-10 ${getCertificateIconColor(certificate.level)}`} />
+                  </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 text-sm leading-tight">
-                      {achievement.replace(" XP Master", "").replace(" XP Legend", "")} XP
-                    </h3>
-                    <p className="text-xs text-gray-600 mt-1">
-                      {achievement.includes("Legend")
-                        ? "Legjendë"
-                        : achievement.includes("Master")
-                          ? "Mjeshtër"
-                          : "Arritje"}
+                    <h3 className="font-bold text-gray-900 text-2xl mb-1">Niveli {certificate.level}</h3>
+                    <p className="text-sm text-gray-600 mb-1">
+                      Lëshuar më:{" "}
+                      {new Date(certificate.issuedAt).toLocaleDateString("sq-AL", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })}
                     </p>
                   </div>
+                  <button
+                    onClick={() => handleDownloadCertificate(certificate._id, certificate.level)}
+                    disabled={downloadingCert === certificate._id}
+                    className="w-full bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {downloadingCert === certificate._id ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Duke shkarkuar...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4" />
+                        Shkarko PDF
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             ))}
@@ -264,13 +326,14 @@ const Account = () => {
         ) : (
           <div className="text-center py-12">
             <div className="bg-gray-50 rounded-full p-6 w-24 h-24 mx-auto mb-4 flex items-center justify-center">
-              <Trophy className="h-12 w-12 text-gray-300" />
+              <FileText className="h-12 w-12 text-gray-300" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Ende nuk ka arritje</h3>
-            <p className="text-gray-600 mb-4">Vazhdoni të mësoni për të fituar arritjen tuaj të parë!</p>
-            <div className="bg-blue-50 rounded-lg p-4 max-w-md mx-auto">
-              <p className="text-sm text-blue-800">
-                <strong>Arritja e ardhshme:</strong> 500 XP Master në {500 - user.xp} XP
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Ende nuk ka certifikata</h3>
+            <p className="text-gray-600 mb-4">Vazhdoni të mësoni për të fituar certifikatën tuaj të parë!</p>
+            <div className="bg-teal-50 rounded-lg p-4 max-w-md mx-auto">
+              <p className="text-sm text-teal-800">
+                <strong>Certifikata e ardhshme:</strong> Niveli {user.level === "A1" ? "A2" : user.level} kur të arrini
+                nivelin e ri!
               </p>
             </div>
           </div>
