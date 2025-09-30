@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import { authService } from "../services/api"
 
 const ResetPassword = () => {
@@ -11,7 +11,6 @@ const ResetPassword = () => {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
   const { token } = useParams()
-  const navigate = useNavigate()
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -46,16 +45,12 @@ const ResetPassword = () => {
           <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-8 text-2xl text-white">
             ✅
           </div>
-          <h2 className="text-3xl font-bold text-gray-700 mb-4">Fjalëkalimi u verifikua me sukses!</h2>
+          <h2 className="text-3xl font-bold text-gray-700 mb-4">
+            Fjalëkalimi u verifikua me sukses!
+          </h2>
           <p className="text-gray-500 mb-8 leading-relaxed">
-            Tani mund të hyni me fjalëkalimin tuaj të ri.
+            Fjalëkalimi juaj është rivendosur me sukses mbylleni kete faqe dhe vazdhoni ne faqen kryesore
           </p>
-          <button
-            onClick={() => navigate("/signin")}
-            className="w-full bg-amber-600 text-white border-none rounded-lg px-4 py-3 text-base font-medium cursor-pointer transition-all hover:bg-amber-700"
-          >
-            Shko te Hyrja
-          </button>
         </div>
       </div>
     )
@@ -64,7 +59,9 @@ const ResetPassword = () => {
   return (
     <div className="bg-gradient-to-br from-yellow-50 to-white flex items-center justify-center p-4 min-h-screen">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-8">
-        <h2 className="text-2xl font-bold text-gray-700 mb-4 text-center">Rivendosni fjalëkalimin</h2>
+        <h2 className="text-2xl font-bold text-gray-700 mb-4 text-center">
+          Rivendosni fjalëkalimin
+        </h2>
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-red-600 text-sm text-center">
             {error}
