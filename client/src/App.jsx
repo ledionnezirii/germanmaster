@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom"
 import { SidebarProvider, useSidebar } from "./context/SidebarContext"
 import { AuthProvider } from "./context/AuthContext"
 import Navbar from "./components/Navbar"
@@ -25,17 +25,21 @@ import Quizes from "./pages/Quizes"
 
 const AppContent = () => {
   const { isCollapsed } = useSidebar()
+  const location = useLocation()
+
+  // Kontrollo nëse rruga është verify email
+  const isVerifyPage = location.pathname.startsWith("/verify/")
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <Navbar />
+      {!isVerifyPage && <Navbar />}
       <div className="flex flex-1 relative">
-        <Sidebar />
+        {!isVerifyPage && <Sidebar />}
         {/* Main content with proper margin to account for fixed sidebar */}
         <main
           className={`
             flex-1 transition-all duration-300 ease-in-out
-            ${isCollapsed ? "lg:ml-16" : "lg:ml-64"}
+            ${!isVerifyPage ? (isCollapsed ? "lg:ml-16" : "lg:ml-64") : ""}
             min-h-[calc(100vh-4rem)] overflow-y-auto
           `}
         >
@@ -59,7 +63,6 @@ const AppContent = () => {
               <Route path="tests" element={<Tests />} />
               <Route path="/pronunciation" element={<Pronunciation />} />
               <Route path="/quizes" element={<Quizes />} />
-
             </Routes>
           </div>
         </main>
