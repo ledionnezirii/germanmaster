@@ -2,7 +2,6 @@ const User = require("../models/User")
 const { ApiError } = require("../utils/ApiError")
 const { ApiResponse } = require("../utils/ApiResponse")
 const { asyncHandler } = require("../utils/asyncHandler")
-const achievementsService = require("../services/achievementService");
 const multer = require("multer")
 const path = require("path")
 const fs = require("fs")
