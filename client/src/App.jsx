@@ -27,19 +27,20 @@ const AppContent = () => {
   const { isCollapsed } = useSidebar()
   const location = useLocation()
 
-  // Kontrollo nëse rruga është verify email
-  const isVerifyPage = location.pathname.startsWith("/verify/")
+  // Rrugët ku nuk duhen Navbar/Sidebar
+  const hiddenLayoutPaths = ["/verify/", "/reset-password/"]
+  const hideLayout = hiddenLayoutPaths.some((path) => location.pathname.startsWith(path))
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      {!isVerifyPage && <Navbar />}
+      {!hideLayout && <Navbar />}
       <div className="flex flex-1 relative">
-        {!isVerifyPage && <Sidebar />}
-        {/* Main content with proper margin to account for fixed sidebar */}
+        {!hideLayout && <Sidebar />}
+        {/* Main content with proper margin */}
         <main
           className={`
             flex-1 transition-all duration-300 ease-in-out
-            ${!isVerifyPage ? (isCollapsed ? "lg:ml-16" : "lg:ml-64") : ""}
+            ${!hideLayout ? (isCollapsed ? "lg:ml-16" : "lg:ml-64") : ""}
             min-h-[calc(100vh-4rem)] overflow-y-auto
           `}
         >
@@ -58,7 +59,8 @@ const AppContent = () => {
               <Route path="/signup" element={<SignUp />} />
               <Route path="/forgotpassword" element={<ForgotPassword />} />
               <Route path="/reset-password/:token" element={<ResetPassword />} />
-              <Route path="/verify/:token" element={<VerifyEmail />} />              {/* <Route path="/challenge" element={<Challenge />} /> */}
+              <Route path="/verify/:token" element={<VerifyEmail />} />
+              {/* <Route path="/challenge" element={<Challenge />} /> */}
               <Route path="/plan" element={<Plan />} />
               <Route path="tests" element={<Tests />} />
               <Route path="/pronunciation" element={<Pronunciation />} />
