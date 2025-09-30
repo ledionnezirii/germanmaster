@@ -98,7 +98,13 @@ const userSchema = new mongoose.Schema(
         ref: "Quiz",
       },
     ],
-
+    certificates: [
+      {
+        level: String,
+        filePath: String,
+        issuedAt: Date,
+      },
+    ],
     isPaid: {
       type: Boolean,
       default: false,

@@ -34,6 +34,9 @@ const testRoutes = require("./routes/testRoutes");
 const pronunciationRoutes = require('./routes/pronunciationRoutes')
 const paymentRoutes = require("./routes/paymentRoutes");
 const quizRoutes = require ("./routes/quizRoutes")
+const certificateRoutes = require("./routes/certificateRoutes");
+
+
 
 
 const { errorHandler, notFound } = require("./middleware/errorMiddleware")
@@ -220,6 +223,7 @@ app.use("/api/tests",testRoutes)
 app.use("/api/pronunciation",pronunciationRoutes)
 app.use("/api/payments",paymentRoutes)
 app.use("/api/quizes", quizRoutes)
+app.use("/api/certificates", certificateRoutes);
 
 app.use(notFound)
 app.use(errorHandler)
