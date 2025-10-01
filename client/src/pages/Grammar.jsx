@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
 import React from "react"
 
-import { grammarService } from "../services/api"
+import { grammarService, authService } from "../services/api"
 import {
   GraduationCap,
   BookOpen,
@@ -91,10 +91,38 @@ const Grammar = () => {
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentPlayingNumber, setCurrentPlayingNumber] = useState(null)
   const [showDetailedContent, setShowDetailedContent] = useState(false)
+  const [finishedTopics, setFinishedTopics] = useState([])
 
   useEffect(() => {
     fetchTopics()
+    fetchFinishedTopics()
   }, [selectedLevel])
+
+  const fetchFinishedTopics = async () => {
+    try {
+      const response = await authService.getProfile()
+      setFinishedTopics(response.data?.grammarFinished || [])
+    } catch (error) {
+      console.error("Error fetching finished topics:", error)
+    }
+  }
+
+  const handleMarkAsFinished = async () => {
+    if (!selectedTopic) return
+
+    try {
+      await grammarService.markTopicAsFinished(selectedTopic._id)
+      setFinishedTopics([...finishedTopics, selectedTopic._id])
+      alert("Urime! Keni përfunduar këtë temë të gramatikës!")
+    } catch (error) {
+      console.error("Error marking topic as finished:", error)
+      alert("Dështoi shënimi i temës si e përfunduar. Ju lutemi provoni përsëri.")
+    }
+  }
+
+  const isTopicFinished = (topicId) => {
+    return finishedTopics.includes(topicId)
+  }
 
   const fetchTopics = async () => {
     try {
@@ -232,7 +260,12 @@ const Grammar = () => {
 
   const isAllExercisesCompleted = () => {
     if (!selectedTopic?.exercises) return false
-    return selectedTopic.exercises.every((_, index) => showResults[index])
+    const allCompleted = selectedTopic.exercises.every((_, index) => showResults[index])
+    console.log("[v0] Total exercises:", selectedTopic.exercises.length)
+    console.log("[v0] Completed exercises:", Object.keys(showResults).length)
+    console.log("[v0] All exercises completed:", allCompleted)
+    console.log("[v0] Is topic finished:", isTopicFinished(selectedTopic._id))
+    return allCompleted
   }
 
   const levels = ["all", "A1", "A2", "B1", "B2", "C1", "C2"]
@@ -242,8 +275,10 @@ const Grammar = () => {
   }
 
   const renderTopicGrid = useMemo(() => {
-    return filteredTopics.map((topic) => <TopicCard key={topic._id} topic={topic} onClick={handleTopicClick} />)
-  }, [filteredTopics, handleTopicClick])
+    return filteredTopics.map((topic) => (
+      <TopicCard key={topic._id} topic={topic} onClick={handleTopicClick} isFinished={isTopicFinished(topic._id)} />
+    ))
+  }, [filteredTopics, handleTopicClick, finishedTopics])
 
   // If a topic is selected, show the detailed view
   if (selectedTopic) {
@@ -883,8 +918,28 @@ const Grammar = () => {
                         </div>
                       ))}
 
+                      {isAllExercisesCompleted() && !isTopicFinished(selectedTopic._id) && (
+                        <div className="text-center pt-6 border-t-2 border-gray-200">
+                          <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-6 rounded-2xl border-2 border-orange-200 shadow-xl">
+                            <CheckCircle className="h-16 w-16 text-orange-500 mx-auto mb-4" />
+                            <h3 className="text-2xl font-bold text-gray-900 mb-3">Të gjitha ushtrimet u përfunduan!</h3>
+                            <p className="text-gray-600 text-base mb-6 max-w-2xl mx-auto leading-relaxed">
+                              Keni përfunduar me sukses të gjitha ushtrimet. Kliko butonin më poshtë për të shënuar këtë
+                              temë si të përfunduar.
+                            </p>
+                            <button
+                              onClick={handleMarkAsFinished}
+                              className="px-8 py-4 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-2xl hover:from-orange-700 hover:to-amber-700 transition-all font-bold shadow-lg hover:shadow-xl text-base"
+                              aria-label="Shëno si të përfunduar"
+                            >
+                              Përfundo Temën
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Enhanced completion message */}
-                      {isAllExercisesCompleted() && (
+                      {isAllExercisesCompleted() && isTopicFinished(selectedTopic._id) && (
                         <div className="text-center pt-12 border-t-2 border-gray-200">
                           <div className="bg-gradient-to-br from-green-50 to-teal-50 p-8 rounded-2xl border-2 border-green-200 shadow-xl">
                             <Award className="h-20 w-20 text-green-500 mx-auto mb-6" />
@@ -1017,14 +1072,24 @@ const Grammar = () => {
   )
 }
 
-const TopicCard = React.memo(({ topic, onClick }) => (
+const TopicCard = React.memo(({ topic, onClick, isFinished }) => (
   <div
     onClick={() => onClick(topic)}
-    className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all cursor-pointer hover:scale-105 hover:border-teal-200"
+    className={`bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-all cursor-pointer hover:scale-105 ${
+      isFinished
+        ? "border-2 border-orange-500 bg-gradient-to-br from-orange-50 to-amber-50"
+        : "border border-gray-200 hover:border-teal-200"
+    }`}
     aria-label={`Mëso për temën: ${topic.name || "Temë pa titull"}`}
   >
-    <div className="flex items-center justify-end mb-3">
-      <div className="flex items-center gap-1 text-gray-500">
+    <div className="flex items-center justify-between mb-3">
+      {isFinished && (
+        <div className="flex items-center gap-1 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold">
+          <CheckCircle className="h-3 w-3" />
+          <span>Përfunduar</span>
+        </div>
+      )}
+      <div className={`flex items-center gap-1 text-gray-500 ${isFinished ? "" : "ml-auto"}`}>
         <BookOpen className="h-4 w-4" />
         <span className="text-xs">{topic.exercises?.length || 0} ushtr.</span>
       </div>
