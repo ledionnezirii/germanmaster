@@ -6,8 +6,9 @@ const {
   createTopic,
   updateTopic,
   deleteTopic,
+  markTopicAsFinished,
 } = require("../controllers/grammarController")
-const  auth  = require("../middleware/auth")
+const auth = require("../middleware/auth")
 const isAdmin = require("../middleware/isAdmin")
 
 const router = express.Router()
@@ -16,6 +17,7 @@ const router = express.Router()
 router.get("/", getAllTopics)
 router.get("/level/:level", getTopicsByLevel)
 router.get("/:id", getTopicById)
+router.post("/:id/finish", auth, markTopicAsFinished)
 
 // Protected admin routes
 router.post("/", auth, isAdmin, createTopic)
