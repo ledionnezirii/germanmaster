@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api"
+const API_BASE_URL = "/api"
 export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com"
 
 export const getAbsoluteImageUrl = (relativePath) => {
@@ -141,6 +141,7 @@ export const grammarService = {
   createTopic: (topicData) => api.post("/grammar", topicData),
   updateTopic: (id, topicData) => api.put(`/grammar/${id}`, topicData),
   deleteTopic: (id) => api.delete(`/grammar/${id}`),
+  markTopicAsFinished: (id) => api.post(`/grammar/${id}/finish`),
 }
 
 export const questionsService = {
@@ -225,13 +226,11 @@ export const quizService = {
   deleteQuiz: (id) => api.delete(`/quizes/${id}`),
 
   // SUBMIT QUIZ
-  submitQuiz: (quizId, answers) => 
-    api.post(`/quizes/${quizId}/submit`, { answers }),
+  submitQuiz: (quizId, answers) => api.post(`/quizes/${quizId}/submit`, { answers }),
 
   // GET ALL COMPLETED QUIZZES FOR LOGGED-IN USER
   getCompletedQuizzes: () => api.get("/quizes/completed/user"),
 }
-
 
 export const certificatesService = {
   getUserCertificates: () => api.get("/certificates"),
@@ -242,7 +241,5 @@ export const certificatesService = {
     }),
   generateCertificateForLevel: (userId, level) => api.post("/certificates/generate", { userId, level }),
 }
-
-
 
 export default api
