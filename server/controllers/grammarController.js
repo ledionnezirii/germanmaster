@@ -138,6 +138,32 @@ const deleteTopic = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, null, "Grammar topic deleted successfully"))
 })
 
+// @desc    Mark grammar topic as finished
+// @route   PUT /api/grammar/finished/:id
+// @access  Private
+const markTopicAsFinished = asyncHandler(async (req, res) => {
+  const topicId = req.params.id
+  const userId = req.user.id
+
+  const topic = await Grammar.findById(topicId)
+  if (!topic) {
+    throw new ApiError(404, "Grammar topic not found")
+  }
+
+  const User = require("../models/User")
+  const user = await User.findById(userId)
+  if (!user) {
+    throw new ApiError(404, "User not found")
+  }
+
+  if (!user.grammarFinished.includes(topicId)) {
+    user.grammarFinished.push(topicId)
+    await user.save()
+  }
+
+  res.json(new ApiResponse(200, { topicId }, "Grammar topic marked as finished"))
+})
+
 module.exports = {
   getAllTopics,
   getTopicsByLevel,
@@ -145,4 +171,5 @@ module.exports = {
   createTopic,
   updateTopic,
   deleteTopic,
+  markTopicAsFinished,
 }
