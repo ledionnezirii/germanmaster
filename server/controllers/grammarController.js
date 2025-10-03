@@ -164,6 +164,22 @@ const markTopicAsFinished = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, { topicId }, "Grammar topic marked as finished"))
 })
 
+// @desc    Get user's finished grammar topics
+// @route   GET /api/grammar/finished
+// @access  Private
+const getFinishedTopics = asyncHandler(async (req, res) => {
+  const userId = req.user.id
+  
+  const User = require("../models/User")
+  const user = await User.findById(userId).select("grammarFinished")
+  
+  if (!user) {
+    throw new ApiError(404, "User not found")
+  }
+  
+  res.json(new ApiResponse(200, { finishedTopics: user.grammarFinished }))
+})
+
 module.exports = {
   getAllTopics,
   getTopicsByLevel,
@@ -172,4 +188,5 @@ module.exports = {
   updateTopic,
   deleteTopic,
   markTopicAsFinished,
+  getFinishedTopics
 }
