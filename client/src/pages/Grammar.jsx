@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
 import React from "react"
 
-import { grammarService, authService } from "../services/api"
+import { grammarService } from "../services/api"
 import {
   GraduationCap,
   BookOpen,
@@ -92,6 +92,7 @@ const Grammar = () => {
   const [currentPlayingNumber, setCurrentPlayingNumber] = useState(null)
   const [showDetailedContent, setShowDetailedContent] = useState(false)
   const [finishedTopics, setFinishedTopics] = useState([])
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
 
   useEffect(() => {
     fetchTopics()
@@ -100,10 +101,14 @@ const Grammar = () => {
 
   const fetchFinishedTopics = async () => {
     try {
-      const response = await authService.getProfile()
-      setFinishedTopics(response.data?.grammarFinished || [])
+      const response = await grammarService.getFinishedTopics()
+      console.log("[v0] Fetched finished topics response:", response)
+      const finishedIds = response.data?.finishedTopics || response.data || []
+      setFinishedTopics(finishedIds)
+      console.log("[v0] Set finished topics to:", finishedIds)
     } catch (error) {
       console.error("Error fetching finished topics:", error)
+      setFinishedTopics([])
     }
   }
 
@@ -193,6 +198,7 @@ const Grammar = () => {
     setSelectedAnswers({})
     setShowResults({})
     setShowDetailedContent(false)
+    setCurrentQuestionIndex(0)
     window.scrollTo({ top: 0, behavior: "smooth" })
   }, [])
 
@@ -217,6 +223,14 @@ const Grammar = () => {
 
       if (isCorrect) {
         setShowDetailedContent(true)
+      }
+
+      // Auto-advance to next question after 2 seconds
+      if (exerciseIndex < selectedTopic.exercises.length - 1) {
+        setTimeout(() => {
+          setCurrentQuestionIndex(exerciseIndex + 1)
+          setShowDetailedContent(false)
+        }, 2000)
       }
     },
     [selectedTopic],
@@ -557,7 +571,7 @@ const Grammar = () => {
                             {numberItem.number}
                           </div>
 
-                          {/* German word with enhanced pronunciation button */}
+                          {/* German number with enhanced pronunciation button */}
                           <div className="mb-3">
                             <div className="flex items-center justify-center gap-1 mb-1">
                               <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">
@@ -781,183 +795,216 @@ const Grammar = () => {
 
                   {selectedTopic.exercises && selectedTopic.exercises.length > 0 ? (
                     <div className="space-y-6">
-                      {selectedTopic.exercises.map((exercise, index) => (
-                        <div
-                          key={index}
-                          className="bg-gradient-to-br from-white via-purple-50/30 to-pink-50/20 p-6 rounded-xl border-2 border-purple-200/50 shadow-md hover:shadow-lg transition-all"
-                        >
-                          <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                              <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl font-bold text-base shadow-md">
-                                Ushtrimi {index + 1}
+                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl border-2 border-purple-200 shadow-md">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <Brain className="h-5 w-5 text-purple-600" />
+                            <span className="font-bold text-purple-800 text-sm">
+                              Pyetja {currentQuestionIndex + 1} nga {selectedTopic.exercises.length}
+                            </span>
+                          </div>
+                          <div className="text-xs text-purple-600 font-medium">
+                            {Object.keys(showResults).length} të përfunduara
+                          </div>
+                        </div>
+                        <div className="w-full bg-purple-200 rounded-full h-2">
+                          <div
+                            className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full transition-all duration-500"
+                            style={{
+                              width: `${((currentQuestionIndex + 1) / selectedTopic.exercises.length) * 100}%`,
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+
+                      {(() => {
+                        const exercise = selectedTopic.exercises[currentQuestionIndex]
+                        const index = currentQuestionIndex
+                        return (
+                          <div className="bg-gradient-to-br from-white via-purple-50/30 to-pink-50/20 p-6 rounded-xl border-2 border-purple-200/50 shadow-md hover:shadow-lg transition-all">
+                            <div className="flex items-center justify-between mb-6">
+                              <div className="flex items-center gap-3">
+                                <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl font-bold text-base shadow-md">
+                                  Ushtrimi {index + 1}
+                                </div>
                               </div>
+                              {showResults[index] && (
+                                <div
+                                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold shadow-md ${
+                                    showResults[index].isCorrect
+                                      ? "bg-green-100 text-green-800 border border-green-200"
+                                      : "bg-red-100 text-red-800 border border-red-200"
+                                  }`}
+                                >
+                                  {showResults[index].isCorrect ? (
+                                    <CheckCircle className="h-4 w-4" />
+                                  ) : (
+                                    <XCircle className="h-4 w-4" />
+                                  )}
+                                  {showResults[index].isCorrect ? "E saktë!" : "E gabuar"}
+                                </div>
+                              )}
                             </div>
-                            {showResults[index] && (
-                              <div
-                                className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold shadow-md ${
-                                  showResults[index].isCorrect
-                                    ? "bg-green-100 text-green-800 border border-green-200"
-                                    : "bg-red-100 text-red-800 border border-red-200"
-                                }`}
-                              >
-                                {showResults[index].isCorrect ? (
-                                  <CheckCircle className="h-4 w-4" />
-                                ) : (
-                                  <XCircle className="h-4 w-4" />
-                                )}
-                                {showResults[index].isCorrect ? "E saktë!" : "E gabuar"}
+
+                            {exercise.question && (
+                              <div className="mb-6 bg-gradient-to-br from-gray-50 to-slate-50 p-4 rounded-xl border-2 border-gray-200 shadow-md">
+                                <p className="text-gray-900 font-semibold text-base leading-relaxed">
+                                  {exercise.question}
+                                </p>
                               </div>
                             )}
-                          </div>
 
-                          {exercise.question && (
-                            <div className="mb-6 bg-gradient-to-br from-gray-50 to-slate-50 p-4 rounded-xl border-2 border-gray-200 shadow-md">
-                              <p className="text-gray-900 font-semibold text-base leading-relaxed">
-                                {exercise.question}
-                              </p>
-                            </div>
-                          )}
-
-                          {exercise.options && exercise.options.length > 0 && (
-                            <div className="mb-6">
-                              <div className="grid grid-cols-1 gap-4">
-                                {exercise.options.map((option, optIndex) => (
-                                  <button
-                                    key={optIndex}
-                                    onClick={() => handleAnswerSelect(index, option)}
-                                    disabled={showResults[index]}
-                                    className={`p-4 text-left rounded-xl border-3 transition-all text-base font-medium shadow-sm hover:shadow-lg ${
-                                      selectedAnswers[index] === option
-                                        ? showResults[index]
-                                          ? option === exercise.correctAnswer
+                            {exercise.options && exercise.options.length > 0 && (
+                              <div className="mb-6">
+                                <div className="grid grid-cols-1 gap-4">
+                                  {exercise.options.map((option, optIndex) => (
+                                    <button
+                                      key={optIndex}
+                                      onClick={() => handleAnswerSelect(index, option)}
+                                      disabled={showResults[index]}
+                                      className={`p-4 text-left rounded-xl border-3 transition-all text-base font-medium shadow-sm hover:shadow-lg ${
+                                        selectedAnswers[index] === option
+                                          ? showResults[index]
+                                            ? option === exercise.correctAnswer
+                                              ? "bg-green-50 border-green-300 text-green-800 shadow-lg"
+                                              : "bg-red-50 border-red-300 text-red-800 shadow-lg"
+                                            : "bg-purple-50 border-purple-300 text-purple-800 shadow-lg"
+                                          : showResults[index] && option === exercise.correctAnswer
                                             ? "bg-green-50 border-green-300 text-green-800 shadow-lg"
-                                            : "bg-red-50 border-red-300 text-red-800 shadow-lg"
-                                          : "bg-purple-50 border-purple-300 text-purple-800 shadow-lg"
-                                        : showResults[index] && option === exercise.correctAnswer
-                                          ? "bg-green-50 border-green-300 text-green-800 shadow-lg"
-                                          : "bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
-                                    } ${showResults[index] ? "cursor-not-allowed opacity-75" : "cursor-pointer"}`}
-                                    aria-label={`Zgjidh përgjigjen: ${option}`}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <span>{option}</span>
-                                      {showResults[index] && (
-                                        <>
-                                          {option === exercise.correctAnswer && (
-                                            <CheckCircle className="h-5 w-5 text-green-600" />
-                                          )}
-                                          {selectedAnswers[index] === option && option !== exercise.correctAnswer && (
-                                            <XCircle className="h-5 w-5 text-red-600" />
-                                          )}
-                                        </>
-                                      )}
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {showDetailedContent && (
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-gradient-to-r from-gray-50 to-slate-50 p-4 rounded-xl border-2 border-gray-200 shadow-md">
-                              {exercise.english && (
-                                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-xl border-2 border-blue-200 shadow-md">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="bg-blue-200 p-2 rounded-lg">
-                                      <Globe className="h-4 w-4 text-blue-700" />
-                                    </div>
-                                    <span className="font-bold text-blue-700 text-xs uppercase tracking-wide">
-                                      Në Shqip:
-                                    </span>
-                                  </div>
-                                  <p className="text-blue-800 leading-relaxed font-medium text-sm">
-                                    {exercise.english}
-                                  </p>
-                                </div>
-                              )}
-                              {exercise.german && (
-                                <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-3 rounded-xl border-2 border-teal-200 shadow-md">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-2">
-                                      <div className="bg-teal-200 p-2 rounded-lg">
-                                        <Globe className="h-4 w-4 text-teal-700" />
+                                            : "bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                                      } ${showResults[index] ? "cursor-not-allowed opacity-75" : "cursor-pointer"}`}
+                                      aria-label={`Zgjidh përgjigjen: ${option}`}
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span>{option}</span>
+                                        {showResults[index] && (
+                                          <>
+                                            {option === exercise.correctAnswer && (
+                                              <CheckCircle className="h-5 w-5 text-green-600" />
+                                            )}
+                                            {selectedAnswers[index] === option && option !== exercise.correctAnswer && (
+                                              <XCircle className="h-5 w-5 text-red-600" />
+                                            )}
+                                          </>
+                                        )}
                                       </div>
-                                      <span className="font-bold text-teal-700 text-xs uppercase tracking-wide">
-                                        Në Gjermanisht:
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {showDetailedContent && showResults[index] && (
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-gradient-to-r from-gray-50 to-slate-50 p-4 rounded-xl border-2 border-gray-200 shadow-md">
+                                {exercise.english && (
+                                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-xl border-2 border-blue-200 shadow-md">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <div className="bg-blue-200 p-2 rounded-lg">
+                                        <Globe className="h-4 w-4 text-blue-700" />
+                                      </div>
+                                      <span className="font-bold text-blue-700 text-xs uppercase tracking-wide">
+                                        Në Shqip:
                                       </span>
                                     </div>
-                                    <button
-                                      onClick={() => speakGerman(exercise.german)}
-                                      className="p-3 text-teal-600 hover:text-teal-800 hover:bg-teal-200 rounded-xl transition-all shadow-sm hover:shadow-md"
-                                      title="Dëgjo shqiptimin gjerman"
-                                      aria-label="Dëgjo shqiptimin gjerman"
-                                    >
-                                      <Volume2 className="h-4 w-4" />
-                                    </button>
+                                    <p className="text-blue-800 leading-relaxed font-medium text-sm">
+                                      {exercise.english}
+                                    </p>
                                   </div>
-                                  <p className="text-teal-800 font-medium leading-relaxed text-sm">{exercise.german}</p>
-                                </div>
-                              )}
-                              {exercise.explanation && (
-                                <div className="bg-gradient-to-br from-gray-100 to-slate-100 p-3 rounded-xl border-2 border-gray-200 shadow-md">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <div className="bg-gray-200 p-2 rounded-lg">
-                                      <Brain className="h-4 w-4 text-gray-700" />
+                                )}
+                                {exercise.german && (
+                                  <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-3 rounded-xl border-2 border-teal-200 shadow-md">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2">
+                                        <div className="bg-teal-200 p-2 rounded-lg">
+                                          <Globe className="h-4 w-4 text-teal-700" />
+                                        </div>
+                                        <span className="font-bold text-teal-700 text-xs uppercase tracking-wide">
+                                          Në Gjermanisht:
+                                        </span>
+                                      </div>
+                                      <button
+                                        onClick={() => speakGerman(exercise.german)}
+                                        className="p-3 text-teal-600 hover:text-teal-800 hover:bg-teal-200 rounded-xl transition-all shadow-sm hover:shadow-md"
+                                        title="Dëgjo shqiptimin gjerman"
+                                        aria-label="Dëgjo shqiptimin gjerman"
+                                      >
+                                        <Volume2 className="h-4 w-4" />
+                                      </button>
                                     </div>
-                                    <span className="font-bold text-gray-700 text-xs uppercase tracking-wide">
-                                      Shpjegimi:
-                                    </span>
+                                    <p className="text-teal-800 font-medium leading-relaxed text-sm">
+                                      {exercise.german}
+                                    </p>
                                   </div>
-                                  <p className="text-gray-700 italic leading-relaxed font-medium text-sm">
-                                    {exercise.explanation}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                                )}
+                                {exercise.explanation && (
+                                  <div className="bg-gradient-to-br from-gray-100 to-slate-100 p-3 rounded-xl border-2 border-gray-200 shadow-md">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <div className="bg-gray-200 p-2 rounded-lg">
+                                        <Brain className="h-4 w-4 text-gray-700" />
+                                      </div>
+                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide">
+                                        Shpjegimi:
+                                      </span>
+                                    </div>
+                                    <p className="text-gray-700 italic leading-relaxed font-medium text-sm">
+                                      {exercise.explanation}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
 
-                      {isAllExercisesCompleted() && !isTopicFinished(selectedTopic._id) && (
-                        <div className="text-center pt-6 border-t-2 border-gray-200">
-                          <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-6 rounded-2xl border-2 border-orange-200 shadow-xl">
-                            <CheckCircle className="h-16 w-16 text-orange-500 mx-auto mb-4" />
-                            <h3 className="text-2xl font-bold text-gray-900 mb-3">Të gjitha ushtrimet u përfunduan!</h3>
-                            <p className="text-gray-600 text-base mb-6 max-w-2xl mx-auto leading-relaxed">
-                              Keni përfunduar me sukses të gjitha ushtrimet. Kliko butonin më poshtë për të shënuar këtë
-                              temë si të përfunduar.
-                            </p>
-                            <button
-                              onClick={handleMarkAsFinished}
-                              className="px-8 py-4 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-2xl hover:from-orange-700 hover:to-amber-700 transition-all font-bold shadow-lg hover:shadow-xl text-base"
-                              aria-label="Shëno si të përfunduar"
-                            >
-                              Përfundo Temën
-                            </button>
+                            {/* The question will automatically advance after 2 seconds */}
                           </div>
-                        </div>
-                      )}
+                        )
+                      })()}
+
+                      {isAllExercisesCompleted() &&
+                        currentQuestionIndex === selectedTopic.exercises.length - 1 &&
+                        !isTopicFinished(selectedTopic._id) && (
+                          <div className="text-center pt-6 border-t-2 border-gray-200">
+                            <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-6 rounded-2xl border-2 border-orange-200 shadow-xl">
+                              <CheckCircle className="h-16 w-16 text-orange-500 mx-auto mb-4" />
+                              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                                Të gjitha ushtrimet u përfunduan!
+                              </h3>
+                              <p className="text-gray-600 text-base mb-6 max-w-2xl mx-auto leading-relaxed">
+                                Keni përfunduar me sukses të gjitha ushtrimet për këtë temë të gramatikës. Kliko butonin
+                                më poshtë për të shënuar këtë temë si të përfunduar.
+                              </p>
+                              <button
+                                onClick={handleMarkAsFinished}
+                                className="px-8 py-4 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-2xl hover:from-orange-700 hover:to-amber-700 transition-all font-bold shadow-lg hover:shadow-xl text-base"
+                                aria-label="Shëno si të përfunduar"
+                              >
+                                Përfundo Temën
+                              </button>
+                            </div>
+                          </div>
+                        )}
 
                       {/* Enhanced completion message */}
-                      {isAllExercisesCompleted() && isTopicFinished(selectedTopic._id) && (
-                        <div className="text-center pt-12 border-t-2 border-gray-200">
-                          <div className="bg-gradient-to-br from-green-50 to-teal-50 p-8 rounded-2xl border-2 border-green-200 shadow-xl">
-                            <Award className="h-20 w-20 text-green-500 mx-auto mb-6" />
-                            <h3 className="text-3xl font-bold text-gray-900 mb-4">Urime! Punë e shkëlqyer!</h3>
-                            <p className="text-gray-600 text-lg mb-8 max-w-3xl mx-auto leading-relaxed">
-                              Keni përfunduar me sukses të gjitha ushtrimet për këtë temë të gramatikës. Vazhdoni me
-                              tema të tjera për të përmirësuar njohuritë tuaja.
-                            </p>
-                            <button
-                              onClick={handleBackToTopics}
-                              className="px-8 py-4 bg-gradient-to-r from-teal-600 to-blue-600 text-white rounded-2xl hover:from-teal-700 hover:to-blue-700 transition-all font-bold shadow-lg hover:shadow-xl text-base"
-                              aria-label="Kthehu te lista e temave"
-                            >
-                              Vazhdo me Tema të Tjera
-                            </button>
+                      {isAllExercisesCompleted() &&
+                        currentQuestionIndex === selectedTopic.exercises.length - 1 &&
+                        isTopicFinished(selectedTopic._id) && (
+                          <div className="text-center pt-12 border-t-2 border-gray-200">
+                            <div className="bg-gradient-to-br from-green-50 to-teal-50 p-8 rounded-2xl border-2 border-green-200 shadow-xl">
+                              <Award className="h-20 w-20 text-green-500 mx-auto mb-6" />
+                              <h3 className="text-3xl font-bold text-gray-900 mb-4">Urime! Punë e shkëlqyer!</h3>
+                              <p className="text-gray-600 text-lg mb-8 max-w-3xl mx-auto leading-relaxed">
+                                Keni përfunduar me sukses të gjitha ushtrimet për këtë temë të gramatikës. Vazhdoni me
+                                tema të tjera për të përmirësuar njohuritë tuaja.
+                              </p>
+                              <button
+                                onClick={handleBackToTopics}
+                                className="px-8 py-4 bg-gradient-to-r from-teal-600 to-blue-600 text-white rounded-2xl hover:from-teal-700 hover:to-blue-700 transition-all font-bold shadow-lg hover:shadow-xl text-base"
+                                aria-label="Kthehu te lista e temave"
+                              >
+                                Vazhdo me Tema të Tjera
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </div>
                   ) : (
                     <div className="text-center py-16 bg-gradient-to-br from-gray-50 to-slate-50 rounded-2xl border-2 border-gray-200">

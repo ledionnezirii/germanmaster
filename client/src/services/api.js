@@ -142,6 +142,7 @@ export const grammarService = {
   updateTopic: (id, topicData) => api.put(`/grammar/${id}`, topicData),
   deleteTopic: (id) => api.delete(`/grammar/${id}`),
   markTopicAsFinished: (id) => api.post(`/grammar/${id}/finish`),
+  getFinishedTopics: () => api.get("/grammar/finished"),
 }
 
 export const questionsService = {

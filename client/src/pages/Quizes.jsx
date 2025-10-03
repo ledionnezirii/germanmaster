@@ -27,6 +27,14 @@ const Quizes = () => {
 
   const [selectedWords, setSelectedWords] = useState([])
 
+  const totalPages = Math.ceil(quizzes.length / quizzesPerPage)
+  const indexOfFirstQuiz = (currentPage - 1) * quizzesPerPage
+  const indexOfLastQuiz = Math.min(indexOfFirstQuiz + quizzesPerPage, quizzes.length)
+
+  const paginate = (pageNumber) => {
+    setCurrentPage(pageNumber)
+  }
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -110,23 +118,14 @@ const Quizes = () => {
     }
   }, [])
 
-  const filteredQuizzes = selectedLevel === "all" ? quizzes : quizzes.filter((quiz) => quiz.level === selectedLevel)
-
-  const indexOfLastQuiz = currentPage * quizzesPerPage
-  const indexOfFirstQuiz = indexOfLastQuiz - quizzesPerPage
-  const currentQuizzes = filteredQuizzes.slice(indexOfFirstQuiz, indexOfLastQuiz)
-  const totalPages = Math.ceil(filteredQuizzes.length / quizzesPerPage)
-
-  const paginate = (pageNumber) => setCurrentPage(pageNumber)
-
   const getLevelColor = (level) => {
     const colors = {
-      A1: "bg-green-50 text-green-700 border-green-200",
-      A2: "bg-green-100 text-green-800 border-green-300",
-      B1: "bg-emerald-100 text-emerald-800 border-emerald-300",
-      B2: "bg-orange-50 text-orange-700 border-orange-200",
-      C1: "bg-orange-100 text-orange-800 border-orange-300",
-      C2: "bg-amber-100 text-amber-800 border-amber-300",
+      A1: "bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-800 border-emerald-300",
+      A2: "bg-gradient-to-r from-teal-100 to-cyan-100 text-teal-800 border-teal-300",
+      B1: "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border-blue-300",
+      B2: "bg-gradient-to-r from-orange-100 to-amber-100 text-orange-800 border-orange-300",
+      C1: "bg-gradient-to-r from-orange-100 to-amber-100 text-orange-800 border-orange-300",
+      C2: "bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 border-amber-300",
     }
     return colors[level] || colors.A1
   }
@@ -150,14 +149,12 @@ const Quizes = () => {
   const handleWordClick = (word) => {
     const newSelectedWords = [...selectedWords, word]
     setSelectedWords(newSelectedWords)
-    // Join words with space to form the answer
     handleAnswer(newSelectedWords.join(" "))
   }
 
   const handleRemoveWord = (index) => {
     const newSelectedWords = selectedWords.filter((_, i) => i !== index)
     setSelectedWords(newSelectedWords)
-    // Update answer
     handleAnswer(newSelectedWords.join(" "))
   }
 
@@ -263,7 +260,6 @@ const Quizes = () => {
               </h3>
             </div>
 
-            {/* Selected words area */}
             <div className="min-h-[60px] p-3 bg-white border-2 border-gray-300 rounded-lg">
               {selectedWords.length === 0 ? (
                 <p className="text-gray-400 text-sm font-medium text-center py-2">
@@ -284,7 +280,6 @@ const Quizes = () => {
               )}
             </div>
 
-            {/* Available word buttons */}
             <div className="flex flex-wrap gap-2 justify-center">
               {question.options.map((option, optIndex) => {
                 const isUsed = selectedWords.includes(option)
@@ -305,7 +300,6 @@ const Quizes = () => {
               })}
             </div>
 
-            {/* Clear button */}
             {selectedWords.length > 0 && (
               <div className="text-center">
                 <button
@@ -367,13 +361,13 @@ const Quizes = () => {
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 max-w-md w-full p-5 text-center">
           <div
             className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 ${
-              isGoodScore ? "bg-green-100" : "bg-orange-100"
+              isGoodScore ? "bg-orange-100" : "bg-amber-100"
             }`}
           >
             {isGoodScore ? (
-              <Trophy className="w-7 h-7 text-green-600" />
+              <Trophy className="w-7 h-7 text-orange-600" />
             ) : (
-              <Target className="w-7 h-7 text-orange-600" />
+              <Target className="w-7 h-7 text-amber-600" />
             )}
           </div>
 
@@ -386,7 +380,7 @@ const Quizes = () => {
             </div>
             <p className="text-gray-600 mb-2 font-medium text-sm">Përgjigje të Sakta</p>
 
-            <div className={`text-xl font-bold mb-1 ${isGoodScore ? "text-green-600" : "text-orange-600"}`}>
+            <div className={`text-xl font-bold mb-1 ${isGoodScore ? "text-orange-600" : "text-amber-600"}`}>
               {percentage}%
             </div>
             <p className="text-xs text-gray-500 font-medium">Rezultati</p>
@@ -410,7 +404,7 @@ const Quizes = () => {
                 setQuizResults(null)
                 setCurrentView("list")
               }}
-              className="w-full py-2.5 px-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-sm transition-all duration-200 shadow-md hover:shadow-lg"
+              className="w-full py-2.5 px-4 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white rounded-xl font-bold text-sm transition-all duration-200 shadow-md hover:shadow-lg"
             >
               Kthehu te Kuizet
             </button>
@@ -456,7 +450,7 @@ const Quizes = () => {
               <span className="sm:hidden">Kthehu</span>
             </button>
 
-            <div className="bg-green-600 rounded-xl p-4 sm:p-5 text-white shadow-md">
+            <div className="bg-gradient-to-r from-orange-600 to-amber-600 rounded-xl p-4 sm:p-5 text-white shadow-md">
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-base sm:text-xl font-bold mb-2">{selectedQuiz.title}</h1>
@@ -464,14 +458,14 @@ const Quizes = () => {
                     <span className="px-2.5 py-1 rounded-full text-xs font-bold border-2 bg-white/20 text-white border-white/30">
                       Niveli {selectedQuiz.level}
                     </span>
-                    <div className="flex items-center gap-1 text-xs bg-orange-500 px-2.5 py-1 rounded-full font-bold">
+                    <div className="flex items-center gap-1 text-xs bg-amber-500 px-2.5 py-1 rounded-full font-bold">
                       <Star className="w-3 h-3" />
                       {selectedQuiz.xp} XP
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-green-100 font-medium">Pyetja</p>
+                  <p className="text-xs text-orange-100 font-medium">Pyetja</p>
                   <p className="text-lg sm:text-xl font-bold">
                     {currentQuestionIndex + 1}/{selectedQuiz.questions.length}
                   </p>
@@ -486,7 +480,7 @@ const Quizes = () => {
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
-                  className="bg-green-600 h-2 rounded-full transition-all duration-500"
+                  className="bg-gradient-to-r from-orange-600 to-amber-600 h-2 rounded-full transition-all duration-500"
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
@@ -504,7 +498,7 @@ const Quizes = () => {
               className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${
                 currentQuestionIndex === 0
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-white border-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-green-300"
+                  : "bg-white border-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-orange-300"
               }`}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -519,7 +513,7 @@ const Quizes = () => {
                 className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${
                   !answers[currentQuestionIndex]
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg"
+                    : "bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-700 hover:to-amber-700 shadow-md hover:shadow-lg"
                 }`}
               >
                 <span className="hidden sm:inline">Dërgo Kuizin</span>
@@ -533,7 +527,7 @@ const Quizes = () => {
                 className={`flex items-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-lg text-sm font-bold transition-all ${
                   !answers[currentQuestionIndex]
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-green-600 text-white hover:bg-green-700 shadow-md hover:shadow-lg"
+                    : "bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-700 hover:to-amber-700 shadow-md hover:shadow-lg"
                 }`}
               >
                 <span className="hidden sm:inline">Tjetri</span>
@@ -572,7 +566,7 @@ const Quizes = () => {
                 }}
                 className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${
                   selectedLevel === level
-                    ? "bg-green-600 text-white shadow-md"
+                    ? "bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
@@ -583,7 +577,7 @@ const Quizes = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          {currentQuizzes.map((quiz) => {
+          {quizzes.slice(indexOfFirstQuiz, indexOfLastQuiz).map((quiz) => {
             const isCompleted = completedQuizzes.includes(quiz._id)
 
             return (
@@ -591,8 +585,8 @@ const Quizes = () => {
                 key={quiz._id}
                 className={`relative rounded-xl transition-all duration-300 hover:shadow-lg cursor-pointer overflow-hidden group border-2 ${
                   isCompleted
-                    ? "bg-orange-50 border-orange-200 hover:border-orange-300"
-                    : "bg-white border-gray-200 hover:border-green-300"
+                    ? "bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200 hover:border-orange-300"
+                    : "bg-white border-gray-200 hover:border-orange-300"
                 }`}
                 onClick={() => startQuiz(quiz)}
               >
@@ -608,7 +602,7 @@ const Quizes = () => {
                   <div className="mb-4">
                     <h3
                       className={`text-base sm:text-lg font-bold mb-2 line-clamp-2 leading-snug ${
-                        isCompleted ? "text-orange-800" : "text-gray-800 group-hover:text-green-700"
+                        isCompleted ? "text-orange-800" : "text-gray-800 group-hover:text-orange-700"
                       }`}
                     >
                       {quiz.title}
@@ -636,8 +630,8 @@ const Quizes = () => {
                     <button
                       className={`w-full py-2.5 px-4 rounded-lg text-sm font-bold transition-all duration-200 ${
                         isCompleted
-                          ? "bg-orange-600 text-white hover:bg-orange-700 shadow-sm hover:shadow-md"
-                          : "bg-green-600 text-white hover:bg-green-700 shadow-sm hover:shadow-md"
+                          ? "bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-700 hover:to-amber-700 shadow-sm hover:shadow-md"
+                          : "bg-gradient-to-r from-orange-600 to-amber-600 text-white hover:from-orange-700 hover:to-amber-700 shadow-sm hover:shadow-md"
                       }`}
                     >
                       {isCompleted ? "Përsërit Kuizin" : "Fillo Kuizin"}
@@ -681,7 +675,7 @@ const Quizes = () => {
                   onClick={() => paginate(pageNumber)}
                   className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${
                     currentPage === pageNumber
-                      ? "bg-green-600 text-white shadow-md"
+                      ? "bg-gradient-to-r from-orange-600 to-amber-600 text-white shadow-md"
                       : "text-gray-600 hover:bg-gray-100 bg-gray-50"
                   }`}
                 >
@@ -704,19 +698,18 @@ const Quizes = () => {
           </div>
         )}
 
-        {filteredQuizzes.length > 0 && (
+        {quizzes.length > 0 && (
           <div className="text-center">
             <p className="text-sm text-gray-500 font-medium">
-              Duke treguar {indexOfFirstQuiz + 1}-{Math.min(indexOfLastQuiz, filteredQuizzes.length)} nga{" "}
-              {filteredQuizzes.length} kuize
+              Duke treguar {indexOfFirstQuiz + 1}-{Math.min(indexOfLastQuiz, quizzes.length)} nga {quizzes.length} kuize
             </p>
           </div>
         )}
 
-        {filteredQuizzes.length === 0 && !loading && (
+        {quizzes.length === 0 && !loading && (
           <div className="text-center py-12">
             <div className="bg-gray-50 rounded-2xl p-8 inline-block border border-gray-200">
-              <BookOpen className="h-12 w-12 text-green-600 mx-auto mb-3" />
+              <BookOpen className="h-12 w-12 text-orange-600 mx-auto mb-3" />
               <h3 className="text-base font-bold text-gray-800 mb-2">Nuk ka kuize të disponueshme</h3>
               <p className="text-gray-500 text-sm">
                 {selectedLevel === "all" ? "Nuk u gjetën kuize." : `Nuk ka kuize për nivelin ${selectedLevel}.`}
