@@ -51,7 +51,7 @@ const SignIn = () => {
       } else if (errorMessage.toLowerCase().includes("verify")) {
         setError("Ju lutemi verifikoni email-in tuaj para se të hyni.")
       } else {
-        setError("Hyrja dështoi. Ju lutemi provoni përsëri.")
+        setError("Email ose fjalëkalim i pasaktë. Ju lutemi provoni përsëri.")
       }
     } finally {
       setLoading(false)
@@ -154,9 +154,8 @@ const SignIn = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3.5 px-4 rounded-lg text-base font-semibold transition-all duration-200 flex items-center justify-center ${
-              loading ? "bg-gray-400 cursor-not-allowed" : "bg-amber-600 hover:bg-amber-700 active:bg-amber-800"
-            } text-white shadow-lg hover:shadow-xl`}
+            className={`w-full py-3.5 px-4 rounded-lg text-base font-semibold transition-all duration-200 flex items-center justify-center ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-amber-600 hover:bg-amber-700 active:bg-amber-800"
+              } text-white shadow-lg hover:shadow-xl`}
           >
             {loading ? (
               <>
