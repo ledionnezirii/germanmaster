@@ -1,35 +1,23 @@
-require("dotenv").config(); // sigurohu që lexon variablat nga .env
-const nodemailer = require("nodemailer");
+require('dotenv').config({ path: './.env' }); // adjust path if needed
+const SibApiV3Sdk = require('@sendinblue/client');
 
-const sendTest = async () => {
-  console.log("Leximi i variablave nga .env:");
-  console.log("EMAIL_HOST:", process.env.EMAIL_HOST);
-  console.log("EMAIL_PORT:", process.env.EMAIL_PORT);
-  console.log("EMAIL_USER:", process.env.EMAIL_USER);
-  console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "💚 set" : "❌ missing");
+const client = new SibApiV3Sdk.TransactionalEmailsApi();
+client.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, process.env.BREVO_API_KEY);
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: false, // përdor true me port 465 nëse do
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+const sendEmail = async () => {
+  const emailData = {
+    sender: { email: process.env.EMAIL_FROM, name: "GjuhëGjerma App" },
+    to: [{ email: "ledion.0204@gmail.com", name: "Test User" }],
+    subject: "Brevo Test Email",
+    htmlContent: "<h1>Hello!</h1><p>Testing Brevo email sending.</p>",
+  };
 
   try {
-    const info = await transporter.sendMail({
-      from: `"Test App" <${process.env.EMAIL_USER}>`,
-      to: "ledioon.2022@gmail.com", // vendos email-in tënd personal për test
-      subject: "Test Email nga Render",
-      html: "<h1>Email Test</h1><p>Kjo është një test nga serveri në Render</p>",
-    });
-    console.log("Email i dërguar me sukses:", info.messageId);
-  } catch (error) {
-    console.error("Gabim në dërgimin e email:", error);
-    if (error.response) console.error("Response:", error.response);
+    const res = await client.sendTransacEmail(emailData);
+    console.log("✅ Email sent:", res);
+  } catch (err) {
+    console.error("❌ Error:", err.body || err);
   }
 };
 
-sendTest();
+sendEmail();
