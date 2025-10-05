@@ -8,12 +8,13 @@ import { LockIcon, Mail, User } from 'lucide-react';
 
 
 const SignUp = () => {
- const [formData, setFormData] = useState({
-  emri: "",
-  mbiemri: "",
+const [formData, setFormData] = useState({
+  firstName: "",
+  lastName: "",
   email: "",
   password: "",
 })
+
 
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
