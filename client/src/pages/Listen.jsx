@@ -302,16 +302,16 @@ const Listen = () => {
               {/* Result */}
               {showResult && (
                 <div
-                  className={`p-3 sm:p-4 rounded-lg ${result.correct ? "bg-green-50 border border-green-200" : "bg-red-50 border border-red-200"}`}
+                  className={`p-3 sm:p-4 rounded-lg ${result.correct ? "bg-orange-50 border border-orange-200" : "bg-red-50 border border-red-200"}`}
                 >
                   <div className="flex items-center gap-2 mb-2">
                     {result.correct ? (
-                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
+                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
                     ) : (
                       <X className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                     )}
                     <p
-                      className={`font-medium text-sm sm:text-base ${result.correct ? "text-green-800" : "text-red-800"}`}
+                      className={`font-medium text-sm sm:text-base ${result.correct ? "text-orange-800" : "text-red-800"}`}
                     >
                       {result.message}
                     </p>
@@ -423,7 +423,7 @@ const Listen = () => {
                     key={test._id}
                     className={`p-3 rounded-lg shadow-sm border transition-all cursor-pointer overflow-hidden relative group h-fit ${
                       isCompleted
-                        ? "bg-gradient-to-br from-green-50 to-emerald-50 border-green-300 hover:border-green-400 hover:shadow-lg"
+                        ? "bg-gradient-to-br from-orange-50 to-amber-50 border-orange-300 hover:border-orange-400 hover:shadow-lg"
                         : "bg-white border-gray-200 hover:border-teal-300 hover:shadow-md"
                     }`}
                     onClick={() => setSelectedTest(test)}
@@ -437,29 +437,29 @@ const Listen = () => {
                     {/* Background Icon */}
                     <Volume2
                       className={`absolute -bottom-4 -right-4 w-16 h-16 ${
-                        isCompleted ? "text-green-200" : "text-gray-200"
+                        isCompleted ? "text-orange-200" : "text-gray-200"
                       }`}
                     />
                     <div className="relative z-10">
                       <h3
                         className={`text-sm font-semibold mb-1 pr-12 truncate ${
                           isCompleted
-                            ? "text-green-800 group-hover:text-green-900"
+                            ? "text-orange-800 group-hover:text-orange-900"
                             : "text-gray-800 group-hover:text-teal-700"
                         }`}
                       >
                         {test.title}
                       </h3>
-                      <p className={`text-xs line-clamp-2 ${isCompleted ? "text-green-700" : "text-gray-600"}`}>
+                      <p className={`text-xs line-clamp-2 ${isCompleted ? "text-orange-700" : "text-gray-600"}`}>
                         {test.text ? test.text.substring(0, 80) + "..." : "Ushtrim Audio"}
                       </p>
                       <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center">
-                        <span className={`text-xs ${isCompleted ? "text-green-600" : "text-gray-500"}`}>
+                        <span className={`text-xs ${isCompleted ? "text-orange-600" : "text-gray-500"}`}>
                           Gjermanisht • Ushtrim Audio
                         </span>
                         <span
                           className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                            isCompleted ? "bg-green-200 text-green-800" : "bg-teal-100 text-teal-800"
+                            isCompleted ? "bg-orange-200 text-orange-800" : "bg-teal-100 text-teal-800"
                           }`}
                         >
                           {isCompleted ? "Përfunduar" : "Dëgjo"}
