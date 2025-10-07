@@ -13,27 +13,44 @@ export const useSidebar = () => {
 }
 
 export const SidebarProvider = ({ children }) => {
-  const [isCollapsed, setIsCollapsed] = useState(true) // Start collapsed on mobile
+  const [isCollapsed, setIsCollapsed] = useState(true)
 
-  // Initialize sidebar state based on screen size
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 1024) {
-        // Desktop - can be expanded
         setIsCollapsed(false)
       } else {
-        // Mobile - start collapsed
         setIsCollapsed(true)
       }
     }
 
-    // Set initial state
     handleResize()
-
-    // Listen for resize events
     window.addEventListener("resize", handleResize)
     return () => window.removeEventListener("resize", handleResize)
   }, [])
+
+  useEffect(() => {
+    if (window.innerWidth < 1024) {
+      if (!isCollapsed) {
+        // Sidebar is open on mobile - prevent background scroll
+        document.body.style.overflow = "hidden"
+        document.body.style.position = "fixed"
+        document.body.style.width = "100%"
+      } else {
+        // Sidebar is closed - restore scroll
+        document.body.style.overflow = ""
+        document.body.style.position = ""
+        document.body.style.width = ""
+      }
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = ""
+      document.body.style.position = ""
+      document.body.style.width = ""
+    }
+  }, [isCollapsed])
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed)
