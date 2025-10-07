@@ -50,7 +50,7 @@ const Sidebar = () => {
     {
       icon: Sparkles,
       label: "Kaloni në Premium", // Upgrade to Premium
-      path: "/premium",
+      path: "/payments",
       requireAuth: false,
     },
   ]

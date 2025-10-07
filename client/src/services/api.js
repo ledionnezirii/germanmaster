@@ -3,12 +3,19 @@ import axios from "axios"
 const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api"
 export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com"
 
-export const getAbsoluteImageUrl = (relativePath) => {
-  if (!relativePath) return "/placeholder.svg?height=40&width=40"
-  const baseServerUrl = API_BASE_URL.replace("/api", "")
-  const normalizedPath = relativePath.startsWith("/") ? relativePath : `/${relativePath}`
-  return `${baseServerUrl}${normalizedPath}`
-}
+export const getAbsoluteImageUrl = (path) => {
+  if (!path) return "/placeholder.svg?height=40&width=40";
+
+  if (path.startsWith("http")) return path;
+
+  const baseServerUrl =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return `${baseServerUrl}${normalizedPath}`;
+};
+
+
+
 
 const api = axios.create({
   baseURL: API_BASE_URL,
