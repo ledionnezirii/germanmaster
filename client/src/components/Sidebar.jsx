@@ -1,8 +1,8 @@
 "use client"
 
 import { Link, useLocation } from "react-router-dom"
-import { useSidebar } from "../context/SidebarContext" // Assuming this path is correct
-import { useAuth } from "../context/AuthContext" // Assuming this path is correct
+import { useSidebar } from "../context/SidebarContext"
+import { useAuth } from "../context/AuthContext"
 import {
   Home,
   Trophy,
@@ -28,28 +28,25 @@ const Sidebar = () => {
   const location = useLocation()
 
   const menuItems = [
-    { icon: Home, label: "Kryefaqja", path: "/", requireAuth: false }, // Home
-    { icon: Languages, label: "Përkthe", path: "/translate", requireAuth: true }, // Translate
-    { icon: Headphones, label: "Dëgjo", path: "/listen", requireAuth: true }, // Listen
-    { icon: BookOpen, label: "Fjalor", path: "/dictionary", requireAuth: true }, // Dictionary
-    { icon: FolderOpen, label: "Kategori", path: "/category", requireAuth: true }, // Category
-    { icon: MessageCircle, label: "Bisedo", path: "/chat", requireAuth: true }, // Chat
-    // { icon: Swords, label: "Sfidë", path: "/challenge", requireAuth: true }, Challenge
-    { icon: GraduationCap, label: "Gramatikë", path: "/grammar", requireAuth: true }, // Grammar
-    { icon: Trophy, label: "Renditja", path: "/leaderboard", requireAuth: false }, // Leaderboard
-    { icon: MapIcon, label: "PlanProgrami", path: "/plan", requireAuth: true }, //
-
-    { icon: TestTube2Icon, label: "Tests", path: "/tests", requireAuth: true }, //
-    { icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation", requireAuth: true }, //
-    { icon: LightbulbIcon, label: "Kuizet", path: "/quizes", requireAuth: true }, //
-
-    { icon: User, label: "Llogaria", path: "/account", requireAuth: true }, //
+    { icon: Home, label: "Kryefaqja", path: "/", requireAuth: false },
+    { icon: Languages, label: "Përkthe", path: "/translate", requireAuth: true },
+    { icon: Headphones, label: "Dëgjo", path: "/listen", requireAuth: true },
+    { icon: BookOpen, label: "Fjalor", path: "/dictionary", requireAuth: true },
+    { icon: FolderOpen, label: "Kategori", path: "/category", requireAuth: true },
+    { icon: MessageCircle, label: "Bisedo", path: "/chat", requireAuth: true },
+    { icon: GraduationCap, label: "Gramatikë", path: "/grammar", requireAuth: true },
+    { icon: Trophy, label: "Renditja", path: "/leaderboard", requireAuth: false },
+    { icon: MapIcon, label: "PlanProgrami", path: "/plan", requireAuth: true },
+    { icon: TestTube2Icon, label: "Tests", path: "/tests", requireAuth: true },
+    { icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation", requireAuth: true },
+    { icon: LightbulbIcon, label: "Kuizet", path: "/quizes", requireAuth: true },
+    { icon: User, label: "Llogaria", path: "/account", requireAuth: true },
   ]
 
   const footerMenuItems = [
     {
       icon: Sparkles,
-      label: "Kaloni në Premium", // Upgrade to Premium
+      label: "Kaloni në Premium",
       path: "/payments",
       requireAuth: false,
     },
@@ -58,11 +55,9 @@ const Sidebar = () => {
   const filteredMenuItems = menuItems.filter((item) => !item.requireAuth || isAuthenticated)
   const filteredFooterMenuItems = footerMenuItems.filter((item) => !item.requireAuth || isAuthenticated)
 
-  // Handle link click - close sidebar on mobile
   const handleLinkClick = () => {
     window.scrollTo({ top: 0, behavior: "smooth" })
 
-    // Close sidebar on mobile when link is clicked
     if (window.innerWidth < 1024 && !isCollapsed) {
       toggleSidebar()
     }
@@ -70,13 +65,21 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile overlay - only show on mobile when sidebar is open */}
       {!isCollapsed && (
-        <div className="fixed inset-0 z-30 bg-black/30 lg:hidden" onClick={toggleSidebar} aria-hidden="true" />
+        <div
+          className="fixed inset-0 z-30 bg-black/30 lg:hidden"
+          onClick={toggleSidebar}
+          aria-hidden="true"
+          style={{ touchAction: "none" }}
+        />
       )}
-      {/* Sidebar */}
+
       <div
-        className={`fixed left-0 top-16 bottom-0 bg-slate-900 border-r border-slate-800 transition-all duration-300 ease-in-out ${isCollapsed ? "-translate-x-full lg:translate-x-0 lg:w-16" : "translate-x-0 w-64"} z-40 lg:z-10 flex flex-col`}
+        className={`fixed left-0 top-16 bottom-0 bg-slate-900 border-r border-slate-800 z-40 lg:z-10 flex flex-col ${isCollapsed ? "-translate-x-full lg:translate-x-0 lg:w-16" : "translate-x-0 w-64"}`}
+        style={{
+          transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          willChange: "transform",
+        }}
       >
         {/* Toggle button */}
         <button
@@ -90,8 +93,19 @@ const Sidebar = () => {
             <ChevronLeft className="h-4 w-4 text-slate-300" />
           )}
         </button>
-        {/* Menu items */}
-        <nav className="mt-8 px-3 pb-6 flex-1 overflow-y-auto scrollbar-hide">
+
+        <nav
+          className="mt-8 px-3 pb-6 flex-1 overflow-y-auto"
+          style={{
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+          }}
+        >
+          <style>{`
+            nav::-webkit-scrollbar {
+              display: none;
+            }
+          `}</style>
           <ul className="space-y-2">
             {filteredMenuItems.map((item) => {
               const Icon = item.icon
@@ -114,7 +128,7 @@ const Sidebar = () => {
           </ul>
         </nav>
 
-        {/* Professional Footer Section */}
+        {/* Footer Section */}
         <div className="mt-auto px-3 py-4 border-t border-slate-800">
           <ul className="space-y-2">
             {filteredFooterMenuItems.map((item) => {
