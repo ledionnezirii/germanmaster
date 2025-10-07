@@ -25,7 +25,7 @@ const Navbar = () => {
     { to: "/leaderboard", label: "Renditja" }, // Leaderboard
     { to: "/listen", label: "Dëgjo" }, // Listen
     { to: "/translate", label: "Përkthe" }, // Translate
-    { to: "/chat", label: "Bisedo" }, // Chat
+    { to: "/terms", label: "Politika e Privatesise" }, // Chat
   ]
 
   // Close dropdown when clicking outside
