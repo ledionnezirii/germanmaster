@@ -23,6 +23,8 @@ const Account = () => {
   const [achievementStats, setAchievementStats] = useState(null)
   const [groupedAchievements, setGroupedAchievements] = useState({ xp: [], streak: [], tests: [] })
 
+  const [achievementCarouselIndex, setAchievementCarouselIndex] = useState(0)
+
   useEffect(() => {
     setProfilePictureDisplayUrl(user?.profilePicture || null)
     if (user?.profilePicture) setImageError(false)
@@ -109,6 +111,19 @@ const Account = () => {
       fetchAchievements()
     }
   }, [user])
+
+  useEffect(() => {
+    if (achievements.length === 0) return
+
+    const interval = setInterval(() => {
+      setAchievementCarouselIndex((prev) => {
+        const maxIndex = Math.max(0, achievements.length - 1)
+        return prev >= maxIndex ? 0 : prev + 1
+      })
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [achievements.length])
 
   const handleProfilePictureUpload = async (event) => {
     const file = event.target.files[0]
@@ -215,6 +230,27 @@ const Account = () => {
       tests: "Teste",
     }
     return names[category] || category
+  }
+
+  const getCategoryIcon = (category) => {
+    switch (category) {
+      case "xp":
+        return Star
+      case "streak":
+        return Flame
+      case "tests":
+        return BookOpen
+      default:
+        return Award
+    }
+  }
+
+  const handleAchievementPrev = () => {
+    setAchievementCarouselIndex((prev) => Math.max(0, prev - 1))
+  }
+
+  const handleAchievementNext = () => {
+    setAchievementCarouselIndex((prev) => Math.min(achievements.length - 1, prev + 1))
   }
 
   if (authLoading || !user) {
@@ -373,178 +409,104 @@ const Account = () => {
             <p className="text-gray-600">Duke ngarkuar arritjet...</p>
           </div>
         ) : achievements.length > 0 ? (
-          <div className="space-y-8">
-            {/* XP Achievements */}
-            {groupedAchievements.xp && groupedAchievements.xp.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Star className="h-5 w-5 text-yellow-600" />
-                  Arritje XP
-                  <span className="text-sm text-gray-500 font-normal">
-                    ({groupedAchievements.xp.filter((a) => a.isUnlocked).length} / {groupedAchievements.xp.length})
-                  </span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {groupedAchievements.xp.map((achievement) => (
-                    <div
-                      key={achievement.key}
-                      className={`bg-gradient-to-r ${getAchievementBadgeColor(achievement.category, achievement.isUnlocked)} rounded-xl p-5 border-2 shadow-md hover:shadow-lg transition-all duration-300 ${achievement.isUnlocked ? "hover:-translate-y-1" : "opacity-60"}`}
-                    >
-                      <div className="flex flex-col gap-3">
-                        <div className="flex items-start justify-between">
-                          <div className="bg-white p-3 rounded-full shadow-sm">
-                            <Award
-                              className={`h-6 w-6 ${getAchievementIconColor(achievement.category, achievement.isUnlocked)}`}
-                            />
-                          </div>
-                          {achievement.isUnlocked && (
-                            <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
-                              ✓ Shkyçur
+          <div className="relative">
+            <div className="overflow-hidden">
+              <div
+                className="flex transition-transform duration-500 ease-out gap-4"
+                style={{
+                  transform: `translateX(-${achievementCarouselIndex * (100 / Math.min(4, achievements.length))}%)`,
+                }}
+              >
+                {achievements.map((achievement) => {
+                  const IconComponent = getCategoryIcon(achievement.category)
+                  return (
+                    <div key={achievement.key} className="flex-shrink-0 w-full sm:w-1/2 lg:w-1/3 xl:w-1/4">
+                      <div
+                        className={`bg-gradient-to-r ${getAchievementBadgeColor(achievement.category, achievement.isUnlocked)} rounded-xl p-5 border-2 shadow-md hover:shadow-lg transition-all duration-300 h-full ${achievement.isUnlocked ? "hover:-translate-y-1" : "opacity-60"}`}
+                      >
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-start justify-between">
+                            <div className="bg-white p-3 rounded-full shadow-sm">
+                              <IconComponent
+                                className={`h-6 w-6 ${getAchievementIconColor(achievement.category, achievement.isUnlocked)}`}
+                              />
                             </div>
-                          )}
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-gray-900 text-base mb-1">{achievement.title}</h4>
-                          <p className="text-sm text-gray-600 mb-2">{achievement.description}</p>
-                          <div className="bg-white bg-opacity-70 rounded-lg px-2 py-1 inline-block">
-                            <p className="text-xs font-semibold text-gray-700">
-                              {achievement.isUnlocked ? `${achievement.xpThreshold} XP` : achievement.progressText}
-                            </p>
-                          </div>
-                          {!achievement.isUnlocked && achievement.progress > 0 && (
-                            <div className="mt-2">
-                              <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div
-                                  className="bg-yellow-500 h-2 rounded-full transition-all duration-300"
-                                  style={{ width: `${achievement.progress}%` }}
-                                ></div>
+                            {achievement.isUnlocked && (
+                              <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                                ✓ Shkyçur
                               </div>
-                              <p className="text-xs text-gray-500 mt-1">{achievement.progress}% e përfunduar</p>
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-gray-900 text-base mb-1">{achievement.title}</h4>
+                            <p className="text-sm text-gray-600 mb-2">{achievement.description}</p>
+                            <div className="bg-white bg-opacity-70 rounded-lg px-2 py-1 inline-block">
+                              <p className="text-xs font-semibold text-gray-700">
+                                {achievement.isUnlocked
+                                  ? achievement.xpThreshold
+                                    ? `${achievement.xpThreshold} XP`
+                                    : achievement.streakThreshold
+                                      ? `${achievement.streakThreshold} ditë`
+                                      : `${achievement.testsThreshold} teste`
+                                  : achievement.progressText}
+                              </p>
                             </div>
-                          )}
+                            {!achievement.isUnlocked && achievement.progress > 0 && (
+                              <div className="mt-2">
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div
+                                    className={`h-2 rounded-full transition-all duration-300 ${
+                                      achievement.category === "xp"
+                                        ? "bg-yellow-500"
+                                        : achievement.category === "streak"
+                                          ? "bg-orange-500"
+                                          : "bg-purple-500"
+                                    }`}
+                                    style={{ width: `${achievement.progress}%` }}
+                                  ></div>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-1">{achievement.progress}% e përfunduar</p>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  )
+                })}
               </div>
+            </div>
+
+            {achievements.length > 1 && (
+              <>
+                <button
+                  onClick={handleAchievementPrev}
+                  disabled={achievementCarouselIndex === 0}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all z-10"
+                >
+                  {"<"} {/* Placeholder for ChevronLeft */}
+                </button>
+                <button
+                  onClick={handleAchievementNext}
+                  disabled={achievementCarouselIndex >= achievements.length - 1}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all z-10"
+                >
+                  {">"} {/* Placeholder for ChevronRight */}
+                </button>
+              </>
             )}
 
-            {/* Streak Achievements */}
-            {groupedAchievements.streak && groupedAchievements.streak.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <Flame className="h-5 w-5 text-orange-600" />
-                  Arritje Ditësh Rresht
-                  <span className="text-sm text-gray-500 font-normal">
-                    ({groupedAchievements.streak.filter((a) => a.isUnlocked).length} /{" "}
-                    {groupedAchievements.streak.length})
-                  </span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {groupedAchievements.streak.map((achievement) => (
-                    <div
-                      key={achievement.key}
-                      className={`bg-gradient-to-r ${getAchievementBadgeColor(achievement.category, achievement.isUnlocked)} rounded-xl p-5 border-2 shadow-md hover:shadow-lg transition-all duration-300 ${achievement.isUnlocked ? "hover:-translate-y-1" : "opacity-60"}`}
-                    >
-                      <div className="flex flex-col gap-3">
-                        <div className="flex items-start justify-between">
-                          <div className="bg-white p-3 rounded-full shadow-sm">
-                            <Flame
-                              className={`h-6 w-6 ${getAchievementIconColor(achievement.category, achievement.isUnlocked)}`}
-                            />
-                          </div>
-                          {achievement.isUnlocked && (
-                            <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
-                              ✓ Shkyçur
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-gray-900 text-base mb-1">{achievement.title}</h4>
-                          <p className="text-sm text-gray-600 mb-2">{achievement.description}</p>
-                          <div className="bg-white bg-opacity-70 rounded-lg px-2 py-1 inline-block">
-                            <p className="text-xs font-semibold text-gray-700">
-                              {achievement.isUnlocked
-                                ? `${achievement.streakThreshold} ditë`
-                                : achievement.progressText}
-                            </p>
-                          </div>
-                          {!achievement.isUnlocked && achievement.progress > 0 && (
-                            <div className="mt-2">
-                              <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div
-                                  className="bg-orange-500 h-2 rounded-full transition-all duration-300"
-                                  style={{ width: `${achievement.progress}%` }}
-                                ></div>
-                              </div>
-                              <p className="text-xs text-gray-500 mt-1">{achievement.progress}% e përfunduar</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Test Achievements */}
-            {groupedAchievements.tests && groupedAchievements.tests.length > 0 && (
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <BookOpen className="h-5 w-5 text-purple-600" />
-                  Arritje Testesh
-                  <span className="text-sm text-gray-500 font-normal">
-                    ({groupedAchievements.tests.filter((a) => a.isUnlocked).length} / {groupedAchievements.tests.length}
-                    )
-                  </span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {groupedAchievements.tests.map((achievement) => (
-                    <div
-                      key={achievement.key}
-                      className={`bg-gradient-to-r ${getAchievementBadgeColor(achievement.category, achievement.isUnlocked)} rounded-xl p-5 border-2 shadow-md hover:shadow-lg transition-all duration-300 ${achievement.isUnlocked ? "hover:-translate-y-1" : "opacity-60"}`}
-                    >
-                      <div className="flex flex-col gap-3">
-                        <div className="flex items-start justify-between">
-                          <div className="bg-white p-3 rounded-full shadow-sm">
-                            <BookOpen
-                              className={`h-6 w-6 ${getAchievementIconColor(achievement.category, achievement.isUnlocked)}`}
-                            />
-                          </div>
-                          {achievement.isUnlocked && (
-                            <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
-                              ✓ Shkyçur
-                            </div>
-                          )}
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-gray-900 text-base mb-1">{achievement.title}</h4>
-                          <p className="text-sm text-gray-600 mb-2">{achievement.description}</p>
-                          <div className="bg-white bg-opacity-70 rounded-lg px-2 py-1 inline-block">
-                            <p className="text-xs font-semibold text-gray-700">
-                              {achievement.isUnlocked
-                                ? `${achievement.testsThreshold} teste`
-                                : achievement.progressText}
-                            </p>
-                          </div>
-                          {!achievement.isUnlocked && achievement.progress > 0 && (
-                            <div className="mt-2">
-                              <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div
-                                  className="bg-purple-500 h-2 rounded-full transition-all duration-300"
-                                  style={{ width: `${achievement.progress}%` }}
-                                ></div>
-                              </div>
-                              <p className="text-xs text-gray-500 mt-1">{achievement.progress}% e përfunduar</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {achievements.length > 1 && (
+              <div className="flex justify-center gap-2 mt-6">
+                {achievements.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setAchievementCarouselIndex(index)}
+                    className={`h-2 rounded-full transition-all ${
+                      index === achievementCarouselIndex ? "w-8 bg-teal-600" : "w-2 bg-gray-300"
+                    }`}
+                  />
+                ))}
               </div>
             )}
           </div>
@@ -581,40 +543,66 @@ const Account = () => {
             </p>
           </div>
         ) : certificates.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             {certificates.map((certificate) => (
               <div
                 key={certificate._id}
-                className={`bg-gradient-to-r ${getCertificateBadgeColor(certificate.level)} rounded-xl p-6 border-2 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1`}
+                className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
               >
-                <div className="flex flex-col items-center text-center gap-4">
-                  <div className="bg-white p-4 rounded-full shadow-md">
-                    <Award className={`h-10 w-10 ${getCertificateIconColor(certificate.level)}`} />
+                <div className="flex flex-col items-center text-center gap-3">
+                  <div
+                    className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                      certificate.level === "A1"
+                        ? "bg-green-100"
+                        : certificate.level === "A2"
+                          ? "bg-blue-100"
+                          : certificate.level === "B1"
+                            ? "bg-purple-100"
+                            : certificate.level === "B2"
+                              ? "bg-orange-100"
+                              : certificate.level === "C1"
+                                ? "bg-red-100"
+                                : "bg-yellow-100"
+                    }`}
+                  >
+                    <Award className={`h-8 w-8 ${getCertificateIconColor(certificate.level)}`} />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-bold text-gray-900 text-2xl mb-1">Niveli {certificate.level}</h3>
-                    <p className="text-sm text-gray-600 mb-1">
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-base mb-1">Niveli {certificate.level}</h3>
+                    <p className="text-xs text-gray-500">
                       Lëshuar më:{" "}
                       {new Date(certificate.issuedAt).toLocaleDateString("sq-AL", {
-                        year: "numeric",
-                        month: "long",
                         day: "numeric",
+                        month: "long",
+                        year: "numeric",
                       })}
                     </p>
                   </div>
                   <button
                     onClick={() => handleDownloadCertificate(certificate._id, certificate.level)}
                     disabled={downloadingCert === certificate._id}
-                    className="w-full bg-teal-600 text-white px-4 py-2.5 rounded-lg hover:bg-teal-700 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+                    className={`w-full text-sm px-3 py-2 rounded-lg transition-colors font-medium flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
+                      certificate.level === "A1"
+                        ? "bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
+                        : certificate.level === "A2"
+                          ? "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                          : certificate.level === "B1"
+                            ? "bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200"
+                            : certificate.level === "B2"
+                              ? "bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200"
+                              : certificate.level === "C1"
+                                ? "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+                                : "bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border border-yellow-200"
+                    }`}
                   >
                     {downloadingCert === certificate._id ? (
                       <>
-                        <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        Duke shkarkuar...
+                        <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                        <span className="text-xs">Duke shkarkuar...</span>
                       </>
                     ) : (
                       <>
-                        <Download className="h-4 w-4" />
+                        <Download className="h-3.5 w-3.5" />
                         Shkarko PDF
                       </>
                     )}
