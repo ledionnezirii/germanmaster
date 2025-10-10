@@ -250,4 +250,21 @@ export const certificatesService = {
   generateCertificateForLevel: (userId, level) => api.post("/certificates/generate", { userId, level }),
 }
 
+export const achievementsService = {
+  // Update user's XP and check for achievements
+  updateUserXP: (userId, xpGained) => api.post(`/users/${userId}/xp`, { xpGained }),
+
+  // Get all achievements for a user (locked and unlocked)
+  getUserAchievements: (userId) => api.get(`/users/${userId}/achievements`),
+
+  // Check and update streak-based achievements
+  checkStreakAchievements: (userId) => api.post(`/users/${userId}/achievements/streak`),
+
+  // Check and update test-based achievements
+  checkTestAchievements: (userId) => api.post(`/users/${userId}/achievements/tests`),
+
+  // Get achievement leaderboard
+  getAchievementLeaderboard: () => api.get("/achievements/leaderboard"),
+}
+
 export default api

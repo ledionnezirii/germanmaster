@@ -1,8 +1,6 @@
-"use client"
-
 import { useState, useEffect } from "react"
+import { ArrowLeft, CheckCircle, Check, AlertCircle, Search, BookOpen, Target, Trophy, Lock } from 'lucide-react'
 import { planService, authService } from "../services/api"
-import { ArrowLeft, CheckCircle, Check, AlertCircle, Search, BookOpen, Target, Trophy } from "lucide-react"
 
 export default function PlanPage() {
   const [selectedLevel, setSelectedLevel] = useState(null)
@@ -12,22 +10,20 @@ export default function PlanPage() {
   const [error, setError] = useState(null)
   const [submittingTopicId, setSubmittingTopicId] = useState(null)
 
-  const levels = ["A1", "A2", "B1", "B2", "C1", "C2"]
-
-  useEffect(() => {
-    const script = document.createElement("script")
-    script.src = "https://unpkg.com/lucide@latest/dist/umd/lucide.js"
-    script.onload = () => {
-      if (window.lucide) {
-        window.lucide.createIcons()
+const FontImport = () => (
+  <style>
+    {`
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+      
+      * {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       }
-    }
-    document.head.appendChild(script)
+    `}
+  </style>
+)
 
-    return () => {
-      document.head.removeChild(script)
-    }
-  }, [])
+
+  const levels = ["A1", "A2", "B1", "B2", "C1", "C2"]
 
   useEffect(() => {
     const fetchPlanAndXp = async () => {
@@ -105,6 +101,19 @@ export default function PlanPage() {
     } finally {
       setSubmittingTopicId(null)
     }
+  }
+
+  // <CHANGE> Added function to check if a topic is locked based on previous topics completion
+  const isTopicLocked = (index) => {
+    if (!plan || !plan.topics) return false
+    if (index === 0) return false
+    
+    for (let i = 0; i < index; i++) {
+      if (!plan.topics[i].isCompleted) {
+        return true
+      }
+    }
+    return false
   }
 
   if (!selectedLevel) {
@@ -283,13 +292,21 @@ export default function PlanPage() {
         {/* Topics Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {plan.topics.map((topic, index) => {
+            // <CHANGE> Check if topic is locked based on previous topics
+            const locked = isTopicLocked(index)
+            
             const cardColors = [
               "border-blue-200 bg-blue-50",
               "border-green-200 bg-green-50",
               "border-purple-200 bg-purple-50",
               "border-orange-200 bg-orange-50",
             ]
-            const cardColor = topic.isCompleted ? "border-teal-300 bg-teal-50" : cardColors[index % 4]
+            // <CHANGE> Use gray colors for locked topics
+            const cardColor = topic.isCompleted 
+              ? "border-teal-300 bg-teal-50" 
+              : locked 
+              ? "border-gray-200 bg-gray-50" 
+              : cardColors[index % 4]
 
             return (
               <div
@@ -309,40 +326,56 @@ export default function PlanPage() {
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div
-                      className={`w-5 h-5 border-2 rounded ${
-                        topic.isCompleted ? "border-teal-500 bg-teal-500" : "border-gray-300 bg-white"
-                      } flex items-center justify-center`}
-                    >
-                      {topic.isCompleted && <Check className="h-3 w-3 text-white" />}
-                    </div>
-                    <span className={`font-medium ${topic.isCompleted ? "text-teal-600" : "text-gray-500"}`}>
+                    {/* <CHANGE> Show lock icon for locked topics */}
+                    {locked ? (
+                      <Lock className="h-5 w-5 text-gray-400" />
+                    ) : (
+                      <div
+                        className={`w-5 h-5 border-2 rounded ${
+                          topic.isCompleted ? "border-teal-500 bg-teal-500" : "border-gray-300 bg-white"
+                        } flex items-center justify-center`}
+                      >
+                        {topic.isCompleted && <Check className="h-3 w-3 text-white" />}
+                      </div>
+                    )}
+                    <span className={`font-medium ${topic.isCompleted ? "text-teal-600" : locked ? "text-gray-400" : "text-gray-500"}`}>
                       {topic.isCompleted ? "Përfunduar" : "Jo përfunduar"}
                     </span>
                   </div>
 
+                  {/* <CHANGE> Show locked button for locked topics, regular button for unlocked */}
                   {!topic.isCompleted && (
-                    <button
-                      onClick={() => handleMarkAsFinished(topic._id)}
-                      disabled={submittingTopicId === topic._id}
-                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                        submittingTopicId === topic._id
-                          ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                          : "bg-teal-600 text-white hover:bg-teal-700 hover:scale-105 shadow-md"
-                      }`}
-                    >
-                      {submittingTopicId === topic._id ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500" />
-                          Po shënohet...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="h-4 w-4" />
-                          Përfundo
-                        </>
-                      )}
-                    </button>
+                    locked ? (
+                      <button
+                        disabled
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gray-200 text-gray-500 cursor-not-allowed"
+                      >
+                        <Lock className="h-4 w-4" />
+                        I bllokuar
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleMarkAsFinished(topic._id)}
+                        disabled={submittingTopicId === topic._id}
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                          submittingTopicId === topic._id
+                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                            : "bg-teal-600 text-white hover:bg-teal-700 hover:scale-105 shadow-md"
+                        }`}
+                      >
+                        {submittingTopicId === topic._id ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500" />
+                            Po shënohet...
+                          </>
+                        ) : (
+                          <>
+                            <Check className="h-4 w-4" />
+                            Përfundo
+                          </>
+                        )}
+                      </button>
+                    )
                   )}
                 </div>
               </div>

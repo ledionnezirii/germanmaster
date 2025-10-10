@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Target,
   X,
+  AlertTriangle,
 } from "lucide-react"
 import { pronunciationService } from "../services/api.js"
 
@@ -551,6 +552,29 @@ const PronunciationPractice = () => {
   return (
     <div className="h-min-screen p-4 flex flex-col">
       <div className="max-w-6xl mx-auto w-full">
+        {isMobile && (
+          <div
+            style={{
+              backgroundColor: "#FEF3C7",
+              border: "2px solid #F59E0B",
+              borderRadius: "12px",
+              padding: "16px",
+              marginBottom: "16px",
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+            }}
+          >
+            <AlertTriangle style={{ color: "#F59E0B", minWidth: "24px", minHeight: "24px" }} />
+            <div>
+              <p style={{ fontWeight: "bold", color: "#92400E", margin: "0 0 4px 0" }}>Kujdes</p>
+              <p style={{ color: "#78350F", margin: 0, fontSize: "14px" }}>
+               Ky seksion për praktikimin e shqiptimit funksionon më mirë në pajisje desktop. Njohja e zërit mund të mos funksionojë si duhet në telefonat celularë
+              </p>
+            </div>
+          </div>
+        )}
+
         <header className="mb-4 flex-shrink-0">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Praktikë Shqiptimi</h1>
