@@ -827,7 +827,7 @@ const Tests = () => {
       <div className="min-h-screen bg-gray-50 p-4">
         <div className="max-w-5xl mx-auto space-y-6">
           <div className="text-center space-y-2">
-            <h1 className="text-2xl font-bold text-gray-900">👉 Testet e Gramatikës Gjermane</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Testet e Gramatikës Gjermane</h1>
             <p className="text-sm text-gray-600">Testoni njohuritë tuaja të gjermanishtes në të gjitha nivelet CEFR</p>
           </div>
 
@@ -846,37 +846,48 @@ const Tests = () => {
                   }`}
                   onClick={isAvailable && !isLocked ? () => handleLevelSelect(level.code) : undefined}
                 >
+                  <div className="absolute top-3 left-3">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-bold border bg-white/80 shadow-sm">
+                      {level.code}
+                    </span>
+                  </div>
+
                   {isLocked && (
-                    <div className="absolute top-2 right-2 p-1 bg-white/50 rounded-md">
+                    <div className="absolute top-3 right-3 p-1 bg-white/50 rounded-md">
                       <LockIcon className="w-3.5 h-3.5 text-gray-500" />
                     </div>
                   )}
 
-                  <div className="p-4">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-1 rounded-md text-sm font-bold border bg-white/50`}
-                      >
-                        👉 {level.code}
-                      </span>
-                      <div>
-                        <h3 className="text-sm font-bold">{level.name}</h3>
-                        <p className="mt-0.5 text-xs opacity-90">{level.description}</p>
-                      </div>
+                  <div className="p-4 pt-12">
+                    <div>
+                      <h3 className="text-sm font-bold">{level.name}</h3>
+                      <p className="mt-0.5 text-xs opacity-90">{level.description}</p>
                     </div>
                   </div>
 
                   <div className="px-4 pb-4 space-y-2">
-                    <span
-                      className={`inline-flex items-center justify-center w-full py-1.5 px-3 rounded-md text-xs font-medium border ${
-                        availability.reason === "passed"
-                          ? "bg-green-50 text-green-700 border-green-200"
-                          : "bg-white/50 border-current"
-                      }`}
-                    >
-                      {availability.reason === "passed" && <CheckCircle className="w-3 h-3 mr-1" />}
-                      {availabilityMessage}
-                    </span>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="opacity-75">
+                          {availability.reason === "passed" ? "Përfunduar" : "Progresi"}
+                        </span>
+                        <span className="font-medium">{availability.reason === "passed" ? "100%" : "0%"}</span>
+                      </div>
+                      <div className="w-full bg-white/30 rounded-full h-1.5">
+                        <div
+                          className={`h-1.5 rounded-full transition-all ${
+                            availability.reason === "passed" ? "bg-green-500 w-full" : "bg-gray-400 w-0"
+                          }`}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {availability.reason === "passed" && availability.lastScore && (
+                      <div className="text-xs">
+                        <span className="opacity-75">Rezultati: </span>
+                        <span className="font-bold">{availability.lastScore}%</span>
+                      </div>
+                    )}
 
                     <button
                       className={`w-full py-2 px-3 rounded-md font-medium transition-all duration-200 text-xs ${
@@ -891,7 +902,7 @@ const Tests = () => {
                           <LockIcon className="w-3 h-3 mr-1 inline" />I kyçur
                         </>
                       ) : isAvailable ? (
-                        `👉 Merr Testin ${level.code}`
+                        `Merr Testin ${level.code}`
                       ) : (
                         "Jo i disponueshëm"
                       )}

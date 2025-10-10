@@ -45,8 +45,13 @@ const generateCertificatePDF = async (user, level, serialNumber) => {
       // Bottom right corner
       doc.moveTo(792, 535).bezierCurveTo(787, 545, 782, 550, 772, 545).bezierCurveTo(782, 540, 787, 535, 792, 525).fill()
 
-     // Add logo near top center (adjust x, y and width to fit your logo)
-doc.image(path.join(__dirname, "../public/images/logo.png"), 350, 40, { width: 140 })
+const logoX = (842 - 140) / 2; // center horizontally with width 140
+const logoY = 10; // near top but spaced nicely
+
+doc.save();
+doc.circle(logoX + 70, logoY + 70, 70).clip();
+doc.image(path.join(__dirname, "../public/images/logo.png"), logoX, logoY, { width: 140 });
+doc.restore();
 
       // Title
       doc.fontSize(38).fillColor("#1a2332").font("Times-Bold").text("CERTIFIKATË E PËRFUNDIMIT", 0, 130, {

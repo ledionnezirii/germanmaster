@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useSidebar } from "../context/SidebarContext"
 import { Menu, User, LogOut, ChevronDown, Star } from "lucide-react"
-import mainLogo from "../../public/logoT.png"
+import mainLogo from "../../public/wortii.png"
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth()
@@ -118,7 +118,7 @@ const Navbar = () => {
                   src={mainLogo || "/placeholder.svg"}
                   width={40} // Smaller logo on mobile
                   height={40} // Smaller logo on mobile
-                  className="md:w-[55px] md:h-[55px] rounded-2xl cursor-pointer p-0 m-0"
+                  className="md:w-[55px] md:h-[55px] rounded-full cursor-pointer p-0 m-0"
                   alt="logo"
                 />
               </div>
