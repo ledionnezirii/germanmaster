@@ -35,8 +35,8 @@ const pronunciationRoutes = require('./routes/pronunciationRoutes')
 const paymentRoutes = require("./routes/paymentRoutes");
 const quizRoutes = require ("./routes/quizRoutes")
 const certificateRoutes = require("./routes/certificateRoutes");
-
-
+const leagueRoutes = require('./routes/leagueRoutes');
+const achievementRoutes = require("./routes/achievementsRoutes");
 
 
 const { errorHandler, notFound } = require("./middleware/errorMiddleware")
@@ -224,6 +224,8 @@ app.use("/api/pronunciation",pronunciationRoutes)
 app.use("/api/payments",paymentRoutes)
 app.use("/api/quizes", quizRoutes)
 app.use("/api/certificates", certificateRoutes);
+app.use('/api/league', leagueRoutes);
+app.use("/api", achievementRoutes);
 
 app.use(notFound)
 app.use(errorHandler)

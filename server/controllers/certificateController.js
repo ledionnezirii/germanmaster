@@ -3,11 +3,17 @@ const PDFDocument = require("pdfkit")
 const fs = require("fs")
 const path = require("path")
 
+const generateSerialNumber = (level, userId) => {
+  const year = new Date().getFullYear()
+  const userIdShort = userId.toString().slice(-4).toUpperCase()
+  const randomCode = Math.random().toString(36).substring(2, 6).toUpperCase()
+  return `${year}-${level}-${userIdShort}-${randomCode}`
+}
+
 // Helper function to generate certificate PDF
-const generateCertificatePDF = async (user, level) => {
+const generateCertificatePDF = async (user, level, serialNumber) => {
   return new Promise((resolve, reject) => {
     try {
-      // Create certificates directory if it doesn't exist
       const certificatesDir = path.join(__dirname, "../public/certificates")
       if (!fs.existsSync(certificatesDir)) {
         fs.mkdirSync(certificatesDir, { recursive: true })
@@ -20,70 +26,91 @@ const generateCertificatePDF = async (user, level) => {
 
       doc.pipe(stream)
 
-      // Certificate Design
-      // Background gradient effect with rectangles
-      doc.rect(0, 0, 842, 595).fill("#f8f9fa")
+      // Set page margins to zero
+      doc.page.margins = { top: 0, bottom: 0, left: 0, right: 0 }
 
-      // Decorative border
-      doc.strokeColor("#14b8a6").lineWidth(8).rect(30, 30, 782, 535).stroke()
-      doc.strokeColor("#0d9488").lineWidth(4).rect(40, 40, 762, 515).stroke()
+      // Background colors and borders
+      doc.rect(0, 0, 842, 595).fill("#1a2332")
+      doc.rect(15, 15, 812, 565).fill("#f5f1e8")
+      doc.strokeColor("#c9a961").lineWidth(2).rect(45, 35, 752, 525).stroke()
 
-      // Top decorative elements
-      doc.fillColor("#14b8a6").circle(100, 100, 30).fill()
-      doc.fillColor("#0d9488").circle(742, 100, 30).fill()
-      doc.fillColor("#14b8a6").circle(100, 495, 30).fill()
-      doc.fillColor("#0d9488").circle(742, 495, 30).fill()
+      // Decorative corners
+      doc.fillColor("#c9a961")
+      // Top left corner
+      doc.moveTo(50, 60).bezierCurveTo(55, 50, 60, 45, 70, 50).bezierCurveTo(60, 55, 55, 60, 50, 70).fill()
+      // Top right corner
+      doc.moveTo(792, 60).bezierCurveTo(787, 50, 782, 45, 772, 50).bezierCurveTo(782, 55, 787, 60, 792, 70).fill()
+      // Bottom left corner
+      doc.moveTo(50, 535).bezierCurveTo(55, 545, 60, 550, 70, 545).bezierCurveTo(60, 540, 55, 535, 50, 525).fill()
+      // Bottom right corner
+      doc.moveTo(792, 535).bezierCurveTo(787, 545, 782, 550, 772, 545).bezierCurveTo(782, 540, 787, 535, 792, 525).fill()
+
+     // Add logo near top center (adjust x, y and width to fit your logo)
+doc.image(path.join(__dirname, "../public/images/logo.png"), 350, 40, { width: 140 })
 
       // Title
-      doc.fontSize(48).fillColor("#1f2937").font("Helvetica-Bold").text("CERTIFIKATË", 0, 100, {
+      doc.fontSize(38).fillColor("#1a2332").font("Times-Bold").text("CERTIFIKATË E PËRFUNDIMIT", 0, 130, {
         align: "center",
         width: 842,
       })
 
-      doc.fontSize(20).fillColor("#6b7280").font("Helvetica").text("Kjo certifikatë jepet për", 0, 160, {
+      // Intro text
+      doc.fontSize(13).fillColor("#4a4a4a").font("Times-Roman").text("Me anë të kësaj certifikatë vërtetohet se", 0, 180, {
         align: "center",
         width: 842,
       })
 
       // User name
-      doc.fontSize(36).fillColor("#14b8a6").font("Helvetica-Bold").text(`${user.emri} ${user.mbiemri}`, 0, 210, {
+      doc.fontSize(48).fillColor("#c9a961").font("Times-Bold").text(`${user.emri} ${user.mbiemri}`, 0, 215, {
         align: "center",
         width: 842,
       })
 
-      // Achievement text
-      doc.fontSize(18).fillColor("#4b5563").font("Helvetica").text("për përfundimin me sukses të nivelit", 0, 270, {
+      // Completion text
+      doc.fontSize(15).fillColor("#4a4a4a").font("Times-Roman").text("ka përfunduar me sukses kursin e", 0, 275, {
         align: "center",
         width: 842,
       })
 
-      // Level badge
-      doc.fontSize(60).fillColor("#0d9488").font("Helvetica-Bold").text(level, 0, 310, {
+      // Course name
+      doc.fontSize(26).fillColor("#1a2332").font("Times-Bold").text("Gjuha Gjermane", 0, 305, {
         align: "center",
         width: 842,
       })
 
-      doc.fontSize(16).fillColor("#6b7280").font("Helvetica").text("në gjuhën Gjermane", 0, 390, {
+      // Level
+      doc.fontSize(80).fillColor("#c9a961").font("Times-Bold").text(level, 0, 345, {
         align: "center",
         width: 842,
       })
 
-      // Date
+      // Issue date (moved a bit up)
       const issueDate = new Date().toLocaleDateString("sq-AL", {
-        year: "numeric",
-        month: "long",
         day: "numeric",
+        month: "long",
+        year: "numeric",
       })
-      doc.fontSize(14).fillColor("#9ca3af").font("Helvetica-Oblique").text(`Lëshuar më: ${issueDate}`, 0, 450, {
+      doc.fontSize(14).fillColor("#4a4a4a").font("Times-Roman").text(`${issueDate}`, 0, 435, {
         align: "center",
         width: 842,
       })
 
-      // Signature line
-      doc.moveTo(321, 510).lineTo(521, 510).strokeColor("#d1d5db").lineWidth(1).stroke()
-      doc.fontSize(12).fillColor("#6b7280").font("Helvetica").text("Nënshkrimi i Drejtorit", 0, 520, {
+      doc.fontSize(11).fillColor("#6a6a6a").font("Times-Italic").text("Data e Lëshimit", 0, 455, {
         align: "center",
         width: 842,
+      })
+
+      // Footer block (moved a bit up)
+      doc.rect(350, 510, 142, 20).fill("#e8d68a")
+      doc.fontSize(11).fillColor("#4a4a4a").font("Times-Roman").text("German Learn Website", 350, 515, {
+        width: 142,
+        align: "center",
+      })
+
+      // Serial number (moved up to avoid page break)
+      doc.fontSize(10).fillColor("#d97706").font("Times-Roman").text(`Nr. Serie: ${serialNumber}`, 0, 520, {
+        align: "right",
+        width: 792,
       })
 
       doc.end()
@@ -137,15 +164,17 @@ exports.checkAndIssueCertificate = async (req, res) => {
 
     console.log("[v0] Generating certificate PDF for level:", currentLevel)
 
-    // Generate certificate PDF
-    const filePath = await generateCertificatePDF(user, currentLevel)
+    const serialNumber = generateSerialNumber(currentLevel, userId)
+
+    // Generate certificate PDF with serial number
+    const filePath = await generateCertificatePDF(user, currentLevel, serialNumber)
 
     console.log("[v0] Certificate PDF generated:", filePath)
 
-    // Add certificate to user
     user.certificates.push({
       level: currentLevel,
       filePath: filePath,
+      serialNumber: serialNumber,
       issuedAt: new Date(),
     })
 
@@ -237,11 +266,13 @@ exports.generateCertificateForLevel = async (req, res) => {
       return res.status(400).json({ success: false, message: "Certifikata tashmë ekziston për këtë nivel" })
     }
 
-    const filePath = await generateCertificatePDF(user, level)
+    const serialNumber = generateSerialNumber(level, userId)
+    const filePath = await generateCertificatePDF(user, level, serialNumber)
 
     user.certificates.push({
       level: level,
       filePath: filePath,
+      serialNumber: serialNumber,
       issuedAt: new Date(),
     })
 
