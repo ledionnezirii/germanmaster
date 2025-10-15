@@ -156,17 +156,15 @@ const markTopicAsFinished = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found")
   }
 
-  if (!user.grammarFinished.includes(topicId)) {
+  const finishedTopicIds = user.grammarFinished.map((id) => id.toString())
+
+  if (!finishedTopicIds.includes(topicId)) {
     user.grammarFinished.push(topicId)
     await user.save()
   }
 
-  res.json(new ApiResponse(200, { topicId }, "Grammar topic marked as finished"))
+  res.json(new ApiResponse(200, { topicId, grammarFinished: user.grammarFinished }, "Grammar topic marked as finished"))
 })
-
-// @desc    Get user's finished grammar topics
-// @route   GET /api/grammar/finished
-// @access  Private
 const getFinishedTopics = asyncHandler(async (req, res) => {
   const userId = req.user.id
   

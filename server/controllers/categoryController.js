@@ -2,6 +2,8 @@ const Category = require("../models/Category")
 const { ApiError } = require("../utils/ApiError")
 const { ApiResponse } = require("../utils/ApiResponse")
 const { asyncHandler } = require("../utils/asyncHandler")
+const User = require("../models/User")
+
 
 // @desc    Get all categories
 // @route   GET /api/categories
@@ -190,6 +192,50 @@ const removeWordFromCategory = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, category, "Word removed from category successfully"))
 })
 
+
+
+
+const finishCategory = asyncHandler(async (req, res) => {
+  const categoryId = req.params.id
+  const userId = req.user.id
+
+  // Find the category
+  const category = await Category.findById(categoryId)
+  if (!category || !category.isActive) {
+    throw new ApiError(404, "Category not found")
+  }
+
+  // Find the user
+  const user = await User.findById(userId)
+  if (!user) {
+    throw new ApiError(404, "User not found")
+  }
+
+  // Check if category is already finished
+  if (user.categoryFinished.includes(categoryId)) {
+    throw new ApiError(400, "Category already finished")
+  }
+
+  const xpGained = 10
+
+  // Add category to finished list and add XP
+  user.categoryFinished.push(categoryId)
+  user.xp += xpGained
+  await user.save()
+
+  res.json(
+    new ApiResponse(
+      200,
+      {
+        xpGained,
+        totalXp: user.xp,
+        categoryName: category.category,
+      },
+      "Category finished successfully! Congratulations!",
+    ),
+  )
+})
+
 module.exports = {
   getAllCategories,
   getCategoryById,
@@ -198,4 +244,5 @@ module.exports = {
   deleteCategory,
   addWordToCategory,
   removeWordFromCategory,
+  finishCategory
 }
