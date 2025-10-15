@@ -55,7 +55,7 @@ const AppContent = () => {
               <Route path="/account" element={<Account />} />
               <Route path="/dictionary" element={<Dictionary />} />
               <Route path="/category" element={<Category />} />
-              <Route path="/chat" element={<Chat />} />
+              {/* <Route path="/chat" element={<Chat />} /> */}
               <Route path="/grammar" element={<Grammar />} />
               <Route path="/signin" element={<SignIn />} />
               <Route path="/signup" element={<SignUp />} />
