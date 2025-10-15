@@ -115,6 +115,7 @@ export const categoriesService = {
   deleteCategory: (id) => api.delete(`/categories/${id}`),
   addWordToCategory: (categoryId, wordData) => api.post(`/categories/${categoryId}`),
   removeWordFromCategory: (categoryId, wordId) => api.delete(`/categories/${categoryId}/words/${wordId}`),
+    finishCategory: (categoryId) => api.post(`/categories/${categoryId}/finish`),
 }
 
 export const listenService = {

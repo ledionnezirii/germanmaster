@@ -36,7 +36,9 @@ const Payments = () => {
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded-lg text-center">
-      <h2 className="text-2xl font-bold mb-6">Zgjidh planin tënd</h2>
+      <h2 className="text-2xl font-poppins font-bold mb-6">
+        Zgjidh planin tënd
+      </h2>
       <div className="flex flex-col gap-4">
         <button
           onClick={() => handlePayment(PRODUCT_MONTHLY)}

@@ -1,6 +1,7 @@
 "use client"
+
 import { useState, useEffect, useCallback, useMemo } from "react"
-import { categoriesService } from "../services/api"
+import { categoriesService, authService } from "../services/api"
 import {
   FolderOpen,
   ArrowLeft,
@@ -28,6 +29,9 @@ import {
   Castle,
   Swords,
   Hammer,
+  CheckCircle,
+  Trophy,
+  Lock,
 } from "lucide-react"
 
 const iconMap = {
@@ -61,8 +65,12 @@ const Category = () => {
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all")
-  const [visibleCategories, setVisibleCategories] = useState(20) // Show 20 categories initially
+  const [visibleCategories, setVisibleCategories] = useState(20)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [finishingCategory, setFinishingCategory] = useState(false)
+  const [showCongrats, setShowCongrats] = useState(false)
+  const [xpGained, setXpGained] = useState(0)
+  const [user, setUser] = useState(null)
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" })
@@ -97,7 +105,6 @@ const Category = () => {
     if (loadingMore || visibleCategories >= filteredCategories.length) return
 
     setLoadingMore(true)
-    // Simulate loading delay for smooth UX
     setTimeout(() => {
       setVisibleCategories((prev) => Math.min(prev + 20, filteredCategories.length))
       setLoadingMore(false)
@@ -132,6 +139,7 @@ const Category = () => {
 
   useEffect(() => {
     fetchCategories()
+    fetchUserData()
   }, [])
 
   const fetchCategories = useCallback(async () => {
@@ -161,11 +169,12 @@ const Category = () => {
 
   const fetchCategoryDetails = useCallback(async (categoryId, categoryName) => {
     try {
-      setLoading(true) // Show loading while fetching details
+      setLoading(true)
       const response = await categoriesService.getCategoryById(categoryId)
       const categoryData = response.data.data || response.data
 
       const categoryWithWords = {
+        id: categoryId,
         name: categoryName,
         words: categoryData.words || [],
         description: categoryData.description || "",
@@ -177,6 +186,7 @@ const Category = () => {
     } catch (error) {
       console.error("Error fetching category details:", error)
       setSelectedCategory({
+        id: categoryId,
         name: categoryName,
         words: [],
         description: "Gabim gjatë ngarkimit të detajeve të kategorisë",
@@ -187,6 +197,43 @@ const Category = () => {
       setLoading(false)
     }
   }, [])
+
+  const fetchUserData = async () => {
+    try {
+      const response = await authService.getProfile()
+      const userData = response.data || response
+      console.log("[v0] User data fetched:", userData)
+      console.log("[v0] Category finished array:", userData?.categoryFinished)
+      setUser(userData)
+    } catch (error) {
+      console.error("Error fetching user data:", error)
+    }
+  }
+
+  const handleFinishCategory = async () => {
+    if (!selectedCategory || !selectedCategory.id) return
+
+    try {
+      setFinishingCategory(true)
+      const response = await categoriesService.finishCategory(selectedCategory.id)
+
+      const data = response.data || response
+      setXpGained(data.xpGained || 0)
+      setShowCongrats(true)
+
+      await fetchUserData()
+
+      setTimeout(() => {
+        setShowCongrats(false)
+        setSelectedCategory(null)
+      }, 5000)
+    } catch (error) {
+      console.error("Error finishing category:", error)
+      alert(error.response?.data?.message || "Gabim gjatë përfundimit të kategorisë")
+    } finally {
+      setFinishingCategory(false)
+    }
+  }
 
   const getLevelColor = (level) => {
     switch (level) {
@@ -207,7 +254,38 @@ const Category = () => {
     }
   }
 
+  if (showCongrats) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-teal-50 via-emerald-50 to-green-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center animate-bounce-in">
+          <div className="mb-6">
+            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+              <Trophy className="h-10 w-10 text-white" />
+            </div>
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">Urime!</h2>
+          <p className="text-lg text-gray-700 mb-6">
+            Ju përfunduat kategorinë <span className="font-semibold text-teal-600">{selectedCategory?.name}</span>!
+          </p>
+          <div className="bg-gradient-to-r from-teal-500 to-emerald-500 rounded-xl p-6 mb-6">
+            <p className="text-white text-sm font-medium mb-2">XP e Fituar</p>
+            <p className="text-5xl font-bold text-white">+{xpGained}</p>
+          </div>
+          <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+            <CheckCircle className="h-5 w-5 text-green-500" />
+            <span>Vazhdo kështu!</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (selectedCategory) {
+    const isCategoryFinished = user?.categoryFinished?.some(
+      (finishedId) => finishedId.toString() === selectedCategory.id.toString(),
+    )
+    console.log("[v0] Is category finished?", isCategoryFinished, "Category ID:", selectedCategory.id)
+
     return (
       <div className="min-h-screen bg-gray-50 p-3 sm:p-4 lg:p-6">
         <div className="max-w-7xl mx-auto">
@@ -223,15 +301,43 @@ const Category = () => {
                   </span>
                 )}
               </div>
-              <button
-                onClick={() => setSelectedCategory(null)}
-                className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all duration-200 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md w-fit"
-                aria-label="Kthehu te Kategoritë"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span className="hidden sm:inline">Kthehu te Kategoritë</span>
-                <span className="sm:hidden">Kthehu</span>
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all duration-200 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md w-fit"
+                  aria-label="Kthehu te Kategoritë"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline">Kthehu</span>
+                </button>
+                <button
+                  onClick={handleFinishCategory}
+                  disabled={finishingCategory || isCategoryFinished}
+                  className={`flex items-center gap-2 text-sm font-medium text-white transition-all duration-200 px-6 py-2.5 rounded-lg shadow-md disabled:cursor-not-allowed ${
+                    isCategoryFinished
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 hover:shadow-lg"
+                  }`}
+                  aria-label="Përfundo kategorinë"
+                >
+                  {finishingCategory ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      <span>Duke përfunduar...</span>
+                    </>
+                  ) : isCategoryFinished ? (
+                    <>
+                      <Lock className="h-4 w-4" />
+                      <span>E përfunduar</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4" />
+                      <span>Përfundo</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             {loading ? (
@@ -286,44 +392,45 @@ const Category = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 lg:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-3 sm:p-4 lg:p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
-          <div className="mb-6">
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2 text-balance">Kategoritë e Fjalëve</h1>
-            <p className="text-sm sm:text-base text-gray-600 text-pretty">
-              Eksploroni fjalorin gjermanisht të organizuar sipas temave dhe kategorive
-            </p>
-          </div>
+        <div className="text-center mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Kategoritë e Fjalëve</h1>
+          <p className="text-sm sm:text-base text-gray-600">
+            Eksploroni fjalorin gjermanisht të organizuar sipas temave dhe kategorive.
+          </p>
+        </div>
 
-          {/* Filter Section */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-500" />
-              <p className="text-sm font-medium text-gray-700">Filtro sipas llojit:</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Filter className="h-4 w-4 text-gray-600" />
+            <p className="text-sm font-medium text-gray-700">Filtro sipas llojit:</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {availableWordTypes.map((type) => (
+              <button
+                key={type.value}
+                onClick={() => setSelectedCategoryFilter(type.value)}
+                className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 ${
+                  selectedCategoryFilter === type.value
+                    ? "bg-blue-600 text-white shadow-md"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
+              >
+                {type.label}
+              </button>
+            ))}
+            <div className="ml-auto">
+              <select className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option>Të gjitha nivelët</option>
+                <option>A1</option>
+                <option>A2</option>
+                <option>B1</option>
+                <option>B2</option>
+                <option>C1</option>
+                <option>C2</option>
+              </select>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {availableWordTypes.map((type) => (
-                <button
-                  key={type.value}
-                  onClick={() => setSelectedCategoryFilter(type.value)}
-                  className={`px-4 py-2 text-xs sm:text-sm font-medium rounded-lg border transition-all duration-200 hover:shadow-sm ${
-                    selectedCategoryFilter === type.value
-                      ? "bg-teal-600 text-white border-teal-600 shadow-md hover:bg-teal-700"
-                      : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50 hover:border-gray-300 shadow-sm"
-                  }`}
-                >
-                  {type.label}
-                </button>
-              ))}
-            </div>
-            {selectedCategoryFilter !== "all" && (
-              <p className="text-xs text-gray-500 bg-teal-50 px-3 py-2 rounded-md border border-teal-100">
-                Duke treguar kategoritë që përmbajnë fjalë të llojit "
-                {availableWordTypes.find((t) => t.value === selectedCategoryFilter)?.label}"
-              </p>
-            )}
           </div>
         </div>
 
@@ -331,42 +438,67 @@ const Category = () => {
         {loading ? (
           <div className="flex items-center justify-center min-h-64">
             <div className="flex flex-col items-center gap-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               <p className="text-sm text-gray-600">Duke ngarkuar kategoritë...</p>
             </div>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {Array.isArray(filteredCategories) && filteredCategories.length > 0 ? (
-                filteredCategories.slice(0, visibleCategories).map((category) => {
+                filteredCategories.slice(0, visibleCategories).map((category, index) => {
                   const IconComponent = iconMap[category.icon] || iconMap.default
+
+                  const colorClasses = [
+                    { bg: "bg-blue-100", icon: "text-blue-600" },
+                    { bg: "bg-green-100", icon: "text-green-600" },
+                    { bg: "bg-cyan-100", icon: "text-cyan-600" },
+                    { bg: "bg-sky-100", icon: "text-sky-600" },
+                    { bg: "bg-pink-100", icon: "text-pink-600" },
+                    { bg: "bg-purple-100", icon: "text-purple-600" },
+                    { bg: "bg-orange-100", icon: "text-orange-600" },
+                    { bg: "bg-red-100", icon: "text-red-600" },
+                  ]
+                  const colorClass = colorClasses[index % colorClasses.length]
+
+                  const isCompleted = user?.categoryFinished?.some(
+                    (finishedId) => finishedId.toString() === category._id.toString(),
+                  )
+                  console.log("[v0] Category:", category.category, "ID:", category._id, "Is completed:", isCompleted)
 
                   return (
                     <div
                       key={category._id}
-                      className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-lg hover:border-gray-300 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer group"
+                      className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-300 cursor-pointer relative h-[200px] flex flex-col"
                       onClick={() => fetchCategoryDetails(category._id, category.category)}
-                      aria-label={`Eksploro kategorinë ${category.category}`}
                     >
-                      <div className="flex items-start gap-4 mb-4">
-                        <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-3 rounded-xl group-hover:from-teal-100 group-hover:to-teal-200 transition-all duration-300 flex-shrink-0 shadow-sm">
-                          <IconComponent className="h-5 w-5 text-teal-600 group-hover:text-teal-700 group-hover:scale-110 transition-all duration-300" />
+                      {isCompleted && (
+                        <div className="absolute top-3 right-3">
+                          <div className="bg-green-500 rounded-full p-1">
+                            <CheckCircle className="h-4 w-4 text-white" />
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-semibold text-gray-900 leading-tight text-pretty group-hover:text-gray-800 transition-colors duration-200">
-                            {category.category}
-                          </h3>
-                        </div>
+                      )}
+
+                      <div
+                        className={`${colorClass.bg} w-12 h-12 rounded-xl flex items-center justify-center mb-4 flex-shrink-0`}
+                      >
+                        <IconComponent className={`h-6 w-6 ${colorClass.icon}`} />
                       </div>
 
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-gray-500 bg-gray-50 px-2 py-1 rounded-md">
-                          Kategori
+                      <div className="flex-1 flex flex-col min-h-0">
+                        <h3 className="text-base font-semibold text-gray-900 mb-1 leading-tight line-clamp-2">
+                          {category.category}
+                        </h3>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-auto flex-shrink-0">
+                        <span className="text-xs font-medium text-gray-600">
+                          {availableWordTypes.find((t) => t.value === category.type)?.label || "Kategori"}
                         </span>
-                        <div className="text-teal-600 group-hover:text-teal-700 font-semibold text-xs flex items-center gap-1.5 transition-all duration-200 bg-teal-50 group-hover:bg-teal-100 px-3 py-1.5 rounded-lg">
+                        <div className="text-blue-600 font-medium text-sm flex items-center gap-1">
                           <span>Eksploro</span>
-                          <ArrowLeft className="h-3 w-3 rotate-180 group-hover:translate-x-0.5 transition-transform duration-200" />
+                          <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
                         </div>
                       </div>
                     </div>
@@ -374,14 +506,14 @@ const Category = () => {
                 })
               ) : (
                 <div className="col-span-full">
-                  <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                  <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
                     <BookOpen className="h-8 w-8 text-gray-400 mx-auto mb-3" />
                     <h3 className="text-base font-medium text-gray-900 mb-2">
                       {selectedCategoryFilter === "all"
                         ? "Nuk ka kategori të disponueshme"
                         : `Nuk ka kategori me fjalë të llojit "${availableWordTypes.find((t) => t.value === selectedCategoryFilter)?.label}"`}
                     </h3>
-                    <p className="text-sm text-gray-600 text-pretty">
+                    <p className="text-sm text-gray-600">
                       {selectedCategoryFilter === "all"
                         ? "Kategoritë do të shfaqen këtu kur të shtohen."
                         : "Provoni një filtër tjetër ose shtoni kategori me fjalë të këtij lloji."}
@@ -395,13 +527,13 @@ const Category = () => {
               <div id="load-more-sentinel" className="mt-8 flex justify-center">
                 {loadingMore ? (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-teal-600"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                     Duke ngarkuar më shumë...
                   </div>
                 ) : (
                   <button
                     onClick={loadMoreCategories}
-                    className="px-6 py-3 text-sm font-medium text-teal-600 bg-white border border-teal-200 rounded-lg hover:bg-teal-50 hover:border-teal-300 transition-all duration-200 shadow-sm hover:shadow-md"
+                    className="px-6 py-3 text-sm font-medium text-blue-600 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     Ngarko më shumë ({filteredCategories.length - visibleCategories} të tjera)
                   </button>

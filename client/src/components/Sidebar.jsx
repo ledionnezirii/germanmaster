@@ -33,7 +33,6 @@ const Sidebar = () => {
     { icon: Headphones, label: "Dëgjo", path: "/listen", requireAuth: true },
     { icon: BookOpen, label: "Fjalor", path: "/dictionary", requireAuth: true },
     { icon: FolderOpen, label: "Kategori", path: "/category", requireAuth: true },
-    { icon: MessageCircle, label: "Bisedo", path: "/chat", requireAuth: true },
     { icon: GraduationCap, label: "Gramatikë", path: "/grammar", requireAuth: true },
     { icon: Trophy, label: "Renditja", path: "/leaderboard", requireAuth: false },
     { icon: MapIcon, label: "PlanProgrami", path: "/plan", requireAuth: true },

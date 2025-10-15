@@ -580,36 +580,52 @@ const Quizes = () => {
             return (
               <div
                 key={quiz._id}
-                className={`rounded-xl transition-all duration-300 hover:shadow-lg cursor-pointer overflow-hidden border ${
-                  isCompleted ? "bg-green-50 border-green-200" : "bg-white border-gray-200"
-                }`}
+                className="rounded-2xl transition-all duration-300 hover:shadow-xl cursor-pointer overflow-hidden bg-white border-2 border-gray-200 shadow-md hover:scale-[1.02]"
                 onClick={() => startQuiz(quiz)}
               >
-                <div className="p-4">
-                  <div className="mb-16">
-                    <h3 className="text-base font-bold mb-1 text-gray-800">{quiz.title}</h3>
-                    <p className="text-sm text-gray-600">{quiz.questions.length} pyetje</p>
-                  </div>
-
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`px-2.5 py-1 rounded-md text-xs font-bold ${getLevelColor(quiz.level)}`}>
-                      {quiz.level}
-                    </span>
-                    <div className="flex items-center gap-1 text-orange-600">
-                      <Star className="w-4 h-4 fill-orange-600" />
-                      <span className="text-sm font-bold">{quiz.xp}</span>
+                <div className="p-5">
+                  {/* Header with title and icon */}
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-lg font-bold text-gray-900 leading-tight flex-1 pr-2">{quiz.title}</h3>
+                    <div className="flex-shrink-0">
+                      {isCompleted ? (
+                        <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                          <Check className="w-4 h-4 text-green-600" />
+                        </div>
+                      ) : (
+                        <BookOpen className="w-5 h-5 text-gray-400" />
+                      )}
                     </div>
                   </div>
 
+                  {/* Status text */}
+                  <div className="mb-3">
+                    <p className={`text-sm font-semibold ${isCompleted ? "text-green-600" : "text-gray-500"}`}>
+                      {isCompleted ? "Completed!" : "Not started"}
+                    </p>
+                  </div>
+
+                  {/* Progress bar for completed quizzes */}
+                  {isCompleted && (
+                    <div className="mb-4">
+                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div className="bg-green-500 h-2 rounded-full w-full transition-all duration-500"></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Spacer to push button to bottom */}
+                  <div className="mb-12"></div>
+
+                  {/* Action button */}
                   <button
-                    className={`w-full py-2.5 px-4 rounded-lg text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2 ${
+                    className={`w-full py-3 px-4 rounded-xl text-sm font-bold transition-all duration-200 shadow-sm ${
                       isCompleted
-                        ? "bg-green-600 text-white hover:bg-green-700"
-                        : "bg-orange-600 text-white hover:bg-orange-700"
+                        ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        : "bg-blue-500 text-white hover:bg-blue-600"
                     }`}
                   >
-                    {isCompleted && <Check className="w-4 h-4" />}
-                    {isCompleted ? "Përfunduar" : "Fillo Kuizin"}
+                    {isCompleted ? "Review" : "Start"}
                   </button>
                 </div>
               </div>

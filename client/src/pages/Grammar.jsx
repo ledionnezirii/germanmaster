@@ -94,7 +94,7 @@ const Grammar = () => {
   const [finishedTopics, setFinishedTopics] = useState([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
 
-  useEffect(() => {
+ useEffect(() => {
     fetchTopics()
     fetchFinishedTopics()
   }, [selectedLevel])
@@ -104,8 +104,9 @@ const Grammar = () => {
       const response = await grammarService.getFinishedTopics()
       console.log("[v0] Fetched finished topics response:", response)
       const finishedIds = response.data?.finishedTopics || response.data || []
-      setFinishedTopics(finishedIds)
-      console.log("[v0] Set finished topics to:", finishedIds)
+      const finishedIdsAsStrings = finishedIds.map((id) => String(id))
+      setFinishedTopics(finishedIdsAsStrings)
+      console.log("[v0] Set finished topics to:", finishedIdsAsStrings)
     } catch (error) {
       console.error("Error fetching finished topics:", error)
       setFinishedTopics([])
@@ -116,8 +117,28 @@ const Grammar = () => {
     if (!selectedTopic) return
 
     try {
-      await grammarService.markTopicAsFinished(selectedTopic._id)
-      setFinishedTopics([...finishedTopics, selectedTopic._id])
+      const response = await grammarService.markTopicAsFinished(selectedTopic._id)
+      console.log("[v0] Mark as finished response:", response)
+
+      const topicIdString = String(selectedTopic._id)
+
+      setFinishedTopics((prev) => {
+        if (!prev.includes(topicIdString)) {
+          return [...prev, topicIdString]
+        }
+        return prev
+      })
+
+      if (user) {
+        const updatedGrammarFinished = response.data?.grammarFinished || [
+          ...(user.grammarFinished || []),
+          topicIdString,
+        ]
+        updateUser({
+          grammarFinished: updatedGrammarFinished.map((id) => String(id)),
+        })
+      }
+
       alert("Urime! Keni përfunduar këtë temë të gramatikës!")
     } catch (error) {
       console.error("Error marking topic as finished:", error)
@@ -126,8 +147,10 @@ const Grammar = () => {
   }
 
   const isTopicFinished = (topicId) => {
-    return finishedTopics.includes(topicId)
+    const topicIdString = String(topicId)
+    return finishedTopics.includes(topicIdString)
   }
+
 
   const fetchTopics = async () => {
     try {
