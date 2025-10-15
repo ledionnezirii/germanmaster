@@ -103,6 +103,12 @@ const userSchema = new mongoose.Schema(
         ref: "Grammar",
       },
     ],
+     categoryFinished: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Category",
+      },
+    ],
     certificates: [
       {
         level: String,

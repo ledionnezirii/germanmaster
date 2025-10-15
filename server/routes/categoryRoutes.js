@@ -7,6 +7,7 @@ const {
   deleteCategory,
   addWordToCategory,
   removeWordFromCategory,
+  finishCategory
 } = require("../controllers/categoryController")
 const  auth  = require("../middleware/auth")
 const isAdmin = require("../middleware/isAdmin")
@@ -17,6 +18,9 @@ const router = express.Router()
 // Public routes
 router.get("/", getAllCategories)
 router.get("/:id", getCategoryById)
+
+
+router.post("/:id/finish", auth, finishCategory)
 
 // Protected admin routes
 router.post("/", auth, isAdmin, validateCategory, createCategory)
