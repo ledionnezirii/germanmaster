@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useAuth } from "../context/AuthContext"
-import { useNavigate } from "react-router-dom"
+import logo from "../../public/wortii.png"
 import {
   ArrowLeft,
   Clock,
@@ -15,7 +15,7 @@ import {
   CheckCircle,
   AlertCircle,
   X,
-  Star,
+  Check,
 } from "lucide-react"
 import { testService } from "../services/api"
 
@@ -39,7 +39,6 @@ const Tests = () => {
 
   const { user } = useAuth()
   const userId = user?.id
-  const navigate = useNavigate()
 
   const germanLevels = [
     {
@@ -329,9 +328,8 @@ const Tests = () => {
 
             <button
               onClick={handleClose}
-              className={`w-full px-3 py-2 rounded-md font-medium transition-colors text-xs ${
-                isPassed ? "bg-gray-800 hover:bg-gray-900 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-              }`}
+              className={`w-full px-3 py-2 rounded-md font-medium transition-colors text-xs ${isPassed ? "bg-gray-800 hover:bg-gray-900 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                }`}
             >
               {isPassed ? "Vazhdo" : "Kthehu te Nivelet"}
             </button>
@@ -601,20 +599,30 @@ const Tests = () => {
         <div className="max-w-4xl mx-auto space-y-3">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="p-4 text-center">
-              <h1 className="text-base font-semibold text-gray-900">👉 {test.title}</h1>
-              <p className="text-xs text-gray-600 mt-1">
+              <p
+                className="text-xs font-semibold text-blue-600 uppercase tracking-wide"
+                style={{ fontFamily: "Inter, sans-serif" }}
+              >
+                TEST YOUR GERMAN SKILLS
+              </p>
+              <h1 className="text-2xl font-bold text-gray-900 mt-2" style={{ fontFamily: "Poppins, sans-serif" }}>
+                {test.title}
+              </h1>
+              <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: "Inter, sans-serif" }}>
                 Niveli: {test.level} • Koha: 30 minuta • Pyetjet: {test.questions?.length}
               </p>
 
               {timeRemaining !== null && (
-                <div className={`mt-2 flex items-center justify-center gap-1.5 ${getTimerColor()}`}>
+                <div className={`mt-4 flex items-center justify-center gap-1.5 ${getTimerColor()}`}>
                   <Clock className="w-4 h-4" />
-                  <span className="text-xl font-bold">{formatTime(timeRemaining)}</span>
+                  <span className="text-xl font-bold" style={{ fontFamily: "Poppins, sans-serif" }}>
+                    {formatTime(timeRemaining)}
+                  </span>
                 </div>
               )}
 
               <div className="mt-3 space-y-1.5">
-                <div className="flex justify-between text-xs text-gray-600">
+                <div className="flex justify-between text-xs text-gray-600" style={{ fontFamily: "Inter, sans-serif" }}>
                   <span>Progresi</span>
                   <span>
                     {answeredQuestions} nga {totalQuestions}
@@ -630,15 +638,23 @@ const Tests = () => {
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {test.questions?.map((question, index) => (
               <div key={question._id || index} className="bg-white rounded-lg shadow-sm border border-gray-200 h-fit">
                 <div className="p-4 border-b border-gray-100">
                   <div className="flex items-start gap-2">
-                    <span className="shrink-0 inline-flex items-center px-2 py-1 rounded text-sm font-semibold bg-gray-100 text-gray-700">
-                      👉 {question.questionNumber || index + 1}
+                    <span
+                      className="shrink-0 inline-flex items-center px-2 py-1 rounded text-sm font-semibold bg-gray-100 text-gray-700"
+                      style={{ fontFamily: "Poppins, sans-serif" }}
+                    >
+                      {question.questionNumber || index + 1}
                     </span>
-                    <h3 className="text-sm font-medium leading-relaxed text-gray-900">{question.questionText}</h3>
+                    <h3
+                      className="text-sm font-medium leading-relaxed text-gray-900"
+                      style={{ fontFamily: "Inter, sans-serif" }}
+                    >
+                      {question.questionText}
+                    </h3>
                   </div>
                 </div>
                 <div className="p-3 space-y-2">
@@ -655,7 +671,10 @@ const Tests = () => {
                         onChange={() => handleAnswerSelect(question._id || index, option.label)}
                         className="mt-0.5 text-gray-800 focus:ring-gray-500 focus:ring-1"
                       />
-                      <span className="text-sm leading-relaxed text-gray-700">
+                      <span
+                        className="text-sm leading-relaxed text-gray-700"
+                        style={{ fontFamily: "Inter, sans-serif" }}
+                      >
                         <strong className="text-gray-800">{option.label})</strong> {option.text}
                       </span>
                     </label>
@@ -667,7 +686,7 @@ const Tests = () => {
 
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="p-4 text-center space-y-2">
-              <div className="text-xs text-gray-600">
+              <div className="text-xs text-gray-600" style={{ fontFamily: "Inter, sans-serif" }}>
                 {answeredQuestions === totalQuestions
                   ? "Të gjitha pyetjet u përgjigjën! Gati për dorëzim."
                   : `${totalQuestions - answeredQuestions} pyetje të mbetura`}
@@ -677,11 +696,13 @@ const Tests = () => {
                   onClick={submitTest}
                   disabled={answeredQuestions === 0 || isSubmittingRef.current}
                   className="px-3 py-2 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-md font-medium transition-colors text-xs"
+                  style={{ fontFamily: "Poppins, sans-serif" }}
                 >
                   {isSubmittingRef.current ? "Duke dorëzuar..." : "Dorëzo Testin"}
                 </button>
                 <button
-                  className="px-3 py-2 rounded-md bg-white text-gray-700 hover:bg-gray-100 transition-colors border border-gray-200 text-xs font-medium"
+                  className="px-3 py-2 rounded-md bg-white text-gray-700 hover:bg-gray-100 transition-colors border border-gray-200 font-medium text-xs"
+                  style={{ fontFamily: "Poppins, sans-serif" }}
                   onClick={handleCancelTest}
                   disabled={isSubmittingRef.current}
                 >
@@ -826,12 +847,16 @@ const Tests = () => {
     return (
       <div className="min-h-screen bg-gray-50 p-4">
         <div className="max-w-5xl mx-auto space-y-6">
-          <div className="text-center space-y-2">
-            <h1 className="text-2xl font-bold text-gray-900">Testet e Gramatikës Gjermane</h1>
-            <p className="text-sm text-gray-600">Testoni njohuritë tuaja të gjermanishtes në të gjitha nivelet CEFR</p>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
+            <h1 className="text-3xl font-bold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
+              Testet e Gramatikës Gjermane
+            </h1>
+            <p className="text-base text-gray-600 mt-2" style={{ fontFamily: "Inter, sans-serif" }}>
+              Testoni njohuritë tuaja të gjermanishtes në të gjitha nivelet CEFR
+            </p>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {germanLevels.map((level) => {
               const availability = getLevelAvailability(level.code)
               const isAvailable = availability.available
@@ -841,70 +866,90 @@ const Tests = () => {
               return (
                 <div
                   key={level.code}
-                  className={`relative overflow-hidden rounded-lg shadow-sm border transition-all duration-200 ${level.color} ${
-                    isAvailable && !isLocked ? "hover:shadow-md cursor-pointer" : "opacity-60 cursor-not-allowed"
-                  }`}
+                  className={`relative overflow-hidden rounded-xl shadow-sm border-2 transition-all duration-200 ${level.color} ${isAvailable && !isLocked ? "hover:shadow-lg cursor-pointer" : "opacity-70 cursor-not-allowed"
+                    }`}
                   onClick={isAvailable && !isLocked ? () => handleLevelSelect(level.code) : undefined}
                 >
-                  <div className="absolute top-3 left-3">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-bold border bg-white/80 shadow-sm">
+                  <div className="absolute top-4 left-4">
+                    <span
+                      className="inline-flex items-center px-3 py-1.5 rounded-lg text-base font-bold border-2 bg-white shadow-sm"
+                      style={{ fontFamily: "Poppins, sans-serif" }}
+                    >
                       {level.code}
                     </span>
                   </div>
 
                   {isLocked && (
-                    <div className="absolute top-3 right-3 p-1 bg-white/50 rounded-md">
-                      <LockIcon className="w-3.5 h-3.5 text-gray-500" />
+                    <div className="absolute top-4 right-4 p-2 bg-white/70 rounded-lg shadow-sm">
+                      <LockIcon className="w-5 h-5 text-gray-600" />
                     </div>
                   )}
 
-                  <div className="p-4 pt-12">
+                  {availability.reason === "passed" && (
+                    <div className="absolute top-4 right-4 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-md">
+                      <Check className="w-5 h-5 text-white stroke-[3]" />
+                    </div>
+                  )}
+
+                  <div className="p-5 pt-16">
                     <div>
-                      <h3 className="text-sm font-bold">{level.name}</h3>
-                      <p className="mt-0.5 text-xs opacity-90">{level.description}</p>
+                      <h3 className="text-lg font-bold" style={{ fontFamily: "Poppins, sans-serif" }}>
+                        {level.name}
+                      </h3>
+                      <p className="mt-1 text-sm opacity-90" style={{ fontFamily: "Inter, sans-serif" }}>
+                        {level.description}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="px-4 pb-4 space-y-2">
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="opacity-75">
+                  <div className="px-5 pb-5 space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm" style={{ fontFamily: "Inter, sans-serif" }}>
+                        <span className="opacity-80">
                           {availability.reason === "passed" ? "Përfunduar" : "Progresi"}
                         </span>
-                        <span className="font-medium">{availability.reason === "passed" ? "100%" : "0%"}</span>
+                        <span className="font-semibold">{availability.reason === "passed" ? "100%" : "0%"}</span>
                       </div>
-                      <div className="w-full bg-white/30 rounded-full h-1.5">
+                      <div className="w-full bg-white/40 rounded-full h-2">
                         <div
-                          className={`h-1.5 rounded-full transition-all ${
-                            availability.reason === "passed" ? "bg-green-500 w-full" : "bg-gray-400 w-0"
-                          }`}
+                          className={`h-2 rounded-full transition-all ${availability.reason === "passed" ? "bg-green-500 w-full" : "bg-gray-300 w-0"
+                            }`}
                         ></div>
                       </div>
                     </div>
 
                     {availability.reason === "passed" && availability.lastScore && (
-                      <div className="text-xs">
-                        <span className="opacity-75">Rezultati: </span>
+                      <div className="text-sm" style={{ fontFamily: "Poppins, sans-serif" }}>
+                        <span className="opacity-80">Rezultati: </span>
                         <span className="font-bold">{availability.lastScore}%</span>
                       </div>
                     )}
 
+                    {availability.reason === "passed" && availability.lastAttemptDate && (
+                      <div className="text-xs opacity-75" style={{ fontFamily: "Inter, sans-serif" }}>
+                        Përfunduar më: {new Date(availability.lastAttemptDate).toLocaleDateString("sq-AL")}
+                      </div>
+                    )}
+
                     <button
-                      className={`w-full py-2 px-3 rounded-md font-medium transition-all duration-200 text-xs ${
-                        isAvailable && !isLocked
-                          ? `${level.buttonColor} text-white`
-                          : "bg-gray-100 text-gray-500 cursor-not-allowed"
-                      }`}
+                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 text-sm flex items-center justify-center gap-2 ${isAvailable && !isLocked
+                          ? `${level.buttonColor} text-white shadow-md hover:shadow-lg`
+                          : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                        }`}
+                      style={{ fontFamily: "Poppins, sans-serif" }}
                       disabled={!isAvailable || isLocked}
                     >
                       {isLocked ? (
                         <>
-                          <LockIcon className="w-3 h-3 mr-1 inline" />I kyçur
+                          <LockIcon className="w-4 h-4" />
+                          Njohuri në nivel gjuhëtari
                         </>
                       ) : isAvailable ? (
-                        `Merr Testin ${level.code}`
+                        <>
+                          <span>→</span> Merr Testin {level.code}
+                        </>
                       ) : (
-                        "Jo i disponueshëm"
+                        "I kyçur"
                       )}
                     </button>
                   </div>
@@ -919,84 +964,137 @@ const Tests = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-5xl mx-auto space-y-4">
+      <div className="max-w-5xl mx-auto space-y-6">
         <button
-          className="mb-3 flex items-center gap-1.5 cursor-pointer px-3 py-1.5 rounded-md bg-white text-gray-700 hover:bg-gray-100 transition-colors border border-gray-200 text-xs font-medium"
+          className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors text-sm font-medium"
+          style={{ fontFamily: "Inter, sans-serif" }}
           onClick={() => {
             setSelectedLevel(null)
             setLevelTests([])
           }}
         >
-          <ArrowLeft size={14} /> Kthehu te Zgjedhja e Nivelit
+          <ArrowLeft size={16} /> Kthehu te Zgjedhja e Nivelit
         </button>
 
-        <div className="text-center space-y-2">
-          <h1 className="text-xl font-bold text-gray-900">👉 Testet e Gramatikës Gjermane - Niveli {selectedLevel}</h1>
-          <p className="text-gray-600 text-xs">Zgjidhni një test për të filluar vlerësimin tuaj</p>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
+                Testet e Gramatikës Gjermane
+              </h1>
+              <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: "Inter, sans-serif" }}>
+                Zgjidhni një test për të filluar vlerësimin tuaj për nivelin {selectedLevel}.
+              </p>
+            </div>
+            <div className="text-4xl">
+              <img src={logo}
+                className="rounded-full"
+                width={48}
+                height={48}
+
+                alt="" />
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {levelTests.map((test) => (
-            <div
-              key={test._id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all duration-200"
-            >
-              <div className="p-4 border-b border-gray-100">
-                <h3 className="text-sm font-bold text-gray-900">{test.title}</h3>
-                <p className="text-gray-600 mt-1 text-xs">
-                  Niveli: {test.level} • Kategoria: {test.category}
-                </p>
-              </div>
-              <div className="p-4 space-y-3">
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div className="space-y-1">
-                    <p className="text-gray-600">Pyetjet</p>
-                    <p className="font-bold text-gray-900">{test.questions?.length || "..."}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-gray-600">Koha</p>
-                    <p className="font-bold text-gray-900">30min</p>
-                  </div>
-                </div>
+          {levelTests.map((test) => {
+            const levelInfo = germanLevels.find((l) => l.code === test.level)
+            const badgeColor =
+              test.level === "A1"
+                ? "bg-blue-100 text-blue-700"
+                : test.level === "A2"
+                  ? "bg-green-100 text-green-700"
+                  : test.level === "B1"
+                    ? "bg-amber-100 text-amber-700"
+                    : test.level === "B2"
+                      ? "bg-orange-100 text-orange-700"
+                      : test.level === "C1"
+                        ? "bg-purple-100 text-purple-700"
+                        : "bg-rose-100 text-rose-700"
 
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-gray-600">Vështirësia:</span>
-                  <div className="flex">
-                    {Array.from({ length: 5 }, (_, i) => (
-                      <Star
-                        key={i}
-                        className={`w-3 h-3 ${i < (test.difficulty || 1) ? "text-yellow-400 fill-current" : "text-gray-300"}`}
-                      />
-                    ))}
+            return (
+              <div
+                key={test._id}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden"
+              >
+                <div className="p-5 space-y-4">
+                  {/* Level badge and question mark icon */}
+                  <div className="flex items-start justify-between">
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold ${badgeColor}`}
+                      style={{ fontFamily: "Poppins, sans-serif" }}
+                    >
+                      {test.level}
+                    </span>
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
+                      <img src={logo}
+                        className="rounded-full"
+                        width={48}
+                        height={48}
+
+                        alt="" />                    </div>
+                  </div>
+
+                  {/* Question count and duration */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span className="text-sm font-medium" style={{ fontFamily: "Inter, sans-serif" }}>
+                        {test.questions?.length || 1} Pyetje
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <Clock className="w-4 h-4" />
+                      <span className="text-sm font-medium" style={{ fontFamily: "Inter, sans-serif" }}>
+                        30 Minuta
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={() => {
+                        setSelectedTest(test)
+                        setShowInstructions(true)
+                      }}
+                      className="flex-1 px-4 py-2.5 rounded-lg border-2 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors text-sm font-semibold"
+                      style={{ fontFamily: "Poppins, sans-serif" }}
+                    >
+                      Shiko
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedTest(test)
+                        const startTime = Date.now()
+                        setTestStartTime(startTime)
+                        setTimeRemaining(30 * 60)
+                        setTakingTest(true)
+                      }}
+                      className="flex-1 px-4 py-2.5 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors text-sm font-semibold"
+                      style={{ fontFamily: "Poppins, sans-serif" }}
+                    >
+                      Merr Testin
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => {
-                      setSelectedTest(test)
-                      const startTime = Date.now()
-                      setTestStartTime(startTime)
-                      setTimeRemaining(30 * 60)
-                      setTakingTest(true)
-                    }}
-                    className="flex-1 px-3 py-2 bg-gray-800 hover:bg-gray-900 text-white rounded-md font-medium transition-all duration-200 text-xs"
-                  >
-                    👉 Merr Testin
-                  </button>
-                  <button
-                    className="px-3 py-2 rounded-md bg-gray-50 text-gray-700 hover:bg-gray-100 transition-all duration-200 border border-gray-200 font-medium text-xs"
-                    onClick={() => {
-                      setSelectedTest(test)
-                      setShowInstructions(true)
-                    }}
-                  >
-                    Shiko
-                  </button>
-                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {levelTests.length === 0 && !loading && (
