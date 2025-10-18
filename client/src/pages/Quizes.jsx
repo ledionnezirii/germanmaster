@@ -14,7 +14,7 @@ const Quizes = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [quizzesPerPage] = useState(20)
+  const [quizzesPerPage] = useState(16)
   const [showResults, setShowResults] = useState(false)
   const [quizResults, setQuizResults] = useState(null)
 
@@ -27,9 +27,11 @@ const Quizes = () => {
 
   const [selectedWords, setSelectedWords] = useState([])
 
-  const totalPages = Math.ceil(quizzes.length / quizzesPerPage)
+  const filteredQuizzes = selectedLevel === "all" ? quizzes : quizzes.filter((quiz) => quiz.level === selectedLevel)
+
+  const totalPages = Math.ceil(filteredQuizzes.length / quizzesPerPage)
   const indexOfFirstQuiz = (currentPage - 1) * quizzesPerPage
-  const indexOfLastQuiz = Math.min(indexOfFirstQuiz + quizzesPerPage, quizzes.length)
+  const indexOfLastQuiz = Math.min(indexOfFirstQuiz + quizzesPerPage, filteredQuizzes.length)
 
   const paginate = (pageNumber) => {
     setCurrentPage(pageNumber)
@@ -120,12 +122,12 @@ const Quizes = () => {
 
   const getLevelColor = (level) => {
     const colors = {
-      A1: "bg-green-100 text-green-800",
-      A2: "bg-green-100 text-green-800",
+      A1: "bg-amber-100 text-amber-800",
+      A2: "bg-amber-100 text-amber-800",
       B1: "bg-orange-100 text-orange-800",
-      B2: "bg-orange-100 text-orange-800",
-      C1: "bg-purple-100 text-purple-800",
-      C2: "bg-pink-100 text-pink-800",
+      B2: "bg-yellow-100 text-yellow-800",
+      C1: "bg-orange-100 text-orange-800",
+      C2: "bg-orange-100 text-orange-800",
     }
     return colors[level] || colors.A1
   }
@@ -328,11 +330,16 @@ const Quizes = () => {
           <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto">
             <X className="w-6 h-6 text-red-600" />
           </div>
-          <h2 className="text-lg font-bold text-gray-800">Diçka shkoi keq</h2>
-          <p className="text-sm text-gray-600">{error}</p>
+          <h2 className="text-lg font-bold text-gray-800" style={{ fontFamily: "Poppins, sans-serif" }}>
+            Diçka shkoi keq
+          </h2>
+          <p className="text-sm text-gray-600" style={{ fontFamily: "Inter, sans-serif" }}>
+            {error}
+          </p>
           <button
             onClick={() => window.location.reload()}
             className="px-5 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors text-sm font-bold"
+            style={{ fontFamily: "Poppins, sans-serif" }}
           >
             Provo Përsëri
           </button>
@@ -368,28 +375,44 @@ const Quizes = () => {
             )}
           </div>
 
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Kuizi u Përfundua!</h2>
-          <p className="text-gray-600 mb-3 font-medium text-sm">{quizResults.quizTitle}</p>
+          <h2 className="text-xl font-bold text-gray-800 mb-2" style={{ fontFamily: "Poppins, sans-serif" }}>
+            Kuizi u Përfundua!
+          </h2>
+          <p className="text-gray-600 mb-3 font-medium text-sm" style={{ fontFamily: "Inter, sans-serif" }}>
+            {quizResults.quizTitle}
+          </p>
 
           <div className="bg-gray-50 rounded-xl p-3 mb-3 border border-gray-200">
-            <div className="text-2xl font-bold text-gray-800 mb-1">
+            <div className="text-2xl font-bold text-gray-800 mb-1" style={{ fontFamily: "Poppins, sans-serif" }}>
               {quizResults.correctAnswers}/{quizResults.totalQuestions}
             </div>
-            <p className="text-gray-600 mb-2 font-medium text-sm">Përgjigje të Sakta</p>
+            <p className="text-gray-600 mb-2 font-medium text-sm" style={{ fontFamily: "Inter, sans-serif" }}>
+              Përgjigje të Sakta
+            </p>
 
-            <div className={`text-xl font-bold mb-1 ${isGoodScore ? "text-orange-600" : "text-amber-600"}`}>
+            <div
+              className={`text-xl font-bold mb-1 ${isGoodScore ? "text-orange-600" : "text-amber-600"}`}
+              style={{ fontFamily: "Poppins, sans-serif" }}
+            >
               {percentage}%
             </div>
-            <p className="text-xs text-gray-500 font-medium">Rezultati</p>
+            <p className="text-xs text-gray-500 font-medium" style={{ fontFamily: "Inter, sans-serif" }}>
+              Rezultati
+            </p>
           </div>
 
           <div className="flex items-center justify-center gap-2 mb-3 p-2.5 bg-orange-50 rounded-xl border border-orange-200">
             <Star className="w-4 h-4 text-orange-600" />
-            <span className="text-orange-600 font-bold text-sm">+{quizResults.xpEarned} XP Fituar</span>
+            <span className="text-orange-600 font-bold text-sm" style={{ fontFamily: "Poppins, sans-serif" }}>
+              +{quizResults.xpEarned} XP Fituar
+            </span>
           </div>
 
           <div className="mb-4">
-            <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${getLevelColor(quizResults.level)}`}>
+            <span
+              className={`px-3 py-1.5 rounded-full text-xs font-bold ${getLevelColor(quizResults.level)}`}
+              style={{ fontFamily: "Poppins, sans-serif" }}
+            >
               Niveli {quizResults.level}
             </span>
           </div>
@@ -402,6 +425,7 @@ const Quizes = () => {
                 setCurrentView("list")
               }}
               className="w-full py-2.5 px-4 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold text-sm transition-all duration-200 shadow-md hover:shadow-lg"
+              style={{ fontFamily: "Poppins, sans-serif" }}
             >
               Kthehu te Kuizet
             </button>
@@ -415,6 +439,7 @@ const Quizes = () => {
                 setCurrentView("quiz")
               }}
               className="w-full py-2.5 px-4 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-bold text-sm flex items-center justify-center gap-2"
+              style={{ fontFamily: "Poppins, sans-serif" }}
             >
               <RotateCcw className="w-4 h-4" />
               Përsërit Kuizin
@@ -441,6 +466,7 @@ const Quizes = () => {
                 window.scrollTo({ top: 0, behavior: "smooth" })
               }}
               className="mb-3 sm:mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors text-sm font-medium bg-gray-50 px-3 py-2 rounded-lg hover:bg-gray-100 border border-gray-200"
+              style={{ fontFamily: "Poppins, sans-serif" }}
             >
               <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Kthehu te Kuizet</span>
@@ -450,20 +476,30 @@ const Quizes = () => {
             <div className="bg-orange-600 rounded-xl p-4 sm:p-5 text-white shadow-md">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-base sm:text-xl font-bold mb-2">{selectedQuiz.title}</h1>
+                  <h1 className="text-base sm:text-xl font-bold mb-2" style={{ fontFamily: "Poppins, sans-serif" }}>
+                    {selectedQuiz.title}
+                  </h1>
                   <div className="flex items-center gap-2 sm:gap-3">
-                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-white/20 text-white">
+                    <span
+                      className="px-2.5 py-1 rounded-full text-xs font-bold bg-white/20 text-white"
+                      style={{ fontFamily: "Poppins, sans-serif" }}
+                    >
                       Niveli {selectedQuiz.level}
                     </span>
-                    <div className="flex items-center gap-1 text-xs bg-orange-500 px-2.5 py-1 rounded-full font-bold">
+                    <div
+                      className="flex items-center gap-1 text-xs bg-orange-500 px-2.5 py-1 rounded-full font-bold"
+                      style={{ fontFamily: "Poppins, sans-serif" }}
+                    >
                       <Star className="w-3 h-3" />
                       {selectedQuiz.xp} XP
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-orange-100 font-medium">Pyetja</p>
-                  <p className="text-lg sm:text-xl font-bold">
+                  <p className="text-xs text-orange-100 font-medium" style={{ fontFamily: "Inter, sans-serif" }}>
+                    Pyetja
+                  </p>
+                  <p className="text-lg sm:text-xl font-bold" style={{ fontFamily: "Poppins, sans-serif" }}>
                     {currentQuestionIndex + 1}/{selectedQuiz.questions.length}
                   </p>
                 </div>
@@ -472,8 +508,12 @@ const Quizes = () => {
 
             <div className="mt-3 sm:mt-4">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-xs text-gray-600 font-medium">Përparimi</span>
-                <span className="text-xs text-gray-600 font-medium">{Math.round(progress)}%</span>
+                <span className="text-xs text-gray-600 font-medium" style={{ fontFamily: "Inter, sans-serif" }}>
+                  Përparimi
+                </span>
+                <span className="text-xs text-gray-600 font-medium" style={{ fontFamily: "Inter, sans-serif" }}>
+                  {Math.round(progress)}%
+                </span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
@@ -497,6 +537,7 @@ const Quizes = () => {
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                   : "bg-white border-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-orange-300"
               }`}
+              style={{ fontFamily: "Poppins, sans-serif" }}
             >
               <ChevronLeft className="w-4 h-4" />
               <span className="hidden sm:inline">E Mëparshme</span>
@@ -512,6 +553,7 @@ const Quizes = () => {
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : "bg-orange-600 text-white hover:bg-orange-700 shadow-md hover:shadow-lg"
                 }`}
+                style={{ fontFamily: "Poppins, sans-serif" }}
               >
                 <span className="hidden sm:inline">Dërgo Kuizin</span>
                 <span className="sm:hidden">Dërgo</span>
@@ -526,6 +568,7 @@ const Quizes = () => {
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                     : "bg-orange-600 text-white hover:bg-orange-700 shadow-md hover:shadow-lg"
                 }`}
+                style={{ fontFamily: "Poppins, sans-serif" }}
               >
                 <span className="hidden sm:inline">Tjetri</span>
                 <span className="sm:hidden">Para</span>
@@ -541,167 +584,297 @@ const Quizes = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto p-4 sm:p-5">
-        <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Kuizet e Mësimit të Gjuhës</h1>
-          <p className="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto leading-relaxed">
-            Testoni aftësitë tuaja në gjuhën gjermane me kuize interaktive dhe ndiqni përparimin tuaj.
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 sm:p-6 mb-5">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+              <BookOpen className="h-5 w-5 text-gray-700" />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
+                Kuize te Gjuhes Gjermane
+              </h1>
+            </div>
+          </div>
+          <p className="text-sm text-gray-600 ml-13" style={{ fontFamily: "Inter, sans-serif" }}>
+            Sfidoni njohurite tuaja Gjermane
           </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 mb-6 sm:mb-8">
-          <div className="flex items-center gap-2 mb-3 sm:mb-4">
-            <BookOpen className="h-5 w-5 text-gray-600" />
-            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Filtro sipas Nivelit</h2>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-5 mb-5">
+          <div className="flex items-center gap-2 mb-3">
+            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+              />
+            </svg>
+            <h2 className="text-base font-semibold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
+              Filtro sipas Nivelit
+            </h2>
           </div>
           <div className="flex flex-wrap gap-2">
-            {levels.map((level) => (
-              <button
-                key={level}
-                onClick={() => {
-                  setSelectedLevel(level)
-                  setCurrentPage(1)
-                }}
-                className={`px-3 sm:px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${
-                  selectedLevel === level
-                    ? "bg-orange-600 text-white shadow-md"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                {level === "all" ? "Të Gjitha" : level}
-              </button>
-            ))}
+            <button
+              onClick={() => {
+                setSelectedLevel("all")
+                setCurrentPage(1)
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                selectedLevel === "all"
+                  ? "bg-blue-500 text-white shadow-md"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+              }`}
+              style={{ fontFamily: "Poppins, sans-serif" }}
+            >
+              Të Gjitha
+            </button>
+            <button
+              onClick={() => {
+                setSelectedLevel("A1")
+                setCurrentPage(1)
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                selectedLevel === "A1"
+                  ? "bg-blue-500 text-white shadow-md"
+                  : "bg-amber-100 text-amber-800 hover:bg-amber-200"
+              }`}
+              style={{ fontFamily: "Poppins, sans-serif" }}
+            >
+              A1
+            </button>
+            <button
+              onClick={() => {
+                setSelectedLevel("A2")
+                setCurrentPage(1)
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                selectedLevel === "A2"
+                  ? "bg-blue-500 text-white shadow-md"
+                  : "bg-amber-100 text-amber-800 hover:bg-amber-200"
+              }`}
+              style={{ fontFamily: "Poppins, sans-serif" }}
+            >
+              A2
+            </button>
+            <button
+              onClick={() => {
+                setSelectedLevel("B1")
+                setCurrentPage(1)
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                selectedLevel === "B1"
+                  ? "bg-blue-500 text-white shadow-md"
+                  : "bg-orange-100 text-orange-800 hover:bg-orange-200"
+              }`}
+              style={{ fontFamily: "Poppins, sans-serif" }}
+            >
+              B1
+            </button>
+            <button
+              onClick={() => {
+                setSelectedLevel("B2")
+                setCurrentPage(1)
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                selectedLevel === "B2"
+                  ? "bg-blue-500 text-white shadow-md"
+                  : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+              }`}
+              style={{ fontFamily: "Poppins, sans-serif" }}
+            >
+              B2
+            </button>
+            <button
+              onClick={() => {
+                setSelectedLevel("C1")
+                setCurrentPage(1)
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                selectedLevel === "C1"
+                  ? "bg-blue-500 text-white shadow-md"
+                  : "bg-orange-100 text-orange-800 hover:bg-orange-200"
+              }`}
+              style={{ fontFamily: "Poppins, sans-serif" }}
+            >
+              C1
+            </button>
+            <button
+              onClick={() => {
+                setSelectedLevel("C2")
+                setCurrentPage(1)
+              }}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
+                selectedLevel === "C2"
+                  ? "bg-blue-500 text-white shadow-md"
+                  : "bg-orange-100 text-orange-800 hover:bg-orange-200"
+              }`}
+              style={{ fontFamily: "Poppins, sans-serif" }}
+            >
+              C2
+            </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-          {quizzes.slice(indexOfFirstQuiz, indexOfLastQuiz).map((quiz) => {
-            const isCompleted = completedQuizzes.includes(quiz._id)
+        {filteredQuizzes.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              {filteredQuizzes.slice(indexOfFirstQuiz, indexOfLastQuiz).map((quiz) => {
+                const isCompleted = completedQuizzes.includes(quiz._id)
 
-            return (
-              <div
-                key={quiz._id}
-                className="rounded-2xl transition-all duration-300 hover:shadow-xl cursor-pointer overflow-hidden bg-white border-2 border-gray-200 shadow-md hover:scale-[1.02]"
-                onClick={() => startQuiz(quiz)}
-              >
-                <div className="p-5">
-                  {/* Header with title and icon */}
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-lg font-bold text-gray-900 leading-tight flex-1 pr-2">{quiz.title}</h3>
-                    <div className="flex-shrink-0">
-                      {isCompleted ? (
-                        <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
-                          <Check className="w-4 h-4 text-green-600" />
-                        </div>
-                      ) : (
-                        <BookOpen className="w-5 h-5 text-gray-400" />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Status text */}
-                  <div className="mb-3">
-                    <p className={`text-sm font-semibold ${isCompleted ? "text-green-600" : "text-gray-500"}`}>
-                      {isCompleted ? "Completed!" : "Not started"}
-                    </p>
-                  </div>
-
-                  {/* Progress bar for completed quizzes */}
-                  {isCompleted && (
-                    <div className="mb-4">
-                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                        <div className="bg-green-500 h-2 rounded-full w-full transition-all duration-500"></div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Spacer to push button to bottom */}
-                  <div className="mb-12"></div>
-
-                  {/* Action button */}
-                  <button
-                    className={`w-full py-3 px-4 rounded-xl text-sm font-bold transition-all duration-200 shadow-sm ${
-                      isCompleted
-                        ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        : "bg-blue-500 text-white hover:bg-blue-600"
-                    }`}
+                return (
+                  <div
+                    key={quiz._id}
+                    className="bg-white rounded-2xl border-2 border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer overflow-hidden"
+                    onClick={() => startQuiz(quiz)}
                   >
-                    {isCompleted ? "Review" : "Start"}
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+                    <div className="p-5">
+                      {/* Header with title and icon */}
+                      <div className="flex items-start justify-between mb-4">
+                        <h3
+                          className="text-base font-bold text-gray-900 leading-tight flex-1 pr-2"
+                          style={{ fontFamily: "Poppins, sans-serif" }}
+                        >
+                          {quiz.title}
+                        </h3>
+                        <div className="flex-shrink-0">
+                          {isCompleted ? (
+                            <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                              <Check className="w-4 h-4 text-white" />
+                            </div>
+                          ) : (
+                            <svg
+                              className="w-6 h-6 text-gray-400"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                              />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
 
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center space-x-2 mb-6">
-            <button
-              onClick={() => paginate(currentPage - 1)}
-              disabled={currentPage === 1}
-              className={`p-2.5 rounded-lg transition-all ${
-                currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-600 hover:bg-gray-100 bg-white"
-              }`}
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
+                      {/* Status text */}
+                      <div className="mb-3">
+                        <p
+                          className={`text-sm font-semibold ${isCompleted ? "text-green-600" : "text-gray-500"}`}
+                          style={{ fontFamily: "Inter, sans-serif" }}
+                        >
+                          {isCompleted ? "Perfunduar!" : "Filloni"}
+                        </p>
+                      </div>
 
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let pageNumber
-              if (totalPages <= 5) {
-                pageNumber = i + 1
-              } else {
-                if (currentPage <= 3) {
-                  pageNumber = i + 1
-                } else if (currentPage >= totalPages - 2) {
-                  pageNumber = totalPages - 4 + i
-                } else {
-                  pageNumber = currentPage - 2 + i
-                }
-              }
+                      {/* Question count */}
+                      <div className="mb-4">
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          <span className="text-sm font-medium" style={{ fontFamily: "Inter, sans-serif" }}>
+                            {quiz.questions?.length || 0} Pyetje
+                          </span>
+                        </div>
+                      </div>
 
-              return (
+                      {/* Action button */}
+                      <button
+                        className={`w-full py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-200 ${
+                          isCompleted
+                            ? "bg-amber-100 text-amber-800 hover:bg-amber-200 cursor-pointer"
+                            : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 cursor-pointer"
+                        }`}
+                        style={{ fontFamily: "Poppins, sans-serif" }}
+                      >
+                        {isCompleted ? "Perserit" : "Fillo"}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center space-x-2 mb-6">
                 <button
-                  key={pageNumber}
-                  onClick={() => paginate(pageNumber)}
-                  className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${
-                    currentPage === pageNumber
-                      ? "bg-orange-600 text-white shadow-md"
+                  onClick={() => paginate(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`p-2.5 rounded-lg transition-all ${
+                    currentPage === 1 ? "text-gray-300 cursor-not-allowed" : "text-gray-600 hover:bg-gray-100 bg-white"
+                  }`}
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNumber
+                  if (totalPages <= 5) {
+                    pageNumber = i + 1
+                  } else {
+                    if (currentPage <= 3) {
+                      pageNumber = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNumber = totalPages - 4 + i
+                    } else {
+                      pageNumber = currentPage - 2 + i
+                    }
+                  }
+
+                  return (
+                    <button
+                      key={pageNumber}
+                      onClick={() => paginate(pageNumber)}
+                      className={`w-10 h-10 rounded-lg text-sm font-bold transition-all ${
+                        currentPage === pageNumber
+                          ? "bg-orange-600 text-white shadow-md"
+                          : "text-gray-600 hover:bg-gray-100 bg-white"
+                      }`}
+                      style={{ fontFamily: "Poppins, sans-serif" }}
+                    >
+                      {pageNumber}
+                    </button>
+                  )
+                })}
+
+                <button
+                  onClick={() => paginate(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`p-2.5 rounded-lg transition-all ${
+                    currentPage === totalPages
+                      ? "text-gray-300 cursor-not-allowed"
                       : "text-gray-600 hover:bg-gray-100 bg-white"
                   }`}
                 >
-                  {pageNumber}
+                  <ChevronRight className="w-5 h-5" />
                 </button>
-              )
-            })}
+              </div>
+            )}
 
-            <button
-              onClick={() => paginate(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className={`p-2.5 rounded-lg transition-all ${
-                currentPage === totalPages
-                  ? "text-gray-300 cursor-not-allowed"
-                  : "text-gray-600 hover:bg-gray-100 bg-white"
-              }`}
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-        )}
-
-        {quizzes.length > 0 && (
-          <div className="text-center">
-            <p className="text-sm text-gray-500">
-              Duke treguar {indexOfFirstQuiz + 1}-{Math.min(indexOfLastQuiz, quizzes.length)} nga {quizzes.length} kuize
-            </p>
-          </div>
-        )}
-
-        {quizzes.length === 0 && !loading && (
+            <div className="text-center">
+              <p className="text-sm text-gray-500" style={{ fontFamily: "Inter, sans-serif" }}>
+                Duke treguar {indexOfFirstQuiz + 1}-{Math.min(indexOfLastQuiz, filteredQuizzes.length)} nga{" "}
+                {filteredQuizzes.length} kuize
+              </p>
+            </div>
+          </>
+        ) : (
           <div className="text-center py-12">
             <div className="bg-white rounded-2xl p-8 inline-block border border-gray-200">
               <BookOpen className="h-12 w-12 text-orange-600 mx-auto mb-3" />
-              <h3 className="text-base font-bold text-gray-800 mb-2">Nuk ka kuize të disponueshme</h3>
-              <p className="text-gray-500 text-sm">
+              <h3 className="text-base font-bold text-gray-800 mb-2" style={{ fontFamily: "Poppins, sans-serif" }}>
+                Nuk ka kuize të disponueshme
+              </h3>
+              <p className="text-gray-500 text-sm" style={{ fontFamily: "Inter, sans-serif" }}>
                 {selectedLevel === "all" ? "Nuk u gjetën kuize." : `Nuk ka kuize për nivelin ${selectedLevel}.`}
               </p>
             </div>
