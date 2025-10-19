@@ -235,6 +235,30 @@ const finishCategory = asyncHandler(async (req, res) => {
     ),
   )
 })
+const getFinishedCategories = asyncHandler(async (req, res) => {
+  const userId = req.user.id
+
+  // Find the user and populate finished categories
+  const user = await User.findById(userId).populate({
+    path: "categoryFinished",
+    select: "category description level icon color type",
+    match: { isActive: true },
+  })
+
+  if (!user) {
+    throw new ApiError(404, "User not found")
+  }
+
+  // Return array of category IDs for easy comparison
+  const finishedCategoryIds = user.categoryFinished.map((cat) => cat._id.toString())
+
+  res.json(
+    new ApiResponse(200, {
+      finishedCategories: user.categoryFinished,
+      finishedCategoryIds: finishedCategoryIds,
+    }),
+  )
+})
 
 module.exports = {
   getAllCategories,
@@ -244,5 +268,6 @@ module.exports = {
   deleteCategory,
   addWordToCategory,
   removeWordFromCategory,
-  finishCategory
+  finishCategory,
+  getFinishedCategories
 }

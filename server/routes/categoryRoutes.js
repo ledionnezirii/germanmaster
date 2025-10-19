@@ -7,7 +7,8 @@ const {
   deleteCategory,
   addWordToCategory,
   removeWordFromCategory,
-  finishCategory
+  finishCategory,
+  getFinishedCategories
 } = require("../controllers/categoryController")
 const  auth  = require("../middleware/auth")
 const isAdmin = require("../middleware/isAdmin")
@@ -19,6 +20,8 @@ const router = express.Router()
 router.get("/", getAllCategories)
 router.get("/:id", getCategoryById)
 
+
+router.get("/user/finished", auth, getFinishedCategories)
 
 router.post("/:id/finish", auth, finishCategory)
 
