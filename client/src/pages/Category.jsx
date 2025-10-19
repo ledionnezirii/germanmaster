@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback, useMemo } from "react"
-import { categoriesService, authService } from "../services/api"
+import { categoriesService } from "../services/api"
+import { useAuth } from "../context/AuthContext"
 import {
   FolderOpen,
   ArrowLeft,
@@ -70,11 +71,34 @@ const Category = () => {
   const [finishingCategory, setFinishingCategory] = useState(false)
   const [showCongrats, setShowCongrats] = useState(false)
   const [xpGained, setXpGained] = useState(0)
-  const [user, setUser] = useState(null)
+  const [finishedCategoryIds, setFinishedCategoryIds] = useState([])
+
+  const { user, updateUser, refreshProfile } = useAuth()
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }, [selectedCategory])
+
+  useEffect(() => {
+    const fetchFinishedCategories = async () => {
+      try {
+        const response = await categoriesService.getFinishedCategories()
+        const data = response.data || response
+        console.log("[v0] Finished categories response:", data)
+
+        const ids = data.finishedCategoryIds || []
+        console.log("[v0] Finished category IDs:", ids)
+        setFinishedCategoryIds(ids)
+      } catch (error) {
+        console.error("[v0] Error fetching finished categories:", error)
+        setFinishedCategoryIds([])
+      }
+    }
+
+    if (user) {
+      fetchFinishedCategories()
+    }
+  }, [user])
 
   const filteredCategories = useMemo(() => {
     if (selectedCategoryFilter === "all") {
@@ -139,7 +163,6 @@ const Category = () => {
 
   useEffect(() => {
     fetchCategories()
-    fetchUserData()
   }, [])
 
   const fetchCategories = useCallback(async () => {
@@ -198,18 +221,6 @@ const Category = () => {
     }
   }, [])
 
-  const fetchUserData = async () => {
-    try {
-      const response = await authService.getProfile()
-      const userData = response.data || response
-      console.log("[v0] User data fetched:", userData)
-      console.log("[v0] Category finished array:", userData?.categoryFinished)
-      setUser(userData)
-    } catch (error) {
-      console.error("Error fetching user data:", error)
-    }
-  }
-
   const handleFinishCategory = async () => {
     if (!selectedCategory || !selectedCategory.id) return
 
@@ -221,7 +232,12 @@ const Category = () => {
       setXpGained(data.xpGained || 0)
       setShowCongrats(true)
 
-      await fetchUserData()
+      const finishedResponse = await categoriesService.getFinishedCategories()
+      const finishedData = finishedResponse.data || finishedResponse
+      const ids = finishedData.finishedCategoryIds || []
+      setFinishedCategoryIds(ids)
+
+      await refreshProfile()
 
       setTimeout(() => {
         setShowCongrats(false)
@@ -271,20 +287,32 @@ const Category = () => {
             <p className="text-white text-sm font-medium mb-2">XP e Fituar</p>
             <p className="text-5xl font-bold text-white">+{xpGained}</p>
           </div>
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center justify-center gap-2 text-sm text-gray-600 mb-6">
             <CheckCircle className="h-5 w-5 text-green-500" />
             <span>Vazhdo kështu!</span>
           </div>
+          <button
+            onClick={() => {
+              setShowCongrats(false)
+              setSelectedCategory(null)
+            }}
+            className="w-full flex items-center justify-center gap-2 text-sm font-medium text-white bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 transition-all duration-200 px-6 py-3 rounded-lg shadow-md hover:shadow-lg"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Kthehu te Kategoritë</span>
+          </button>
         </div>
       </div>
     )
   }
 
   if (selectedCategory) {
-    const isCategoryFinished = user?.categoryFinished?.some(
-      (finishedId) => finishedId.toString() === selectedCategory.id.toString(),
-    )
-    console.log("[v0] Is category finished?", isCategoryFinished, "Category ID:", selectedCategory.id)
+    const categoryIdStr = String(selectedCategory.id?._id || selectedCategory.id)
+    const isCategoryFinished = finishedCategoryIds.includes(categoryIdStr)
+
+    console.log("[v0] Category ID:", categoryIdStr)
+    console.log("[v0] Finished IDs:", finishedCategoryIds)
+    console.log("[v0] Is completed:", isCategoryFinished)
 
     return (
       <div className="min-h-screen bg-gray-50 p-3 sm:p-4 lg:p-6">
@@ -327,7 +355,7 @@ const Category = () => {
                     </>
                   ) : isCategoryFinished ? (
                     <>
-                      <Lock className="h-4 w-4" />
+                      <CheckCircle className="h-4 w-4" />
                       <span>E përfunduar</span>
                     </>
                   ) : (
@@ -434,7 +462,6 @@ const Category = () => {
           </div>
         </div>
 
-        {/* Categories Grid */}
         {loading ? (
           <div className="flex items-center justify-center min-h-64">
             <div className="flex flex-col items-center gap-3">
@@ -461,16 +488,13 @@ const Category = () => {
                   ]
                   const colorClass = colorClasses[index % colorClasses.length]
 
-                  const isCompleted = user?.categoryFinished?.some(
-                    (finishedId) => finishedId.toString() === category._id.toString(),
-                  )
-                  console.log("[v0] Category:", category.category, "ID:", category._id, "Is completed:", isCompleted)
+                  const categoryIdStr = String(category._id?._id || category._id)
+                  const isCompleted = finishedCategoryIds.includes(categoryIdStr)
 
                   return (
                     <div
                       key={category._id}
-                      className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-300 cursor-pointer relative h-[200px] flex flex-col"
-                      onClick={() => fetchCategoryDetails(category._id, category.category)}
+                      className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-300 cursor-pointer relative h-[240px] flex flex-col"
                     >
                       {isCompleted && (
                         <div className="absolute top-3 right-3">
@@ -481,25 +505,36 @@ const Category = () => {
                       )}
 
                       <div
-                        className={`${colorClass.bg} w-12 h-12 rounded-xl flex items-center justify-center mb-4 flex-shrink-0`}
+                        className={`${colorClass.bg} w-12 h-12 rounded-xl flex items-center justify-center mb-4 flex-shrink-0 cursor-pointer`}
+                        onClick={() => fetchCategoryDetails(category._id, category.category)}
                       >
                         <IconComponent className={`h-6 w-6 ${colorClass.icon}`} />
                       </div>
 
-                      <div className="flex-1 flex flex-col min-h-0">
+                      <div
+                        className="flex-1 flex flex-col min-h-0 cursor-pointer"
+                        onClick={() => fetchCategoryDetails(category._id, category.category)}
+                      >
                         <h3 className="text-base font-semibold text-gray-900 mb-1 leading-tight line-clamp-2">
                           {category.category}
                         </h3>
                       </div>
 
-                      <div className="flex items-center justify-between mt-auto flex-shrink-0">
-                        <span className="text-xs font-medium text-gray-600">
-                          {availableWordTypes.find((t) => t.value === category.type)?.label || "Kategori"}
-                        </span>
-                        <div className="text-blue-600 font-medium text-sm flex items-center gap-1">
-                          <span>Eksploro</span>
-                          <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
+                      <div className="flex flex-col gap-2 mt-auto flex-shrink-0">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-gray-600">
+                            {availableWordTypes.find((t) => t.value === category.type)?.label || "Kategori"}
+                          </span>
+                          <button
+                            onClick={() => fetchCategoryDetails(category._id, category.category)}
+                            className="text-blue-600 font-medium text-sm flex items-center gap-1 hover:text-blue-700 transition-colors"
+                          >
+                            <span>Eksploro</span>
+                            <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
+                          </button>
                         </div>
+
+                                  
                       </div>
                     </div>
                   )

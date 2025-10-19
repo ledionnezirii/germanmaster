@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useSidebar } from "../context/SidebarContext"
-import { Menu, User, LogOut, ChevronDown, Star } from "lucide-react"
+import { Menu, User, LogOut, ChevronDown, Star, Puzzle } from "lucide-react" // Added Puzzle icon
 import mainLogo from "../../public/wortii.png"
 
 const Navbar = () => {
@@ -22,7 +22,6 @@ const Navbar = () => {
 
   const navLinks = [
     { to: "/", label: "Kryefaqja" }, // Home
-    { to: "/leaderboard", label: "Renditja" }, // Leaderboard
     { to: "/listen", label: "Dëgjo" }, // Listen
     { to: "/translate", label: "Përkthe" }, // Translate
     { to: "/terms", label: "Politika e Privatesise" }, // Chat
@@ -149,11 +148,17 @@ const Navbar = () => {
             {" "}
             {/* Reduced spacing on mobile */}
             {isAuthenticated ? (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 bg-slate-700/60 backdrop-blur-sm px-3 py-1 rounded-full border border-slate-600/70 shadow-lg my-2">
                 {" "}
-                {/* Added XP display container */}
+                <Link
+                  to="/puzzle"
+                  className="flex items-center space-x-1.5 bg-gradient-to-r from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-purple-200 hover:text-purple-100 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border border-purple-400/30 hover:border-purple-400/50 shadow-sm hover:shadow-md"
+                >
+                  <Puzzle className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Puzzle</span>
+                </Link>
                 {user?.xp !== undefined && (
-                  <div className="flex items-center space-x-1 bg-amber-500/20 text-amber-300 px-2 py-1 rounded-full text-xs font-medium">
+                  <div className="hidden md:flex items-center space-x-1 bg-amber-500/20 text-amber-300 px-2 py-1 rounded-full text-xs font-medium border border-amber-400/30">
                     <Star className="h-3 w-3" />
                     <span>{user.xp} XP</span>
                   </div>
@@ -161,7 +166,7 @@ const Navbar = () => {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="flex items-center space-x-1 md:space-x-2 text-slate-100 hover:text-white hover:bg-slate-700/50 px-2 md:px-3 py-2 rounded-md text-xs md:text-sm font-medium transition-colors" // Smaller text and spacing on mobile, better colors
+                    className="flex items-center space-x-1 md:space-x-2 text-slate-100 hover:text-white hover:bg-slate-700/50 px-2 md:px-3 py-1.5 rounded-full text-xs md:text-sm font-medium transition-colors" // Smaller text and spacing on mobile, better colors
                   >
                     <Avatar
                       src={user?.profilePicture || "/placeholder.svg"}
@@ -170,7 +175,7 @@ const Navbar = () => {
                     />
                     <span className="hidden sm:block text-orange-300 font-medium">
                       {user?.firstName && user?.lastName
-                        ? `${user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1).toLowerCase()} ${user.lastName.charAt(0).toUpperCase() + user.lastName.slice(1).toLowerCase()}`
+                        ? `${user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1).toLowerCase()} ${user.lastName.charAt(0).toUpperCase() + user.lastName.slice(1).toLowerCase()}` // Updated color
                         : user?.firstName
                           ? user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1).toLowerCase()
                           : "Profili"}

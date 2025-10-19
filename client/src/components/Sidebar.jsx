@@ -19,8 +19,9 @@ import {
   MapIcon,
   TestTube2Icon,
   LightbulbIcon,
+  FileQuestionMark,
 } from "lucide-react"
-import { MicrophoneIcon } from "@heroicons/react/24/outline"
+import { MicrophoneIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline"
 
 const Sidebar = () => {
   const { isCollapsed, toggleSidebar } = useSidebar()

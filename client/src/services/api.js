@@ -4,18 +4,14 @@ const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api"
 export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com"
 
 export const getAbsoluteImageUrl = (path) => {
-  if (!path) return "/placeholder.svg?height=40&width=40";
+  if (!path) return "/placeholder.svg?height=40&width=40"
 
-  if (path.startsWith("http")) return path;
+  if (path.startsWith("http")) return path
 
-  const baseServerUrl =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${baseServerUrl}${normalizedPath}`;
-};
-
-
-
+  const baseServerUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`
+  return `${baseServerUrl}${normalizedPath}`
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -29,6 +25,13 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+
+  if (config.url?.includes("puzzle")) {
+    console.log("[v0] REQUEST INTERCEPTOR - Full URL:", config.baseURL + config.url)
+    console.log("[v0] REQUEST INTERCEPTOR - Method:", config.method)
+    console.log("[v0] REQUEST INTERCEPTOR - Data:", config.data)
+  }
+
   return config
 })
 
@@ -113,9 +116,10 @@ export const categoriesService = {
   createCategory: (categoryData) => api.post("/categories", categoryData),
   updateCategory: (id, categoryData) => api.put(`/categories/${id}`, categoryData),
   deleteCategory: (id) => api.delete(`/categories/${id}`),
-  addWordToCategory: (categoryId, wordData) => api.post(`/categories/${categoryId}`),
+  addWordToCategory: (categoryId, wordData) => api.post(`/categories/${categoryId}`, wordData),
   removeWordFromCategory: (categoryId, wordId) => api.delete(`/categories/${categoryId}/words/${wordId}`),
-    finishCategory: (categoryId) => api.post(`/categories/${categoryId}/finish`),
+  finishCategory: (categoryId) => api.post(`/categories/${categoryId}/finish`),
+  getFinishedCategories: () => api.get("/categories/user/finished"),
 }
 
 export const listenService = {
@@ -266,6 +270,34 @@ export const achievementsService = {
 
   // Get achievement leaderboard
   getAchievementLeaderboard: () => api.get("/achievements/leaderboard"),
+}
+
+export const puzzleService = {
+  // User endpoints
+  getTodayPuzzle: () => {
+    console.log("[v0] Calling getTodayPuzzle API...")
+    return api.get("/puzzle/today").then((response) => {
+      console.log("[v0] getTodayPuzzle - Raw axios response:", response)
+      console.log("[v0] getTodayPuzzle - response.data:", response.data)
+      console.log("[v0] getTodayPuzzle - response.data._id:", response.data?._id)
+      return response.data
+    })
+  },
+  submitAnswer: (puzzleId, currentGuess) => {
+    console.log("[v0] submitAnswer called with puzzleId:", puzzleId, "currentGuess:", currentGuess)
+    const url = `/puzzle/${puzzleId}/submit`
+    return api.post(url, { guess: currentGuess }).then((response) => response.data)
+  },
+  getUserProgress: () => api.get("/puzzle/user/progress"),
+  getCompletedPuzzles: () => api.get("/puzzle/completed"),
+
+  // Admin endpoints
+  getAllPuzzles: (params = {}) => api.get("/puzzle/admin/all", { params }),
+  createPuzzle: (puzzleData) => api.post("/puzzle/admin", puzzleData),
+  createBulkPuzzles: (puzzles) => api.post("/puzzle/admin/bulk", { puzzles }),
+  updatePuzzle: (id, puzzleData) => api.put(`/puzzle/admin/${id}`, puzzleData),
+  deletePuzzle: (id) => api.delete(`/puzzle/admin/${id}`),
+  getPuzzleById: (id) => api.get(`/puzzle/admin/${id}`),
 }
 
 export default api
