@@ -20,6 +20,7 @@ import {
   TestTube2Icon,
   LightbulbIcon,
   FileQuestionMark,
+  Dumbbell,
 } from "lucide-react"
 import { MicrophoneIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline"
 
@@ -40,6 +41,7 @@ const Sidebar = () => {
     { icon: TestTube2Icon, label: "Tests", path: "/tests", requireAuth: true },
     { icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation", requireAuth: true },
     { icon: LightbulbIcon, label: "Kuizet", path: "/quizes", requireAuth: true },
+    { icon: Dumbbell, label: "Ushtro", path: "/practice", requireAuth: true },
     { icon: User, label: "Llogaria", path: "/account", requireAuth: true },
   ]
 

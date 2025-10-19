@@ -44,22 +44,24 @@ const Account = () => {
           if (!hasCertificateForCurrentLevel && !issuingCertificate) {
             setIssuingCertificate(true)
             try {
+              console.log("[v0] Auto-issuing certificate for level:", user.level)
               const issueResponse = await certificatesService.issueCertificate()
               if (issueResponse.data.success) {
+                console.log("[v0] Certificate issued successfully")
                 const refreshResponse = await certificatesService.getUserCertificates()
                 setCertificates(refreshResponse.data.certificates || [])
               }
             } catch (issueError) {
-              console.error("Error auto-issuing certificate:", issueError)
+              console.error("[v0] Error auto-issuing certificate:", issueError)
             } finally {
               setIssuingCertificate(false)
             }
           }
         }
       } catch (error) {
-        console.error("Error fetching certificates:", error)
+        console.error("[v0] Error fetching certificates:", error)
         if (error.response?.status !== 404) {
-          console.error("Unexpected error:", error)
+          console.error("[v0] Unexpected error:", error)
         }
       } finally {
         setLoadingCertificates(false)
@@ -69,7 +71,7 @@ const Account = () => {
     if (user) {
       fetchCertificates()
     }
-  }, [user])
+  }, [user, user?.level]) // Added user.level as dependency to refetch when level changes
 
   useEffect(() => {
     const fetchAchievements = async () => {
@@ -543,66 +545,41 @@ const Account = () => {
             </p>
           </div>
         ) : certificates.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {certificates.map((certificate) => (
               <div
                 key={certificate._id}
-                className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                className={`bg-gradient-to-r ${getCertificateBadgeColor(certificate.level)} rounded-xl p-6 border-2 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1`}
               >
-                <div className="flex flex-col items-center text-center gap-3">
-                  <div
-                    className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                      certificate.level === "A1"
-                        ? "bg-green-100"
-                        : certificate.level === "A2"
-                          ? "bg-blue-100"
-                          : certificate.level === "B1"
-                            ? "bg-purple-100"
-                            : certificate.level === "B2"
-                              ? "bg-orange-100"
-                              : certificate.level === "C1"
-                                ? "bg-red-100"
-                                : "bg-yellow-100"
-                    }`}
-                  >
-                    <Award className={`h-8 w-8 ${getCertificateIconColor(certificate.level)}`} />
+                <div className="flex flex-col items-center text-center gap-4">
+                  <div className="bg-white p-4 rounded-full shadow-sm">
+                    <Award className={`h-10 w-10 ${getCertificateIconColor(certificate.level)}`} />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900 text-base mb-1">Niveli {certificate.level}</h3>
-                    <p className="text-xs text-gray-500">
+                    <h3 className="font-bold text-gray-900 text-xl mb-2">Niveli {certificate.level}</h3>
+                    <p className="text-sm text-gray-600 mb-1">
                       Lëshuar më:{" "}
                       {new Date(certificate.issuedAt).toLocaleDateString("sq-AL", {
                         day: "numeric",
-                        month: "long",
+                        month: "short",
                         year: "numeric",
                       })}
                     </p>
+                    <p className="text-xs text-gray-500 font-mono">Nr. Serie: {certificate.serialNumber}</p>
                   </div>
                   <button
                     onClick={() => handleDownloadCertificate(certificate._id, certificate.level)}
                     disabled={downloadingCert === certificate._id}
-                    className={`w-full text-sm px-3 py-2 rounded-lg transition-colors font-medium flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
-                      certificate.level === "A1"
-                        ? "bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
-                        : certificate.level === "A2"
-                          ? "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
-                          : certificate.level === "B1"
-                            ? "bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200"
-                            : certificate.level === "B2"
-                              ? "bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200"
-                              : certificate.level === "C1"
-                                ? "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
-                                : "bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border border-yellow-200"
-                    }`}
+                    className="w-full bg-white text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm border border-gray-200"
                   >
                     {downloadingCert === certificate._id ? (
                       <>
-                        <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-xs">Duke shkarkuar...</span>
+                        <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                        <span>Duke shkarkuar...</span>
                       </>
                     ) : (
                       <>
-                        <Download className="h-3.5 w-3.5" />
+                        <Download className="h-4 w-4" />
                         Shkarko PDF
                       </>
                     )}

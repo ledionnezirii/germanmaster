@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { quizService } from "../services/api"
-import { BookOpen, ArrowLeft, Check, X, Star, Trophy, Target, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react"
+import { BookOpen, ArrowLeft, Check, X, Star, Trophy, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react"
 
 const Quizes = () => {
   const [currentView, setCurrentView] = useState("list")
@@ -176,20 +176,23 @@ const Quizes = () => {
 
   const submitQuiz = async () => {
     try {
-      await quizService.submitQuiz(selectedQuiz._id, answers)
-
-      const correctAnswers = selectedQuiz.questions.filter((q, index) => answers[index] === q.correctAnswer).length
+      const response = await quizService.submitQuiz(selectedQuiz._id, answers)
 
       setQuizResults({
-        correctAnswers,
-        totalQuestions: selectedQuiz.questions.length,
-        xpEarned: selectedQuiz.xp,
+        correctAnswers: response.data.correctAnswers,
+        totalQuestions: response.data.totalQuestions,
+        xpEarned: response.data.xpEarned || 0,
         quizTitle: selectedQuiz.title,
         level: selectedQuiz.level,
+        passed: response.data.passed,
+        percentage: response.data.percentage,
+        alreadyCompleted: response.data.alreadyCompleted,
       })
       setShowResults(true)
 
-      setCompletedQuizzes((prev) => (prev.includes(selectedQuiz._id) ? prev : [...prev, selectedQuiz._id]))
+      if (response.data.passed && !response.data.alreadyCompleted) {
+        setCompletedQuizzes((prev) => (prev.includes(selectedQuiz._id) ? prev : [...prev, selectedQuiz._id]))
+      }
     } catch (err) {
       console.error("Error submitting quiz:", err)
       alert("Dështoi të dërgojë kuizin. Ju lutemi provoni përsëri.")
@@ -357,26 +360,25 @@ const Quizes = () => {
   }
 
   if (showResults && quizResults) {
-    const percentage = Math.round((quizResults.correctAnswers / quizResults.totalQuestions) * 100)
-    const isGoodScore = percentage >= 70
+    const percentage =
+      quizResults.percentage || Math.round((quizResults.correctAnswers / quizResults.totalQuestions) * 100)
+    const passed = quizResults.passed
+    const xpEarned = quizResults.xpEarned || 0
+    const alreadyCompleted = quizResults.alreadyCompleted
 
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 max-w-md w-full p-5 text-center">
           <div
             className={`w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 ${
-              isGoodScore ? "bg-orange-100" : "bg-amber-100"
+              passed ? "bg-orange-100" : "bg-red-100"
             }`}
           >
-            {isGoodScore ? (
-              <Trophy className="w-7 h-7 text-orange-600" />
-            ) : (
-              <Target className="w-7 h-7 text-amber-600" />
-            )}
+            {passed ? <Trophy className="w-7 h-7 text-orange-600" /> : <X className="w-7 h-7 text-red-600" />}
           </div>
 
           <h2 className="text-xl font-bold text-gray-800 mb-2" style={{ fontFamily: "Poppins, sans-serif" }}>
-            Kuizi u Përfundua!
+            {passed ? "Kuizi u Përfundua!" : "Kuizi Dështoi"}
           </h2>
           <p className="text-gray-600 mb-3 font-medium text-sm" style={{ fontFamily: "Inter, sans-serif" }}>
             {quizResults.quizTitle}
@@ -391,22 +393,40 @@ const Quizes = () => {
             </p>
 
             <div
-              className={`text-xl font-bold mb-1 ${isGoodScore ? "text-orange-600" : "text-amber-600"}`}
+              className={`text-xl font-bold mb-1 ${passed ? "text-orange-600" : "text-red-600"}`}
               style={{ fontFamily: "Poppins, sans-serif" }}
             >
               {percentage}%
             </div>
             <p className="text-xs text-gray-500 font-medium" style={{ fontFamily: "Inter, sans-serif" }}>
-              Rezultati
+              {passed ? "Kaluar! (Duhet ≥70%)" : "Dështuar (Duhet ≥70%)"}
             </p>
           </div>
 
-          <div className="flex items-center justify-center gap-2 mb-3 p-2.5 bg-orange-50 rounded-xl border border-orange-200">
-            <Star className="w-4 h-4 text-orange-600" />
-            <span className="text-orange-600 font-bold text-sm" style={{ fontFamily: "Poppins, sans-serif" }}>
-              +{quizResults.xpEarned} XP Fituar
-            </span>
-          </div>
+          {xpEarned > 0 && (
+            <div className="flex items-center justify-center gap-2 mb-3 p-2.5 bg-orange-50 rounded-xl border border-orange-200">
+              <Star className="w-4 h-4 text-orange-600" />
+              <span className="text-orange-600 font-bold text-sm" style={{ fontFamily: "Poppins, sans-serif" }}>
+                +{xpEarned} XP Fituar
+              </span>
+            </div>
+          )}
+
+          {passed && alreadyCompleted && (
+            <div className="mb-3 p-2.5 bg-amber-50 rounded-xl border border-amber-200">
+              <p className="text-amber-700 text-sm font-medium" style={{ fontFamily: "Inter, sans-serif" }}>
+                Ju keni përfunduar tashmë këtë kuiz. Nuk fitoni XP përsëri.
+              </p>
+            </div>
+          )}
+
+          {!passed && (
+            <div className="mb-3 p-2.5 bg-red-50 rounded-xl border border-red-200">
+              <p className="text-red-700 text-sm font-medium" style={{ fontFamily: "Inter, sans-serif" }}>
+                Ju nevojitet të paktën 70% për të kaluar. Provoni përsëri!
+              </p>
+            </div>
+          )}
 
           <div className="mb-4">
             <span

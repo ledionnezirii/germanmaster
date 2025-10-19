@@ -25,6 +25,7 @@ import Quizes from "./pages/Quizes"
 import Payments from "./pages/Payments"
 import Terms from "./pages/Terms"
 import Puzzle from "./pages/Puzzle"
+import Practice from "./pages/Practice"
 
 const AppContent = () => {
   const { isCollapsed } = useSidebar()
@@ -71,6 +72,7 @@ const AppContent = () => {
               <Route path="/payments" element={<Payments />} />
               <Route path="/terms" element={<Terms />} />
               <Route path="/puzzle" element={<Puzzle />} />
+              <Route path="/practice" element={<Practice />}/>
             </Routes>
           </div>
         </main>
