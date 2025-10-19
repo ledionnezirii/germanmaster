@@ -91,44 +91,58 @@ const deleteQuiz = async (req, res) => {
   }
 };
 
-// @desc    Submit a quiz (user finishes quiz)
-// @route   POST /api/quizzes/:id/submit
-// @access  Private (User)
 const submitQuiz = async (req, res) => {
   try {
-    const { answers } = req.body;
-    const quiz = await Quiz.findById(req.params.id);
-    if (!quiz) return res.status(404).json({ success: false, message: "Quiz not found" });
+    const { answers } = req.body
+    const quiz = await Quiz.findById(req.params.id)
+    if (!quiz) return res.status(404).json({ success: false, message: "Quiz not found" })
 
     // Count correct answers
-    let correctCount = 0;
+    let correctCount = 0
     quiz.questions.forEach((q, index) => {
-      if (answers[index] && answers[index] === q.correctAnswer) correctCount++;
-    });
+      if (answers[index] && answers[index] === q.correctAnswer) correctCount++
+    })
 
-    // XP earned = quiz.xp
-    const xpEarned = quiz.xp;
+    const totalQuestions = quiz.questions.length
+    const percentage = Math.round((correctCount / totalQuestions) * 100)
+    const passed = percentage >= 70
 
-    // Update user's finishedQuizzes and XP
-    const user = await User.findById(req.user._id);
-    if (!user.finishedQuizzes.includes(quiz._id)) {
-      user.finishedQuizzes.push(quiz._id);
-      user.xp += xpEarned;
-      await user.save();
+    let xpEarned = 0
+    let alreadyCompleted = false
+
+    const user = await User.findById(req.user._id)
+    alreadyCompleted = user.finishedQuizzes.includes(quiz._id)
+
+    if (passed && !alreadyCompleted) {
+      // User passed and hasn't completed this quiz before - award XP
+      xpEarned = quiz.xp
+      user.finishedQuizzes.push(quiz._id)
+      user.xp += xpEarned
+      await user.save()
+    } else if (passed && alreadyCompleted) {
+      // User passed but already completed - no XP
+      xpEarned = 0
+    } else {
+      // User failed (< 70%) - no XP, don't add to finishedQuizzes
+      xpEarned = 0
     }
 
     res.status(200).json({
       success: true,
-      message: "Quiz submitted successfully",
-      xp: xpEarned,
+      message: passed ? "Quiz submitted successfully" : "Quiz submitted but not passed",
+      passed,
+      percentage,
+      xpEarned,
+      alreadyCompleted,
       totalQuestions: quiz.questions.length,
-      correctAnswers: correctCount
-    });
+      correctAnswers: correctCount,
+    })
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Server error" });
+    console.error(error)
+    res.status(500).json({ success: false, message: "Server error" })
   }
-};
+}
+
 const getCompletedQuizes = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).populate({
