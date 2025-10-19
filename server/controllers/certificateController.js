@@ -43,48 +43,56 @@ const generateCertificatePDF = async (user, level, serialNumber) => {
       // Bottom left corner
       doc.moveTo(50, 535).bezierCurveTo(55, 545, 60, 550, 70, 545).bezierCurveTo(60, 540, 55, 535, 50, 525).fill()
       // Bottom right corner
-      doc.moveTo(792, 535).bezierCurveTo(787, 545, 782, 550, 772, 545).bezierCurveTo(782, 540, 787, 535, 792, 525).fill()
+      doc
+        .moveTo(792, 535)
+        .bezierCurveTo(787, 545, 782, 550, 772, 545)
+        .bezierCurveTo(782, 540, 787, 535, 792, 525)
+        .fill()
 
-const logoX = (842 - 140) / 2; // center horizontally with width 140
-const logoY = 10; // near top but spaced nicely
+      const logoSize = 100 // Reduced from 140 to fit better
+      const logoX = (842 - logoSize) / 2 // center horizontally
+      const logoY = 60 // moved down from 10 to prevent overflow at top
 
-doc.save();
-doc.circle(logoX + 70, logoY + 70, 70).clip();
-doc.image(path.join(__dirname, "../public/images/logo.png"), logoX, logoY, { width: 140 });
-doc.restore();
+      doc.save()
+      doc.circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2).clip()
+      doc.image(path.join(__dirname, "../public/images/logo.png"), logoX, logoY, { width: logoSize })
+      doc.restore()
 
-      // Title
-      doc.fontSize(38).fillColor("#1a2332").font("Times-Bold").text("CERTIFIKATË E PËRFUNDIMIT", 0, 130, {
+      doc.fontSize(38).fillColor("#1a2332").font("Times-Bold").text("CERTIFIKATË E PËRFUNDIMIT", 0, 170, {
         align: "center",
         width: 842,
       })
 
       // Intro text
-      doc.fontSize(13).fillColor("#4a4a4a").font("Times-Roman").text("Me anë të kësaj certifikatë vërtetohet se", 0, 180, {
-        align: "center",
-        width: 842,
-      })
+      doc
+        .fontSize(13)
+        .fillColor("#4a4a4a")
+        .font("Times-Roman")
+        .text("Me anë të kësaj certifikatë vërtetohet se", 0, 220, {
+          align: "center",
+          width: 842,
+        })
 
       // User name
-      doc.fontSize(48).fillColor("#c9a961").font("Times-Bold").text(`${user.emri} ${user.mbiemri}`, 0, 215, {
+      doc.fontSize(48).fillColor("#c9a961").font("Times-Bold").text(`${user.emri} ${user.mbiemri}`, 0, 255, {
         align: "center",
         width: 842,
       })
 
       // Completion text
-      doc.fontSize(15).fillColor("#4a4a4a").font("Times-Roman").text("ka përfunduar me sukses kursin e", 0, 275, {
+      doc.fontSize(15).fillColor("#4a4a4a").font("Times-Roman").text("ka përfunduar me sukses kursin e", 0, 315, {
         align: "center",
         width: 842,
       })
 
       // Course name
-      doc.fontSize(26).fillColor("#1a2332").font("Times-Bold").text("Gjuha Gjermane", 0, 305, {
+      doc.fontSize(26).fillColor("#1a2332").font("Times-Bold").text("Gjuha Gjermane", 0, 345, {
         align: "center",
         width: 842,
       })
 
       // Level
-      doc.fontSize(80).fillColor("#c9a961").font("Times-Bold").text(level, 0, 345, {
+      doc.fontSize(80).fillColor("#c9a961").font("Times-Bold").text(level, 0, 385, {
         align: "center",
         width: 842,
       })
@@ -95,25 +103,25 @@ doc.restore();
         month: "long",
         year: "numeric",
       })
-      doc.fontSize(14).fillColor("#4a4a4a").font("Times-Roman").text(`${issueDate}`, 0, 435, {
+      doc.fontSize(14).fillColor("#4a4a4a").font("Times-Roman").text(`${issueDate}`, 0, 475, {
         align: "center",
         width: 842,
       })
 
-      doc.fontSize(11).fillColor("#6a6a6a").font("Times-Italic").text("Data e Lëshimit", 0, 455, {
+      doc.fontSize(11).fillColor("#6a6a6a").font("Times-Italic").text("Data e Lëshimit", 0, 495, {
         align: "center",
         width: 842,
       })
 
       // Footer block (moved a bit up)
-      doc.rect(350, 510, 142, 20).fill("#e8d68a")
-      doc.fontSize(11).fillColor("#4a4a4a").font("Times-Roman").text("German Learn Website", 350, 515, {
+      doc.rect(350, 530, 142, 20).fill("#e8d68a")
+      doc.fontSize(11).fillColor("#4a4a4a").font("Times-Roman").text("German Learn Website", 350, 535, {
         width: 142,
         align: "center",
       })
 
       // Serial number (moved up to avoid page break)
-      doc.fontSize(10).fillColor("#d97706").font("Times-Roman").text(`Nr. Serie: ${serialNumber}`, 0, 520, {
+      doc.fontSize(10).fillColor("#d97706").font("Times-Roman").text(`Nr. Serie: ${serialNumber}`, 0, 560, {
         align: "right",
         width: 792,
       })

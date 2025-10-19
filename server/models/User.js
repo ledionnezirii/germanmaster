@@ -111,6 +111,28 @@ const userSchema = new mongoose.Schema(
         ref: "Puzzle",
       },
     ],
+    practiceCompleted: [
+      {
+        practiceId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Practice",
+        },
+        completedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        score: {
+          type: Number,
+        },
+        answers: [
+          {
+            questionIndex: Number,
+            userAnswer: mongoose.Schema.Types.Mixed,
+            isCorrect: Boolean,
+          },
+        ],
+      },
+    ],
     certificates: [
       {
         level: String,
