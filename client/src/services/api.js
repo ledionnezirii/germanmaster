@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api"
+const API_BASE_URL = "/api"
 export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com"
 
 export const getAbsoluteImageUrl = (path) => {
@@ -298,6 +298,21 @@ export const puzzleService = {
   updatePuzzle: (id, puzzleData) => api.put(`/puzzle/admin/${id}`, puzzleData),
   deletePuzzle: (id) => api.delete(`/puzzle/admin/${id}`),
   getPuzzleById: (id) => api.get(`/puzzle/admin/${id}`),
+}
+
+export const practiceService = {
+
+
+  getAllPractices: (params = {}) => api.get("/practice", { params }),
+  getPracticeById: (id) => api.get(`/practice/${id}`),
+  submitPractice: (id, answers) => api.post(`/practice/${id}/submit`, { answers }),
+  getUserProgress: () => api.get("/practice/user/progress"),
+  getFinishedPractices: () => api.get("/practice/user/finished"),
+  getPracticeStats: () => api.get("/practice/stats"),
+  createPractice: (practiceData) => api.post("/practice", practiceData),
+  createBulkPractices: (practices) => api.post("/practice/bulk", { practices }),
+  updatePractice: (id, practiceData) => api.put(`/practice/${id}`, practiceData),
+  deletePractice: (id) => api.delete(`/practice/${id}`),
 }
 
 export default api
