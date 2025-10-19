@@ -328,8 +328,9 @@ const Tests = () => {
 
             <button
               onClick={handleClose}
-              className={`w-full px-3 py-2 rounded-md font-medium transition-colors text-xs ${isPassed ? "bg-gray-800 hover:bg-gray-900 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-                }`}
+              className={`w-full px-3 py-2 rounded-md font-medium transition-colors text-xs ${
+                isPassed ? "bg-gray-800 hover:bg-gray-900 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+              }`}
             >
               {isPassed ? "Vazhdo" : "Kthehu te Nivelet"}
             </button>
@@ -518,7 +519,9 @@ const Tests = () => {
           <div className="max-w-2xl mx-auto">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
               <div className="p-6 text-center">
-                <h2 className="text-lg font-semibold text-gray-900">{test.title}</h2>
+                <h2 className="text-lg font-semibold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
+                  {test.title}
+                </h2>
                 <p className="text-red-600 mt-2 text-xs">
                   Nuk ka pyetje të disponueshme për këtë test. Ju lutemi kontaktoni mbështetjen.
                 </p>
@@ -559,21 +562,18 @@ const Tests = () => {
       }
     }
 
-    const handleCancelTest = async () => {
-      if (
-        window.confirm(
-          "Jeni të sigurt që dëshironi të anuloni testin? Anulimi llogaritet si dështim dhe do të duhet të prisni një muaj për të provuar përsëri.",
-        )
-      ) {
-        if (isSubmittingRef.current) return
-        isSubmittingRef.current = true
-
-        try {
-          // Submit the test with current answers (counts as failed)
-          await submitTestAnswers(test, userAnswers, false)
-        } finally {
-          isSubmittingRef.current = false
+    const handleCancelTest = () => {
+      if (window.confirm("Jeni të sigurt që dëshironi të anuloni testin? Do të ktheheni te zgjedhja e nivelit.")) {
+        clearTestState()
+        if (timerIntervalRef.current) {
+          clearInterval(timerIntervalRef.current)
         }
+        setTakingTest(false)
+        setUserAnswers({})
+        setTimeRemaining(null)
+        setTestStartTime(null)
+        setSelectedLevel(null)
+        setLevelTests([])
       }
     }
 
@@ -866,8 +866,9 @@ const Tests = () => {
               return (
                 <div
                   key={level.code}
-                  className={`relative overflow-hidden rounded-xl shadow-sm border-2 transition-all duration-200 ${level.color} ${isAvailable && !isLocked ? "hover:shadow-lg cursor-pointer" : "opacity-70 cursor-not-allowed"
-                    }`}
+                  className={`relative overflow-hidden rounded-xl shadow-sm border-2 transition-all duration-200 ${level.color} ${
+                    isAvailable && !isLocked ? "hover:shadow-lg cursor-pointer" : "opacity-70 cursor-not-allowed"
+                  }`}
                   onClick={isAvailable && !isLocked ? () => handleLevelSelect(level.code) : undefined}
                 >
                   <div className="absolute top-4 left-4">
@@ -912,8 +913,9 @@ const Tests = () => {
                       </div>
                       <div className="w-full bg-white/40 rounded-full h-2">
                         <div
-                          className={`h-2 rounded-full transition-all ${availability.reason === "passed" ? "bg-green-500 w-full" : "bg-gray-300 w-0"
-                            }`}
+                          className={`h-2 rounded-full transition-all ${
+                            availability.reason === "passed" ? "bg-green-500 w-full" : "bg-gray-300 w-0"
+                          }`}
                         ></div>
                       </div>
                     </div>
@@ -932,10 +934,11 @@ const Tests = () => {
                     )}
 
                     <button
-                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 text-sm flex items-center justify-center gap-2 ${isAvailable && !isLocked
+                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 text-sm flex items-center justify-center gap-2 ${
+                        isAvailable && !isLocked
                           ? `${level.buttonColor} text-white shadow-md hover:shadow-lg`
                           : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                        }`}
+                      }`}
                       style={{ fontFamily: "Poppins, sans-serif" }}
                       disabled={!isAvailable || isLocked}
                     >
@@ -987,12 +990,7 @@ const Tests = () => {
               </p>
             </div>
             <div className="text-4xl">
-              <img src={logo}
-                className="rounded-full"
-                width={48}
-                height={48}
-
-                alt="" />
+              <img src={logo || "/placeholder.svg"} className="rounded-full" width={48} height={48} alt="" />
             </div>
           </div>
         </div>
@@ -1028,12 +1026,14 @@ const Tests = () => {
                       {test.level}
                     </span>
                     <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
-                      <img src={logo}
+                      <img
+                        src={logo || "/placeholder.svg"}
                         className="rounded-full"
                         width={48}
                         height={48}
-
-                        alt="" />                    </div>
+                        alt=""
+                      />{" "}
+                    </div>
                   </div>
 
                   {/* Question count and duration */}

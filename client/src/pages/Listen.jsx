@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { listenService } from "../services/api" // Assuming this service is available
-import { Volume2, Play, Pause, Check, X, Filter } from "lucide-react"
+import { Volume2, Play, Pause, Check, X, Filter, LogOut } from "lucide-react"
 
 const Listen = () => {
   const [tests, setTests] = useState([])
@@ -234,20 +234,20 @@ const Listen = () => {
                 className="text-gray-600 hover:text-gray-900 p-1"
                 aria-label="Kthehu te Testet"
               >
-                <X className="h-5 w-5 sm:h-6 sm:w-6" />
+                <LogOut className="h-5 w-5 sm:h-6 sm:w-6 cursor-pointer" />
               </button>
             </div>
             <div className="space-y-4 sm:space-y-6">
               {/* Audio Controls */}
-              <div className="bg-gray-50 rounded-lg p-4 sm:p-6 text-center">
+              <div className="bg-gradient-to-br from-slate-700 via-slate-600 to-teal-700 rounded-lg p-4 sm:p-6 text-center">
                 <button
                   onClick={() => playAudio(selectedTest.text)}
-                  className="bg-teal-600 text-white p-3 sm:p-4 rounded-full hover:bg-teal-700 transition-colors"
+                  className="bg-white/20 backdrop-blur-sm text-white p-3 sm:p-4 rounded-full hover:bg-white/30 transition-colors"
                   aria-label={isPlaying ? "Pauzë" : "Luaj"}
                 >
                   {isPlaying ? <Pause className="h-6 w-6 sm:h-8 sm:w-8" /> : <Play className="h-6 w-6 sm:h-8 sm:w-8" />}
                 </button>
-                <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-600">
+                <p className="mt-3 sm:mt-4 text-sm sm:text-base text-white/90">
                   Klikoni për të dëgjuar tekstin gjermanisht
                 </p>
               </div>
@@ -255,11 +255,20 @@ const Listen = () => {
               {/* Answer Input */}
               {!showResult && (
                 <div className="space-y-3 sm:space-y-4">
-                  <label htmlFor="user-answer" className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="user-answer"
+                    className="block text-sm font-medium text-gray-700"
+                    style={{ fontFamily: "Poppins, sans-serif" }}
+                  >
                     Shkruani atë që dëgjuat:
                   </label>
                   <div className="flex flex-wrap gap-1 sm:gap-2 mb-2 sm:mb-3">
-                    <span className="text-xs sm:text-sm text-gray-600 mr-1 sm:mr-2">Karaktere gjermane:</span>
+                    <span
+                      className="text-xs sm:text-sm text-gray-600 mr-1 sm:mr-2"
+                      style={{ fontFamily: "Poppins, sans-serif" }}
+                    >
+                      Karaktere gjermane:
+                    </span>
                     {["ä", "ö", "ü", "Ä", "Ö", "Ü", "ß"].map((char) => (
                       <button
                         key={char}
@@ -276,6 +285,7 @@ const Listen = () => {
                           }, 0)
                         }}
                         className="px-2 py-1 sm:px-3 sm:py-1 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded text-xs sm:text-sm font-medium text-gray-700 transition-colors"
+                        style={{ fontFamily: "Poppins, sans-serif" }}
                       >
                         {char}
                       </button>
@@ -288,11 +298,13 @@ const Listen = () => {
                     className="w-full p-3 border border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-gray-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base"
                     rows="10"
                     placeholder="Shkruani tekstin gjermanisht që dëgjuat..."
+                    style={{ fontFamily: "Inter, sans-serif" }}
                   />
                   <button
                     onClick={handleSubmit}
                     disabled={!userAnswer.trim()}
-                    className="w-full bg-gray-800 text-white py-2.5 sm:py-3 rounded-lg hover:bg-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold text-sm sm:text-base"
+                    className="w-full bg-green-500 text-white py-2.5 sm:py-3 rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold text-sm sm:text-base"
+                    style={{ fontFamily: "Poppins, sans-serif" }}
                   >
                     Kontrollo Përgjigjen
                   </button>
