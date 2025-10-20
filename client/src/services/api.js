@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api"
+const API_BASE_URL = "/api"
 export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com"
 
 export const getAbsoluteImageUrl = (path) => {
@@ -301,8 +301,6 @@ export const puzzleService = {
 }
 
 export const practiceService = {
-
-
   getAllPractices: (params = {}) => api.get("/practice", { params }),
   getPracticeById: (id) => api.get(`/practice/${id}`),
   submitPractice: (id, answers) => api.post(`/practice/${id}/submit`, { answers }),

@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -13,6 +14,7 @@ export default function PracticePage() {
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showXpAnimation, setShowXpAnimation] = useState(false)
+  const [finishedPractices, setFinishedPractices] = useState([])
   const [filters, setFilters] = useState({
     level: "all",
     category: "all",
@@ -21,7 +23,23 @@ export default function PracticePage() {
 
   useEffect(() => {
     fetchPractices()
+    fetchFinishedPractices()
   }, [filters])
+
+  const fetchFinishedPractices = async () => {
+    try {
+      console.log("[v0] Fetching finished practices...")
+      const response = await practiceService.getFinishedPractices()
+      console.log("[v0] Finished practices response:", response)
+      const finishedData = response.data || response
+      console.log("[v0] Finished practices data:", finishedData)
+      const finishedIds = finishedData.map((fp) => fp.practice._id)
+      console.log("[v0] Finished practice IDs:", finishedIds)
+      setFinishedPractices(finishedIds)
+    } catch (error) {
+      console.error("[v0] Error fetching finished practices:", error)
+    }
+  }
 
   const fetchPractices = async () => {
     try {
@@ -76,6 +94,13 @@ export default function PracticePage() {
     setResult(null)
     setShowXpAnimation(false)
     fetchPractices()
+    fetchFinishedPractices()
+  }
+
+  const isPracticeFinished = (practiceId) => {
+    const isFinished = finishedPractices.includes(practiceId)
+    console.log(`[v0] Checking if practice ${practiceId} is finished:`, isFinished)
+    return isFinished
   }
 
   const renderQuestion = (question, index) => {
@@ -1311,7 +1336,7 @@ export default function PracticePage() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253m0-13C19.832 5.477 18.247 5 16.5 5c-1.746 0-3.332.477-4.5 1.253"
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13m0-13C19.832 5.477 18.247 5 16.5 5c-1.746 0-3.332.477-4.5 1.253"
               />
             </svg>
             <h3
@@ -1331,160 +1356,199 @@ export default function PracticePage() {
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
-            {practices.map((practice) => (
-              <div
-                key={practice._id}
-                onClick={() => startPractice(practice)}
-                style={{
-                  backgroundColor: "#fff",
-                  borderRadius: "12px",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                  padding: "16px",
-                  border: "1px solid #e5e7eb",
-                  cursor: "pointer",
-                  transition: "all 0.3s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "translateY(-4px)"
-                  e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.12)"
-                  e.currentTarget.style.borderColor = "#93c5fd"
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "translateY(0)"
-                  e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"
-                  e.currentTarget.style.borderColor = "#e5e7eb"
-                }}
-              >
-                <h3
+            {practices.map((practice) => {
+              const isFinished = isPracticeFinished(practice._id)
+
+              return (
+                <div
+                  key={practice._id}
+                  onClick={() => startPractice(practice)}
                   style={{
-                    fontWeight: "700",
-                    fontSize: "16px",
-                    color: "#1f2937",
-                    marginBottom: "8px",
-                    fontFamily: "Poppins, sans-serif",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
+                    backgroundColor: isFinished ? "#f0fdf4" : "#fff",
+                    borderRadius: "12px",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                    padding: "16px",
+                    border: isFinished ? "2px solid #86efac" : "1px solid #e5e7eb",
+                    cursor: "pointer",
+                    transition: "all 0.3s ease",
+                    position: "relative",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-4px)"
+                    e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.12)"
+                    e.currentTarget.style.borderColor = isFinished ? "#4ade80" : "#93c5fd"
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)"
+                    e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.08)"
+                    e.currentTarget.style.borderColor = isFinished ? "#86efac" : "#e5e7eb"
                   }}
                 >
-                  {practice.title}
-                </h3>
-                {practice.description && (
-                  <p
+                  {isFinished && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "12px",
+                        right: "12px",
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "50%",
+                        background: "linear-gradient(135deg, #10b981, #059669)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        boxShadow: "0 2px 8px rgba(16, 185, 129, 0.3)",
+                      }}
+                    >
+                      <svg
+                        style={{ height: "16px", width: "16px", color: "#fff" }}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  )}
+
+                  <h3
                     style={{
-                      fontSize: "12px",
-                      color: "#6b7280",
-                      marginBottom: "12px",
-                      fontFamily: "Inter, sans-serif",
+                      fontWeight: "700",
+                      fontSize: "16px",
+                      color: "#1f2937",
+                      marginBottom: "8px",
+                      fontFamily: "Poppins, sans-serif",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       display: "-webkit-box",
                       WebkitLineClamp: 2,
                       WebkitBoxOrient: "vertical",
+                      paddingRight: isFinished ? "36px" : "0",
                     }}
                   >
-                    {practice.description}
-                  </p>
-                )}
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginBottom: "12px" }}
-                >
-                  <span
-                    style={{
-                      padding: "3px 10px",
-                      background: "linear-gradient(135deg, #3b82f6, #2563eb)",
-                      color: "#fff",
-                      fontSize: "11px",
-                      fontWeight: "600",
-                      borderRadius: "10px",
-                      fontFamily: "Inter, sans-serif",
-                    }}
-                  >
-                    {practice.level}
-                  </span>
-                  <span
-                    style={{
-                      padding: "3px 10px",
-                      backgroundColor: "#f3f4f6",
-                      color: "#1f2937",
-                      fontSize: "11px",
-                      fontWeight: "500",
-                      borderRadius: "10px",
-                      fontFamily: "Inter, sans-serif",
-                    }}
-                  >
-                    {practice.category}
-                  </span>
-                  <span
-                    style={{
-                      padding: "3px 10px",
-                      backgroundColor: "#f3f4f6",
-                      color: "#1f2937",
-                      fontSize: "11px",
-                      fontWeight: "500",
-                      borderRadius: "10px",
-                      textTransform: "capitalize",
-                      fontFamily: "Inter, sans-serif",
-                    }}
-                  >
-                    {practice.type}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    paddingTop: "12px",
-                    borderTop: "1px solid #e5e7eb",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                      fontSize: "12px",
-                      color: "#6b7280",
-                      fontFamily: "Inter, sans-serif",
-                    }}
-                  >
-                    <svg
-                      style={{ height: "14px", width: "14px" }}
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
+                    {practice.title}
+                  </h3>
+                  {practice.description && (
+                    <p
+                      style={{
+                        fontSize: "12px",
+                        color: "#6b7280",
+                        marginBottom: "12px",
+                        fontFamily: "Inter, sans-serif",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                      }}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
-                    <span>{practice.questions.length} pyetje</span>
+                      {practice.description}
+                    </p>
+                  )}
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      flexWrap: "wrap",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    <span
+                      style={{
+                        padding: "3px 10px",
+                        background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                        color: "#fff",
+                        fontSize: "11px",
+                        fontWeight: "600",
+                        borderRadius: "10px",
+                        fontFamily: "Inter, sans-serif",
+                      }}
+                    >
+                      {practice.level}
+                    </span>
+                    <span
+                      style={{
+                        padding: "3px 10px",
+                        backgroundColor: "#f3f4f6",
+                        color: "#1f2937",
+                        fontSize: "11px",
+                        fontWeight: "500",
+                        borderRadius: "10px",
+                        fontFamily: "Inter, sans-serif",
+                      }}
+                    >
+                      {practice.category}
+                    </span>
+                    <span
+                      style={{
+                        padding: "3px 10px",
+                        backgroundColor: "#f3f4f6",
+                        color: "#1f2937",
+                        fontSize: "11px",
+                        fontWeight: "500",
+                        borderRadius: "10px",
+                        textTransform: "capitalize",
+                        fontFamily: "Inter, sans-serif",
+                      }}
+                    >
+                      {practice.type}
+                    </span>
                   </div>
                   <div
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "4px",
-                      fontSize: "12px",
-                      fontWeight: "600",
-                      color: "#d97706",
-                      fontFamily: "Inter, sans-serif",
+                      justifyContent: "space-between",
+                      paddingTop: "12px",
+                      borderTop: "1px solid #e5e7eb",
                     }}
                   >
-                    <svg style={{ height: "14px", width: "14px" }} fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                    <span>{practice.xp} XP</span>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        fontSize: "12px",
+                        color: "#6b7280",
+                        fontFamily: "Inter, sans-serif",
+                      }}
+                    >
+                      <svg
+                        style={{ height: "14px", width: "14px" }}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      <span>{practice.questions.length} pyetje</span>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        fontSize: "12px",
+                        fontWeight: "600",
+                        color: "#d97706",
+                        fontFamily: "Inter, sans-serif",
+                      }}
+                    >
+                      <svg style={{ height: "14px", width: "14px" }} fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      <span>{practice.xp} XP</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
