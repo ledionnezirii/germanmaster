@@ -1,5 +1,8 @@
+"use client"
+
 import { useState, useEffect } from "react"
 import { useAuth } from "../context/AuthContext"
+import { practiceService } from "../services/api"
 
 export default function PracticePage() {
   const { user, token } = useAuth()
@@ -23,21 +26,13 @@ export default function PracticePage() {
   const fetchPractices = async () => {
     try {
       setLoading(true)
-      const queryParams = new URLSearchParams()
-      if (filters.level !== "all") queryParams.append("level", filters.level)
-      if (filters.category !== "all") queryParams.append("category", filters.category)
-      if (filters.type !== "all") queryParams.append("type", filters.type)
+      const queryParams = {}
+      if (filters.level !== "all") queryParams.level = filters.level
+      if (filters.category !== "all") queryParams.category = filters.category
+      if (filters.type !== "all") queryParams.type = filters.type
 
-      const response = await fetch(`/api/practice?${queryParams}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      const data = await response.json()
-      if (data.success) {
-        setPractices(data.data)
-      }
+      const response = await practiceService.getAllPractices(queryParams)
+      setPractices(response.data || response)
     } catch (error) {
       console.error("Error fetching practices:", error)
     } finally {
@@ -61,22 +56,12 @@ export default function PracticePage() {
   const submitPractice = async () => {
     try {
       setIsSubmitting(true)
-      const response = await fetch(`/api/practice/${selectedPractice._id}/submit`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ answers: userAnswers }),
-      })
+      const response = await practiceService.submitPractice(selectedPractice._id, userAnswers)
+      const data = response.data || response
 
-      const data = await response.json()
-      if (data.success) {
-        setResult(data.data)
-        // <CHANGE> Trigger XP animation after result is set
-        if (data.data.xpAwarded > 0) {
-          setTimeout(() => setShowXpAnimation(true), 300)
-        }
+      setResult(data)
+      if (data.xpAwarded > 0) {
+        setTimeout(() => setShowXpAnimation(true), 300)
       }
     } catch (error) {
       console.error("Error submitting practice:", error)
@@ -100,11 +85,27 @@ export default function PracticePage() {
       case "dropdown":
         return (
           <div key={index} style={{ marginBottom: "12px" }}>
-            <p style={{ fontSize: "14px", fontWeight: "500", color: "#1f2937", marginBottom: "6px", fontFamily: "Poppins, sans-serif" }}>
+            <p
+              style={{
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#1f2937",
+                marginBottom: "6px",
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
               {question.questionText}
             </p>
             {question.hint && (
-              <p style={{ fontSize: "12px", color: "#6b7280", fontStyle: "italic", marginBottom: "6px", fontFamily: "Inter, sans-serif" }}>
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "#6b7280",
+                  fontStyle: "italic",
+                  marginBottom: "6px",
+                  fontFamily: "Inter, sans-serif",
+                }}
+              >
                 💡 {question.hint}
               </p>
             )}
@@ -134,15 +135,42 @@ export default function PracticePage() {
             {result && (
               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "6px" }}>
                 {result.gradedAnswers[index].isCorrect ? (
-                  <svg style={{ height: "16px", width: "16px", color: "#16a34a" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    style={{ height: "16px", width: "16px", color: "#16a34a" }}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 ) : (
-                  <svg style={{ height: "16px", width: "16px", color: "#dc2626" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    style={{ height: "16px", width: "16px", color: "#dc2626" }}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 )}
-                <span style={{ color: result.gradedAnswers[index].isCorrect ? "#16a34a" : "#dc2626", fontWeight: "500", fontSize: "13px", fontFamily: "Poppins, sans-serif" }}>
+                <span
+                  style={{
+                    color: result.gradedAnswers[index].isCorrect ? "#16a34a" : "#dc2626",
+                    fontWeight: "500",
+                    fontSize: "13px",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
+                >
                   {result.gradedAnswers[index].isCorrect ? "Saktë!" : "Gabim"}
                 </span>
               </div>
@@ -154,11 +182,27 @@ export default function PracticePage() {
         if (question.blanks && question.blanks.length > 0) {
           return (
             <div key={index} style={{ marginBottom: "12px" }}>
-              <p style={{ fontSize: "14px", fontWeight: "500", color: "#1f2937", marginBottom: "6px", fontFamily: "Poppins, sans-serif" }}>
+              <p
+                style={{
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  color: "#1f2937",
+                  marginBottom: "6px",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
                 {question.questionText}
               </p>
               {question.hint && (
-                <p style={{ fontSize: "12px", color: "#6b7280", fontStyle: "italic", marginBottom: "6px", fontFamily: "Inter, sans-serif" }}>
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "#6b7280",
+                    fontStyle: "italic",
+                    marginBottom: "6px",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
                   💡 {question.hint}
                 </p>
               )}
@@ -170,7 +214,9 @@ export default function PracticePage() {
                     placeholder={`Zbrazëtira ${blankIndex + 1}...`}
                     value={Array.isArray(userAnswers[index]) ? userAnswers[index][blankIndex] || "" : ""}
                     onChange={(e) => {
-                      const newBlanks = Array.isArray(userAnswers[index]) ? [...userAnswers[index]] : new Array(question.blanks.length).fill("")
+                      const newBlanks = Array.isArray(userAnswers[index])
+                        ? [...userAnswers[index]]
+                        : new Array(question.blanks.length).fill("")
                       newBlanks[blankIndex] = e.target.value
                       handleAnswerChange(index, newBlanks)
                     }}
@@ -192,15 +238,42 @@ export default function PracticePage() {
               {result && (
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "6px" }}>
                   {result.gradedAnswers[index].isCorrect ? (
-                    <svg style={{ height: "16px", width: "16px", color: "#16a34a" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      style={{ height: "16px", width: "16px", color: "#16a34a" }}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   ) : (
-                    <svg style={{ height: "16px", width: "16px", color: "#dc2626" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      style={{ height: "16px", width: "16px", color: "#dc2626" }}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   )}
-                  <span style={{ color: result.gradedAnswers[index].isCorrect ? "#16a34a" : "#dc2626", fontWeight: "500", fontSize: "13px", fontFamily: "Poppins, sans-serif" }}>
+                  <span
+                    style={{
+                      color: result.gradedAnswers[index].isCorrect ? "#16a34a" : "#dc2626",
+                      fontWeight: "500",
+                      fontSize: "13px",
+                      fontFamily: "Poppins, sans-serif",
+                    }}
+                  >
                     {result.gradedAnswers[index].isCorrect ? "Saktë!" : "Gabim"}
                   </span>
                 </div>
@@ -210,11 +283,27 @@ export default function PracticePage() {
         } else {
           return (
             <div key={index} style={{ marginBottom: "12px" }}>
-              <p style={{ fontSize: "14px", fontWeight: "500", color: "#1f2937", marginBottom: "6px", fontFamily: "Poppins, sans-serif" }}>
+              <p
+                style={{
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  color: "#1f2937",
+                  marginBottom: "6px",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
                 {question.questionText}
               </p>
               {question.hint && (
-                <p style={{ fontSize: "12px", color: "#6b7280", fontStyle: "italic", marginBottom: "6px", fontFamily: "Inter, sans-serif" }}>
+                <p
+                  style={{
+                    fontSize: "12px",
+                    color: "#6b7280",
+                    fontStyle: "italic",
+                    marginBottom: "6px",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
                   💡 {question.hint}
                 </p>
               )}
@@ -239,15 +328,42 @@ export default function PracticePage() {
               {result && (
                 <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "6px" }}>
                   {result.gradedAnswers[index].isCorrect ? (
-                    <svg style={{ height: "16px", width: "16px", color: "#16a34a" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      style={{ height: "16px", width: "16px", color: "#16a34a" }}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   ) : (
-                    <svg style={{ height: "16px", width: "16px", color: "#dc2626" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      style={{ height: "16px", width: "16px", color: "#dc2626" }}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   )}
-                  <span style={{ color: result.gradedAnswers[index].isCorrect ? "#16a34a" : "#dc2626", fontWeight: "500", fontSize: "13px", fontFamily: "Poppins, sans-serif" }}>
+                  <span
+                    style={{
+                      color: result.gradedAnswers[index].isCorrect ? "#16a34a" : "#dc2626",
+                      fontWeight: "500",
+                      fontSize: "13px",
+                      fontFamily: "Poppins, sans-serif",
+                    }}
+                  >
                     {result.gradedAnswers[index].isCorrect ? "Saktë!" : "Gabim"}
                   </span>
                 </div>
@@ -259,11 +375,27 @@ export default function PracticePage() {
       case "checkbox":
         return (
           <div key={index} style={{ marginBottom: "12px" }}>
-            <p style={{ fontSize: "14px", fontWeight: "500", color: "#1f2937", marginBottom: "6px", fontFamily: "Poppins, sans-serif" }}>
+            <p
+              style={{
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#1f2937",
+                marginBottom: "6px",
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
               {question.questionText}
             </p>
             {question.hint && (
-              <p style={{ fontSize: "12px", color: "#6b7280", fontStyle: "italic", marginBottom: "6px", fontFamily: "Inter, sans-serif" }}>
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "#6b7280",
+                  fontStyle: "italic",
+                  marginBottom: "6px",
+                  fontFamily: "Inter, sans-serif",
+                }}
+              >
                 💡 {question.hint}
               </p>
             )}
@@ -273,7 +405,17 @@ export default function PracticePage() {
                 const isChecked = currentAnswers.includes(option)
 
                 return (
-                  <label key={optIndex} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", padding: "6px", borderRadius: "6px" }}>
+                  <label
+                    key={optIndex}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      cursor: "pointer",
+                      padding: "6px",
+                      borderRadius: "6px",
+                    }}
+                  >
                     <input
                       type="checkbox"
                       checked={isChecked}
@@ -289,7 +431,9 @@ export default function PracticePage() {
                       disabled={!!result}
                       style={{ width: "16px", height: "16px" }}
                     />
-                    <span style={{ color: "#1f2937", fontSize: "13px", fontFamily: "Inter, sans-serif" }}>{option}</span>
+                    <span style={{ color: "#1f2937", fontSize: "13px", fontFamily: "Inter, sans-serif" }}>
+                      {option}
+                    </span>
                   </label>
                 )
               })}
@@ -297,15 +441,42 @@ export default function PracticePage() {
             {result && (
               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "6px" }}>
                 {result.gradedAnswers[index].isCorrect ? (
-                  <svg style={{ height: "16px", width: "16px", color: "#16a34a" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    style={{ height: "16px", width: "16px", color: "#16a34a" }}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 ) : (
-                  <svg style={{ height: "16px", width: "16px", color: "#dc2626" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    style={{ height: "16px", width: "16px", color: "#dc2626" }}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 )}
-                <span style={{ color: result.gradedAnswers[index].isCorrect ? "#16a34a" : "#dc2626", fontWeight: "500", fontSize: "13px", fontFamily: "Poppins, sans-serif" }}>
+                <span
+                  style={{
+                    color: result.gradedAnswers[index].isCorrect ? "#16a34a" : "#dc2626",
+                    fontWeight: "500",
+                    fontSize: "13px",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
+                >
                   {result.gradedAnswers[index].isCorrect ? "Saktë!" : "Gabim"}
                 </span>
               </div>
@@ -316,17 +487,43 @@ export default function PracticePage() {
       case "radio":
         return (
           <div key={index} style={{ marginBottom: "12px" }}>
-            <p style={{ fontSize: "14px", fontWeight: "500", color: "#1f2937", marginBottom: "6px", fontFamily: "Poppins, sans-serif" }}>
+            <p
+              style={{
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#1f2937",
+                marginBottom: "6px",
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
               {question.questionText}
             </p>
             {question.hint && (
-              <p style={{ fontSize: "12px", color: "#6b7280", fontStyle: "italic", marginBottom: "6px", fontFamily: "Inter, sans-serif" }}>
+              <p
+                style={{
+                  fontSize: "12px",
+                  color: "#6b7280",
+                  fontStyle: "italic",
+                  marginBottom: "6px",
+                  fontFamily: "Inter, sans-serif",
+                }}
+              >
                 💡 {question.hint}
               </p>
             )}
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
               {question.options.map((option, optIndex) => (
-                <label key={optIndex} style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", padding: "6px", borderRadius: "6px" }}>
+                <label
+                  key={optIndex}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    cursor: "pointer",
+                    padding: "6px",
+                    borderRadius: "6px",
+                  }}
+                >
                   <input
                     type="radio"
                     name={`question-${index}`}
@@ -343,15 +540,42 @@ export default function PracticePage() {
             {result && (
               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "6px" }}>
                 {result.gradedAnswers[index].isCorrect ? (
-                  <svg style={{ height: "16px", width: "16px", color: "#16a34a" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    style={{ height: "16px", width: "16px", color: "#16a34a" }}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 ) : (
-                  <svg style={{ height: "16px", width: "16px", color: "#dc2626" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg
+                    style={{ height: "16px", width: "16px", color: "#dc2626" }}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
                   </svg>
                 )}
-                <span style={{ color: result.gradedAnswers[index].isCorrect ? "#16a34a" : "#dc2626", fontWeight: "500", fontSize: "13px", fontFamily: "Poppins, sans-serif" }}>
+                <span
+                  style={{
+                    color: result.gradedAnswers[index].isCorrect ? "#16a34a" : "#dc2626",
+                    fontWeight: "500",
+                    fontSize: "13px",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
+                >
                   {result.gradedAnswers[index].isCorrect ? "Saktë!" : "Gabim"}
                 </span>
               </div>
@@ -366,9 +590,27 @@ export default function PracticePage() {
 
   if (loading) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+          background: "linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)",
+        }}
+      >
         <div style={{ textAlign: "center" }}>
-          <div style={{ width: "48px", height: "48px", border: "4px solid #2563eb", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto" }}></div>
+          <div
+            style={{
+              width: "48px",
+              height: "48px",
+              border: "4px solid #2563eb",
+              borderTopColor: "transparent",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+              margin: "0 auto",
+            }}
+          ></div>
           <p style={{ color: "#6b7280", marginTop: "16px", fontFamily: "Poppins, sans-serif" }}>Duke u ngarkuar...</p>
         </div>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -378,25 +620,88 @@ export default function PracticePage() {
 
   if (selectedPractice) {
     return (
-      <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)", padding: "24px 16px" }}>
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)",
+          padding: "24px 16px",
+        }}
+      >
         <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-          <div style={{ backgroundColor: "#fff", borderRadius: "16px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", padding: "24px", border: "1px solid #e5e7eb" }}>
+          <div
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: "16px",
+              boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+              padding: "24px",
+              border: "1px solid #e5e7eb",
+            }}
+          >
             {/* Header */}
             <div style={{ borderBottom: "1px solid #e5e7eb", paddingBottom: "16px", marginBottom: "20px" }}>
-              <h1 style={{ fontSize: "24px", fontWeight: "700", color: "#1f2937", marginBottom: "12px", fontFamily: "Poppins, sans-serif" }}>
+              <h1
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "700",
+                  color: "#1f2937",
+                  marginBottom: "12px",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
                 {selectedPractice.title}
               </h1>
               <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
-                <span style={{ padding: "4px 12px", background: "linear-gradient(135deg, #3b82f6, #2563eb)", color: "#fff", fontSize: "12px", fontWeight: "600", borderRadius: "12px", fontFamily: "Inter, sans-serif" }}>
+                <span
+                  style={{
+                    padding: "4px 12px",
+                    background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                    color: "#fff",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    borderRadius: "12px",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
                   {selectedPractice.level}
                 </span>
-                <span style={{ padding: "4px 12px", backgroundColor: "#f3f4f6", color: "#1f2937", fontSize: "12px", fontWeight: "500", borderRadius: "12px", fontFamily: "Inter, sans-serif" }}>
+                <span
+                  style={{
+                    padding: "4px 12px",
+                    backgroundColor: "#f3f4f6",
+                    color: "#1f2937",
+                    fontSize: "12px",
+                    fontWeight: "500",
+                    borderRadius: "12px",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
                   {selectedPractice.category}
                 </span>
-                <span style={{ padding: "4px 12px", backgroundColor: "#f3f4f6", color: "#1f2937", fontSize: "12px", fontWeight: "500", borderRadius: "12px", textTransform: "capitalize", fontFamily: "Inter, sans-serif" }}>
+                <span
+                  style={{
+                    padding: "4px 12px",
+                    backgroundColor: "#f3f4f6",
+                    color: "#1f2937",
+                    fontSize: "12px",
+                    fontWeight: "500",
+                    borderRadius: "12px",
+                    textTransform: "capitalize",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
                   {selectedPractice.type}
                 </span>
-                <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#d97706", fontWeight: "600", fontFamily: "Inter, sans-serif" }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "4px",
+                    fontSize: "12px",
+                    color: "#d97706",
+                    fontWeight: "600",
+                    fontFamily: "Inter, sans-serif",
+                  }}
+                >
                   <svg style={{ height: "16px", width: "16px" }} fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
@@ -407,15 +712,43 @@ export default function PracticePage() {
 
             {/* Example */}
             {selectedPractice.exampleSentence && (
-              <div style={{ background: "linear-gradient(135deg, #dbeafe, #e0e7ff)", padding: "12px", borderRadius: "10px", borderLeft: "4px solid #3b82f6", marginBottom: "16px" }}>
-                <p style={{ fontSize: "12px", fontWeight: "600", color: "#1e3a8a", marginBottom: "6px", fontFamily: "Poppins, sans-serif" }}>Shembull:</p>
-                <p style={{ fontSize: "13px", color: "#1f2937", fontFamily: "Inter, sans-serif" }}>{selectedPractice.exampleSentence}</p>
+              <div
+                style={{
+                  background: "linear-gradient(135deg, #dbeafe, #e0e7ff)",
+                  padding: "12px",
+                  borderRadius: "10px",
+                  borderLeft: "4px solid #3b82f6",
+                  marginBottom: "16px",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    color: "#1e3a8a",
+                    marginBottom: "6px",
+                    fontFamily: "Poppins, sans-serif",
+                  }}
+                >
+                  Shembull:
+                </p>
+                <p style={{ fontSize: "13px", color: "#1f2937", fontFamily: "Inter, sans-serif" }}>
+                  {selectedPractice.exampleSentence}
+                </p>
               </div>
             )}
 
             {/* Description */}
             {selectedPractice.description && (
-              <p style={{ color: "#6b7280", fontSize: "13px", lineHeight: "1.6", marginBottom: "16px", fontFamily: "Inter, sans-serif" }}>
+              <p
+                style={{
+                  color: "#6b7280",
+                  fontSize: "13px",
+                  lineHeight: "1.6",
+                  marginBottom: "16px",
+                  fontFamily: "Inter, sans-serif",
+                }}
+              >
                 {selectedPractice.description}
               </p>
             )}
@@ -423,13 +756,32 @@ export default function PracticePage() {
             {/* Progress */}
             {!result && (
               <div style={{ marginBottom: "16px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px", marginBottom: "6px" }}>
-                  <span style={{ color: "#6b7280", fontWeight: "500", fontFamily: "Poppins, sans-serif" }}>Progresi</span>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    fontSize: "12px",
+                    marginBottom: "6px",
+                  }}
+                >
+                  <span style={{ color: "#6b7280", fontWeight: "500", fontFamily: "Poppins, sans-serif" }}>
+                    Progresi
+                  </span>
                   <span style={{ fontWeight: "600", color: "#1f2937", fontFamily: "Inter, sans-serif" }}>
-                    {userAnswers.filter((a) => a && (Array.isArray(a) ? a.length > 0 : a !== "")).length} / {selectedPractice.questions.length}
+                    {userAnswers.filter((a) => a && (Array.isArray(a) ? a.length > 0 : a !== "")).length} /{" "}
+                    {selectedPractice.questions.length}
                   </span>
                 </div>
-                <div style={{ width: "100%", backgroundColor: "#e5e7eb", borderRadius: "8px", height: "8px", overflow: "hidden" }}>
+                <div
+                  style={{
+                    width: "100%",
+                    backgroundColor: "#e5e7eb",
+                    borderRadius: "8px",
+                    height: "8px",
+                    overflow: "hidden",
+                  }}
+                >
                   <div
                     style={{
                       background: "linear-gradient(90deg, #3b82f6, #6366f1)",
@@ -446,10 +798,39 @@ export default function PracticePage() {
             {/* Questions */}
             <div style={{ marginBottom: "16px" }}>
               {selectedPractice.questions.map((question, index) => (
-                <div key={index} style={{ background: "linear-gradient(135deg, #f9fafb, #f3f4f6)", padding: "16px", borderRadius: "10px", border: "2px solid #e5e7eb", marginBottom: "12px" }}>
+                <div
+                  key={index}
+                  style={{
+                    background: "linear-gradient(135deg, #f9fafb, #f3f4f6)",
+                    padding: "16px",
+                    borderRadius: "10px",
+                    border: "2px solid #e5e7eb",
+                    marginBottom: "12px",
+                  }}
+                >
                   <div style={{ display: "flex", gap: "12px" }}>
-                    <div style={{ flexShrink: 0, width: "32px", height: "32px", borderRadius: "50%", background: "linear-gradient(135deg, #3b82f6, #6366f1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ fontSize: "13px", fontWeight: "700", color: "#fff", fontFamily: "Poppins, sans-serif" }}>{index + 1}</span>
+                    <div
+                      style={{
+                        flexShrink: 0,
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "50%",
+                        background: "linear-gradient(135deg, #3b82f6, #6366f1)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "13px",
+                          fontWeight: "700",
+                          color: "#fff",
+                          fontFamily: "Poppins, sans-serif",
+                        }}
+                      >
+                        {index + 1}
+                      </span>
                     </div>
                     <div style={{ flex: 1 }}>{renderQuestion(question, index)}</div>
                   </div>
@@ -459,8 +840,18 @@ export default function PracticePage() {
 
             {/* Result with XP Animation */}
             {result && (
-              <div style={{ background: "linear-gradient(135deg, #dbeafe, #e0e7ff, #ede9fe)", padding: "24px", borderRadius: "16px", border: "2px solid #93c5fd", marginBottom: "16px", position: "relative", overflow: "hidden" }}>
-                {/* <CHANGE> Added XP animation overlay */}
+              <div
+                style={{
+                  background: "linear-gradient(135deg, #dbeafe, #e0e7ff, #ede9fe)",
+                  padding: "24px",
+                  borderRadius: "16px",
+                  border: "2px solid #93c5fd",
+                  marginBottom: "16px",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                {/* Added XP animation overlay */}
                 {showXpAnimation && (
                   <div
                     style={{
@@ -489,15 +880,33 @@ export default function PracticePage() {
                 `}</style>
 
                 <div style={{ marginBottom: "16px" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-                    <h3 style={{ fontSize: "20px", fontWeight: "700", color: "#1f2937", fontFamily: "Poppins, sans-serif" }}>Rezultati</h3>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    <h3
+                      style={{
+                        fontSize: "20px",
+                        fontWeight: "700",
+                        color: "#1f2937",
+                        fontFamily: "Poppins, sans-serif",
+                      }}
+                    >
+                      Rezultati
+                    </h3>
                     <span
                       style={{
                         padding: "6px 16px",
                         fontSize: "16px",
                         fontWeight: "700",
                         borderRadius: "12px",
-                        background: result.passed ? "linear-gradient(135deg, #10b981, #059669)" : "linear-gradient(135deg, #ef4444, #dc2626)",
+                        background: result.passed
+                          ? "linear-gradient(135deg, #10b981, #059669)"
+                          : "linear-gradient(135deg, #ef4444, #dc2626)",
                         color: "#fff",
                         fontFamily: "Poppins, sans-serif",
                       }}
@@ -506,30 +915,124 @@ export default function PracticePage() {
                     </span>
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-                    <div style={{ backgroundColor: "#fff", padding: "12px", borderRadius: "10px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                      <p style={{ fontSize: "11px", color: "#6b7280", marginBottom: "4px", fontFamily: "Inter, sans-serif" }}>Përgjigje të sakta</p>
-                      <p style={{ fontSize: "24px", fontWeight: "700", color: "#16a34a", fontFamily: "Poppins, sans-serif" }}>
+                    <div
+                      style={{
+                        backgroundColor: "#fff",
+                        padding: "12px",
+                        borderRadius: "10px",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontSize: "11px",
+                          color: "#6b7280",
+                          marginBottom: "4px",
+                          fontFamily: "Inter, sans-serif",
+                        }}
+                      >
+                        Përgjigje të sakta
+                      </p>
+                      <p
+                        style={{
+                          fontSize: "24px",
+                          fontWeight: "700",
+                          color: "#16a34a",
+                          fontFamily: "Poppins, sans-serif",
+                        }}
+                      >
                         {result.correctCount} / {result.totalQuestions}
                       </p>
                     </div>
-                    <div style={{ backgroundColor: "#fff", padding: "12px", borderRadius: "10px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-                      <p style={{ fontSize: "11px", color: "#6b7280", marginBottom: "4px", fontFamily: "Inter, sans-serif" }}>XP e fituar</p>
-                      <p style={{ fontSize: "24px", fontWeight: "700", color: "#d97706", fontFamily: "Poppins, sans-serif" }}>+{result.xpAwarded}</p>
+                    <div
+                      style={{
+                        backgroundColor: "#fff",
+                        padding: "12px",
+                        borderRadius: "10px",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontSize: "11px",
+                          color: "#6b7280",
+                          marginBottom: "4px",
+                          fontFamily: "Inter, sans-serif",
+                        }}
+                      >
+                        XP e fituar
+                      </p>
+                      <p
+                        style={{
+                          fontSize: "24px",
+                          fontWeight: "700",
+                          color: "#d97706",
+                          fontFamily: "Poppins, sans-serif",
+                        }}
+                      >
+                        +{result.xpAwarded}
+                      </p>
                     </div>
                   </div>
                   {result.passed ? (
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#16a34a", backgroundColor: "#dcfce7", padding: "10px", borderRadius: "8px", marginTop: "12px" }}>
-                      <svg style={{ height: "20px", width: "20px" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        color: "#16a34a",
+                        backgroundColor: "#dcfce7",
+                        padding: "10px",
+                        borderRadius: "8px",
+                        marginTop: "12px",
+                      }}
+                    >
+                      <svg
+                        style={{ height: "20px", width: "20px" }}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
                       </svg>
-                      <span style={{ fontWeight: "600", fontSize: "14px", fontFamily: "Poppins, sans-serif" }}>Kaluar! Punë e shkëlqyer! 🎉</span>
+                      <span style={{ fontWeight: "600", fontSize: "14px", fontFamily: "Poppins, sans-serif" }}>
+                        Kaluar! Punë e shkëlqyer! 🎉
+                      </span>
                     </div>
                   ) : (
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#d97706", backgroundColor: "#fef3c7", padding: "10px", borderRadius: "8px", marginTop: "12px" }}>
-                      <svg style={{ height: "20px", width: "20px" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        color: "#d97706",
+                        backgroundColor: "#fef3c7",
+                        padding: "10px",
+                        borderRadius: "8px",
+                        marginTop: "12px",
+                      }}
+                    >
+                      <svg
+                        style={{ height: "20px", width: "20px" }}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                        />
                       </svg>
-                      <span style={{ fontWeight: "600", fontSize: "14px", fontFamily: "Poppins, sans-serif" }}>Vazhdo të praktikosh! Ti mund ta bësh! 💪</span>
+                      <span style={{ fontWeight: "600", fontSize: "14px", fontFamily: "Poppins, sans-serif" }}>
+                        Vazhdo të praktikosh! Ti mund ta bësh! 💪
+                      </span>
                     </div>
                   )}
                 </div>
@@ -563,7 +1066,16 @@ export default function PracticePage() {
                   >
                     {isSubmitting ? (
                       <>
-                        <div style={{ width: "16px", height: "16px", border: "2px solid #fff", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite" }}></div>
+                        <div
+                          style={{
+                            width: "16px",
+                            height: "16px",
+                            border: "2px solid #fff",
+                            borderTopColor: "transparent",
+                            borderRadius: "50%",
+                            animation: "spin 1s linear infinite",
+                          }}
+                        ></div>
                         Duke kontrolluar...
                       </>
                     ) : (
@@ -614,23 +1126,67 @@ export default function PracticePage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)", padding: "24px 16px" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)",
+        padding: "24px 16px",
+      }}
+    >
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
-          <h1 style={{ fontSize: "36px", fontWeight: "700", background: "linear-gradient(135deg, #2563eb, #6366f1)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: "8px", fontFamily: "Poppins, sans-serif" }}>
+          <h1
+            style={{
+              fontSize: "36px",
+              fontWeight: "700",
+              background: "linear-gradient(135deg, #2563eb, #6366f1)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              marginBottom: "8px",
+              fontFamily: "Poppins, sans-serif",
+            }}
+          >
             Praktiko Gjermanishten
           </h1>
-          <p style={{ fontSize: "14px", color: "#6b7280", maxWidth: "600px", margin: "0 auto", fontFamily: "Inter, sans-serif" }}>
+          <p
+            style={{
+              fontSize: "14px",
+              color: "#6b7280",
+              maxWidth: "600px",
+              margin: "0 auto",
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
             Përmirëso njohuritë e tua në gjermanisht me lloje të ndryshme ushtrimesh
           </p>
         </div>
 
         {/* Filters */}
-        <div style={{ backgroundColor: "#fff", borderRadius: "16px", boxShadow: "0 4px 12px rgba(0,0,0,0.08)", padding: "20px", border: "1px solid #e5e7eb", marginBottom: "24px" }}>
+        <div
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: "16px",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+            padding: "20px",
+            border: "1px solid #e5e7eb",
+            marginBottom: "24px",
+          }}
+        >
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px" }}>
             <div>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#374151", marginBottom: "6px", fontFamily: "Poppins, sans-serif" }}>Niveli</label>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  color: "#374151",
+                  marginBottom: "6px",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
+                Niveli
+              </label>
               <select
                 value={filters.level}
                 onChange={(e) => setFilters({ ...filters, level: e.target.value })}
@@ -656,7 +1212,18 @@ export default function PracticePage() {
               </select>
             </div>
             <div>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#374151", marginBottom: "6px", fontFamily: "Poppins, sans-serif" }}>Kategoria</label>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  color: "#374151",
+                  marginBottom: "6px",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
+                Kategoria
+              </label>
               <select
                 value={filters.category}
                 onChange={(e) => setFilters({ ...filters, category: e.target.value })}
@@ -685,7 +1252,18 @@ export default function PracticePage() {
               </select>
             </div>
             <div>
-              <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#374151", marginBottom: "6px", fontFamily: "Poppins, sans-serif" }}>Lloji i ushtrimit</label>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "12px",
+                  fontWeight: "600",
+                  color: "#374151",
+                  marginBottom: "6px",
+                  fontFamily: "Poppins, sans-serif",
+                }}
+              >
+                Lloji i ushtrimit
+              </label>
               <select
                 value={filters.type}
                 onChange={(e) => setFilters({ ...filters, type: e.target.value })}
@@ -713,12 +1291,43 @@ export default function PracticePage() {
 
         {/* Practices Grid */}
         {practices.length === 0 ? (
-          <div style={{ backgroundColor: "#fff", borderRadius: "16px", boxShadow: "0 4px 12px rgba(0,0,0,0.08)", padding: "48px", border: "1px solid #e5e7eb", textAlign: "center" }}>
-            <svg style={{ height: "48px", width: "48px", margin: "0 auto 16px", color: "#9ca3af" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          <div
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: "16px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              padding: "48px",
+              border: "1px solid #e5e7eb",
+              textAlign: "center",
+            }}
+          >
+            <svg
+              style={{ height: "48px", width: "48px", margin: "0 auto 16px", color: "#9ca3af" }}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253m0-13C19.832 5.477 18.247 5 16.5 5c-1.746 0-3.332.477-4.5 1.253"
+              />
             </svg>
-            <h3 style={{ fontSize: "18px", fontWeight: "700", color: "#1f2937", marginBottom: "8px", fontFamily: "Poppins, sans-serif" }}>Nuk u gjetën ushtrime</h3>
-            <p style={{ color: "#6b7280", fontSize: "13px", fontFamily: "Inter, sans-serif" }}>Provo filtra të tjerë ose kthehu më vonë.</p>
+            <h3
+              style={{
+                fontSize: "18px",
+                fontWeight: "700",
+                color: "#1f2937",
+                marginBottom: "8px",
+                fontFamily: "Poppins, sans-serif",
+              }}
+            >
+              Nuk u gjetën ushtrime
+            </h3>
+            <p style={{ color: "#6b7280", fontSize: "13px", fontFamily: "Inter, sans-serif" }}>
+              Provo filtra të tjerë ose kthehu më vonë.
+            </p>
           </div>
         ) : (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "16px" }}>
@@ -746,33 +1355,128 @@ export default function PracticePage() {
                   e.currentTarget.style.borderColor = "#e5e7eb"
                 }}
               >
-                <h3 style={{ fontWeight: "700", fontSize: "16px", color: "#1f2937", marginBottom: "8px", fontFamily: "Poppins, sans-serif", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                <h3
+                  style={{
+                    fontWeight: "700",
+                    fontSize: "16px",
+                    color: "#1f2937",
+                    marginBottom: "8px",
+                    fontFamily: "Poppins, sans-serif",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                  }}
+                >
                   {practice.title}
                 </h3>
                 {practice.description && (
-                  <p style={{ fontSize: "12px", color: "#6b7280", marginBottom: "12px", fontFamily: "Inter, sans-serif", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                  <p
+                    style={{
+                      fontSize: "12px",
+                      color: "#6b7280",
+                      marginBottom: "12px",
+                      fontFamily: "Inter, sans-serif",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                    }}
+                  >
                     {practice.description}
                   </p>
                 )}
-                <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginBottom: "12px" }}>
-                  <span style={{ padding: "3px 10px", background: "linear-gradient(135deg, #3b82f6, #2563eb)", color: "#fff", fontSize: "11px", fontWeight: "600", borderRadius: "10px", fontFamily: "Inter, sans-serif" }}>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap", marginBottom: "12px" }}
+                >
+                  <span
+                    style={{
+                      padding: "3px 10px",
+                      background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                      color: "#fff",
+                      fontSize: "11px",
+                      fontWeight: "600",
+                      borderRadius: "10px",
+                      fontFamily: "Inter, sans-serif",
+                    }}
+                  >
                     {practice.level}
                   </span>
-                  <span style={{ padding: "3px 10px", backgroundColor: "#f3f4f6", color: "#1f2937", fontSize: "11px", fontWeight: "500", borderRadius: "10px", fontFamily: "Inter, sans-serif" }}>
+                  <span
+                    style={{
+                      padding: "3px 10px",
+                      backgroundColor: "#f3f4f6",
+                      color: "#1f2937",
+                      fontSize: "11px",
+                      fontWeight: "500",
+                      borderRadius: "10px",
+                      fontFamily: "Inter, sans-serif",
+                    }}
+                  >
                     {practice.category}
                   </span>
-                  <span style={{ padding: "3px 10px", backgroundColor: "#f3f4f6", color: "#1f2937", fontSize: "11px", fontWeight: "500", borderRadius: "10px", textTransform: "capitalize", fontFamily: "Inter, sans-serif" }}>
+                  <span
+                    style={{
+                      padding: "3px 10px",
+                      backgroundColor: "#f3f4f6",
+                      color: "#1f2937",
+                      fontSize: "11px",
+                      fontWeight: "500",
+                      borderRadius: "10px",
+                      textTransform: "capitalize",
+                      fontFamily: "Inter, sans-serif",
+                    }}
+                  >
                     {practice.type}
                   </span>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "12px", borderTop: "1px solid #e5e7eb" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", color: "#6b7280", fontFamily: "Inter, sans-serif" }}>
-                    <svg style={{ height: "14px", width: "14px" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    paddingTop: "12px",
+                    borderTop: "1px solid #e5e7eb",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      fontSize: "12px",
+                      color: "#6b7280",
+                      fontFamily: "Inter, sans-serif",
+                    }}
+                  >
+                    <svg
+                      style={{ height: "14px", width: "14px" }}
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                     <span>{practice.questions.length} pyetje</span>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "12px", fontWeight: "600", color: "#d97706", fontFamily: "Inter, sans-serif" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                      fontSize: "12px",
+                      fontWeight: "600",
+                      color: "#d97706",
+                      fontFamily: "Inter, sans-serif",
+                    }}
+                  >
                     <svg style={{ height: "14px", width: "14px" }} fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
