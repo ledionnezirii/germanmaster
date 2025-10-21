@@ -32,7 +32,6 @@ import {
   Hammer,
   CheckCircle,
   Trophy,
-  Lock,
 } from "lucide-react"
 
 const iconMap = {
@@ -422,10 +421,16 @@ const Category = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-3 sm:p-4 lg:p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Kategoritë e Fjalëve</h1>
-          <p className="text-sm sm:text-base text-gray-600">
-            Eksploroni fjalorin gjermanisht të organizuar sipas temave dhe kategorive.
+        <div className="bg-gradient-to-r from-teal-50 to-blue-50 rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-3 flex items-center gap-3">
+            <div className="bg-teal-100 p-3 rounded-full">
+              <FolderOpen className="h-8 w-8 text-teal-600" />
+            </div>
+            Kategoritë e Fjalëve
+          </h1>
+          <p className="text-gray-700 text-lg leading-relaxed">
+            Eksploroni fjalorin gjermanisht të organizuar sipas temave dhe kategorive. Mësoni fjalë të reja dhe zgjeroni
+            fjalorin tuaj në mënyrë sistematike.
           </p>
         </div>
 
@@ -533,8 +538,6 @@ const Category = () => {
                             <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
                           </button>
                         </div>
-
-                                  
                       </div>
                     </div>
                   )

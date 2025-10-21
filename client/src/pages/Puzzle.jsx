@@ -162,13 +162,16 @@ export default function Puzzle() {
       const index = guess.word.toUpperCase().indexOf(letter)
       if (index !== -1) {
         const feedback = guess.feedback[index]
-        if (feedback === "correct") return "bg-gradient-to-br from-emerald-500 to-green-600 text-white border-emerald-400 shadow-lg shadow-emerald-500/30"
+        if (feedback === "correct")
+          return "bg-gradient-to-br from-emerald-500 to-green-600 text-white border-emerald-400 shadow-lg shadow-emerald-500/30"
         if (feedback === "present" && status !== "correct") status = "present"
         if (feedback === "absent" && !status) status = "absent"
       }
     }
-    if (status === "present") return "bg-gradient-to-br from-amber-400 to-orange-500 text-white border-amber-300 shadow-lg shadow-amber-500/30"
-    if (status === "absent") return "bg-gradient-to-br from-slate-400 to-slate-500 text-white border-slate-300 shadow-md"
+    if (status === "present")
+      return "bg-gradient-to-br from-amber-400 to-orange-500 text-white border-amber-300 shadow-lg shadow-amber-500/30"
+    if (status === "absent")
+      return "bg-gradient-to-br from-slate-400 to-slate-500 text-white border-slate-300 shadow-md"
     return "bg-white/90 backdrop-blur-sm text-slate-700 border-slate-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 dark:bg-slate-700/90 dark:text-slate-100 dark:border-slate-600"
   }
 
@@ -177,7 +180,10 @@ export default function Puzzle() {
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-indigo-950 dark:to-purple-950">
         <div className="text-center">
           <div className="mb-6 inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-indigo-400 border-r-transparent shadow-2xl"></div>
-          <p className="text-base font-medium text-slate-600 dark:text-slate-300" style={{ fontFamily: "Inter, sans-serif", letterSpacing: "-0.01em" }}>
+          <p
+            className="text-base font-medium text-slate-600 dark:text-slate-300"
+            style={{ fontFamily: "Inter, sans-serif", letterSpacing: "-0.01em" }}
+          >
             Duke ngarkuar...
           </p>
         </div>
@@ -190,7 +196,10 @@ export default function Puzzle() {
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-indigo-950 dark:to-purple-950 p-4">
         <div className="rounded-3xl bg-white/70 backdrop-blur-xl p-8 text-center shadow-2xl border border-white/20 dark:bg-slate-800/70 dark:border-slate-700/30 max-w-sm">
           <div className="mb-3 text-5xl">🎯</div>
-          <p className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2" style={{ fontFamily: "Inter, sans-serif", letterSpacing: "-0.02em" }}>
+          <p
+            className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2"
+            style={{ fontFamily: "Inter, sans-serif", letterSpacing: "-0.02em" }}
+          >
             Nuk ka enigmë sot
           </p>
           <p className="text-xs text-slate-500 dark:text-slate-400" style={{ fontFamily: "Inter, sans-serif" }}>
@@ -247,30 +256,34 @@ export default function Puzzle() {
                 </div>
               </div>
             </div>
-            <h2 
+            <h2
               className="text-2xl font-bold text-white mb-3 drop-shadow-lg"
               style={{ fontFamily: "Inter, sans-serif", letterSpacing: "-0.02em" }}
             >
               Enigma e Mbyllur
             </h2>
-            <p 
-              className="text-slate-200 mb-6 text-sm max-w-xs mx-auto"
-              style={{ fontFamily: "Inter, sans-serif" }}
-            >
-              {gameStatus === "won" 
+            <p className="text-slate-200 mb-6 text-sm max-w-xs mx-auto" style={{ fontFamily: "Inter, sans-serif" }}>
+              {gameStatus === "won"
                 ? "Urime! Keni përfunduar enigmën e sotme."
                 : gameStatus === "lost"
-                ? "Enigma e sotme ka përfunduar."
-                : "Keni përfunduar tashmë enigmën e sotme."}
+                  ? "Enigma e sotme ka përfunduar."
+                  : "Keni përfunduar tashmë enigmën e sotme."}
             </p>
-            <div className="inline-block bg-white/20 backdrop-blur-sm px-6 py-3 rounded-xl border border-white/30">
-              <p 
+            <div className="inline-block m-2 bg-white/20 backdrop-blur-sm px-6 py-3 rounded-xl border border-white/30 mb-6">
+              <p
                 className="text-white text-xs font-semibold"
                 style={{ fontFamily: "Inter, sans-serif", letterSpacing: "0.05em" }}
               >
                 Kthehuni nesër për një enigmë të re! 🎯
               </p>
             </div>
+            <button
+              onClick={() => (window.location.href = "/")}
+              className="bg-gradient-to-br from-indigo-400 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-2 px-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
+              style={{ fontFamily: "Inter, sans-serif", letterSpacing: "-0.01em" }}
+            >
+              Kthehu ne faqen Kryesore
+            </button>
           </div>
         </div>
       )}
@@ -336,7 +349,7 @@ export default function Puzzle() {
                       animation: "flipIn 0.25s ease-out",
                       fontFamily: "Inter, sans-serif",
                       fontWeight: 800,
-                      letterSpacing: "0.02em"
+                      letterSpacing: "0.02em",
                     }}
                   >
                     {letter}
@@ -432,8 +445,8 @@ export default function Puzzle() {
                       key={key}
                       onClick={() => handleVirtualKeyPress(key)}
                       className={`${
-                        key === "ENTER" || key === "⌫" 
-                          ? "px-2.5 sm:px-3 text-[10px] font-bold" 
+                        key === "ENTER" || key === "⌫"
+                          ? "px-2.5 sm:px-3 text-[10px] font-bold"
                           : "w-7 sm:w-9 text-sm font-bold"
                       } h-11 sm:h-12 rounded-lg border-2 transition-all duration-100 ${
                         key === "ENTER" || key === "⌫"
