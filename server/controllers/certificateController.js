@@ -49,16 +49,16 @@ const generateCertificatePDF = async (user, level, serialNumber) => {
         .bezierCurveTo(782, 540, 787, 535, 792, 525)
         .fill()
 
-      const logoSize = 100 // Reduced from 140 to fit better
+      const logoSize = 80 // Reduced from 100 to prevent overlap with decorative elements
       const logoX = (842 - logoSize) / 2 // center horizontally
-      const logoY = 60 // moved down from 10 to prevent overflow at top
+      const logoY = 75 // moved down from 60 to give more space from top border and decorative corners
 
       doc.save()
       doc.circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2).clip()
       doc.image(path.join(__dirname, "../public/images/logo.png"), logoX, logoY, { width: logoSize })
       doc.restore()
 
-      doc.fontSize(38).fillColor("#1a2332").font("Times-Bold").text("CERTIFIKATË E PËRFUNDIMIT", 0, 170, {
+      doc.fontSize(38).fillColor("#1a2332").font("Times-Bold").text("CERTIFIKATË E PËRFUNDIMIT", 0, 180, {
         align: "center",
         width: 842,
       })
@@ -68,31 +68,31 @@ const generateCertificatePDF = async (user, level, serialNumber) => {
         .fontSize(13)
         .fillColor("#4a4a4a")
         .font("Times-Roman")
-        .text("Me anë të kësaj certifikatë vërtetohet se", 0, 220, {
+        .text("Me anë të kësaj certifikatë vërtetohet se", 0, 230, {
           align: "center",
           width: 842,
         })
 
       // User name
-      doc.fontSize(48).fillColor("#c9a961").font("Times-Bold").text(`${user.emri} ${user.mbiemri}`, 0, 255, {
+      doc.fontSize(48).fillColor("#c9a961").font("Times-Bold").text(`${user.emri} ${user.mbiemri}`, 0, 265, {
         align: "center",
         width: 842,
       })
 
       // Completion text
-      doc.fontSize(15).fillColor("#4a4a4a").font("Times-Roman").text("ka përfunduar me sukses kursin e", 0, 315, {
+      doc.fontSize(15).fillColor("#4a4a4a").font("Times-Roman").text("ka përfunduar me sukses kursin e", 0, 325, {
         align: "center",
         width: 842,
       })
 
       // Course name
-      doc.fontSize(26).fillColor("#1a2332").font("Times-Bold").text("Gjuha Gjermane", 0, 345, {
+      doc.fontSize(26).fillColor("#1a2332").font("Times-Bold").text("Gjuha Gjermane", 0, 355, {
         align: "center",
         width: 842,
       })
 
       // Level
-      doc.fontSize(80).fillColor("#c9a961").font("Times-Bold").text(level, 0, 385, {
+      doc.fontSize(80).fillColor("#c9a961").font("Times-Bold").text(level, 0, 395, {
         align: "center",
         width: 842,
       })
@@ -103,25 +103,25 @@ const generateCertificatePDF = async (user, level, serialNumber) => {
         month: "long",
         year: "numeric",
       })
-      doc.fontSize(14).fillColor("#4a4a4a").font("Times-Roman").text(`${issueDate}`, 0, 475, {
+      doc.fontSize(14).fillColor("#4a4a4a").font("Times-Roman").text(`${issueDate}`, 0, 485, {
         align: "center",
         width: 842,
       })
 
-      doc.fontSize(11).fillColor("#6a6a6a").font("Times-Italic").text("Data e Lëshimit", 0, 495, {
+      doc.fontSize(11).fillColor("#6a6a6a").font("Times-Italic").text("Data e Lëshimit", 0, 505, {
         align: "center",
         width: 842,
       })
 
       // Footer block (moved a bit up)
-      doc.rect(350, 530, 142, 20).fill("#e8d68a")
-      doc.fontSize(11).fillColor("#4a4a4a").font("Times-Roman").text("German Learn Website", 350, 535, {
+      doc.rect(350, 540, 142, 20).fill("#e8d68a")
+      doc.fontSize(11).fillColor("#4a4a4a").font("Times-Roman").text("German Learn Website", 350, 545, {
         width: 142,
         align: "center",
       })
 
       // Serial number (moved up to avoid page break)
-      doc.fontSize(10).fillColor("#d97706").font("Times-Roman").text(`Nr. Serie: ${serialNumber}`, 0, 560, {
+      doc.fontSize(10).fillColor("#d97706").font("Times-Roman").text(`Nr. Serie: ${serialNumber}`, 0, 570, {
         align: "right",
         width: 792,
       })
