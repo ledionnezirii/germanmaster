@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api"
+const API_BASE_URL = "/api"
 export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com"
 
 export const getAbsoluteImageUrl = (path) => {

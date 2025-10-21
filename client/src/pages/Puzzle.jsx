@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback } from "react"
 import { useAuth } from "../context/AuthContext"
 import { puzzleService } from "../services/api"
+import { Lock } from "lucide-react"
 
 export default function Puzzle() {
   const { user, updateUser } = useAuth()
   const [puzzle, setPuzzle] = useState(null)
   const [currentGuess, setCurrentGuess] = useState("")
   const [guesses, setGuesses] = useState([])
-  const [gameStatus, setGameStatus] = useState("playing") // playing, won, lost, completed
+  const [gameStatus, setGameStatus] = useState("playing")
   const [message, setMessage] = useState("")
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState(null)
@@ -17,6 +18,12 @@ export default function Puzzle() {
   const [xpEarned, setXpEarned] = useState(0)
 
   const MAX_ATTEMPTS = 5
+
+  const keyboardRows = [
+    ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+    ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
+    ["ENTER", "Z", "X", "C", "V", "B", "N", "M", "⌫"],
+  ]
 
   useEffect(() => {
     fetchTodaysPuzzle()
@@ -34,12 +41,12 @@ export default function Puzzle() {
       if (puzzleData.hasCompleted) {
         setGameStatus("completed")
         setMessage(
-          `You've already completed today's puzzle! You earned ${puzzleData.xpReward} XP. Come back tomorrow for a new one.`,
+          `Ju keni përfunduar tashmë enigmën e sotme! Fituat ${puzzleData.xpReward} XP. Kthehuni nesër për një të re.`,
         )
       }
     } catch (error) {
       console.error("Error fetching puzzle:", error)
-      setMessage(error.response?.data?.message || "Failed to load today's puzzle")
+      setMessage(error.response?.data?.message || "Dështoi ngarkimi i enigmës së sotme")
     } finally {
       setLoading(false)
     }
@@ -74,16 +81,28 @@ export default function Puzzle() {
     return () => window.removeEventListener("keydown", handleKeyPress)
   }, [handleKeyPress])
 
+  const handleVirtualKeyPress = (key) => {
+    if (gameStatus !== "playing") return
+
+    if (key === "ENTER") {
+      handleSubmitGuess()
+    } else if (key === "⌫") {
+      setCurrentGuess((prev) => prev.slice(0, -1))
+    } else if (currentGuess.length < 5) {
+      setCurrentGuess((prev) => prev + key.toLowerCase())
+    }
+  }
+
   const handleSubmitGuess = async () => {
     const guess = currentGuess.trim().toLowerCase()
 
     if (guess.length !== 5) {
-      setMessage("Word must be 5 letters!")
+      setMessage("Fjala duhet të jetë 5 shkronja!")
       return
     }
 
     if (guesses.some((g) => g.word === guess)) {
-      setMessage("You already tried this word!")
+      setMessage("E keni provuar tashmë këtë fjalë!")
       return
     }
 
@@ -93,11 +112,11 @@ export default function Puzzle() {
       if (result.correct) {
         setGuesses([...guesses, { word: guess, feedback: Array(5).fill("correct") }])
         setGameStatus("won")
-        setMessage(result.message || `Congratulations! You earned ${result.xpEarned} XP!`)
+        setMessage(result.message || `Urime! Fituat ${result.xpEarned} XP!`)
 
         setXpEarned(result.xpEarned || puzzle.xpReward || 0)
         setShowXpAnimation(true)
-        setTimeout(() => setShowXpAnimation(false), 3000)
+        setTimeout(() => setShowXpAnimation(false), 1800)
 
         if (updateUser && result.user) {
           updateUser({
@@ -111,38 +130,56 @@ export default function Puzzle() {
 
         if (newGuesses.length >= MAX_ATTEMPTS) {
           setGameStatus("lost")
-          setMessage(`Game over! Better luck tomorrow!`)
+          setMessage(`Loja mbaroi! Fat më të mirë nesër!`)
         } else {
-          setMessage(`${MAX_ATTEMPTS - newGuesses.length} attempts remaining`)
+          setMessage(`${MAX_ATTEMPTS - newGuesses.length} përpjekje të mbetura`)
         }
       }
 
       setCurrentGuess("")
     } catch (error) {
       console.error("Error submitting guess:", error)
-      setMessage(error.response?.data?.message || "Error submitting guess")
+      setMessage(error.response?.data?.message || "Gabim në dërgimin e përgjigjes")
     }
   }
 
   const getTileColor = (status) => {
     switch (status) {
       case "correct":
-        return "bg-green-500 border-green-600 text-white"
+        return "bg-gradient-to-br from-emerald-500 to-green-600 border-emerald-400 text-white shadow-lg shadow-emerald-500/50"
       case "present":
-        return "bg-yellow-500 border-yellow-600 text-white"
+        return "bg-gradient-to-br from-amber-400 to-orange-500 border-amber-300 text-white shadow-lg shadow-amber-500/50"
       case "absent":
-        return "bg-gray-500 border-gray-600 text-white"
+        return "bg-gradient-to-br from-slate-400 to-slate-500 border-slate-300 text-white shadow-md"
       default:
-        return "bg-background border-border text-foreground"
+        return "bg-white/80 backdrop-blur-sm border-slate-200 text-slate-700 dark:bg-slate-800/60 dark:border-slate-600 dark:text-slate-200"
     }
+  }
+
+  const getKeyColor = (letter) => {
+    let status = null
+    for (const guess of guesses) {
+      const index = guess.word.toUpperCase().indexOf(letter)
+      if (index !== -1) {
+        const feedback = guess.feedback[index]
+        if (feedback === "correct") return "bg-gradient-to-br from-emerald-500 to-green-600 text-white border-emerald-400 shadow-lg shadow-emerald-500/30"
+        if (feedback === "present" && status !== "correct") status = "present"
+        if (feedback === "absent" && !status) status = "absent"
+      }
+    }
+    if (status === "present") return "bg-gradient-to-br from-amber-400 to-orange-500 text-white border-amber-300 shadow-lg shadow-amber-500/30"
+    if (status === "absent") return "bg-gradient-to-br from-slate-400 to-slate-500 text-white border-slate-300 shadow-md"
+    return "bg-white/90 backdrop-blur-sm text-slate-700 border-slate-200 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 dark:bg-slate-700/90 dark:text-slate-100 dark:border-slate-600"
   }
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-indigo-950 dark:to-purple-950">
         <div className="text-center">
-          <div className="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-          <p className="text-lg text-gray-700 dark:text-gray-300">Loading puzzle...</p>
+          <div className="mb-6 inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-indigo-400 border-r-transparent shadow-2xl"></div>
+          <p className="text-base font-medium text-slate-600 dark:text-slate-300" style={{ fontFamily: "Inter, sans-serif", letterSpacing: "-0.01em" }}>
+            Duke ngarkuar...
+          </p>
         </div>
       </div>
     )
@@ -150,100 +187,156 @@ export default function Puzzle() {
 
   if (!puzzle) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-        <div className="rounded-lg bg-white p-8 text-center shadow-xl dark:bg-gray-800">
-          <p className="text-xl text-gray-700 dark:text-gray-300">No puzzle available today</p>
-          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Check back tomorrow for a new puzzle!</p>
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-indigo-950 dark:to-purple-950 p-4">
+        <div className="rounded-3xl bg-white/70 backdrop-blur-xl p-8 text-center shadow-2xl border border-white/20 dark:bg-slate-800/70 dark:border-slate-700/30 max-w-sm">
+          <div className="mb-3 text-5xl">🎯</div>
+          <p className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2" style={{ fontFamily: "Inter, sans-serif", letterSpacing: "-0.02em" }}>
+            Nuk ka enigmë sot
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400" style={{ fontFamily: "Inter, sans-serif" }}>
+            Kthehuni nesër për një enigmë të re!
+          </p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="flex min-h-screen flex-col bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-indigo-950 dark:to-purple-950 relative">
       {showXpAnimation && (
-        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center">
+        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
           <div className="animate-bounce-in-scale">
             <div className="relative">
-              <div className="absolute inset-0 animate-pulse rounded-full bg-yellow-400 opacity-50 blur-3xl"></div>
-              <div className="relative rounded-full bg-gradient-to-br from-yellow-400 via-orange-400 to-yellow-500 p-1 shadow-2xl">
-                <div className="rounded-full bg-white px-8 py-6 dark:bg-gray-900">
+              <div className="absolute inset-0 animate-pulse rounded-full bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-500 opacity-60 blur-3xl"></div>
+              <div className="relative rounded-3xl bg-gradient-to-br from-yellow-400 via-orange-400 to-pink-500 p-1.5 shadow-2xl">
+                <div className="rounded-[22px] bg-white px-8 py-6 dark:bg-slate-900">
                   <div className="text-center">
-                    <div className="mb-2 text-5xl">🎉</div>
-                    <div className="text-4xl font-bold text-yellow-600 dark:text-yellow-400">+{xpEarned} XP</div>
-                    <div className="mt-1 text-sm font-medium text-gray-600 dark:text-gray-400">Great job!</div>
+                    <div className="mb-3 text-5xl animate-bounce">🎉</div>
+                    <div
+                      className="text-4xl font-bold bg-gradient-to-r from-yellow-600 via-orange-600 to-pink-600 bg-clip-text text-transparent"
+                      style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, letterSpacing: "-0.03em" }}
+                    >
+                      +{xpEarned} XP
+                    </div>
+                    <div
+                      className="mt-2 text-xs font-semibold text-slate-600 dark:text-slate-300"
+                      style={{ fontFamily: "Inter, sans-serif", letterSpacing: "0.05em" }}
+                    >
+                      PUNË E SHKËLQYER!
+                    </div>
                   </div>
                 </div>
               </div>
               <div className="absolute -top-4 -left-4 animate-ping text-2xl">✨</div>
-              <div className="absolute -top-4 -right-4 animate-ping text-2xl delay-100">✨</div>
-              <div className="absolute -bottom-4 -left-4 animate-ping text-2xl delay-200">✨</div>
-              <div className="absolute -bottom-4 -right-4 animate-ping text-2xl delay-300">✨</div>
+              <div className="absolute -top-4 -right-4 animate-ping text-2xl">✨</div>
+              <div className="absolute -bottom-4 -left-4 animate-ping text-2xl">✨</div>
+              <div className="absolute -bottom-4 -right-4 animate-ping text-2xl">✨</div>
             </div>
           </div>
         </div>
       )}
 
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-800/80">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-3 py-3 sm:px-4 sm:py-4">
-          <div>
-            <h1 className="text-balance text-xl font-bold text-gray-900 dark:text-white sm:text-2xl md:text-3xl">
-              German Word Puzzle
-            </h1>
-            <p className="text-xs text-gray-600 dark:text-gray-400 sm:text-sm">
-              Guess the 5-letter word in {MAX_ATTEMPTS} tries
-            </p>
-          </div>
-          <div className="text-right">
-            <div className="flex items-center gap-1 sm:gap-2">
-              <span className="text-xs font-medium text-gray-600 dark:text-gray-400 sm:text-sm">XP:</span>
-              <span className="text-lg font-bold text-blue-600 dark:text-blue-400 sm:text-xl">{user?.xp || 0}</span>
+      {(gameStatus === "won" || gameStatus === "lost" || gameStatus === "completed") && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/60 backdrop-blur-md">
+          <div className="text-center animate-fade-in">
+            <div className="mb-6 inline-flex items-center justify-center">
+              <div className="relative">
+                <div className="absolute inset-0 animate-pulse rounded-full bg-slate-400 opacity-40 blur-2xl"></div>
+                <div className="relative bg-white/90 backdrop-blur-xl p-8 rounded-full shadow-2xl border-4 border-slate-300 dark:bg-slate-800/90 dark:border-slate-600">
+                  <Lock className="w-16 h-16 text-slate-600 dark:text-slate-300" strokeWidth={2.5} />
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-1 sm:gap-2">
-              <span className="text-xs font-medium text-gray-600 dark:text-gray-400 sm:text-sm">Level:</span>
-              <span className="text-base font-bold text-indigo-600 dark:text-indigo-400 sm:text-lg">
-                {user?.level || "A1"}
-              </span>
+            <h2 
+              className="text-2xl font-bold text-white mb-3 drop-shadow-lg"
+              style={{ fontFamily: "Inter, sans-serif", letterSpacing: "-0.02em" }}
+            >
+              Enigma e Mbyllur
+            </h2>
+            <p 
+              className="text-slate-200 mb-6 text-sm max-w-xs mx-auto"
+              style={{ fontFamily: "Inter, sans-serif" }}
+            >
+              {gameStatus === "won" 
+                ? "Urime! Keni përfunduar enigmën e sotme."
+                : gameStatus === "lost"
+                ? "Enigma e sotme ka përfunduar."
+                : "Keni përfunduar tashmë enigmën e sotme."}
+            </p>
+            <div className="inline-block bg-white/20 backdrop-blur-sm px-6 py-3 rounded-xl border border-white/30">
+              <p 
+                className="text-white text-xs font-semibold"
+                style={{ fontFamily: "Inter, sans-serif", letterSpacing: "0.05em" }}
+              >
+                Kthehuni nesër për një enigmë të re! 🎯
+              </p>
             </div>
           </div>
         </div>
-      </header>
+      )}
 
-      <main className="flex flex-1 flex-col items-center justify-center px-3 py-4 sm:px-4 sm:py-8">
-        <div className="w-full max-w-md space-y-4 sm:space-y-6">
+      <main className="flex flex-1 flex-col items-center px-3 py-6 overflow-y-auto sm:px-4 sm:py-8">
+        <div className="w-full max-w-md space-y-4">
           {stats && (
-            <div className="grid grid-cols-3 gap-2 rounded-lg bg-white/80 p-3 shadow-lg backdrop-blur-sm dark:bg-gray-800/80 sm:gap-4 sm:p-4">
+            <div className="grid grid-cols-3 gap-3 rounded-2xl bg-white/60 backdrop-blur-xl p-4 shadow-xl border border-white/20 dark:bg-slate-800/60 dark:border-slate-700/30">
               <div className="text-center">
-                <p className="text-xl font-bold text-blue-600 dark:text-blue-400 sm:text-2xl">
+                <p
+                  className="text-2xl font-bold bg-gradient-to-br from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-1"
+                  style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, letterSpacing: "-0.03em" }}
+                >
                   {stats.completedPuzzles || 0}
                 </p>
-                <p className="text-[10px] text-gray-600 dark:text-gray-400 sm:text-xs">Completed</p>
+                <p
+                  className="text-[9px] text-slate-500 dark:text-slate-400 uppercase font-semibold"
+                  style={{ fontFamily: "Inter, sans-serif", letterSpacing: "0.05em" }}
+                >
+                  Përfunduar
+                </p>
               </div>
               <div className="text-center">
-                <p className="text-xl font-bold text-green-600 dark:text-green-400 sm:text-2xl">
+                <p
+                  className="text-2xl font-bold bg-gradient-to-br from-emerald-600 to-green-600 bg-clip-text text-transparent mb-1"
+                  style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, letterSpacing: "-0.03em" }}
+                >
                   {stats.completionRate || 0}%
                 </p>
-                <p className="text-[10px] text-gray-600 dark:text-gray-400 sm:text-xs">Success Rate</p>
+                <p
+                  className="text-[9px] text-slate-500 dark:text-slate-400 uppercase font-semibold"
+                  style={{ fontFamily: "Inter, sans-serif", letterSpacing: "0.05em" }}
+                >
+                  Suksesi
+                </p>
               </div>
               <div className="text-center">
-                <p className="text-xl font-bold text-purple-600 dark:text-purple-400 sm:text-2xl">
+                <p
+                  className="text-2xl font-bold bg-gradient-to-br from-amber-600 to-orange-600 bg-clip-text text-transparent mb-1"
+                  style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, letterSpacing: "-0.03em" }}
+                >
                   {puzzle.xpReward || 0}
                 </p>
-                <p className="text-[10px] text-gray-600 dark:text-gray-400 sm:text-xs">XP Reward</p>
+                <p
+                  className="text-[9px] text-slate-500 dark:text-slate-400 uppercase font-semibold"
+                  style={{ fontFamily: "Inter, sans-serif", letterSpacing: "0.05em" }}
+                >
+                  XP Sot
+                </p>
               </div>
             </div>
           )}
 
-          <div className="space-y-1.5 sm:space-y-2">
+          <div className="space-y-2">
             {guesses.map((guess, rowIndex) => (
-              <div key={rowIndex} className="flex justify-center gap-1.5 sm:gap-2">
+              <div key={rowIndex} className="flex justify-center gap-1.5">
                 {guess.word.split("").map((letter, colIndex) => (
                   <div
                     key={colIndex}
-                    className={`flex h-12 w-12 items-center justify-center rounded-lg border-2 text-xl font-bold uppercase transition-all duration-300 sm:h-14 sm:w-14 sm:text-2xl ${getTileColor(guess.feedback[colIndex])}`}
+                    className={`flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-xl border-2 text-xl font-bold uppercase transition-all duration-200 ${getTileColor(guess.feedback[colIndex])}`}
                     style={{
-                      animationDelay: `${colIndex * 100}ms`,
-                      animation: "flipIn 0.5s ease-in-out",
+                      animationDelay: `${colIndex * 40}ms`,
+                      animation: "flipIn 0.25s ease-out",
+                      fontFamily: "Inter, sans-serif",
+                      fontWeight: 800,
+                      letterSpacing: "0.02em"
                     }}
                   >
                     {letter}
@@ -253,15 +346,16 @@ export default function Puzzle() {
             ))}
 
             {gameStatus === "playing" && guesses.length < MAX_ATTEMPTS && (
-              <div className="flex justify-center gap-1.5 sm:gap-2">
+              <div className="flex justify-center gap-1.5">
                 {Array.from({ length: 5 }).map((_, index) => (
                   <div
                     key={index}
-                    className={`flex h-12 w-12 items-center justify-center rounded-lg border-2 text-xl font-bold uppercase transition-all sm:h-14 sm:w-14 sm:text-2xl ${
+                    className={`flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-xl border-2 text-xl font-bold uppercase transition-all duration-100 ${
                       currentGuess[index]
-                        ? "scale-105 border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-900/30"
-                        : "border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800"
+                        ? "scale-105 border-indigo-400 bg-indigo-50 shadow-lg shadow-indigo-500/30 dark:border-indigo-400 dark:bg-indigo-900/50"
+                        : "border-slate-200 bg-white/80 backdrop-blur-sm dark:border-slate-600 dark:bg-slate-800/60"
                     }`}
+                    style={{ fontFamily: "Inter, sans-serif", fontWeight: 800, letterSpacing: "0.02em" }}
                   >
                     {currentGuess[index] || ""}
                   </div>
@@ -271,11 +365,11 @@ export default function Puzzle() {
 
             {Array.from({ length: MAX_ATTEMPTS - guesses.length - (gameStatus === "playing" ? 1 : 0) }).map(
               (_, rowIndex) => (
-                <div key={`empty-${rowIndex}`} className="flex justify-center gap-1.5 sm:gap-2">
+                <div key={`empty-${rowIndex}`} className="flex justify-center gap-1.5">
                   {Array.from({ length: 5 }).map((_, colIndex) => (
                     <div
                       key={colIndex}
-                      className="h-12 w-12 rounded-lg border-2 border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800 sm:h-14 sm:w-14"
+                      className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl border-2 border-slate-200 bg-white/50 backdrop-blur-sm dark:border-slate-600 dark:bg-slate-800/40"
                     />
                   ))}
                 </div>
@@ -285,43 +379,29 @@ export default function Puzzle() {
 
           {message && (
             <div
-              className={`rounded-lg p-3 text-center text-sm font-medium shadow-lg sm:p-4 sm:text-base ${
+              className={`rounded-xl p-3 text-center text-xs font-semibold shadow-lg backdrop-blur-xl border sm:text-sm ${
                 gameStatus === "won"
-                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                  ? "bg-emerald-100/80 text-emerald-800 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800"
                   : gameStatus === "lost"
-                    ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                    ? "bg-rose-100/80 text-rose-800 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800"
                     : gameStatus === "completed"
-                      ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
-                      : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300"
+                      ? "bg-purple-100/80 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800"
+                      : "bg-indigo-100/80 text-indigo-800 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800"
               }`}
+              style={{ fontFamily: "Inter, sans-serif", letterSpacing: "-0.01em" }}
             >
               {message}
             </div>
           )}
 
-          {gameStatus === "playing" && (
-            <button
-              onClick={handleSubmitGuess}
-              disabled={currentGuess.length !== 5}
-              className="w-full rounded-lg bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-lg transition-all hover:bg-blue-700 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-blue-600 sm:text-lg"
-            >
-              Submit Guess
-            </button>
-          )}
-
-          {(gameStatus === "won" || gameStatus === "lost" || gameStatus === "completed") && (
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full rounded-lg bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-lg transition-all hover:bg-indigo-700 active:scale-95 sm:text-lg"
-            >
-              Check for New Puzzle
-            </button>
-          )}
-
           {puzzle.hints && gameStatus === "playing" && (
-            <div className="rounded-lg bg-yellow-50 p-3 dark:bg-yellow-900/20 sm:p-4">
-              <p className="text-xs font-medium text-yellow-800 dark:text-yellow-300 sm:text-sm">
-                💡 Hint: {puzzle.hints}
+            <div className="rounded-xl bg-amber-50/80 backdrop-blur-xl p-3 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-800/30 shadow-lg">
+              <p
+                className="text-xs font-medium text-amber-900 dark:text-amber-300 flex items-center gap-2"
+                style={{ fontFamily: "Inter, sans-serif", letterSpacing: "-0.01em" }}
+              >
+                <span className="text-lg">💡</span>
+                <span>{puzzle.hints}</span>
               </p>
             </div>
           )}
@@ -329,16 +409,44 @@ export default function Puzzle() {
           {puzzle.difficulty && (
             <div className="flex justify-center">
               <span
-                className={`rounded-full px-3 py-1 text-[10px] font-semibold sm:px-4 sm:text-xs ${
+                className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase shadow-lg ${
                   puzzle.difficulty === "easy"
-                    ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
+                    ? "bg-gradient-to-r from-emerald-400 to-green-500 text-white"
                     : puzzle.difficulty === "medium"
-                      ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-                      : "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300"
+                      ? "bg-gradient-to-r from-amber-400 to-orange-500 text-white"
+                      : "bg-gradient-to-r from-rose-400 to-red-500 text-white"
                 }`}
+                style={{ fontFamily: "Inter, sans-serif", letterSpacing: "0.08em" }}
               >
-                {puzzle.difficulty.toUpperCase()}
+                {puzzle.difficulty === "easy" ? "LEHTË" : puzzle.difficulty === "medium" ? "MESATAR" : "VËSHTIRË"}
               </span>
+            </div>
+          )}
+
+          {gameStatus === "playing" && (
+            <div className="space-y-1.5 pb-3">
+              {keyboardRows.map((row, rowIndex) => (
+                <div key={rowIndex} className="flex justify-center gap-1">
+                  {row.map((key) => (
+                    <button
+                      key={key}
+                      onClick={() => handleVirtualKeyPress(key)}
+                      className={`${
+                        key === "ENTER" || key === "⌫" 
+                          ? "px-2.5 sm:px-3 text-[10px] font-bold" 
+                          : "w-7 sm:w-9 text-sm font-bold"
+                      } h-11 sm:h-12 rounded-lg border-2 transition-all duration-100 ${
+                        key === "ENTER" || key === "⌫"
+                          ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-indigo-400 hover:from-indigo-600 hover:to-purple-700 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                          : getKeyColor(key)
+                      }`}
+                      style={{ fontFamily: "Inter, sans-serif", fontWeight: 700, letterSpacing: "0.02em" }}
+                    >
+                      {key === "ENTER" ? "DËRGO" : key}
+                    </button>
+                  ))}
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -348,22 +456,25 @@ export default function Puzzle() {
         @keyframes flipIn {
           0% {
             transform: rotateX(0deg);
+            opacity: 0.8;
           }
           50% {
             transform: rotateX(90deg);
+            opacity: 0.9;
           }
           100% {
             transform: rotateX(0deg);
+            opacity: 1;
           }
         }
         
         @keyframes bounce-in-scale {
           0% {
-            transform: scale(0) translateY(100px);
+            transform: scale(0) translateY(30px);
             opacity: 0;
           }
-          50% {
-            transform: scale(1.1) translateY(-10px);
+          60% {
+            transform: scale(1.05) translateY(-5px);
           }
           100% {
             transform: scale(1) translateY(0);
@@ -371,20 +482,23 @@ export default function Puzzle() {
           }
         }
         
+        @keyframes fade-in {
+          0% {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        
         .animate-bounce-in-scale {
-          animation: bounce-in-scale 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+          animation: bounce-in-scale 0.35s ease-out;
         }
         
-        .delay-100 {
-          animation-delay: 0.1s;
-        }
-        
-        .delay-200 {
-          animation-delay: 0.2s;
-        }
-        
-        .delay-300 {
-          animation-delay: 0.3s;
+        .animate-fade-in {
+          animation: fade-in 0.4s ease-out;
         }
       `}</style>
     </div>
