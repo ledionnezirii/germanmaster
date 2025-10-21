@@ -1,9 +1,9 @@
-
 "use client"
 
 import { useState, useEffect } from "react"
 import { useAuth } from "../context/AuthContext"
 import { practiceService } from "../services/api"
+import { Dumbbell } from "lucide-react"
 
 export default function PracticePage() {
   const { user, token } = useAuth()
@@ -1159,32 +1159,54 @@ export default function PracticePage() {
       }}
     >
       <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-        {/* Header */}
-        <div style={{ textAlign: "center", marginBottom: "24px" }}>
-          <h1
+        <div
+          className="relative mb-8 overflow-hidden rounded-2xl border border-white/20 bg-white/40 p-8 shadow-xl backdrop-blur-md"
+          style={{ position: "relative" }}
+        >
+          {/* Decorative background elements */}
+          <div
             style={{
-              fontSize: "36px",
-              fontWeight: "700",
-              background: "linear-gradient(135deg, #2563eb, #6366f1)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              marginBottom: "8px",
-              fontFamily: "Poppins, sans-serif",
+              position: "absolute",
+              top: "-50px",
+              right: "-50px",
+              width: "200px",
+              height: "200px",
+              background: "radial-gradient(circle, rgba(16, 185, 129, 0.15), transparent 70%)",
+              borderRadius: "50%",
+              filter: "blur(40px)",
+              pointerEvents: "none",
             }}
-          >
-            Praktiko Gjermanishten
-          </h1>
-          <p
+          />
+          <div
             style={{
-              fontSize: "14px",
-              color: "#6b7280",
-              maxWidth: "600px",
-              margin: "0 auto",
-              fontFamily: "Inter, sans-serif",
+              position: "absolute",
+              bottom: "-30px",
+              left: "-30px",
+              width: "150px",
+              height: "150px",
+              background: "radial-gradient(circle, rgba(20, 184, 166, 0.15), transparent 70%)",
+              borderRadius: "50%",
+              filter: "blur(40px)",
+              pointerEvents: "none",
             }}
-          >
-            Përmirëso njohuritë e tua në gjermanisht me lloje të ndryshme ushtrimesh
-          </p>
+          />
+
+          <div className="relative z-10 flex flex-col items-center gap-6 text-center md:flex-row md:text-left">
+            {/* Icon */}
+            <div className="flex-shrink-0">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
+                <Dumbbell className="h-8 w-8 text-white" />
+              </div>
+            </div>
+
+            {/* Text content */}
+            <div className="flex-1">
+              <h1 className="mb-2 bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-4xl font-bold text-transparent">
+                Praktiko Gjermanishten
+              </h1>
+              <p className="text-gray-600">Përmirëso njohuritë e tua në gjermanisht me lloje të ndryshme ushtrimesh</p>
+            </div>
+          </div>
         </div>
 
         {/* Filters */}

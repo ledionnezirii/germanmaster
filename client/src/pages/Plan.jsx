@@ -1,5 +1,7 @@
+"use client"
+
 import { useState, useEffect } from "react"
-import { ArrowLeft, Check, AlertCircle, BookOpen, Target, Trophy, Lock, Award, Sparkles } from 'lucide-react'
+import { ArrowLeft, Check, AlertCircle, BookOpen, Target, Trophy, Lock, Award, Sparkles, Rotate3D, Pen } from "lucide-react"
 import { planService, authService } from "../services/api"
 
 export default function PlanPage() {
@@ -132,7 +134,7 @@ export default function PlanPage() {
   const isTopicLocked = (index) => {
     if (!plan || !plan.topics) return false
     if (index === 0) return false
-    
+
     for (let i = 0; i < index; i++) {
       if (!plan.topics[i].isCompleted) {
         return true
@@ -145,33 +147,73 @@ export default function PlanPage() {
     return (
       <>
         <FontImport />
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
           <div className="mx-auto max-w-7xl px-6 py-20 sm:px-8 lg:px-12">
-            {/* Header */}
-            <div className="text-center mb-20 animate-fadeInUp">
-              <div className="inline-flex items-center justify-center mb-6">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500 shadow-xl shadow-emerald-500/30">
-                  <BookOpen className="h-8 w-8 text-white" strokeWidth={1.5} />
+            <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-8 md:p-10 mb-20 animate-fadeInUp">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-emerald-100/30 to-teal-100/30 rounded-full blur-3xl -z-10" />
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-cyan-100/20 to-blue-100/20 rounded-full blur-3xl -z-10" />
+
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                  <Pen className="w-7 h-7 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-emerald-900 bg-clip-text text-transparent mb-2">
+                    Zgjidhni Nivelin Tuaj
+                  </h1>
+                  <p className="text-gray-600 text-lg leading-relaxed">
+                    Filloni udhëtimin tuaj të mësimit të gjermanishtes duke zgjedhur nivelin që ju përshtatet më mirë
+                  </p>
                 </div>
               </div>
-              <h1 className="text-5xl font-bold text-gray-900 mb-6 tracking-tight">
-                Zgjidhni Nivelin Tuaj
-              </h1>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto font-light leading-relaxed">
-                Filloni udhëtimin tuaj të mësimit të gjermanishtes duke zgjedhur nivelin që ju përshtatet më mirë
-              </p>
             </div>
 
             {/* Level Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
               {levels.map((level, index) => {
                 const levelConfigs = [
-                  { color: "emerald", gradient: "from-emerald-50 to-teal-50", border: "border-emerald-200", text: "text-emerald-600", hover: "hover:border-emerald-400 hover:shadow-emerald-100" },
-                  { color: "blue", gradient: "from-blue-50 to-cyan-50", border: "border-blue-200", text: "text-blue-600", hover: "hover:border-blue-400 hover:shadow-blue-100" },
-                  { color: "violet", gradient: "from-violet-50 to-purple-50", border: "border-violet-200", text: "text-violet-600", hover: "hover:border-violet-400 hover:shadow-violet-100" },
-                  { color: "amber", gradient: "from-amber-50 to-orange-50", border: "border-amber-200", text: "text-amber-600", hover: "hover:border-amber-400 hover:shadow-amber-100" },
-                  { color: "rose", gradient: "from-rose-50 to-pink-50", border: "border-rose-200", text: "text-rose-600", hover: "hover:border-rose-400 hover:shadow-rose-100" },
-                  { color: "indigo", gradient: "from-indigo-50 to-blue-50", border: "border-indigo-200", text: "text-indigo-600", hover: "hover:border-indigo-400 hover:shadow-indigo-100" }
+                  {
+                    color: "emerald",
+                    gradient: "from-emerald-50 to-teal-50",
+                    border: "border-emerald-200",
+                    text: "text-emerald-600",
+                    hover: "hover:border-emerald-400 hover:shadow-emerald-100",
+                  },
+                  {
+                    color: "blue",
+                    gradient: "from-blue-50 to-cyan-50",
+                    border: "border-blue-200",
+                    text: "text-blue-600",
+                    hover: "hover:border-blue-400 hover:shadow-blue-100",
+                  },
+                  {
+                    color: "violet",
+                    gradient: "from-violet-50 to-purple-50",
+                    border: "border-violet-200",
+                    text: "text-violet-600",
+                    hover: "hover:border-violet-400 hover:shadow-violet-100",
+                  },
+                  {
+                    color: "amber",
+                    gradient: "from-amber-50 to-orange-50",
+                    border: "border-amber-200",
+                    text: "text-amber-600",
+                    hover: "hover:border-amber-400 hover:shadow-amber-100",
+                  },
+                  {
+                    color: "rose",
+                    gradient: "from-rose-50 to-pink-50",
+                    border: "border-rose-200",
+                    text: "text-rose-600",
+                    hover: "hover:border-rose-400 hover:shadow-rose-100",
+                  },
+                  {
+                    color: "indigo",
+                    gradient: "from-indigo-50 to-blue-50",
+                    border: "border-indigo-200",
+                    text: "text-indigo-600",
+                    hover: "hover:border-indigo-400 hover:shadow-indigo-100",
+                  },
                 ]
                 const config = levelConfigs[index]
 
@@ -272,18 +314,24 @@ export default function PlanPage() {
   return (
     <>
       <FontImport />
-      <div className="min-h-screen bg-white py-12 px-6 sm:px-8 lg:px-12">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 py-12 px-6 sm:px-8 lg:px-12">
         <div className="mx-auto max-w-7xl">
-          {/* Header */}
-          <div className="mb-12 animate-fadeInUp">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-10">
+          <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-8 md:p-10 mb-12 animate-fadeInUp">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-emerald-100/30 to-teal-100/30 rounded-full blur-3xl -z-10" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-cyan-100/20 to-blue-100/20 rounded-full blur-3xl -z-10" />
+
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
               <div className="flex items-start gap-5">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 shadow-xl shadow-emerald-500/30 flex-shrink-0">
-                  <Target className="h-7 w-7 text-white" strokeWidth={1.5} />
+                <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                  <Target className="w-7 h-7 text-white" strokeWidth={1.5} />
                 </div>
-                <div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2 tracking-tight">Gjermanisht {plan.level}</h1>
-                  <p className="text-base text-gray-600 font-light">Ndiqni progresin tuaj përmes temave thelbësore</p>
+                <div className="flex-1">
+                  <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-emerald-900 bg-clip-text text-transparent mb-2">
+                    Gjermanisht {plan.level}
+                  </h1>
+                  <p className="text-gray-600 text-lg leading-relaxed">
+                    Ndiqni progresin tuaj përmes temave thelbësore
+                  </p>
                 </div>
               </div>
               <button
@@ -294,30 +342,30 @@ export default function PlanPage() {
                 Ndrysho Nivelin
               </button>
             </div>
+          </div>
 
-            {/* Progress Card */}
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-3xl p-8 border-2 border-emerald-200 shadow-xl">
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-3">
-                  <Trophy className="h-6 w-6 text-emerald-600" strokeWidth={1.5} />
-                  <span className="text-xl font-semibold text-gray-900">Progresi Juaj</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-4xl font-bold text-emerald-600">{Math.round(progressPercentage)}%</div>
-                  <div className="text-xs text-gray-600 font-medium mt-1">i përfunduar</div>
-                </div>
+          {/* Progress Card */}
+          <div className="bg-gradient-to-br from-emerald-50 to-teal-50 m-2 rounded-3xl p-8 border-2 border-emerald-200 shadow-xl">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <Trophy className="h-6 w-6 text-emerald-600" strokeWidth={1.5} />
+                <span className="text-xl font-semibold text-gray-900">Progresi Juaj</span>
               </div>
-              <div className="h-3 bg-white rounded-full overflow-hidden mb-4 shadow-inner">
-                <div
-                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: `${progressPercentage}%` }}
-                />
+              <div className="text-right">
+                <div className="text-4xl font-bold text-emerald-600">{Math.round(progressPercentage)}%</div>
+                <div className="text-xs text-gray-600 font-medium mt-1">i përfunduar</div>
               </div>
-              <p className="text-sm text-gray-700 font-medium">
-                <span className="font-bold text-emerald-600">{completedTopicsCount}</span> nga{" "}
-                <span className="font-semibold">{totalTopicsCount}</span> tema të përfunduara
-              </p>
             </div>
+            <div className="h-3 bg-white rounded-full overflow-hidden mb-4 shadow-inner">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-1000 ease-out"
+                style={{ width: `${progressPercentage}%` }}
+              />
+            </div>
+            <p className="text-sm text-gray-700 font-medium">
+              <span className="font-bold text-emerald-600">{completedTopicsCount}</span> nga{" "}
+              <span className="font-semibold">{totalTopicsCount}</span> tema të përfunduara
+            </p>
           </div>
 
           {/* Topics Grid */}
@@ -329,11 +377,11 @@ export default function PlanPage() {
                 <div
                   key={topic._id}
                   className={`bg-white rounded-3xl p-7 transition-all duration-300 relative animate-fadeInUp ${
-                    topic.isCompleted 
-                      ? "border-2 border-emerald-200 shadow-xl shadow-emerald-100/50 hover:shadow-2xl" 
-                      : locked 
-                      ? "border-2 border-gray-200 bg-gray-50/50" 
-                      : "border-2 border-gray-200 hover:border-emerald-200 shadow-lg hover:shadow-2xl hover:-translate-y-1"
+                    topic.isCompleted
+                      ? "border-2 border-emerald-200 shadow-xl shadow-emerald-100/50 hover:shadow-2xl"
+                      : locked
+                        ? "border-2 border-gray-200 bg-gray-50/50"
+                        : "border-2 border-gray-200 hover:border-emerald-200 shadow-lg hover:shadow-2xl hover:-translate-y-1"
                   }`}
                   style={{ animationDelay: `${index * 0.05}s` }}
                 >
@@ -358,32 +406,29 @@ export default function PlanPage() {
                   {/* Content */}
                   <div className={`${topic.isCompleted || locked ? "pr-10" : ""}`}>
                     {/* Topic Number */}
-                    <div className={`inline-block px-3 py-1.5 rounded-xl text-xs font-bold mb-4 ${
-                      topic.isCompleted 
-                        ? "bg-emerald-100 text-emerald-700" 
-                        : locked 
-                        ? "bg-gray-200 text-gray-600" 
-                        : "bg-gray-100 text-gray-700"
-                    }`}>
+                    <div
+                      className={`inline-block px-3 py-1.5 rounded-xl text-xs font-bold mb-4 ${
+                        topic.isCompleted
+                          ? "bg-emerald-100 text-emerald-700"
+                          : locked
+                            ? "bg-gray-200 text-gray-600"
+                            : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
                       TEMA {index + 1}
                     </div>
 
-                    <h3 className="text-lg font-bold text-gray-900 mb-3 leading-tight">
-                      {topic.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 leading-relaxed mb-6 font-light">
-                      {topic.description}
-                    </p>
+                    <h3 className="text-lg font-bold text-gray-900 mb-3 leading-tight">{topic.title}</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed mb-6 font-light">{topic.description}</p>
 
                     {/* Action Button */}
-                    {!topic.isCompleted && (
-                      locked ? (
+                    {!topic.isCompleted &&
+                      (locked ? (
                         <button
                           disabled
                           className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl text-sm font-medium bg-gray-200 text-gray-500 cursor-not-allowed"
                         >
-                          <Lock className="h-4 w-4" strokeWidth={2} />
-                          I bllokuar
+                          <Lock className="h-4 w-4" strokeWidth={2} />I bllokuar
                         </button>
                       ) : (
                         <button
@@ -407,8 +452,7 @@ export default function PlanPage() {
                             </>
                           )}
                         </button>
-                      )
-                    )}
+                      ))}
 
                     {topic.isCompleted && (
                       <div className="flex items-center gap-2 text-emerald-600">
@@ -430,9 +474,7 @@ export default function PlanPage() {
                   <Award className="h-10 w-10 text-white" strokeWidth={1.5} />
                 </div>
               </div>
-              <h2 className="text-3xl font-bold text-white mb-3">
-                Urime për Arritjen!
-              </h2>
+              <h2 className="text-3xl font-bold text-white mb-3">Urime për Arritjen!</h2>
               <p className="text-white/90 text-lg font-light max-w-lg mx-auto">
                 Keni përfunduar me sukses të gjitha temat për nivelin {plan.level}. Jeni gati për hapin e radhës!
               </p>
