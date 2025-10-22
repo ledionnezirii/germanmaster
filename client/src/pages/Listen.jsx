@@ -246,7 +246,7 @@ const Listen = () => {
 
   if (selectedTest) {
     return (
-      <div className="h-[700px] bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] p-2 sm:p-4 rounded-xl shadow-lg border-2 border-[#99F6E4] overflow-hidden">
+      <div className="h-[750px] bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] p-2 sm:p-4 rounded-xl shadow-lg border-2 border-[#99F6E4] overflow-hidden">
         {showXpAnimation && (
           <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
             <div className="bg-gradient-to-r from-[#FEF3C7] to-[#FDE68A] text-[#D97706] px-8 py-6 rounded-2xl shadow-2xl border-2 border-[#F59E0B] animate-[xpBounce_0.6s_ease-out]">
@@ -435,7 +435,7 @@ const Listen = () => {
   }
 
   return (
-    <div className="h-min-screen p-4 flex flex-col bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1]">
+    <div className="h-min-screen p-4 flex flex-col">
       <div className="max-w-6xl mx-auto w-full">
         <header className="mb-4 flex-shrink-0">
           <div className="bg-white rounded-xl shadow-lg border-2 border-[#99F6E4] p-6">
@@ -464,9 +464,9 @@ const Listen = () => {
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border-2 shadow-sm hover:shadow-md ${
                   selectedLevel === level
                     ? level === "all"
-                      ? "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white border-[#0D9488] shadow-teal-500/30"
+                      ? "bg-gradient-to-r from-[#14B8A6] to-[#a0dae4] text-[#000c0bfb] border-[#0D9488] shadow-teal-500/30"
                       : getLevelColor(level)
-                    : "bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] text-[#14B8A6] hover:from-[#CCFBF1] hover:to-[#99F6E4] border-[#99F6E4]"
+                    : "bg-gradient-to-br from-[#F0FDFA] to-[#b3e4d9] text-[#000c0bfb] hover:from-[#CCFBF1] hover:to-[#99F6E4] border-[#99F6E4]"
                 }`}
               >
                 {level === "all" ? "Të gjitha Nivelet" : level}
