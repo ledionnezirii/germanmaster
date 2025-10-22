@@ -18,7 +18,6 @@ const Listen = () => {
   const [xpGained, setXpGained] = useState(0)
   const [showXpAnimation, setShowXpAnimation] = useState(false)
   const [totalXp, setTotalXp] = useState(0)
-  const [streakBonus, setStreakBonus] = useState(1)
 
   useEffect(() => {
     fetchTests()
@@ -36,7 +35,7 @@ const Listen = () => {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }, [selectedTest])
 
-  const calculateXP = (level, attempts) => {
+  const getBaseXP = (level) => {
     const baseXP = {
       A1: 10,
       A2: 20,
@@ -45,10 +44,7 @@ const Listen = () => {
       C1: 50,
       C2: 60,
     }
-    const levelXP = baseXP[level] || 20
-    const attemptPenalty = Math.max(0, attempts - 1) * 2
-    const finalXP = Math.max(5, levelXP - attemptPenalty)
-    return Math.floor(finalXP * streakBonus)
+    return baseXP[level] || 20
   }
 
   const fetchTests = async () => {
@@ -109,7 +105,6 @@ const Listen = () => {
       }
       console.log("Final completed tests set:", Array.from(completedTests))
       setTotalXp(progressData.xp || 0)
-      setStreakBonus(progressData.streakCount > 0 ? 1 + progressData.streakCount * 0.1 : 1)
       setUserProgress({ completedTests })
     } catch (error) {
       console.error("Error fetching user progress:", error)
@@ -185,7 +180,7 @@ const Listen = () => {
 
       if (response.data.correct || response.data.score >= 80) {
         console.log("Test completed successfully, updating local state")
-        const earnedXP = calculateXP(selectedTest.level, failedAttempts)
+        const earnedXP = response.data.xpAwarded || 0
         setXpGained(earnedXP)
         setTotalXp((prev) => prev + earnedXP)
         setShowXpAnimation(true)
@@ -272,13 +267,6 @@ const Listen = () => {
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="flex-1">
                 <h1 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{selectedTest.title}</h1>
-                <div className="flex items-center gap-2 mt-1">
-                  {streakBonus > 1 && (
-                    <span className="text-xs bg-gradient-to-r from-[#FED7AA] to-[#FDBA74] text-[#EA580C] px-2 py-0.5 rounded-full font-bold">
-                      {streakBonus.toFixed(1)}x Bonus
-                    </span>
-                  )}
-                </div>
               </div>
               <button
                 onClick={resetTest}
@@ -315,7 +303,7 @@ const Listen = () => {
                     <div className="flex items-center gap-1 bg-gradient-to-r from-[#FEF3C7] to-[#FDE68A] px-3 py-1 rounded-full border border-[#F59E0B]">
                       <Star className="h-3 w-3 text-[#F59E0B]" />
                       <span className="text-xs font-bold text-[#D97706]">
-                        {calculateXP(selectedTest.level, failedAttempts)} XP
+                        {selectedTest.xpReward || getBaseXP(selectedTest.level)} XP
                       </span>
                     </div>
                   </div>
@@ -370,10 +358,11 @@ const Listen = () => {
 
               {showResult && (
                 <div
-                  className={`p-3 sm:p-4 rounded-lg border-2 shadow-lg ${result.correct
+                  className={`p-3 sm:p-4 rounded-lg border-2 shadow-lg ${
+                    result.correct
                       ? "bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] border-[#F59E0B]"
                       : "bg-gradient-to-br from-[#FEE2E2] to-[#FECACA] border-[#EF4444]"
-                    }`}
+                  }`}
                 >
                   <div className="flex items-center gap-2 mb-2">
                     {result.correct ? (
@@ -382,8 +371,9 @@ const Listen = () => {
                       <X className="h-4 w-4 sm:h-5 sm:w-5 text-[#DC2626]" />
                     )}
                     <p
-                      className={`font-medium text-sm sm:text-base ${result.correct ? "text-[#D97706]" : "text-[#DC2626]"
-                        }`}
+                      className={`font-medium text-sm sm:text-base ${
+                        result.correct ? "text-[#D97706]" : "text-[#DC2626]"
+                      }`}
                     >
                       {result.message}
                     </p>
@@ -429,6 +419,10 @@ const Listen = () => {
                     <div className="bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] p-3 sm:p-4 rounded-lg border-2 border-[#99F6E4] text-gray-800 text-left shadow-md">
                       <p className="font-semibold mb-2 text-sm sm:text-base text-[#0D9488]">Teksti Origjinal:</p>
                       <p className="text-sm sm:text-base">{selectedTest.text}</p>
+                      <p className="text-xs text-gray-600 mt-2 italic">
+                        Mund ta kopjoni tekstin, por do të merrni{" "}
+                        {selectedTest.xpReward || getBaseXP(selectedTest.level)} XP kur të kaloni testin.
+                      </p>
                     </div>
                   )}
                 </div>
@@ -450,7 +444,6 @@ const Listen = () => {
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Praktikë Dëgjimi</h1>
                 <p className="text-gray-600">Përmirësoni aftësitë tuaja të dëgjimit në gjermanisht me ushtrime audio</p>
               </div>
-
             </div>
             <p className="text-xs text-gray-400 mt-2">
               Teste të përfunduara: {userProgress.completedTests ? userProgress.completedTests.size : 0}
@@ -468,12 +461,13 @@ const Listen = () => {
               <button
                 key={level}
                 onClick={() => setSelectedLevel(level)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border-2 shadow-sm hover:shadow-md ${selectedLevel === level
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border-2 shadow-sm hover:shadow-md ${
+                  selectedLevel === level
                     ? level === "all"
                       ? "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white border-[#0D9488] shadow-teal-500/30"
                       : getLevelColor(level)
                     : "bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] text-[#14B8A6] hover:from-[#CCFBF1] hover:to-[#99F6E4] border-[#99F6E4]"
-                  }`}
+                }`}
               >
                 {level === "all" ? "Të gjitha Nivelet" : level}
                 {selectedLevel === level && (
@@ -495,14 +489,15 @@ const Listen = () => {
             {tests.length > 0 ? (
               tests.map((test) => {
                 const isCompleted = userProgress.completedTests && userProgress.completedTests.has(test._id)
-                const potentialXP = calculateXP(test.level, 0)
+                const potentialXP = test.xpReward || getBaseXP(test.level)
                 return (
                   <div
                     key={test._id}
-                    className={`p-3 rounded-lg shadow-md border-2 transition-all cursor-pointer overflow-hidden relative group h-fit hover:shadow-xl ${isCompleted
+                    className={`p-3 rounded-lg shadow-md border-2 transition-all cursor-pointer overflow-hidden relative group h-fit hover:shadow-xl ${
+                      isCompleted
                         ? "bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] border-[#F59E0B] hover:border-[#D97706]"
                         : "bg-white border-[#99F6E4] hover:border-[#5EEAD4]"
-                      }`}
+                    }`}
                     onClick={() => setSelectedTest(test)}
                   >
                     <div
@@ -511,15 +506,17 @@ const Listen = () => {
                       {test.level}
                     </div>
                     <Volume2
-                      className={`absolute -bottom-4 -right-4 w-16 h-16 ${isCompleted ? "text-[#FDE68A]" : "text-[#CCFBF1]"
-                        }`}
+                      className={`absolute -bottom-4 -right-4 w-16 h-16 ${
+                        isCompleted ? "text-[#FDE68A]" : "text-[#CCFBF1]"
+                      }`}
                     />
                     <div className="relative z-10">
                       <h3
-                        className={`text-sm font-semibold mb-1 pr-12 truncate ${isCompleted
+                        className={`text-sm font-semibold mb-1 pr-12 truncate ${
+                          isCompleted
                             ? "text-[#D97706] group-hover:text-[#92400E]"
                             : "text-gray-800 group-hover:text-[#0D9488]"
-                          }`}
+                        }`}
                       >
                         {test.title}
                       </h3>
@@ -538,10 +535,11 @@ const Listen = () => {
                             </span>
                           )}
                           <span
-                            className={`text-xs px-1.5 py-0.5 rounded font-medium shadow-sm ${isCompleted
+                            className={`text-xs px-1.5 py-0.5 rounded font-medium shadow-sm ${
+                              isCompleted
                                 ? "bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white"
                                 : "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white"
-                              }`}
+                            }`}
                           >
                             {isCompleted ? "Përfunduar" : "Dëgjo"}
                           </span>
