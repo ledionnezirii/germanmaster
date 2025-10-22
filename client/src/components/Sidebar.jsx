@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Link, useLocation } from "react-router-dom"
@@ -11,7 +12,6 @@ import {
   User,
   BookOpen,
   FolderOpen,
-  MessageCircle,
   GraduationCap,
   ChevronLeft,
   ChevronRight,
@@ -19,10 +19,9 @@ import {
   MapIcon,
   TestTube2Icon,
   LightbulbIcon,
-  FileQuestionMark,
   Dumbbell,
 } from "lucide-react"
-import { MicrophoneIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/outline"
+import { MicrophoneIcon } from "@heroicons/react/24/outline"
 
 const Sidebar = () => {
   const { isCollapsed, toggleSidebar } = useSidebar()
@@ -69,7 +68,7 @@ const Sidebar = () => {
     <>
       {!isCollapsed && (
         <div
-          className="fixed inset-0 z-30 bg-black/30 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden"
           onClick={toggleSidebar}
           aria-hidden="true"
           style={{ touchAction: "none" }}
@@ -77,38 +76,51 @@ const Sidebar = () => {
       )}
 
       <div
-        className={`fixed left-0 top-16 bottom-0 bg-slate-900 border-r border-slate-800 z-40 lg:z-10 flex flex-col ${isCollapsed ? "-translate-x-full lg:translate-x-0 lg:w-16" : "translate-x-0 w-64"}`}
+        className={`fixed left-0 top-16 bottom-0 bg-gradient-to-b from-slate-900/95 via-slate-900/98 to-slate-950/95 backdrop-blur-xl border-r border-white/5 z-40 lg:z-10 flex flex-col shadow-2xl ${isCollapsed ? "-translate-x-full lg:translate-x-0 lg:w-16" : "translate-x-0 w-64"}`}
         style={{
           transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           willChange: "transform",
         }}
       >
+        {/* Decorative gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5 pointer-events-none"></div>
+
         {/* Toggle button */}
         <button
           onClick={toggleSidebar}
-          className="absolute -right-3 top-6 z-10 hidden rounded-full border border-slate-700 bg-slate-800 p-1 shadow-md transition-shadow hover:shadow-lg md:block"
+          className="absolute -right-3 top-6 z-10 hidden rounded-full border-2 border-white/10 bg-slate-900/95 backdrop-blur-xl p-1.5 shadow-xl transition-all duration-200 hover:shadow-2xl hover:border-emerald-500/30 hover:bg-slate-800/95 hover:scale-110 md:block group"
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? (
-            <ChevronRight className="h-4 w-4 text-slate-300" />
+            <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-emerald-400 transition-colors" />
           ) : (
-            <ChevronLeft className="h-4 w-4 text-slate-300" />
+            <ChevronLeft className="h-4 w-4 text-slate-400 group-hover:text-emerald-400 transition-colors" />
           )}
         </button>
 
         <nav
-          className="mt-8 px-3 pb-6 flex-1 overflow-y-auto"
+          className="relative mt-6 px-3 pb-6 flex-1 overflow-y-auto"
           style={{
-            scrollbarWidth: "none",
-            msOverflowStyle: "none",
+            scrollbarWidth: "thin",
+            scrollbarColor: "rgba(148, 163, 184, 0.3) transparent",
           }}
         >
           <style>{`
             nav::-webkit-scrollbar {
-              display: none;
+              width: 6px;
+            }
+            nav::-webkit-scrollbar-track {
+              background: transparent;
+            }
+            nav::-webkit-scrollbar-thumb {
+              background: rgba(148, 163, 184, 0.3);
+              border-radius: 3px;
+            }
+            nav::-webkit-scrollbar-thumb:hover {
+              background: rgba(148, 163, 184, 0.5);
             }
           `}</style>
-          <ul className="space-y-2">
+          <ul className="space-y-1.5">
             {filteredMenuItems.map((item) => {
               const Icon = item.icon
               const isActive = location.pathname === item.path
@@ -117,12 +129,31 @@ const Sidebar = () => {
                   <Link
                     to={item.path}
                     onClick={handleLinkClick}
-                    className={`flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${isActive ? "bg-green-400/20 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"} ${isCollapsed ? "justify-center" : "justify-start"}`}
+                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 overflow-hidden ${
+                      isActive 
+                        ? "bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-white shadow-lg shadow-emerald-500/10" 
+                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                    } ${isCollapsed ? "justify-center" : "justify-start"}`}
                     title={isCollapsed ? item.label : ""}
                     aria-current={isActive ? "page" : undefined}
                   >
-                    <Icon className={`h-5 w-5 flex-shrink-0 ${isCollapsed ? "" : "mr-3"}`} />
-                    {!isCollapsed && <span className="truncate">{item.label}</span>}
+                    {isActive && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-r-full"></div>
+                    )}
+                    <div className={`relative flex items-center ${isCollapsed ? "" : "mr-3"}`}>
+                      <Icon className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${
+                        isActive ? "text-emerald-400" : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
+                      }`} />
+                      {isActive && (
+                        <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-md"></div>
+                      )}
+                    </div>
+                    {!isCollapsed && (
+                      <span className="truncate relative z-10">{item.label}</span>
+                    )}
+                    {!isActive && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                    )}
                   </Link>
                 </li>
               )
@@ -131,8 +162,8 @@ const Sidebar = () => {
         </nav>
 
         {/* Footer Section */}
-        <div className="mt-auto px-3 py-4 border-t border-slate-800">
-          <ul className="space-y-2">
+        <div className="relative mt-auto px-3 py-4 border-t border-white/5 bg-gradient-to-b from-transparent to-slate-950/50">
+          <ul className="space-y-1.5">
             {filteredFooterMenuItems.map((item) => {
               const Icon = item.icon
               const isActive = location.pathname === item.path
@@ -141,25 +172,41 @@ const Sidebar = () => {
                   <Link
                     to={item.path}
                     onClick={item.action || handleLinkClick}
-                    className={`flex items-center text-center rounded-lg px-3 py-2 text-sm font-medium transition-colors ${isActive ? "bg-green-400/20 text-white" : "text-slate-300 hover:bg-slate-800 hover:text-white"} ${isCollapsed ? "justify-center" : "justify-start"}`}
+                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-200 overflow-hidden ${
+                      isActive 
+                        ? "bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-white shadow-lg shadow-amber-500/10" 
+                        : "bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-300 hover:from-amber-500/20 hover:to-orange-500/20 hover:text-amber-200 border border-amber-500/20 hover:border-amber-500/30"
+                    } ${isCollapsed ? "justify-center" : "justify-start"}`}
                     title={isCollapsed ? item.label : ""}
                     aria-current={isActive ? "page" : undefined}
                   >
-                    <Icon className={`h-5 w-5 flex-shrink-0 ${isCollapsed ? "" : "mr-3"}`} />
-                    {!isCollapsed && <span className="truncate">{item.label}</span>}
+                    <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-orange-500/5 to-amber-500/5"></div>
+                    <div className={`relative flex items-center ${isCollapsed ? "" : "mr-3"}`}>
+                      <Icon className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${
+                        isActive ? "text-amber-400" : "group-hover:scale-110"
+                      }`} />
+                      {isActive && (
+                        <div className="absolute inset-0 bg-amber-400/20 rounded-full blur-md"></div>
+                      )}
+                    </div>
+                    {!isCollapsed && (
+                      <span className="truncate relative z-10">{item.label}</span>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
                   </Link>
                   {!isCollapsed && item.description && (
-                    <p className="mt-1 ml-8 text-xs text-slate-400">{item.description}</p>
+                    <p className="mt-1.5 ml-8 text-xs text-slate-500 font-medium">{item.description}</p>
                   )}
                 </li>
               )
             })}
           </ul>
           {!isCollapsed && (
-            <div className="mt-4 text-center text-xs text-slate-500">
-              © {new Date().getFullYear()} German Tutor.
-              <br />
-              Të gjitha të drejtat e rezervuara.
+            <div className="mt-6 px-2 text-center">
+              <div className="text-[10px] text-slate-500 font-medium leading-relaxed">
+                <p className="mb-0.5">© {new Date().getFullYear()} German Tutor</p>
+                <p className="text-slate-600">Të gjitha të drejtat e rezervuara.</p>
+              </div>
             </div>
           )}
         </div>

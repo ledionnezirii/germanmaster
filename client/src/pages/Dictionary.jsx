@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { dictionaryService, favoritesService } from "../services/api"
-import { BookOpen, Volume2, Heart, Search, Filter, ChevronLeft, ChevronRight, Sparkles } from "lucide-react"
+import { BookOpen, Volume2, Heart, Filter, ChevronLeft, ChevronRight } from "lucide-react"
 
 const Dictionary = () => {
   const [words, setWords] = useState([])
@@ -159,43 +159,41 @@ const Dictionary = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
       <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
         {/* Hero Header */}
-        <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-8 md:p-10">
+        <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-5 md:p-8 lg:p-10">
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-emerald-100/30 to-teal-100/30 rounded-full blur-3xl -z-10" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-cyan-100/20 to-blue-100/20 rounded-full blur-3xl -z-10" />
-          
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <BookOpen className="w-7 h-7 text-white" />
+
+          <div className="flex items-start gap-3 md:gap-4">
+            <div className="flex-shrink-0 w-10 h-10 md:w-14 md:h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <BookOpen className="w-5 h-5 md:w-7 md:h-7 text-white" />
             </div>
-            <div className="flex-1">
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-emerald-900 bg-clip-text text-transparent mb-2">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-emerald-900 bg-clip-text text-transparent mb-1 md:mb-2 leading-tight">
                 Fjalor Gjermanisht
               </h1>
-              <p className="text-gray-600 text-lg leading-relaxed">
+              <p className="text-gray-600 text-sm md:text-base lg:text-lg leading-relaxed">
                 Eksploroni fjalorin gjermanisht të organizuar sipas niveleve të gjuhës
               </p>
-             
             </div>
           </div>
         </div>
 
         {/* Search & Filters */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-6 md:p-8 space-y-6 flex items-center gap-4">
-        
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6">
           {/* Level Filters */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-                <Filter className="h-4 w-4 text-emerald-600" />
-                Niveli i gjuhës
+          <div className="space-y-3 md:space-y-4">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="flex items-center gap-2 text-xs md:text-sm font-semibold text-gray-700">
+                <Filter className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-600" />
+                <span>Niveli i gjuhës</span>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5 md:gap-2">
               {levels.map((level) => (
                 <button
                   key={level}
                   onClick={() => handleLevelChange(level)}
-                  className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all border ${
+                  className={`px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl text-xs md:text-sm font-semibold transition-all border ${
                     selectedLevel === level
                       ? level === "all"
                         ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-lg shadow-emerald-500/25"
@@ -210,21 +208,23 @@ const Dictionary = () => {
           </div>
 
           {/* Favorites Toggle */}
-          <div className="pt-2 border-t border-gray-100">
+          <div className="pt-3 md:pt-2 border-t border-gray-100">
             <button
               onClick={handleFavoritesToggle}
-              className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              className={`w-full md:w-auto flex items-center justify-center md:justify-start gap-2 md:gap-2.5 px-4 md:px-5 py-2.5 rounded-lg md:rounded-xl text-xs md:text-sm font-semibold transition-all ${
                 showFavorites
                   ? "bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/25"
                   : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
               }`}
             >
-              <Heart className={`h-4 w-4 ${showFavorites ? "fill-current" : ""}`} />
-              Të Preferuarat
+              <Heart className={`h-3.5 w-3.5 md:h-4 md:w-4 ${showFavorites ? "fill-current" : ""}`} />
+              <span>Të Preferuarat</span>
               {favorites.length > 0 && (
-                <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-                  showFavorites ? "bg-white/20" : "bg-rose-50 text-rose-600"
-                }`}>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                    showFavorites ? "bg-white/20" : "bg-rose-50 text-rose-600"
+                  }`}
+                >
                   {favorites.length}
                 </span>
               )}
@@ -256,17 +256,13 @@ const Dictionary = () => {
                 >
                   {/* Hover Glow */}
                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                  
+
                   <div className="relative flex flex-col h-full">
                     {/* Header */}
                     <div className="flex items-start justify-between gap-3 mb-4">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-bold text-gray-900 mb-1.5 leading-tight">
-                          {word.word}
-                        </h3>
-                        <p className="text-gray-600 text-sm font-medium leading-relaxed">
-                          {word.translation}
-                        </p>
+                        <h3 className="text-lg font-bold text-gray-900 mb-1.5 leading-tight">{word.word}</h3>
+                        <p className="text-gray-600 text-sm font-medium leading-relaxed">{word.translation}</p>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <button
@@ -296,7 +292,9 @@ const Dictionary = () => {
                         {word.level}
                       </span>
                       {word.partOfSpeech && (
-                        <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${getPartOfSpeechColor(word.partOfSpeech)}`}>
+                        <span
+                          className={`px-3 py-1 rounded-lg text-xs font-semibold ${getPartOfSpeechColor(word.partOfSpeech)}`}
+                        >
                           {word.partOfSpeech}
                         </span>
                       )}
