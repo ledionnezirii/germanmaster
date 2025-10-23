@@ -64,6 +64,12 @@ const userSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    learnedWords: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Word",
+      },
+    ],
     listenTestsPassed: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -191,6 +197,14 @@ const userSchema = new mongoose.Schema(
       totalRaces: { type: Number, default: 0 },
       wins: { type: Number, default: 0 },
       correctWords: { type: Number, default: 0 },
+    },
+    quizCycle: {
+      type: [String],
+      default: [],
+    },
+    quizCycleIndex: {
+      type: Number,
+      default: 0,
     },
   },
   {
