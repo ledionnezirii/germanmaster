@@ -39,6 +39,7 @@ const leagueRoutes = require('./routes/leagueRoutes');
 const achievementRoutes = require("./routes/achievementsRoutes");
 const puzzleRoutes = require("./routes/puzzleRoutes");
 const practiceRoutes = require("./routes/practiceRoutes")
+const wordRoutes = require("./routes/wordRoutes")
 
 const { errorHandler, notFound } = require("./middleware/errorMiddleware")
 const { requestLogger } = require("./middleware/loggerMiddleware")
@@ -229,6 +230,7 @@ app.use('/api/league', leagueRoutes);
 app.use("/api", achievementRoutes);
 app.use("/api/puzzle",puzzleRoutes)
 app.use("/api/practice",practiceRoutes)
+app.use("/api/words",wordRoutes)
 
 app.use(notFound)
 app.use(errorHandler)
