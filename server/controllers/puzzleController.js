@@ -17,7 +17,6 @@ exports.getTodaysPuzzle = async (req, res) => {
     // Check if user already completed today's puzzle
     const hasCompleted = puzzle.completedBy.some((completion) => completion.userId.toString() === userId)
 
-    // Don't send the word to the client
     const puzzleData = {
       _id: puzzle._id,
       xpReward: puzzle.xpReward,
@@ -26,6 +25,7 @@ exports.getTodaysPuzzle = async (req, res) => {
       category: puzzle.category,
       hasCompleted,
       wordLength: puzzle.word.length,
+      word: hasCompleted ? puzzle.word : undefined, // Send word if already completed
     }
 
     res.json(puzzleData)
@@ -42,7 +42,7 @@ exports.getTodaysPuzzle = async (req, res) => {
 exports.submitAnswer = async (req, res) => {
   try {
     const { puzzleId } = req.params
-    const { guess } = req.body
+    const { guess, attemptsUsed } = req.body
     const userId = req.user.id
 
     if (!guess || guess.length !== 5) {
@@ -86,7 +86,7 @@ exports.submitAnswer = async (req, res) => {
       // Mark as completed
       puzzle.completedBy.push({
         userId,
-        attempts: 1,
+        attempts: attemptsUsed || 1,
         completedAt: new Date(),
       })
       await puzzle.save()
@@ -118,11 +118,13 @@ exports.submitAnswer = async (req, res) => {
       // Generate feedback for incorrect answer
       const feedback = generateFeedback(userWord, correctWord)
 
+      const isFinalAttempt = attemptsUsed >= 5
+
       return res.json({
         correct: false,
         feedback,
-        message: "Try again!",
-        correctWord: null, // Don't reveal the word yet
+        message: isFinalAttempt ? "Game Over! Better luck tomorrow!" : "Try again!",
+        correctWord: isFinalAttempt ? correctWord : null, // Reveal word on final attempt
       })
     }
   } catch (error) {

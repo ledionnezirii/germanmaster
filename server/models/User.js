@@ -117,6 +117,12 @@ const userSchema = new mongoose.Schema(
         ref: "Puzzle",
       },
     ],
+    phrasesFinished: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Phrase",
+      },
+    ],
     practiceCompleted: [
       {
         practiceId: {
