@@ -20,6 +20,8 @@ import {
   LightbulbIcon,
   Dumbbell,
   Notebook,
+  Pen,
+  NotebookPenIcon,
 } from "lucide-react"
 import { MicrophoneIcon } from "@heroicons/react/24/outline"
 
@@ -40,9 +42,9 @@ const Sidebar = () => {
     { icon: TestTube2Icon, label: "Tests", path: "/tests", requireAuth: true },
     { icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation", requireAuth: true },
     { icon: LightbulbIcon, label: "Kuizet", path: "/quizes", requireAuth: true },
-    { icon: Notebook, label: "Fjalet", path: "/words", requireAuth: true },
+    { icon: Pen, label: "Fjalori Personal", path: "/words", requireAuth: true },
     { icon: Dumbbell, label: "Ushtro", path: "/practice", requireAuth: true },
-
+    { icon: NotebookPenIcon, label: "Fraza te ndryshme", path: "/phrases", requireAuth: true },
     { icon: User, label: "Llogaria", path: "/account", requireAuth: true },
   ]
 
@@ -70,9 +72,8 @@ const Sidebar = () => {
     <>
       {!isCollapsed && (
         <div
-          className={`fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden transition-opacity duration-300 ease-out ${
-            !isCollapsed ? "opacity-100" : "opacity-0"
-          }`}
+          className={`fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden transition-opacity duration-300 ease-out ${!isCollapsed ? "opacity-100" : "opacity-0"
+            }`}
           onClick={toggleSidebar}
           aria-hidden="true"
           style={{ touchAction: "none" }}
@@ -134,11 +135,10 @@ const Sidebar = () => {
                   <Link
                     to={item.path}
                     onClick={handleLinkClick}
-                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 overflow-hidden ${
-                      isActive
+                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 overflow-hidden ${isActive
                         ? "bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-white shadow-lg shadow-emerald-500/10"
                         : "text-slate-300 hover:bg-white/5 hover:text-white"
-                    } ${isCollapsed ? "justify-center" : "justify-start"}`}
+                      } ${isCollapsed ? "justify-center" : "justify-start"}`}
                     title={isCollapsed ? item.label : ""}
                     aria-current={isActive ? "page" : undefined}
                   >
@@ -147,11 +147,10 @@ const Sidebar = () => {
                     )}
                     <div className={`relative flex items-center ${isCollapsed ? "" : "mr-3"}`}>
                       <Icon
-                        className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${
-                          isActive
+                        className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${isActive
                             ? "text-emerald-400"
                             : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
-                        }`}
+                          }`}
                       />
                       {isActive && <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-md"></div>}
                     </div>
@@ -177,20 +176,18 @@ const Sidebar = () => {
                   <Link
                     to={item.path}
                     onClick={item.action || handleLinkClick}
-                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-200 overflow-hidden ${
-                      isActive
+                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-200 overflow-hidden ${isActive
                         ? "bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-white shadow-lg shadow-amber-500/10"
                         : "bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-300 hover:from-amber-500/20 hover:to-orange-500/20 hover:text-amber-200 border border-amber-500/20 hover:border-amber-500/30"
-                    } ${isCollapsed ? "justify-center" : "justify-start"}`}
+                      } ${isCollapsed ? "justify-center" : "justify-start"}`}
                     title={isCollapsed ? item.label : ""}
                     aria-current={isActive ? "page" : undefined}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-orange-500/5 to-amber-500/5"></div>
                     <div className={`relative flex items-center ${isCollapsed ? "" : "mr-3"}`}>
                       <Icon
-                        className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${
-                          isActive ? "text-amber-400" : "group-hover:scale-110"
-                        }`}
+                        className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${isActive ? "text-amber-400" : "group-hover:scale-110"
+                          }`}
                       />
                       {isActive && <div className="absolute inset-0 bg-amber-400/20 rounded-full blur-md"></div>}
                     </div>

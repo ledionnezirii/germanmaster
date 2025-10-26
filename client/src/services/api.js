@@ -383,4 +383,24 @@ export const wordsService = {
   addQuizXp: (xp) => api.post("/words/quiz-xp", { xp }),
 };
 
+
+
+export const ttsService = {
+  getAudioUrl: (text, lang = "de") => api.post("/tts", { text, lang }),
+}
+
+export const phraseService = {
+  getAllPhrases: (params = {}) => api.get("/phrases", { params }),
+  getPhrasesByLevel: (level, params = {}) => api.get(`/phrases/level/${level}`, { params }),
+  getPhraseById: (id) => api.get(`/phrases/${id}`),
+  markPhraseAsFinished: (phraseId) => api.post(`/phrases/${phraseId}/finish`),
+  unmarkPhraseAsFinished: (phraseId) => api.delete(`/phrases/${phraseId}/finish`),
+  getFinishedPhrases: () => api.get("/phrases/user/finished"),
+  getUserPhraseProgress: (level = null) => api.get("/phrases/user/progress", { params: { level } }),
+  createPhrase: (phraseData) => api.post("/", phraseData),
+  createBulkPhrases: (phrases) => api.post("/bulk", { phrases }),
+  updatePhrase: (id, phraseData) => api.put(`/phrases/${id}`, phraseData),
+  deletePhrase: (id) => api.delete(`/phrases/${id}`),
+}
+
 export default api;

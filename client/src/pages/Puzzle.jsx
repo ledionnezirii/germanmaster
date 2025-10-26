@@ -17,6 +17,7 @@ export default function Puzzle() {
   const [showXpAnimation, setShowXpAnimation] = useState(false)
   const [xpEarned, setXpEarned] = useState(0)
   const [showInstructions, setShowInstructions] = useState(false)
+  const [showGameOverOverlay, setShowGameOverOverlay] = useState(false)
 
   const MAX_ATTEMPTS = 5
 
@@ -41,6 +42,7 @@ export default function Puzzle() {
 
       if (puzzleData.hasCompleted) {
         setGameStatus("completed")
+        setShowGameOverOverlay(true)
         setMessage(
           `Ju keni përfunduar tashmë enigmën e sotme! Fituat ${puzzleData.xpReward} XP. Kthehuni nesër për një të re.`,
         )
@@ -114,6 +116,7 @@ export default function Puzzle() {
         setGuesses([...guesses, { word: guess, feedback: Array(5).fill("correct") }])
         setGameStatus("won")
         setMessage(result.message || `Urime! Fituat ${result.xpEarned} XP!`)
+        setShowGameOverOverlay(true)
 
         setXpEarned(result.xpEarned || puzzle.xpReward || 0)
         setShowXpAnimation(true)
@@ -131,7 +134,11 @@ export default function Puzzle() {
 
         if (newGuesses.length >= MAX_ATTEMPTS) {
           setGameStatus("lost")
-          setMessage(`Loja mbaroi! Fat më të mirë nesër!`)
+          setMessage(`Fjala e saktë ishte: ${puzzle.word?.toUpperCase() || "N/A"}`)
+
+          setTimeout(() => {
+            setShowGameOverOverlay(true)
+          }, 3000)
         } else {
           setMessage(`${MAX_ATTEMPTS - newGuesses.length} përpjekje të mbetura`)
         }
@@ -181,9 +188,7 @@ export default function Puzzle() {
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-indigo-950 dark:to-purple-950">
         <div className="text-center">
           <div className="mb-6 inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-indigo-400 border-r-transparent shadow-2xl"></div>
-          <p className="text-base font-medium text-slate-600 dark:text-slate-300">
-            Duke ngarkuar...
-          </p>
+          <p className="text-base font-medium text-slate-600 dark:text-slate-300">Duke ngarkuar...</p>
         </div>
       </div>
     )
@@ -194,12 +199,8 @@ export default function Puzzle() {
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-indigo-950 dark:to-purple-950 p-4">
         <div className="rounded-3xl bg-white/70 backdrop-blur-xl p-8 text-center shadow-2xl border border-white/20 dark:bg-slate-800/70 dark:border-slate-700/30 max-w-sm">
           <div className="mb-3 text-5xl">🎯</div>
-          <p className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2">
-            Nuk ka enigmë sot
-          </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Kthehuni nesër për një enigmë të re!
-          </p>
+          <p className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-2">Nuk ka enigmë sot</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Kthehuni nesër për një enigmë të re!</p>
         </div>
       </div>
     )
@@ -236,7 +237,8 @@ export default function Puzzle() {
                   Qëllimi
                 </h3>
                 <p className="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
-                  Gjeni fjalën sekrete prej 5 shkronjash në 5 përpjekje ose më pak. Çdo hamendësim duhet të jetë një fjalë e vlefshme.
+                  Gjeni fjalën sekrete prej 5 shkronjash në 5 përpjekje ose më pak. Çdo hamendësim duhet të jetë një
+                  fjalë e vlefshme.
                 </p>
               </div>
 
@@ -252,7 +254,9 @@ export default function Puzzle() {
                     </div>
                     <div>
                       <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">Shkronja e Saktë</p>
-                      <p className="text-slate-500 dark:text-slate-400 text-xs">Shkronja është në fjalë dhe në pozicionin e duhur</p>
+                      <p className="text-slate-500 dark:text-slate-400 text-xs">
+                        Shkronja është në fjalë dhe në pozicionin e duhur
+                      </p>
                     </div>
                   </div>
 
@@ -261,8 +265,12 @@ export default function Puzzle() {
                       B
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">Shkronja në vend të gabuar</p>
-                      <p className="text-slate-500 dark:text-slate-400 text-xs">Shkronja është në fjalë por në pozicionin e gabuar</p>
+                      <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">
+                        Shkronja në vend të gabuar
+                      </p>
+                      <p className="text-slate-500 dark:text-slate-400 text-xs">
+                        Shkronja është në fjalë por në pozicionin e gabuar
+                      </p>
                     </div>
                   </div>
 
@@ -284,7 +292,8 @@ export default function Puzzle() {
                   Shpërblimet
                 </h3>
                 <p className="text-slate-600 dark:text-slate-300 text-sm">
-                  Zgjidhni enigmën për të fituar XP dhe për t'u ngjitur në renditje. Një enigmë e re është në dispozicion çdo ditë!
+                  Zgjidhni enigmën për të fituar XP dhe për t'u ngjitur në renditje. Një enigmë e re është në
+                  dispozicion çdo ditë!
                 </p>
               </div>
 
@@ -327,32 +336,41 @@ export default function Puzzle() {
         </div>
       )}
 
-      {/* Game Over Overlay */}
-      {(gameStatus === "won" || gameStatus === "lost" || gameStatus === "completed") && (
+      {showGameOverOverlay && (gameStatus === "won" || gameStatus === "lost" || gameStatus === "completed") && (
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
           <div className="text-center animate-fade-in max-w-md w-full">
             <div className="mb-6 inline-flex items-center justify-center">
               <div className="relative">
                 <div className="absolute inset-0 animate-pulse rounded-full bg-slate-400 opacity-40 blur-2xl"></div>
                 <div className="relative bg-white/90 backdrop-blur-xl p-8 rounded-full shadow-2xl border-4 border-slate-300 dark:bg-slate-800/90 dark:border-slate-600">
-                  <Lock className="w-16 h-16 text-slate-600 dark:text-slate-300" strokeWidth={2.5} />
+                  {gameStatus === "won" ? (
+                    <Trophy className="w-16 h-16 text-emerald-600 dark:text-emerald-400" strokeWidth={2.5} />
+                  ) : (
+                    <Lock className="w-16 h-16 text-slate-600 dark:text-slate-300" strokeWidth={2.5} />
+                  )}
                 </div>
               </div>
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-3 drop-shadow-lg">
-              Enigma e Mbyllur
+              {gameStatus === "won" ? "Urime! 🎉" : "Enigma e Mbyllur"}
             </h2>
-            <p className="text-slate-200 mb-6 text-sm md:text-base max-w-xs mx-auto px-4">
+            <p className="text-slate-200 mb-3 text-sm md:text-base max-w-xs mx-auto px-4">
               {gameStatus === "won"
-                ? "Urime! Keni përfunduar enigmën e sotme."
+                ? "Keni përfunduar enigmën e sotme."
                 : gameStatus === "lost"
                   ? "Enigma e sotme ka përfunduar."
                   : "Keni përfunduar tashmë enigmën e sotme."}
             </p>
+
+            {gameStatus === "lost" && puzzle?.word && (
+              <div className="mb-4 inline-block bg-gradient-to-br from-rose-500/90 to-red-600/90 backdrop-blur-sm px-6 py-4 rounded-xl border-2 border-rose-300 shadow-2xl">
+                <p className="text-white text-xs font-semibold tracking-wide mb-2">Fjala e saktë ishte:</p>
+                <p className="text-white text-3xl font-bold uppercase tracking-wider">{puzzle.word}</p>
+              </div>
+            )}
+
             <div className="inline-block m-2 bg-white/20 backdrop-blur-sm px-6 py-3 rounded-xl border border-white/30 mb-6">
-              <p className="text-white text-xs font-semibold tracking-wide">
-                Kthehuni nesër për një enigmë të re! 🎯
-              </p>
+              <p className="text-white text-xs font-semibold tracking-wide">Kthehuni nesër për një enigmë të re! 🎯</p>
             </div>
             <button
               onClick={() => (window.location.href = "/")}
@@ -370,7 +388,7 @@ export default function Puzzle() {
         <div className="relative overflow-hidden flex-shrink-0">
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10" />
           <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-indigo-400/20 to-purple-600/20 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
-          
+
           <div className="relative px-4 pt-3 pb-2">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
@@ -384,12 +402,10 @@ export default function Puzzle() {
                   <h1 className="text-lg font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-tight">
                     Enigma e Ditës
                   </h1>
-                  <p className="text-[10px] text-slate-600 dark:text-slate-400">
-                    Aftësitë tuaja mendore në provë
-                  </p>
+                  <p className="text-[10px] text-slate-600 dark:text-slate-400">Aftësitë tuaja mendore në provë</p>
                 </div>
               </div>
-              
+
               <button
                 onClick={() => setShowInstructions(true)}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/60 hover:bg-white/80 dark:bg-slate-800/60 dark:hover:bg-slate-800/80 backdrop-blur-xl rounded-lg border border-white/20 dark:border-slate-700/30 shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 active:scale-95 group"
@@ -549,7 +565,7 @@ export default function Puzzle() {
 
             {/* Compact Virtual Keyboard */}
             {gameStatus === "playing" && (
-              <div className="space-y-1 pb-2">
+              <div className="space-y-1.5 pb-2">
                 {keyboardRows.map((row, rowIndex) => (
                   <div key={rowIndex} className="flex justify-center gap-1">
                     {row.map((key) => (
@@ -558,11 +574,11 @@ export default function Puzzle() {
                         onClick={() => handleVirtualKeyPress(key)}
                         className={`${
                           key === "ENTER" || key === "⌫"
-                            ? "px-2 text-[9px] font-bold"
-                            : "w-7 text-xs font-bold"
-                        } h-9 rounded-md border-2 transition-all duration-100 ${
+                            ? "px-3 sm:px-4 text-[10px] sm:text-xs font-bold min-w-[50px] sm:min-w-[60px]"
+                            : "w-8 sm:w-9 md:w-10 text-sm sm:text-base font-bold"
+                        } h-12 sm:h-13 md:h-14 rounded-lg border-2 transition-all duration-100 touch-manipulation ${
                           key === "ENTER" || key === "⌫"
-                            ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-indigo-400 hover:from-indigo-600 hover:to-purple-700 shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+                            ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white border-indigo-400 hover:from-indigo-600 hover:to-purple-700 shadow-lg hover:shadow-xl active:scale-95"
                             : getKeyColor(key)
                         }`}
                       >
