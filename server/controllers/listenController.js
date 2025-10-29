@@ -98,7 +98,7 @@ const getAllTests = asyncHandler(async (req, res) => {
 
   const tests = await Listen.find(query)
     .select("-correctText") // Hide correct answers
-    .sort({ createdAt: -1 })
+    .sort({ createdAt: 1 })
     .limit(limit * 1)
     .skip((page - 1) * limit)
     .populate("createdBy", "emri mbiemri")

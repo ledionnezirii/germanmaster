@@ -37,7 +37,7 @@ const userSchema = new mongoose.Schema(
     level: {
       type: String,
       enum: ["A1", "A2", "B1", "B2", "C1", "C2"],
-      default: "A1",
+      default: null,
     },
     profilePicture: {
       type: String,

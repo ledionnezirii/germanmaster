@@ -9,7 +9,7 @@ client.setApiKey(SibApiV3Sdk.TransactionalEmailsApiApiKeys.apiKey, process.env.B
 
 const sendEmail = async ({ to, subject, htmlContent }) => {
   const emailData = {
-    sender: { email: process.env.EMAIL_FROM, name: "GjuhëGjerma App" },
+    sender: { email: process.env.EMAIL_FROM, name: "gjuhagjermane" },
     to: [{ email: to, name: "User" }],
     subject,
     htmlContent,

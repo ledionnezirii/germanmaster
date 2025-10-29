@@ -144,7 +144,9 @@ const generateCertificatePDF = async (user, level, serialNumber) => {
 // Check and issue certificate when user levels up
 exports.checkAndIssueCertificate = async (req, res) => {
   try {
-    console.log("[v0] Issuing certificate for user:", req.user?.id)
+    console.log("[v0] ===== CERTIFICATE ISSUE REQUEST =====")
+    console.log("[v0] Request user:", req.user?.id)
+    console.log("[v0] Request headers:", req.headers)
 
     const userId = req.user.id
     const user = await User.findById(userId)
@@ -155,19 +157,27 @@ exports.checkAndIssueCertificate = async (req, res) => {
     }
 
     const currentLevel = user.level
+    console.log("[v0] User found:", user.emri, user.mbiemri)
     console.log("[v0] User current level:", currentLevel)
+    console.log("[v0] User XP:", user.xp)
+    console.log("[v0] User completed tests:", user.completedTests)
 
-    if (currentLevel === "A1") {
+    if (!currentLevel) {
+      console.log("[v0] No certificate issued - level is null")
       return res.status(200).json({
         success: false,
-        message: "Certifikata nuk lëshohet për nivelin A1",
+        message: "Certifikata nuk lëshohet nëse niveli nuk është vendosur",
       })
     }
+
+    console.log("[v0] Checking existing certificates...")
+    console.log("[v0] User has", user.certificates?.length || 0, "certificates")
 
     const existingCertificate = user.certificates.find((cert) => cert.level === currentLevel)
 
     if (existingCertificate) {
       console.log("[v0] Certificate already exists for level:", currentLevel)
+      console.log("[v0] Existing certificate:", existingCertificate)
       return res.status(200).json({
         success: true,
         message: "Certifikata tashmë ekziston për këtë nivel",
@@ -175,15 +185,18 @@ exports.checkAndIssueCertificate = async (req, res) => {
       })
     }
 
+    console.log("[v0] No existing certificate found, generating new one...")
     console.log("[v0] Generating certificate PDF for level:", currentLevel)
 
     const serialNumber = generateSerialNumber(currentLevel, userId)
+    console.log("[v0] Generated serial number:", serialNumber)
 
     // Generate certificate PDF with serial number
     const filePath = await generateCertificatePDF(user, currentLevel, serialNumber)
 
     console.log("[v0] Certificate PDF generated:", filePath)
 
+    console.log("[v0] Adding certificate to user...")
     user.certificates.push({
       level: currentLevel,
       filePath: filePath,
@@ -191,17 +204,24 @@ exports.checkAndIssueCertificate = async (req, res) => {
       issuedAt: new Date(),
     })
 
+    console.log("[v0] Saving user with new certificate...")
     await user.save()
 
-    console.log("[v0] Certificate saved to user")
+    console.log("[v0] Certificate saved to user successfully")
+    console.log("[v0] User now has", user.certificates.length, "certificates")
+
+    const newCertificate = user.certificates[user.certificates.length - 1]
+    console.log("[v0] New certificate:", newCertificate)
 
     res.status(201).json({
       success: true,
       message: "Certifikata u krijua me sukses",
-      certificate: user.certificates[user.certificates.length - 1],
+      certificate: newCertificate,
     })
   } catch (error) {
+    console.error("[v0] ===== CERTIFICATE ISSUE ERROR =====")
     console.error("[v0] Error issuing certificate:", error)
+    console.error("[v0] Error stack:", error.stack)
     res.status(500).json({ success: false, message: "Gabim në krijimin e certifikatës", error: error.message })
   }
 }
