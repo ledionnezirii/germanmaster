@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { listenService } from "../services/api"
 import { Volume2, Play, Pause, Check, X, Filter, LogOut, Star, Zap, TrendingUp } from "lucide-react"
 
@@ -19,6 +19,8 @@ const Listen = () => {
   const [showXpAnimation, setShowXpAnimation] = useState(false)
   const [totalXp, setTotalXp] = useState(0)
 
+  const audioRef = useRef(null)
+
   useEffect(() => {
     fetchTests()
     fetchUserProgress()
@@ -34,6 +36,17 @@ const Listen = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }, [selectedTest])
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        if (audioRef.current.src) {
+          URL.revokeObjectURL(audioRef.current.src)
+        }
+      }
+    }
+  }, [])
 
   const getBaseXP = (level) => {
     const baseXP = {
@@ -155,19 +168,113 @@ const Listen = () => {
     }
   }, [tests])
 
-  const playAudio = (text) => {
-    if (isPlaying) {
-      window.speechSynthesis.cancel()
+  const playAudio = async (text) => {
+    // Stop current playback if playing
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
       setIsPlaying(false)
       return
     }
-    const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang = "de-DE"
-    utterance.rate = 0.8
-    utterance.onstart = () => setIsPlaying(true)
-    utterance.onend = () => setIsPlaying(false)
-    utterance.onerror = () => setIsPlaying(false)
-    window.speechSynthesis.speak(utterance)
+
+    try {
+      setIsPlaying(true)
+
+      console.log("[v0] Requesting TTS for text:", text.substring(0, 50) + "...")
+
+      const response = await fetch("/api/tts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text,
+          lang: "de-DE",
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error("[v0] TTS request failed:", response.status, errorData)
+        throw new Error(`TTS request failed: ${response.status}`)
+      }
+
+      const contentType = response.headers.get("content-type")
+      console.log("[v0] Response content-type:", contentType)
+
+      if (contentType && contentType.includes("application/json")) {
+        // Backend returned JSON with URL
+        const jsonData = await response.json()
+        console.log("[v0] Received JSON response:", jsonData)
+
+        let audioUrl
+        if (jsonData.audioUrl) {
+          // Handle array or string
+          audioUrl = Array.isArray(jsonData.audioUrl) ? jsonData.audioUrl[0] : jsonData.audioUrl
+        } else if (jsonData.url) {
+          audioUrl = jsonData.url
+        } else {
+          throw new Error("No audio URL found in response")
+        }
+
+        console.log("[v0] Using audio URL:", audioUrl)
+
+        if (!audioRef.current) {
+          audioRef.current = new Audio()
+        }
+
+        audioRef.current.src = audioUrl
+
+        audioRef.current.onended = () => {
+          console.log("[v0] Audio playback ended")
+          setIsPlaying(false)
+        }
+
+        audioRef.current.onerror = (e) => {
+          console.error("[v0] Audio element error:", e)
+          setIsPlaying(false)
+        }
+
+        await audioRef.current.play()
+        console.log("[v0] Audio playback started successfully")
+      } else if (contentType && contentType.includes("audio")) {
+        // Backend returned binary audio
+        const audioBlob = await response.blob()
+        console.log("[v0] Audio blob received:", audioBlob.size, "bytes, type:", audioBlob.type)
+
+        const audioUrl = URL.createObjectURL(audioBlob)
+
+        if (!audioRef.current) {
+          audioRef.current = new Audio()
+        }
+
+        audioRef.current.src = audioUrl
+
+        audioRef.current.onended = () => {
+          console.log("[v0] Audio playback ended")
+          setIsPlaying(false)
+          URL.revokeObjectURL(audioUrl)
+        }
+
+        audioRef.current.onerror = (e) => {
+          console.error("[v0] Audio element error:", e)
+          setIsPlaying(false)
+          URL.revokeObjectURL(audioUrl)
+        }
+
+        await audioRef.current.play()
+        console.log("[v0] Audio playback started successfully")
+      } else {
+        const errorText = await response.text()
+        console.error("[v0] Invalid content type:", contentType)
+        console.error("[v0] Response body:", errorText)
+        throw new Error("Server returned invalid response. Check backend logs.")
+      }
+    } catch (error) {
+      console.error("[v0] Error with TTS:", error)
+      setIsPlaying(false)
+      alert("Gabim në luajtjen e audios. Kontrolloni konsolën për detaje.")
+    }
   }
 
   const handleSubmit = async () => {
@@ -563,39 +670,6 @@ const Listen = () => {
           </div>
         )}
       </div>
-
-      <style>{`
-        @keyframes xpBounce {
-          0% { 
-            transform: scale(0) translateY(50px);
-            opacity: 0;
-          }
-          50% { 
-            transform: scale(1.1) translateY(-10px);
-            opacity: 1;
-          }
-          100% { 
-            transform: scale(1) translateY(0);
-            opacity: 1;
-          }
-        }
-        
-        @keyframes starSpin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes starShine {
-          0%, 100% { 
-            transform: rotate(0deg) scale(1);
-            filter: drop-shadow(0 0 2px currentColor);
-          }
-          50% { 
-            transform: rotate(180deg) scale(1.15);
-            filter: drop-shadow(0 0 6px currentColor);
-          }
-        }
-      `}</style>
     </div>
   )
 }
