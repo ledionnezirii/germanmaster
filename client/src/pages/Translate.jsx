@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { translateService } from "../services/api"
-import { Languages, Check, X, Filter, ArrowLeft, Book, Play, Pause, Volume2 } from "lucide-react"
+import { Check, X, Filter, ArrowLeft, Book, Play, Pause } from "lucide-react"
 
 const Translate = () => {
   const [texts, setTexts] = useState([])
@@ -39,7 +39,7 @@ const Translate = () => {
   }, [quizComplete, selectedText])
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }, [selectedText])
 
   // Text-to-Speech functions
@@ -214,26 +214,26 @@ const Translate = () => {
     setUserAnswers([])
     setQuizResults(null)
     fetchUserProgress()
-    
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+
+    window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
   const getLevelColor = (level) => {
     switch (level) {
       case "A1":
-        return "bg-teal-100 text-teal-800 border-teal-200"
+        return "bg-gradient-to-br from-[#CCFBF1] to-[#99F6E4] text-[#0D9488] border-[#5EEAD4]"
       case "A2":
-        return "bg-teal-200 text-teal-800 border-teal-300"
+        return "bg-gradient-to-br from-[#99F6E4] to-[#5EEAD4] text-[#0D9488] border-[#2DD4BF]"
       case "B1":
-        return "bg-teal-300 text-teal-800 border-teal-400"
+        return "bg-gradient-to-br from-[#5EEAD4] to-[#2DD4BF] text-[#0F766E] border-[#14B8A6]"
       case "B2":
-        return "bg-teal-400 text-teal-800 border-teal-500"
+        return "bg-gradient-to-br from-[#2DD4BF] to-[#14B8A6] text-white border-[#0D9488]"
       case "C1":
-        return "bg-teal-500 text-white border-teal-600"
+        return "bg-gradient-to-br from-[#14B8A6] to-[#0D9488] text-white border-[#0F766E]"
       case "C2":
-        return "bg-teal-600 text-white border-teal-700"
+        return "bg-gradient-to-br from-[#0D9488] to-[#0F766E] text-white border-[#115E59]"
       default:
-        return "bg-gray-200 text-gray-800 border-gray-300"
+        return "bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] text-[#14B8A6] border-[#99F6E4]"
     }
   }
 
@@ -318,7 +318,6 @@ const Translate = () => {
                 </div>
 
                 {/* Reading Tips Removed*/}
-              
               </div>
             </div>
 
@@ -451,120 +450,132 @@ const Translate = () => {
             </div>
           </div>
         </div>
-        </div>
-      )
+      </div>
+    )
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Praktika e Përkthimit</h1>
-        <p className="text-gray-600">Praktiko kuptimin e leximit me tekste gjermane dhe pyetje</p>
-      </div>
-
-      {/* Level Filter */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Filter className="h-5 w-5 text-gray-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Filtro sipas Nivelit</h2>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {levels.map((level) => (
-            <button
-              key={level}
-              onClick={() => setSelectedLevel(level)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                selectedLevel === level ? "bg-teal-600 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
-            >
-              {level === "all" ? "Të Gjitha Nivelet" : level}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Texts Grid */}
-      {loading ? (
-        <div className="flex items-center justify-center min-h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-          {texts.map((text) => {
-            const progress = userProgress[text._id]
-            const isCompleted = progress && progress.completed
-            return (
-              <div
-                key={text._id}
-                className={`p-3 rounded-lg shadow-sm border transition-all cursor-pointer overflow-hidden relative group h-fit ${
-                  isCompleted
-                    ? "bg-gradient-to-br from-green-50 to-emerald-50 border-green-300 hover:border-green-400 hover:shadow-lg"
-                    : "bg-white border-gray-200 hover:border-teal-300 hover:shadow-md"
-                }`}
-                onClick={() => setSelectedText(text)}
-              >
-                {/* Level Badge */}
-                <div
-                  className={`absolute top-2 right-2 ${getLevelColor(text.level)} px-1.5 py-0.5 rounded text-xs font-medium`}
-                >
-                  {text.level}
-                </div>
-                {/* Background Icon */}
-                <Book
-                  className={`absolute -bottom-4 -right-4 w-12 h-12 sm:w-16 sm:h-16 ${
-                    isCompleted ? "text-green-200" : "text-gray-200"
-                  }`}
-                />
-                <div className="relative z-10">
-                  <h3
-                    className={`text-sm font-semibold mb-1 pr-10 sm:pr-12 line-clamp-2 ${
-                      isCompleted
-                        ? "text-green-800 group-hover:text-green-900"
-                        : "text-gray-800 group-hover:text-teal-700"
-                    }`}
-                  >
-                    {text.title}
-                  </h3>
-                  <p
-                    className={`text-xs line-clamp-2 leading-relaxed ${isCompleted ? "text-green-700" : "text-gray-600"}`}
-                  >
-                    {text.text.substring(0, 60)}...
-                  </p>
-                  <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center">
-                    <span className={`text-xs ${isCompleted ? "text-green-600" : "text-gray-500"}`}>
-                      {text.questions?.length || 0} pyetje
-                    </span>
-                    <span
-                      className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                        isCompleted ? "bg-green-200 text-green-800" : "bg-teal-100 text-teal-800"
-                      }`}
-                    >
-                      {isCompleted ? "Përfunduar" : "Fillo"}
-                    </span>
-                  </div>
-                </div>
+    <div className="h-min-screen p-4 flex flex-col">
+      <div className="max-w-6xl mx-auto w-full">
+        <header className="mb-4 flex-shrink-0">
+          <div className="bg-white rounded-xl shadow-lg border-2 border-[#99F6E4] p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">Praktika e Përkthimit</h1>
+                <p className="text-gray-600">Praktiko kuptimin e leximit me tekste gjermane dhe pyetje</p>
               </div>
-            )
-          })}
-        </div>
-      )}
-
-      {texts.length === 0 && !loading && (
-        <div className="text-center py-12">
-          <div className="bg-gray-50 rounded-lg p-6 inline-block">
-            <Languages className="h-10 w-10 text-teal-600 mx-auto mb-3" />
-            <h3 className="text-sm font-medium text-gray-800 mb-1">Nuk ka tekste të disponueshme</h3>
-            <p className="text-gray-500 text-xs">
-              {selectedLevel === "all"
-                ? "Nuk u gjetën tekste përkthimi."
-                : `Nuk ka tekste për nivelin ${selectedLevel}.`}
+            </div>
+            <p className="text-xs text-gray-400 mt-2">
+              Teste të përfunduara: {Object.values(userProgress).filter((p) => p.completed).length}
             </p>
           </div>
+        </header>
+
+        <div className="bg-white border-2 border-[#99F6E4] p-3 rounded-lg mb-4 shadow-md flex-shrink-0">
+          <div className="flex items-center gap-2 mb-2">
+            <Filter size={16} className="text-[#14B8A6]" />
+            <h2 className="text-sm font-medium text-gray-800">Filtro sipas Nivelit</h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {levels.map((level) => (
+              <button
+                key={level}
+                onClick={() => setSelectedLevel(level)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border-2 shadow-sm hover:shadow-md ${
+                  selectedLevel === level
+                    ? level === "all"
+                      ? "bg-gradient-to-r from-[#14B8A6] to-[#a0dae4] text-[#000c0bfb] border-[#0D9488] shadow-teal-500/30"
+                      : getLevelColor(level)
+                    : "bg-gradient-to-br from-[#F0FDFA] to-[#b3e4d9] text-[#000c0bfb] hover:from-[#CCFBF1] hover:to-[#99F6E4] border-[#99F6E4]"
+                }`}
+              >
+                {level === "all" ? "Të gjitha Nivelet" : level}
+                {selectedLevel === level && (
+                  <span className="ml-1 inline-flex items-center justify-center w-4 h-4 bg-white/50 rounded-full text-xs">
+                    ✓
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
-      )}
+
+        {loading ? (
+          <div className="flex items-center justify-center min-h-96">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#14B8A6]"></div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 flex-1 overflow-y-auto">
+            {texts.length > 0 ? (
+              texts.map((text) => {
+                const progress = userProgress[text._id]
+                const isCompleted = progress && progress.completed
+                return (
+                  <div
+                    key={text._id}
+                    className={`p-3 rounded-lg shadow-md border-2 transition-all cursor-pointer overflow-hidden relative group h-fit hover:shadow-xl ${
+                      isCompleted
+                        ? "bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] border-[#F59E0B] hover:border-[#D97706]"
+                        : "bg-white border-[#99F6E4] hover:border-[#5EEAD4]"
+                    }`}
+                    onClick={() => setSelectedText(text)}
+                  >
+                    <div
+                      className={`absolute top-2 right-2 ${getLevelColor(text.level)} px-1.5 py-0.5 rounded text-xs font-medium shadow-sm`}
+                    >
+                      {text.level}
+                    </div>
+                    <Book
+                      className={`absolute -bottom-4 -right-4 w-16 h-16 ${
+                        isCompleted ? "text-[#FDE68A]" : "text-[#CCFBF1]"
+                      }`}
+                    />
+                    <div className="relative z-10">
+                      <h3
+                        className={`text-sm font-semibold mb-1 pr-12 truncate ${
+                          isCompleted
+                            ? "text-[#D97706] group-hover:text-[#92400E]"
+                            : "text-gray-800 group-hover:text-[#0D9488]"
+                        }`}
+                      >
+                        {text.title}
+                      </h3>
+                      <p className={`text-xs line-clamp-2 ${isCompleted ? "text-[#92400E]" : "text-gray-600"}`}>
+                        {text.text ? text.text.substring(0, 80) + "..." : "Tekst për lexim"}
+                      </p>
+                      <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center">
+                        <span className={`text-xs ${isCompleted ? "text-[#92400E]" : "text-gray-500"}`}>
+                          {text.questions?.length || 0} pyetje
+                        </span>
+                        <span
+                          className={`text-xs px-1.5 py-0.5 rounded font-medium shadow-sm ${
+                            isCompleted
+                              ? "bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white"
+                              : "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white"
+                          }`}
+                        >
+                          {isCompleted ? "Përfunduar" : "Fillo"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })
+            ) : (
+              <div className="col-span-full text-center py-8">
+                <div className="bg-white rounded-lg p-6 inline-block border-2 border-[#99F6E4] shadow-lg">
+                  <Book className="text-[#14B8A6] w-10 h-10 mx-auto mb-3" />
+                  <h3 className="text-sm font-medium text-gray-800 mb-2">Nuk u gjetën tekste</h3>
+                  <p className="text-gray-500 text-xs">
+                    Provoni të zgjidhni nivele të ndryshme ose kontrolloni më vonë
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
-    
   )
 }
 

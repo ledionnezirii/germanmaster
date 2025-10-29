@@ -65,6 +65,7 @@ const Category = () => {
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [loading, setLoading] = useState(true)
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all")
+  const [selectedLevelFilter, setSelectedLevelFilter] = useState("all")
   const [visibleCategories, setVisibleCategories] = useState(20)
   const [loadingMore, setLoadingMore] = useState(false)
   const [finishingCategory, setFinishingCategory] = useState(false)
@@ -83,13 +84,9 @@ const Category = () => {
       try {
         const response = await categoriesService.getFinishedCategories()
         const data = response.data || response
-        console.log("[v0] Finished categories response:", data)
-
         const ids = data.finishedCategoryIds || []
-        console.log("[v0] Finished category IDs:", ids)
         setFinishedCategoryIds(ids)
       } catch (error) {
-        console.error("[v0] Error fetching finished categories:", error)
         setFinishedCategoryIds([])
       }
     }
@@ -100,14 +97,23 @@ const Category = () => {
   }, [user])
 
   const filteredCategories = useMemo(() => {
-    if (selectedCategoryFilter === "all") {
-      return categories
+    let filtered = categories
+
+    if (selectedCategoryFilter !== "all") {
+      filtered = filtered.filter((category) => {
+        const categoryType = category.type || "other"
+        return categoryType === selectedCategoryFilter
+      })
     }
-    return categories.filter((category) => {
-      const categoryType = category.type || "other"
-      return categoryType === selectedCategoryFilter
-    })
-  }, [categories, selectedCategoryFilter])
+
+    if (selectedLevelFilter !== "all") {
+      filtered = filtered.filter((category) => {
+        return category.level === selectedLevelFilter
+      })
+    }
+
+    return filtered
+  }, [categories, selectedCategoryFilter, selectedLevelFilter])
 
   const availableWordTypes = useMemo(() => {
     if (categories.length === 0) {
@@ -158,7 +164,7 @@ const Category = () => {
 
   useEffect(() => {
     setVisibleCategories(20)
-  }, [selectedCategoryFilter])
+  }, [selectedCategoryFilter, selectedLevelFilter])
 
   useEffect(() => {
     fetchCategories()
@@ -182,7 +188,6 @@ const Category = () => {
 
       setCategories(categoriesData)
     } catch (error) {
-      console.error("Error fetching categories:", error)
       setCategories([])
     } finally {
       setLoading(false)
@@ -206,7 +211,6 @@ const Category = () => {
 
       setSelectedCategory(categoryWithWords)
     } catch (error) {
-      console.error("Error fetching category details:", error)
       setSelectedCategory({
         id: categoryId,
         name: categoryName,
@@ -231,19 +235,26 @@ const Category = () => {
       setXpGained(data.xpGained || 0)
       setShowCongrats(true)
 
-      const finishedResponse = await categoriesService.getFinishedCategories()
-      const finishedData = finishedResponse.data || finishedResponse
-      const ids = finishedData.finishedCategoryIds || []
-      setFinishedCategoryIds(ids)
+      try {
+        const finishedResponse = await categoriesService.getFinishedCategories()
+        const finishedData = finishedResponse.data || finishedResponse
+        const ids = finishedData.finishedCategoryIds || []
+        setFinishedCategoryIds(ids)
+      } catch (fetchError) {
+        // Silently handle - category was already finished successfully
+      }
 
-      await refreshProfile()
+      try {
+        await refreshProfile()
+      } catch (refreshError) {
+        // Silently handle - category was already finished successfully
+      }
 
       setTimeout(() => {
         setShowCongrats(false)
         setSelectedCategory(null)
       }, 5000)
     } catch (error) {
-      console.error("Error finishing category:", error)
       alert(error.response?.data?.message || "Gabim gjatë përfundimit të kategorisë")
     } finally {
       setFinishingCategory(false)
@@ -308,10 +319,6 @@ const Category = () => {
   if (selectedCategory) {
     const categoryIdStr = String(selectedCategory.id?._id || selectedCategory.id)
     const isCategoryFinished = finishedCategoryIds.includes(categoryIdStr)
-
-    console.log("[v0] Category ID:", categoryIdStr)
-    console.log("[v0] Finished IDs:", finishedCategoryIds)
-    console.log("[v0] Is completed:", isCategoryFinished)
 
     return (
       <div className="min-h-screen bg-gray-50 p-3 sm:p-4 lg:p-6">
@@ -419,23 +426,25 @@ const Category = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-3 sm:p-4 lg:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-3 sm:p-4 lg:p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="bg-gradient-to-r from-teal-50 to-blue-50 rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-3 flex items-center gap-3">
-            <div className="bg-teal-100 p-3 rounded-full">
-              <FolderOpen className="h-8 w-8 text-teal-600" />
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 mb-6">
+          <div className="flex items-start gap-4">
+            <div className="bg-gradient-to-br from-teal-500 to-blue-600 p-3 rounded-xl shadow-md flex-shrink-0">
+              <FolderOpen className="h-7 w-7 text-white" />
             </div>
-            Kategoritë e Fjalëve
-          </h1>
-          <p className="text-gray-700 text-lg leading-relaxed">
-            Eksploroni fjalorin gjermanisht të organizuar sipas temave dhe kategorive. Mësoni fjalë të reja dhe zgjeroni
-            fjalorin tuaj në mënyrë sistematike.
-          </p>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-balance">Kategoritë e Fjalëve</h1>
+              <p className="text-gray-600 text-base leading-relaxed">
+                Eksploroni fjalorin gjermanisht të organizuar sipas temave dhe kategorive. Mësoni fjalë të reja dhe
+                zgjeroni fjalorin tuaj në mënyrë sistematike.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6">
-          <div className="flex items-center gap-2 mb-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 mb-6">
+          <div className="flex items-center gap-2 mb-3">
             <Filter className="h-4 w-4 text-gray-600" />
             <p className="text-sm font-medium text-gray-700">Filtro sipas llojit:</p>
           </div>
@@ -444,9 +453,9 @@ const Category = () => {
               <button
                 key={type.value}
                 onClick={() => setSelectedCategoryFilter(type.value)}
-                className={`px-4 py-2 text-sm font-medium rounded-full transition-all duration-200 ${
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                   selectedCategoryFilter === type.value
-                    ? "bg-blue-600 text-white shadow-md"
+                    ? "bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow-md"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
@@ -454,14 +463,18 @@ const Category = () => {
               </button>
             ))}
             <div className="ml-auto">
-              <select className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option>Të gjitha nivelët</option>
-                <option>A1</option>
-                <option>A2</option>
-                <option>B1</option>
-                <option>B2</option>
-                <option>C1</option>
-                <option>C2</option>
+              <select
+                value={selectedLevelFilter}
+                onChange={(e) => setSelectedLevelFilter(e.target.value)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
+              >
+                <option value="all">Të gjitha nivelët</option>
+                <option value="A1">A1</option>
+                <option value="A2">A2</option>
+                <option value="B1">B1</option>
+                <option value="B2">B2</option>
+                <option value="C1">C1</option>
+                <option value="C2">C2</option>
               </select>
             </div>
           </div>
@@ -470,7 +483,7 @@ const Category = () => {
         {loading ? (
           <div className="flex items-center justify-center min-h-64">
             <div className="flex flex-col items-center gap-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
               <p className="text-sm text-gray-600">Duke ngarkuar kategoritë...</p>
             </div>
           </div>
@@ -482,14 +495,62 @@ const Category = () => {
                   const IconComponent = iconMap[category.icon] || iconMap.default
 
                   const colorClasses = [
-                    { bg: "bg-blue-100", icon: "text-blue-600" },
-                    { bg: "bg-green-100", icon: "text-green-600" },
-                    { bg: "bg-cyan-100", icon: "text-cyan-600" },
-                    { bg: "bg-sky-100", icon: "text-sky-600" },
-                    { bg: "bg-pink-100", icon: "text-pink-600" },
-                    { bg: "bg-purple-100", icon: "text-purple-600" },
-                    { bg: "bg-orange-100", icon: "text-orange-600" },
-                    { bg: "bg-red-100", icon: "text-red-600" },
+                    {
+                      gradient: "from-blue-500 to-blue-600",
+                      bg: "bg-blue-50",
+                      text: "text-blue-700",
+                      border: "border-blue-100",
+                      hover: "hover:border-blue-200",
+                    },
+                    {
+                      gradient: "from-emerald-500 to-emerald-600",
+                      bg: "bg-emerald-50",
+                      text: "text-emerald-700",
+                      border: "border-emerald-100",
+                      hover: "hover:border-emerald-200",
+                    },
+                    {
+                      gradient: "from-cyan-500 to-cyan-600",
+                      bg: "bg-cyan-50",
+                      text: "text-cyan-700",
+                      border: "border-cyan-100",
+                      hover: "hover:border-cyan-200",
+                    },
+                    {
+                      gradient: "from-violet-500 to-violet-600",
+                      bg: "bg-violet-50",
+                      text: "text-violet-700",
+                      border: "border-violet-100",
+                      hover: "hover:border-violet-200",
+                    },
+                    {
+                      gradient: "from-pink-500 to-pink-600",
+                      bg: "bg-pink-50",
+                      text: "text-pink-700",
+                      border: "border-pink-100",
+                      hover: "hover:border-pink-200",
+                    },
+                    {
+                      gradient: "from-amber-500 to-amber-600",
+                      bg: "bg-amber-50",
+                      text: "text-amber-700",
+                      border: "border-amber-100",
+                      hover: "hover:border-amber-200",
+                    },
+                    {
+                      gradient: "from-indigo-500 to-indigo-600",
+                      bg: "bg-indigo-50",
+                      text: "text-indigo-700",
+                      border: "border-indigo-100",
+                      hover: "hover:border-indigo-200",
+                    },
+                    {
+                      gradient: "from-teal-500 to-teal-600",
+                      bg: "bg-teal-50",
+                      text: "text-teal-700",
+                      border: "border-teal-100",
+                      hover: "hover:border-teal-200",
+                    },
                   ]
                   const colorClass = colorClasses[index % colorClasses.length]
 
@@ -499,52 +560,83 @@ const Category = () => {
                   return (
                     <div
                       key={category._id}
-                      className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-300 cursor-pointer relative h-[240px] flex flex-col"
+                      onClick={() => fetchCategoryDetails(category._id, category.category)}
+                      className={`group relative rounded-2xl border-2 transition-all duration-300 cursor-pointer overflow-hidden h-[180px] ${
+                        isCompleted
+                          ? "bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 border-amber-300 hover:border-amber-400 hover:shadow-xl hover:scale-[1.02]"
+                          : `bg-white ${colorClass.border} ${colorClass.hover} hover:shadow-lg hover:scale-[1.02]`
+                      }`}
                     >
+                      {/* Background decoration */}
+                      <div
+                        className={`absolute inset-0 opacity-5 ${isCompleted ? "bg-gradient-to-br from-amber-400 to-orange-400" : `bg-gradient-to-br ${colorClass.gradient}`}`}
+                      />
+
+                      {/* Shimmer effect for completed */}
                       {isCompleted && (
-                        <div className="absolute top-3 right-3">
-                          <div className="bg-green-500 rounded-full p-1">
-                            <CheckCircle className="h-4 w-4 text-white" />
-                          </div>
-                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
                       )}
 
-                      <div
-                        className={`${colorClass.bg} w-12 h-12 rounded-xl flex items-center justify-center mb-4 flex-shrink-0 cursor-pointer`}
-                        onClick={() => fetchCategoryDetails(category._id, category.category)}
-                      >
-                        <IconComponent className={`h-6 w-6 ${colorClass.icon}`} />
-                      </div>
-
-                      <div
-                        className="flex-1 flex flex-col min-h-0 cursor-pointer"
-                        onClick={() => fetchCategoryDetails(category._id, category.category)}
-                      >
-                        <h3 className="text-base font-semibold text-gray-900 mb-1 leading-tight line-clamp-2">
-                          {category.category}
-                        </h3>
-                      </div>
-
-                      <div className="flex flex-col gap-2 mt-auto flex-shrink-0">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-medium text-gray-600">
-                            {availableWordTypes.find((t) => t.value === category.type)?.label || "Kategori"}
-                          </span>
-                          <button
-                            onClick={() => fetchCategoryDetails(category._id, category.category)}
-                            className="text-blue-600 font-medium text-sm flex items-center gap-1 hover:text-blue-700 transition-colors"
+                      <div className="relative p-5 flex flex-col h-full">
+                        {/* Icon section */}
+                        <div className="flex items-start justify-between mb-3">
+                          <div
+                            className={`p-3 rounded-xl shadow-sm transition-transform duration-300 group-hover:scale-110 flex-shrink-0 ${
+                              isCompleted
+                                ? "bg-gradient-to-br from-amber-400 to-orange-500"
+                                : `bg-gradient-to-br ${colorClass.gradient}`
+                            }`}
                           >
-                            <span>Eksploro</span>
-                            <ArrowLeft className="h-3.5 w-3.5 rotate-180" />
-                          </button>
+                            <IconComponent className="h-6 w-6 text-white" />
+                          </div>
+
+                          {/* Completed badge */}
+                          {isCompleted && (
+                            <div className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold rounded-full shadow-md flex-shrink-0">
+                              <CheckCircle className="h-3.5 w-3.5" />
+                              <span>Kryer</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex-1 flex flex-col min-h-0">
+                          <h3
+                            className={`text-base font-bold leading-tight mb-3 line-clamp-2 ${
+                              isCompleted ? "text-amber-900" : "text-gray-900"
+                            }`}
+                          >
+                            {category.category}
+                          </h3>
+
+                          {/* Type badge - always at bottom */}
+                          <div className="mt-auto">
+                            <span
+                              className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${
+                                isCompleted
+                                  ? "bg-amber-100 text-amber-800 border border-amber-200"
+                                  : `${colorClass.bg} ${colorClass.text} border ${colorClass.border}`
+                              }`}
+                            >
+                              {availableWordTypes.find((t) => t.value === category.type)?.label || "Kategori"}
+                            </span>
+                          </div>
                         </div>
                       </div>
+
+                      {/* Hover indicator */}
+                      <div
+                        className={`absolute bottom-0 left-0 right-0 h-1 transition-all duration-300 ${
+                          isCompleted
+                            ? "bg-gradient-to-r from-amber-400 via-orange-500 to-amber-400"
+                            : `bg-gradient-to-r ${colorClass.gradient}`
+                        } opacity-0 group-hover:opacity-100`}
+                      />
                     </div>
                   )
                 })
               ) : (
                 <div className="col-span-full">
-                  <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
+                  <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
                     <BookOpen className="h-8 w-8 text-gray-400 mx-auto mb-3" />
                     <h3 className="text-base font-medium text-gray-900 mb-2">
                       {selectedCategoryFilter === "all"
@@ -565,13 +657,13 @@ const Category = () => {
               <div id="load-more-sentinel" className="mt-8 flex justify-center">
                 {loadingMore ? (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-teal-600"></div>
                     Duke ngarkuar më shumë...
                   </div>
                 ) : (
                   <button
                     onClick={loadMoreCategories}
-                    className="px-6 py-3 text-sm font-medium text-blue-600 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 shadow-sm hover:shadow-md"
+                    className="px-6 py-3 text-sm font-medium text-teal-600 bg-white border border-teal-200 rounded-lg hover:bg-teal-50 hover:border-teal-300 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     Ngarko më shumë ({filteredCategories.length - visibleCategories} të tjera)
                   </button>

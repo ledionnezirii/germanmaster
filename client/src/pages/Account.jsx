@@ -28,38 +28,58 @@ const Account = () => {
   useEffect(() => {
     setProfilePictureDisplayUrl(user?.profilePicture || null)
     if (user?.profilePicture) setImageError(false)
-  }, [user?.profilePicture, user])
+  }, [user])
 
   useEffect(() => {
     const fetchCertificates = async () => {
       try {
         setLoadingCertificates(true)
+        console.log("[v0] Fetching certificates for user:", user?.id, "level:", user?.level)
+
         const response = await certificatesService.getUserCertificates()
         const userCertificates = response.data.certificates || []
+        console.log("[v0] Fetched certificates:", userCertificates.length)
         setCertificates(userCertificates)
 
-        if (user && user.level && user.level !== "A1") {
+        if (user && user.level) {
+          console.log("[v0] User has level:", user.level)
           const hasCertificateForCurrentLevel = userCertificates.some((cert) => cert.level === user.level)
+          console.log("[v0] Has certificate for current level:", hasCertificateForCurrentLevel)
+          console.log("[v0] Is issuing certificate:", issuingCertificate)
 
           if (!hasCertificateForCurrentLevel && !issuingCertificate) {
             setIssuingCertificate(true)
             try {
               console.log("[v0] Auto-issuing certificate for level:", user.level)
               const issueResponse = await certificatesService.issueCertificate()
+              console.log("[v0] Issue response:", issueResponse.data)
+
               if (issueResponse.data.success) {
                 console.log("[v0] Certificate issued successfully")
                 const refreshResponse = await certificatesService.getUserCertificates()
+                console.log("[v0] Refreshed certificates:", refreshResponse.data.certificates?.length)
                 setCertificates(refreshResponse.data.certificates || [])
+              } else {
+                console.log("[v0] Certificate issue failed:", issueResponse.data.message)
               }
             } catch (issueError) {
               console.error("[v0] Error auto-issuing certificate:", issueError)
+              console.error("[v0] Error response:", issueError.response?.data)
             } finally {
               setIssuingCertificate(false)
             }
+          } else {
+            console.log("[v0] Skipping auto-issue:", {
+              hasCertificate: hasCertificateForCurrentLevel,
+              isIssuing: issuingCertificate,
+            })
           }
+        } else {
+          console.log("[v0] User or level not set:", { user: !!user, level: user?.level })
         }
       } catch (error) {
         console.error("[v0] Error fetching certificates:", error)
+        console.error("[v0] Error response:", error.response?.data)
         if (error.response?.status !== 404) {
           console.error("[v0] Unexpected error:", error)
         }
@@ -70,8 +90,10 @@ const Account = () => {
 
     if (user) {
       fetchCertificates()
+    } else {
+      console.log("[v0] No user, skipping certificate fetch")
     }
-  }, [user, user?.level]) // Added user.level as dependency to refetch when level changes
+  }, [user])
 
   useEffect(() => {
     const fetchAchievements = async () => {
@@ -388,147 +410,6 @@ const Account = () => {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <Award className="h-6 w-6 text-teal-600" />
-            <h2 className="text-xl font-bold text-gray-900">Arritjet</h2>
-          </div>
-          {achievementStats && (
-            <div className="flex items-center gap-4">
-              <span className="bg-teal-100 text-teal-800 px-3 py-1 rounded-full text-sm font-medium">
-                {achievementStats.unlockedAchievements} / {achievementStats.totalAchievements} të shkyçura
-              </span>
-              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                {achievementStats.completionPercentage}% të përfunduara
-              </span>
-            </div>
-          )}
-        </div>
-
-        {loadingAchievements ? (
-          <div className="text-center py-12">
-            <div className="h-8 w-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Duke ngarkuar arritjet...</p>
-          </div>
-        ) : achievements.length > 0 ? (
-          <div className="relative">
-            <div className="overflow-hidden">
-              <div
-                className="flex transition-transform duration-500 ease-out gap-4"
-                style={{
-                  transform: `translateX(-${achievementCarouselIndex * (100 / Math.min(4, achievements.length))}%)`,
-                }}
-              >
-                {achievements.map((achievement) => {
-                  const IconComponent = getCategoryIcon(achievement.category)
-                  return (
-                    <div key={achievement.key} className="flex-shrink-0 w-full sm:w-1/2 lg:w-1/3 xl:w-1/4">
-                      <div
-                        className={`bg-gradient-to-r ${getAchievementBadgeColor(achievement.category, achievement.isUnlocked)} rounded-xl p-5 border-2 shadow-md hover:shadow-lg transition-all duration-300 h-full ${achievement.isUnlocked ? "hover:-translate-y-1" : "opacity-60"}`}
-                      >
-                        <div className="flex flex-col gap-3">
-                          <div className="flex items-start justify-between">
-                            <div className="bg-white p-3 rounded-full shadow-sm">
-                              <IconComponent
-                                className={`h-6 w-6 ${getAchievementIconColor(achievement.category, achievement.isUnlocked)}`}
-                              />
-                            </div>
-                            {achievement.isUnlocked && (
-                              <div className="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
-                                ✓ Shkyçur
-                              </div>
-                            )}
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-gray-900 text-base mb-1">{achievement.title}</h4>
-                            <p className="text-sm text-gray-600 mb-2">{achievement.description}</p>
-                            <div className="bg-white bg-opacity-70 rounded-lg px-2 py-1 inline-block">
-                              <p className="text-xs font-semibold text-gray-700">
-                                {achievement.isUnlocked
-                                  ? achievement.xpThreshold
-                                    ? `${achievement.xpThreshold} XP`
-                                    : achievement.streakThreshold
-                                      ? `${achievement.streakThreshold} ditë`
-                                      : `${achievement.testsThreshold} teste`
-                                  : achievement.progressText}
-                              </p>
-                            </div>
-                            {!achievement.isUnlocked && achievement.progress > 0 && (
-                              <div className="mt-2">
-                                <div className="w-full bg-gray-200 rounded-full h-2">
-                                  <div
-                                    className={`h-2 rounded-full transition-all duration-300 ${
-                                      achievement.category === "xp"
-                                        ? "bg-yellow-500"
-                                        : achievement.category === "streak"
-                                          ? "bg-orange-500"
-                                          : "bg-purple-500"
-                                    }`}
-                                    style={{ width: `${achievement.progress}%` }}
-                                  ></div>
-                                </div>
-                                <p className="text-xs text-gray-500 mt-1">{achievement.progress}% e përfunduar</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            {achievements.length > 1 && (
-              <>
-                <button
-                  onClick={handleAchievementPrev}
-                  disabled={achievementCarouselIndex === 0}
-                  className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all z-10"
-                >
-                  {"<"} {/* Placeholder for ChevronLeft */}
-                </button>
-                <button
-                  onClick={handleAchievementNext}
-                  disabled={achievementCarouselIndex >= achievements.length - 1}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all z-10"
-                >
-                  {">"} {/* Placeholder for ChevronRight */}
-                </button>
-              </>
-            )}
-
-            {achievements.length > 1 && (
-              <div className="flex justify-center gap-2 mt-6">
-                {achievements.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setAchievementCarouselIndex(index)}
-                    className={`h-2 rounded-full transition-all ${
-                      index === achievementCarouselIndex ? "w-8 bg-teal-600" : "w-2 bg-gray-300"
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="bg-gray-50 rounded-full p-6 w-24 h-24 mx-auto mb-4 flex items-center justify-center">
-              <Award className="h-12 w-12 text-gray-300" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Ende nuk ka arritje</h3>
-            <p className="text-gray-600 mb-4">Vazhdoni të mësoni për të fituar arritjen tuaj të parë!</p>
-            <div className="bg-teal-50 rounded-lg p-4 max-w-md mx-auto">
-              <p className="text-sm text-teal-800">
-                <strong>Arritja e ardhshme:</strong> Fitoni më shumë XP për të shkyçur arritje të reja!
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex items-center gap-2 mb-6">
           <Award className="h-6 w-6 text-teal-600" />
           <h2 className="text-xl font-bold text-gray-900">Certifikatat</h2>
@@ -596,10 +477,17 @@ const Account = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Ende nuk ka certifikata</h3>
             <p className="text-gray-600 mb-4">Vazhdoni të mësoni për të fituar certifikatën tuaj të parë!</p>
             <div className="bg-teal-50 rounded-lg p-4 max-w-md mx-auto">
-              <p className="text-sm text-teal-800">
-                <strong>Certifikata e ardhshme:</strong> Niveli {user.level === "A1" ? "A2" : user.level} kur të arrini
-                nivelin e ri!
-              </p>
+              {user.level ? (
+                <p className="text-sm text-teal-800">
+                  <strong>Certifikata juaj po përgatitet!</strong> Nëse sapo keni përfunduar një test, rifreskoni faqen
+                  për të parë certifikatën tuaj të nivelit {user.level}.
+                </p>
+              ) : (
+                <p className="text-sm text-teal-800">
+                  <strong>Certifikata e ardhshme:</strong> Përfundoni testin e nivelit A1 për të marrë certifikatën tuaj
+                  të parë!
+                </p>
+              )}
             </div>
           </div>
         )}
