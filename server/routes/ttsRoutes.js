@@ -1,7 +1,9 @@
-const express = require('express');
-const router = express.Router();
-const ttsController = require('../controllers/ttsController');
+// routes/ttsRoutes.js
+const express = require("express");
+const { generateTTS } = require("../controllers/ttsController");
 
-router.post('/', ttsController.generateTTS);
+const router = express.Router();
+
+router.post("/", generateTTS);
 
 module.exports = router;
