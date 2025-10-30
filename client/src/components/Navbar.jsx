@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useSidebar } from "../context/SidebarContext"
-import { Menu, User, LogOut, ChevronDown, Star, Puzzle } from "lucide-react"
+import { Menu, User, LogOut, ChevronDown, Star, Flame } from "lucide-react"
 import mainLogo from "../../public/wortii.png"
 
 const Navbar = () => {
@@ -43,9 +43,11 @@ const Navbar = () => {
     const baseClasses =
       "inline-flex items-center justify-center rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
     const variants = {
-      default: "bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30",
+      default:
+        "bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30",
       ghost: "text-slate-300 hover:bg-white/5 hover:text-white backdrop-blur-sm",
-      outline: "border-2 border-slate-700 text-slate-200 hover:bg-white/5 hover:border-slate-600 hover:text-white backdrop-blur-sm",
+      outline:
+        "border-2 border-slate-700 text-slate-200 hover:bg-white/5 hover:border-slate-600 hover:text-white backdrop-blur-sm",
     }
     const sizes = {
       default: "h-10 py-2 px-4",
@@ -67,7 +69,9 @@ const Navbar = () => {
   const Avatar = ({ src, alt, fallback, className = "" }) => {
     const [imageError, setImageError] = useState(false)
     return (
-      <div className={`relative flex h-7 w-7 md:h-8 md:w-8 shrink-0 overflow-hidden rounded-full ring-2 ring-white/10 ${className}`}>
+      <div
+        className={`relative flex h-7 w-7 md:h-8 md:w-8 shrink-0 overflow-hidden rounded-full ring-2 ring-white/10 ${className}`}
+      >
         {src && !imageError ? (
           <img
             src={src || "/placeholder.svg"}
@@ -136,14 +140,13 @@ const Navbar = () => {
           <div className="flex items-center space-x-2 md:space-x-3">
             {isAuthenticated ? (
               <div className="flex items-center space-x-2 bg-white/5 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-white/10 shadow-lg">
-                <Link
-                  to="/puzzle"
-                  className="group relative flex items-center space-x-1.5 overflow-hidden bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 border border-purple-400/20 hover:border-purple-400/40 shadow-sm"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-pink-500/0 group-hover:from-purple-500/10 group-hover:to-pink-500/10 transition-all duration-300"></div>
-                  <Puzzle className="h-3.5 w-3.5 text-purple-300 relative z-10" />
-                  <span className="hidden sm:inline text-purple-200 relative z-10">Puzzle</span>
-                </Link>
+                {user?.streakCount !== undefined && (
+                  <div className="flex items-center space-x-1.5 bg-gradient-to-r from-orange-500/15 to-red-500/15 px-3 py-1.5 rounded-xl text-xs font-bold border border-orange-400/20 shadow-sm">
+                    <Flame className="h-3.5 w-3.5 text-orange-400 fill-orange-400/20" />
+                    <span className="text-orange-300">{user.streakCount}</span>
+                    <span className="text-orange-400/70 hidden sm:inline">Ditë</span>
+                  </div>
+                )}
 
                 {user?.xp !== undefined && (
                   <div className="hidden md:flex items-center space-x-1.5 bg-gradient-to-r from-amber-500/15 to-orange-500/15 px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-400/20 shadow-sm">
