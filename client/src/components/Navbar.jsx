@@ -7,6 +7,11 @@ import { useSidebar } from "../context/SidebarContext"
 import { Menu, User, LogOut, ChevronDown, Star, Flame } from "lucide-react"
 import mainLogo from "../../public/wortii.png"
 
+const fonts = {
+  poppins: ["Poppins", "sans-serif"].join(", "),
+  inter: ["Inter", "sans-serif"].join(", "),
+}
+
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth()
   const { toggleSidebar } = useSidebar()
@@ -70,7 +75,7 @@ const Navbar = () => {
     const [imageError, setImageError] = useState(false)
     return (
       <div
-        className={`relative flex h-7 w-7 md:h-8 md:w-8 shrink-0 overflow-hidden rounded-full ring-2 ring-white/10 ${className}`}
+        className={`relative flex h-7 w-7 md:h-8 md:w-8 shrink-0 overflow-hidden rounded-full ring-1 ring-white/5 opacity-80 hover:opacity-100 transition-opacity ${className}`}
       >
         {src && !imageError ? (
           <img
@@ -90,7 +95,10 @@ const Navbar = () => {
   }
 
   return (
-    <nav className="bg-gradient-to-r from-slate-900/95 via-slate-850/95 to-slate-900/95 backdrop-blur-xl border-b border-white/5 sticky top-0 z-50 shadow-2xl shadow-black/20">
+    <nav
+      className="bg-gradient-to-r from-slate-900/95 via-slate-850/95 to-slate-900/95 backdrop-blur-xl border-b-2 border-white/10 sticky top-0 z-50 shadow-2xl shadow-black/20"
+      style={{ fontFamily: fonts.poppins }}
+    >
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Left side - Logo and menu toggle */}
@@ -100,21 +108,29 @@ const Navbar = () => {
               <span className="sr-only">Toggle sidebar</span>
             </Button>
             <Link to="/" className="flex items-center space-x-2.5 group">
-              <div className="relative flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-teal-600/20 rounded-full blur-md group-hover:blur-lg transition-all"></div>
+              <div className="relative flex items-center justify-center group-hover:scale-110 transition-all duration-300">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/30 to-teal-500/30 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 to-teal-400/20 rounded-full blur-md group-hover:from-emerald-400/30 group-hover:to-teal-300/30 transition-all duration-300"></div>
                 <img
                   src={mainLogo || "/placeholder.svg"}
                   width={40}
                   height={40}
-                  className="md:w-[50px] md:h-[50px] rounded-full relative z-10 ring-2 ring-white/10"
+                  className="md:w-[50px] md:h-[50px] rounded-full relative z-10 ring-2 ring-emerald-400/30 group-hover:ring-emerald-300/50 shadow-lg shadow-emerald-500/20 group-hover:shadow-2xl group-hover:shadow-emerald-400/40 transition-all duration-300"
                   alt="logo"
+                  style={{ clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)" }}
                 />
               </div>
               <div className="flex flex-col items-start">
-                <span className="text-base md:text-xl font-bold bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent group-hover:from-emerald-300 group-hover:to-teal-300 transition-all duration-300">
+                <span
+                  className="text-base md:text-xl font-bold bg-gradient-to-r from-white to-slate-200 bg-clip-text text-transparent group-hover:from-emerald-300 group-hover:to-teal-300 transition-all duration-300"
+                  style={{ fontFamily: fonts.poppins }}
+                >
                   gjuhagjermane
                 </span>
-                <span className="text-[10px] md:text-xs text-slate-400 font-medium hidden sm:block">
+                <span
+                  className="text-[10px] md:text-xs text-slate-400 font-medium hidden sm:block"
+                  style={{ fontFamily: fonts.inter }}
+                >
                   Gjermanisht për Shqiptarët
                 </span>
               </div>
@@ -128,6 +144,7 @@ const Navbar = () => {
                 key={link.to}
                 to={link.to}
                 className="relative text-slate-300 hover:text-white px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-200 group overflow-hidden"
+                style={{ fontFamily: fonts.poppins }}
               >
                 <span className="relative z-10">{link.label}</span>
                 <div className="absolute inset-0 bg-white/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
@@ -139,9 +156,12 @@ const Navbar = () => {
           {/* Right side - Auth buttons or user menu */}
           <div className="flex items-center space-x-2 md:space-x-3">
             {isAuthenticated ? (
-              <div className="flex items-center space-x-2 bg-white/5 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-white/10 shadow-lg">
+              <div className="flex items-center space-x-2">
                 {user?.streakCount !== undefined && (
-                  <div className="flex items-center space-x-1.5 bg-gradient-to-r from-orange-500/15 to-red-500/15 px-3 py-1.5 rounded-xl text-xs font-bold border border-orange-400/20 shadow-sm">
+                  <div
+                    className="flex items-center space-x-1.5 bg-gradient-to-r from-orange-500/15 to-red-500/15 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold border border-orange-400/20 shadow-sm"
+                    style={{ fontFamily: fonts.poppins }}
+                  >
                     <Flame className="h-3.5 w-3.5 text-orange-400 fill-orange-400/20" />
                     <span className="text-orange-300">{user.streakCount}</span>
                     <span className="text-orange-400/70 hidden sm:inline">Ditë</span>
@@ -149,7 +169,10 @@ const Navbar = () => {
                 )}
 
                 {user?.xp !== undefined && (
-                  <div className="hidden md:flex items-center space-x-1.5 bg-gradient-to-r from-amber-500/15 to-orange-500/15 px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-400/20 shadow-sm">
+                  <div
+                    className="hidden md:flex items-center space-x-1.5 bg-gradient-to-r from-amber-500/15 to-orange-500/15 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-400/20 shadow-sm"
+                    style={{ fontFamily: fonts.poppins }}
+                  >
                     <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400/20" />
                     <span className="text-amber-300">{user.xp}</span>
                     <span className="text-amber-400/70">XP</span>
@@ -160,6 +183,7 @@ const Navbar = () => {
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="flex items-center space-x-1.5 md:space-x-2 hover:bg-white/5 px-2 md:px-3 py-1.5 rounded-xl text-xs md:text-sm font-semibold transition-all duration-200 group"
+                    style={{ fontFamily: fonts.poppins }}
                   >
                     <Avatar
                       src={user?.profilePicture || "/placeholder.svg"}
@@ -180,7 +204,10 @@ const Navbar = () => {
 
                   {/* Dropdown Menu */}
                   {isDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-64 md:w-56 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 focus:outline-none z-50 overflow-hidden">
+                    <div
+                      className="absolute right-0 mt-2 w-64 md:w-56 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 focus:outline-none z-50 overflow-hidden"
+                      style={{ fontFamily: fonts.poppins }}
+                    >
                       <div className="py-1">
                         {/* User Info */}
                         <div className="px-4 py-3 border-b border-white/5 bg-gradient-to-br from-white/5 to-transparent">
@@ -193,7 +220,14 @@ const Navbar = () => {
                                   : ""}
                               </p>
                             )}
-                            {user?.email && <p className="text-slate-400 truncate text-xs font-medium">{user.email}</p>}
+                            {user?.email && (
+                              <p
+                                className="text-slate-400 truncate text-xs font-medium"
+                                style={{ fontFamily: fonts.inter }}
+                              >
+                                {user.email}
+                              </p>
+                            )}
                           </div>
                         </div>
 
@@ -214,10 +248,10 @@ const Navbar = () => {
                           onClick={handleLogout}
                           className="flex items-center w-full px-4 py-2.5 text-rose-300 hover:bg-rose-500/10 hover:text-rose-200 transition-all duration-200 group"
                         >
-                          <div className="mr-3 w-8 h-8 flex items-center justify-center rounded-lg bg-rose-500/10 group-hover:bg-rose-500/20 transition-colors">
+                          <div className="mr-3 w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors">
                             <LogOut className="h-4 w-4" />
                           </div>
-                          <span className="font-semibold">Dilni</span>
+                          <span className="font-semibold">Çkyqu</span>
                         </button>
                       </div>
                     </div>
@@ -225,27 +259,13 @@ const Navbar = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center space-x-1.5 sm:space-x-2">
-                <Link
-                  to="/signin"
-                  className="relative text-slate-300 hover:text-white hover:bg-white/5 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-200 overflow-hidden group"
-                >
-                  <span className="relative z-10">
-                    <span className="hidden xs:inline">Hyni</span>
-                    <span className="xs:hidden">Hyr</span>
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/5 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500"></div>
-                </Link>
-                <Link
-                  to="/signup"
-                  className="relative overflow-hidden bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 px-3 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/40 hover:scale-105 whitespace-nowrap group"
-                >
-                  <span className="relative z-10">
-                    <span className="hidden xs:inline">Regjistrohuni</span>
-                    <span className="xs:hidden">Regjistro</span>
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                </Link>
+              <div className="flex items-center space-x-2">
+                <Button variant="default" size="default" onClick={() => navigate("/signin")}>
+                  Hyre
+                </Button>
+                <Button variant="default" size="default" onClick={() => navigate("/signup")}>
+                  Regjistrohu
+                </Button>
               </div>
             )}
           </div>
