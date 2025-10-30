@@ -1,11 +1,10 @@
 // ttsRoutes.js
 const express = require("express");
-const textToSpeech = require("@google-cloud/text-to-speech");
 const dotenv = require("dotenv");
 const path = require("path");
+const textToSpeech = require("@google-cloud/text-to-speech"); // <-- vetëm një herë
 
 dotenv.config();
-const textToSpeech = require("@google-cloud/text-to-speech");
 
 // Initialize Google Cloud TTS client using JSON nga environment variable
 let client;
