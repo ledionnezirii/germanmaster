@@ -385,9 +385,6 @@ export const wordsService = {
 
 
 
-export const ttsService = {
-  getAudioUrl: (text, lang = "de") => api.post("/tts", { text, lang }),
-}
 
 export const phraseService = {
   getAllPhrases: (params = {}) => api.get("/phrases", { params }),
@@ -401,6 +398,10 @@ export const phraseService = {
   createBulkPhrases: (phrases) => api.post("/bulk", { phrases }),
   updatePhrase: (id, phraseData) => api.put(`/phrases/${id}`, phraseData),
   deletePhrase: (id) => api.delete(`/phrases/${id}`),
+}
+
+export const ttsService = {
+  getAudioUrl: (text, lang = "de", speakingRate = 0.8) => api.post("/tts", { text, lang, speakingRate }),
 }
 
 export default api;
