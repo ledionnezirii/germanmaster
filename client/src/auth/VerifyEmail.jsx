@@ -28,14 +28,14 @@ const VerifyEmail = () => {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
+      <div className="h-500px flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
         <h2 className="text-xl font-semibold">Duke verifikuar email-in...</h2>
       </div>
     )
   }
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
+    <div className="h-500px flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
       <div className="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md">
         {status === "success" ? (
           <div className="text-green-600 text-3xl mb-4">✓</div>

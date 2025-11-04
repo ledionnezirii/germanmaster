@@ -108,6 +108,7 @@ export default function Words() {
 
   useEffect(() => {
     if (user) {
+      setLoading(true)
       fetchWords()
       fetchStats()
     }
@@ -129,8 +130,10 @@ export default function Words() {
 
   const fetchWords = async () => {
     try {
-      setLoading(true)
-      const response = await wordsService.getLearnedWords()
+      const [response] = await Promise.all([
+        wordsService.getLearnedWords(),
+        new Promise((resolve) => setTimeout(resolve, 500)),
+      ])
       setWords(response.data || [])
       setFilteredWords(response.data || [])
     } catch (error) {
@@ -534,6 +537,14 @@ export default function Words() {
     )
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#14B8A6]"></div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-full mx-auto p-4">
       {notification && (
@@ -656,11 +667,7 @@ export default function Words() {
             : `${filteredWords.length} fjalë në koleksionin tuaj`}
         </p>
 
-        {loading ? (
-          <div className="text-center py-10 text-gray-500 text-sm">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#14B8A6] mx-auto"></div>
-          </div>
-        ) : filteredWords.length === 0 ? (
+        {filteredWords.length === 0 ? (
           <div className="text-center py-10 text-gray-500">
             <p className="text-sm">Filloni të ndërtoni fjalorin tuaj duke shtuar fjalën tuaj të parë!</p>
           </div>

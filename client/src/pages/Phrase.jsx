@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { phraseService } from "../services/api"
 import { useAuth } from "../context/AuthContext"
-import { Volume2, BookOpen, ChevronLeft, ChevronRight, LockIcon, Plus } from "lucide-react"
+import { Volume2, BookOpen, ChevronLeft, ChevronRight, LockIcon, Plus, Eye, EyeOff } from "lucide-react"
 
 const Phrase = () => {
   const fonts = {
@@ -22,6 +22,16 @@ const Phrase = () => {
   const [showXpAnimation, setShowXpAnimation] = useState(false)
   const [animatedXp, setAnimatedXp] = useState(0)
   const [xpPosition, setXpPosition] = useState({ x: 0, y: 0 })
+  const [showGerman, setShowGerman] = useState(true)
+  const [showAlbanian, setShowAlbanian] = useState(true)
+  const [quizMode, setQuizMode] = useState(false)
+  const [quizPhrases, setQuizPhrases] = useState([])
+  const [selectedGerman, setSelectedGerman] = useState(null)
+  const [selectedAlbanian, setSelectedAlbanian] = useState(null)
+  const [matches, setMatches] = useState({})
+  const [shuffledAlbanian, setShuffledAlbanian] = useState([])
+  const [quizComplete, setQuizComplete] = useState(false)
+  const [quizScore, setQuizScore] = useState(0)
   const itemsPerPage = 30
 
   const levels = ["A1", "A2", "B1", "B2", "C1", "C2"]
@@ -113,6 +123,79 @@ const Phrase = () => {
       console.error("Error marking phrase:", error)
       alert("Nuk mund të përditësohet statusi i frazës. Ju lutem provoni përsëri.")
     }
+  }
+
+  const startQuiz = () => {
+    const finishedPhrases = phrases.filter((phrase) => finishedPhraseIds.includes(phrase._id || phrase.id))
+    if (finishedPhrases.length === 0) {
+      alert("Përfundoni disa fraza para se të filloni kuizin!")
+      return
+    }
+
+    const quizSize = Math.min(10, finishedPhrases.length)
+    const selectedPhrases = finishedPhrases.sort(() => Math.random() - 0.5).slice(0, quizSize)
+    const shuffled = [...selectedPhrases].sort(() => Math.random() - 0.5)
+
+    setShuffledAlbanian(shuffled)
+    setQuizPhrases(selectedPhrases)
+    setMatches({})
+    setSelectedGerman(null)
+    setSelectedAlbanian(null)
+    setQuizComplete(false)
+    setQuizScore(0)
+    setQuizMode(true)
+  }
+
+  const handleMatchClick = (germanId, albanianId) => {
+    const germanPhrase = quizPhrases.find((p) => (p._id || p.id) === germanId)
+    const albanianPhrase = shuffledAlbanian.find((p) => (p._id || p.id) === albanianId)
+
+    if (!germanPhrase || !albanianPhrase) return
+
+    const isCorrectMatch = germanId === albanianId
+
+    if (isCorrectMatch) {
+      setMatches((prev) => ({
+        ...prev,
+        [germanId]: albanianId,
+      }))
+
+      if (Object.keys(matches).length + 1 === quizPhrases.length) {
+        finishQuiz()
+      } else {
+        setQuizScore((prev) => prev + 1)
+        setSelectedGerman(null)
+        setSelectedAlbanian(null)
+      }
+    } else {
+      setSelectedGerman(null)
+      setSelectedAlbanian(null)
+    }
+  }
+
+  const finishQuiz = async () => {
+    setQuizComplete(true)
+    const totalXp = (Object.keys(matches).length + 1) * 1
+
+    try {
+      await phraseService.addQuizXp(totalXp)
+      console.log("[v0] Quiz XP added successfully:", totalXp)
+    } catch (error) {
+      console.error("Error submitting quiz XP:", error)
+    }
+
+    setAnimatedXp(totalXp)
+    setShowXpAnimation(true)
+    setTimeout(() => setShowXpAnimation(false), 2000)
+  }
+
+  const exitQuiz = () => {
+    setQuizMode(false)
+    setQuizComplete(false)
+    setMatches({})
+    setQuizScore(0)
+    setSelectedGerman(null)
+    setSelectedAlbanian(null)
   }
 
   const speakGerman = (text) => {
@@ -235,6 +318,206 @@ const Phrase = () => {
     )
   }
 
+  if (quizMode) {
+    return (
+      <>
+        <style jsx>{`
+          @keyframes xp-float {
+            0% {
+              opacity: 0;
+              transform: translateY(0) scale(0.5);
+            }
+            20% {
+              opacity: 0.9;
+              transform: translateY(-20px) scale(1);
+            }
+            40% {
+              opacity: 1;
+              transform: translateY(-40px) scale(1.1);
+            }
+            60% {
+              opacity: 1;
+              transform: translateY(-60px) scale(1.05);
+            }
+            80% {
+              opacity: 0.6;
+              transform: translateY(-80px) scale(1);
+            }
+            100% {
+              opacity: 0;
+              transform: translateY(-100px) scale(0.9);
+            }
+          }
+
+          .animate-xp-float {
+            animation: xp-float 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          }
+        `}</style>
+
+        <div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] via-white to-[#CCFBF1] p-3 md:p-6">
+          <div className="max-w-[900px] mx-auto font-sans">
+            {quizComplete ? (
+              <div className="bg-white rounded-xl p-6 md:p-12 text-center shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
+                <h2
+                  className="text-2xl md:text-4xl font-bold text-[#14B8A6] mb-4"
+                  style={{ fontFamily: fonts.poppins }}
+                >
+                  Kuizi Përfundoi!
+                </h2>
+                <p className="text-lg md:text-2xl text-gray-600 mb-2" style={{ fontFamily: fonts.inter }}>
+                  Përshtatjet e saktë: {Object.keys(matches).length + 1} / {quizPhrases.length}
+                </p>
+                <p className="text-2xl md:text-3xl font-bold text-amber-600 mb-8" style={{ fontFamily: fonts.poppins }}>
+                  +{(Object.keys(matches).length + 1) * 1} XP
+                </p>
+
+                <div className="flex gap-4 justify-center">
+                  <button
+                    onClick={startQuiz}
+                    className="px-6 py-3 bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] border-none rounded-lg text-white text-base font-semibold cursor-pointer transition-colors hover:from-[#0D9488] hover:to-[#0891B2]"
+                    style={{ fontFamily: fonts.poppins }}
+                  >
+                    Fillo Kuizin Përsëri
+                  </button>
+                  <button
+                    onClick={exitQuiz}
+                    className="px-6 py-3 bg-gray-200 border-none rounded-lg text-gray-700 text-base font-semibold cursor-pointer transition-colors hover:bg-gray-300"
+                    style={{ fontFamily: fonts.poppins }}
+                  >
+                    Dil nga Kuizi
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl p-6 md:p-8 shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
+                <div className="mb-6">
+                  <p className="text-sm text-gray-500 mb-2 text-center" style={{ fontFamily: fonts.inter }}>
+                    Përshtat Frazat Gjermane me Përkthimet Shqipe
+                  </p>
+                  <p
+                    className="text-lg font-semibold text-center text-[#14B8A6] mb-4"
+                    style={{ fontFamily: fonts.poppins }}
+                  >
+                    {Object.keys(matches).length} / {quizPhrases.length}
+                  </p>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-[#14B8A6] h-2 rounded-full transition-all"
+                      style={{ width: `${(Object.keys(matches).length / quizPhrases.length) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 md:gap-6 mb-6">
+                  {/* German phrases on the left */}
+                  <div>
+                    <h3
+                      className="text-sm font-bold text-gray-600 mb-3 uppercase"
+                      style={{ fontFamily: fonts.poppins }}
+                    >
+                      Gjermane
+                    </h3>
+                    <div className="space-y-2">
+                      {quizPhrases.map((phrase) => {
+                        const phraseId = phrase._id || phrase.id
+                        const isMatched = matches[phraseId]
+                        const isSelected = selectedGerman === phraseId
+
+                        return (
+                          <button
+                            key={phraseId}
+                            onClick={() => {
+                              if (!isMatched) {
+                                setSelectedGerman(isSelected ? null : phraseId)
+                              }
+                            }}
+                            disabled={isMatched}
+                            className={`w-full px-4 py-3 text-left rounded-lg border-2 transition-all font-semibold text-sm md:text-base ${
+                              isMatched
+                                ? "bg-green-100 border-green-500 text-green-700 cursor-not-allowed"
+                                : isSelected
+                                  ? "bg-blue-100 border-blue-500 text-blue-700"
+                                  : "bg-white border-gray-300 text-gray-700 hover:border-blue-300 cursor-pointer"
+                            }`}
+                            style={{ fontFamily: fonts.inter }}
+                          >
+                            {phrase.german}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Albanian phrases on the right (shuffled) */}
+                  <div>
+                    <h3
+                      className="text-sm font-bold text-gray-600 mb-3 uppercase"
+                      style={{ fontFamily: fonts.poppins }}
+                    >
+                      Shqipe
+                    </h3>
+                    <div className="space-y-2">
+                      {shuffledAlbanian.map((phrase) => {
+                        const phraseId = phrase._id || phrase.id
+                        const isMatched = Object.values(matches).includes(phraseId)
+                        const isSelected = selectedAlbanian === phraseId
+
+                        return (
+                          <button
+                            key={phraseId}
+                            onClick={() => {
+                              if (selectedGerman && !isMatched) {
+                                handleMatchClick(selectedGerman, phraseId)
+                              } else if (!isMatched) {
+                                setSelectedAlbanian(isSelected ? null : phraseId)
+                              }
+                            }}
+                            disabled={isMatched}
+                            className={`w-full px-4 py-3 text-left rounded-lg border-2 transition-all font-semibold text-sm md:text-base ${
+                              isMatched
+                                ? "bg-green-100 border-green-500 text-green-700 cursor-not-allowed"
+                                : isSelected
+                                  ? "bg-purple-100 border-purple-500 text-purple-700"
+                                  : "bg-white border-gray-300 text-gray-700 hover:border-purple-300 cursor-pointer"
+                            }`}
+                            style={{ fontFamily: fonts.inter }}
+                          >
+                            {phrase.albanian}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={exitQuiz}
+                  className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold cursor-pointer hover:bg-gray-300 transition-colors"
+                  style={{ fontFamily: fonts.poppins }}
+                >
+                  Dil nga Kuizi
+                </button>
+              </div>
+            )}
+
+            {showXpAnimation && (
+              <div
+                className="fixed text-2xl md:text-3xl font-bold text-amber-600 animate-xp-float z-[9999] [text-shadow:0_4px_20px_rgba(217,119,6,0.6)] pointer-events-none -translate-x-1/2 -translate-y-1/2"
+                style={{
+                  left: `${xpPosition.x}px`,
+                  top: `${xpPosition.y}px`,
+                  fontFamily: fonts.poppins,
+                }}
+              >
+                +{animatedXp} XP
+              </div>
+            )}
+          </div>
+        </div>
+      </>
+    )
+  }
+
   return (
     <>
       <style jsx>{`
@@ -324,6 +607,34 @@ const Phrase = () => {
             ))}
           </div>
 
+          <div className="flex gap-2 md:gap-3 mb-4 md:mb-6 flex-wrap">
+            <button
+              onClick={() => setShowGerman(!showGerman)}
+              className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-blue-50 border-2 border-blue-300 rounded-lg text-sm md:text-base font-semibold text-blue-700 cursor-pointer hover:bg-blue-100 transition-all"
+              style={{ fontFamily: fonts.poppins }}
+            >
+              {showGerman ? <Eye size={18} /> : <EyeOff size={18} />}
+              Gjermane
+            </button>
+
+            <button
+              onClick={() => setShowAlbanian(!showAlbanian)}
+              className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-purple-50 border-2 border-purple-300 rounded-lg text-sm md:text-base font-semibold text-purple-700 cursor-pointer hover:bg-purple-100 transition-all"
+              style={{ fontFamily: fonts.poppins }}
+            >
+              {showAlbanian ? <Eye size={18} /> : <EyeOff size={18} />}
+              Shqipe
+            </button>
+
+            <button
+              onClick={startQuiz}
+              className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-amber-50 border-2 border-amber-300 rounded-lg text-sm md:text-base font-semibold text-amber-700 cursor-pointer hover:bg-amber-100 transition-all"
+              style={{ fontFamily: fonts.poppins }}
+            >
+              📝 Fillo Kuizin
+            </button>
+          </div>
+
           {currentPhrases.length === 0 ? (
             <div className="bg-white rounded-xl p-6 md:p-12 text-center shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
               <p className="text-sm md:text-base text-gray-600" style={{ fontFamily: fonts.inter }}>
@@ -351,28 +662,32 @@ const Phrase = () => {
                     >
                       <div className="flex justify-between items-center gap-2 md:gap-4">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 md:gap-2 mb-1">
+                          {showGerman && (
+                            <div className="flex items-center gap-1.5 md:gap-2 mb-1">
+                              <p
+                                className="text-sm md:text-base font-semibold text-gray-900 m-0 leading-snug"
+                                style={{ fontFamily: fonts.poppins }}
+                              >
+                                {phrase.german}
+                              </p>
+                              <button
+                                onClick={() => !isLocked && speakGerman(phrase.german)}
+                                disabled={isLocked}
+                                className={`w-6 h-6 md:w-7 md:h-7 rounded-full border-2 ${isLocked ? "border-gray-400 text-gray-400 cursor-not-allowed" : "border-[#14B8A6] text-[#14B8A6] hover:bg-[#F0FDFA]"} bg-white cursor-pointer flex items-center justify-center transition-all p-0 flex-shrink-0`}
+                                title={isLocked ? "Locked" : "Dëgjo frazën gjermane"}
+                              >
+                                <Volume2 className="w-3 h-3 md:w-4 md:h-4" />
+                              </button>
+                            </div>
+                          )}
+                          {showAlbanian && (
                             <p
-                              className="text-sm md:text-base font-semibold text-gray-900 m-0 leading-snug"
-                              style={{ fontFamily: fonts.poppins }}
+                              className="text-xs md:text-sm text-gray-600 m-0 leading-snug"
+                              style={{ fontFamily: fonts.inter }}
                             >
-                              {phrase.german}
+                              {phrase.albanian}
                             </p>
-                            <button
-                              onClick={() => !isLocked && speakGerman(phrase.german)}
-                              disabled={isLocked}
-                              className={`w-6 h-6 md:w-7 md:h-7 rounded-full border-2 ${isLocked ? "border-gray-400 text-gray-400 cursor-not-allowed" : "border-[#14B8A6] text-[#14B8A6] hover:bg-[#F0FDFA]"} bg-white cursor-pointer flex items-center justify-center transition-all p-0 flex-shrink-0`}
-                              title={isLocked ? "Locked" : "Dëgjo frazën gjermane"}
-                            >
-                              <Volume2 className="w-3 h-3 md:w-4 md:h-4" />
-                            </button>
-                          </div>
-                          <p
-                            className="text-xs md:text-sm text-gray-600 m-0 leading-snug"
-                            style={{ fontFamily: fonts.inter }}
-                          >
-                            {phrase.albanian}
-                          </p>
+                          )}
                         </div>
                         <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
                           <span
@@ -384,7 +699,7 @@ const Phrase = () => {
                           {!isFinished && !isLocked && (
                             <button
                               onClick={(e) => handleMarkAsFinished(phraseId, phrase.xp, e)}
-                              className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-green-500 bg-white text-green-500 text-xl md:text-2xl font-bold cursor-pointer flex items-center justify-center transition-all p-0 leading-none hover:bg-green-50"
+                              className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-green-500 bg-white text-green-500 text-xl md:text-2xl font-bold cursor-pointer flex items-center justify-center transition-all p-0 flex-shrink-0"
                             >
                               <Plus />
                             </button>

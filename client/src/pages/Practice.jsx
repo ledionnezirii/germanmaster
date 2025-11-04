@@ -28,22 +28,20 @@ export default function PracticePage() {
 
   const fetchFinishedPractices = async () => {
     try {
-      console.log("[v0] Fetching finished practices...")
       const response = await practiceService.getFinishedPractices()
-      console.log("[v0] Finished practices response:", response)
       const finishedData = response.data || response
-      console.log("[v0] Finished practices data:", finishedData)
       const finishedIds = finishedData.map((fp) => fp.practice._id)
-      console.log("[v0] Finished practice IDs:", finishedIds)
       setFinishedPractices(finishedIds)
     } catch (error) {
-      console.error("[v0] Error fetching finished practices:", error)
+      console.error("Error fetching finished practices:", error)
     }
   }
 
   const fetchPractices = async () => {
     try {
       setLoading(true)
+      const startTime = Date.now()
+
       const queryParams = {}
       if (filters.level !== "all") queryParams.level = filters.level
       if (filters.category !== "all") queryParams.category = filters.category
@@ -51,6 +49,10 @@ export default function PracticePage() {
 
       const response = await practiceService.getAllPractices(queryParams)
       setPractices(response.data || response)
+
+      const elapsedTime = Date.now() - startTime
+      const remainingTime = Math.max(0, 500 - elapsedTime)
+      await new Promise((resolve) => setTimeout(resolve, remainingTime))
     } catch (error) {
       console.error("Error fetching practices:", error)
     } finally {
@@ -99,7 +101,6 @@ export default function PracticePage() {
 
   const isPracticeFinished = (practiceId) => {
     const isFinished = finishedPractices.includes(practiceId)
-    console.log(`[v0] Checking if practice ${practiceId} is finished:`, isFinished)
     return isFinished
   }
 
@@ -615,30 +616,8 @@ export default function PracticePage() {
 
   if (loading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "100vh",
-          background: "linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #eef2ff 100%)",
-        }}
-      >
-        <div style={{ textAlign: "center" }}>
-          <div
-            style={{
-              width: "48px",
-              height: "48px",
-              border: "4px solid #2563eb",
-              borderTopColor: "transparent",
-              borderRadius: "50%",
-              animation: "spin 1s linear infinite",
-              margin: "0 auto",
-            }}
-          ></div>
-          <p style={{ color: "#6b7280", marginTop: "16px", fontFamily: "Poppins, sans-serif" }}>Duke u ngarkuar...</p>
-        </div>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <div className="flex items-center justify-center min-h-96">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#14B8A6]"></div>
       </div>
     )
   }
