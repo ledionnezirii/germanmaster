@@ -5,32 +5,21 @@ import { useSidebar } from "../context/SidebarContext"
 import { useAuth } from "../context/AuthContext"
 import {
   Home,
-  Trophy,
   Headphones,
   Languages,
   User,
-  BookOpen,
-  FolderOpen,
-  GraduationCap,
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  MapIcon,
   TestTube2Icon,
   LightbulbIcon,
   Dumbbell,
   Pen,
   NotebookPenIcon,
-  GitGraph,
   BarChart,
   Calendar,
-  Space,
   InfinityIcon,
-  Book,
-  BookAlert,
-  BookTemplate,
   BookUser,
-  University,
   UniversityIcon,
 } from "lucide-react"
 import { MicrophoneIcon } from "@heroicons/react/24/outline"
@@ -83,26 +72,39 @@ const Sidebar = () => {
     }
   }
 
+  const getTransitionStyle = () => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      // Mobile: use simple, performant easing with shorter duration
+      return "transform 0.3s ease-out, width 0.3s ease-out"
+    }
+    // Desktop: original smooth cubic-bezier easing
+    return "transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
+  }
+
   return (
     <>
       {!isCollapsed && (
         <div
-          className={`fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden transition-opacity duration-300 ease-out ${
+          className={`fixed inset-0 z-30 bg-black/40 lg:hidden transition-opacity duration-300 ease-out ${
             !isCollapsed ? "opacity-100" : "opacity-0"
           }`}
+          style={{
+            backdropFilter: window.innerWidth < 768 ? "blur(4px)" : "blur(12px)",
+            touchAction: "none",
+          }}
           onClick={toggleSidebar}
           aria-hidden="true"
-          style={{ touchAction: "none" }}
         />
       )}
 
       <div
-        className={`fixed left-0 top-16 bottom-0 bg-gradient-to-b from-slate-900/95 via-slate-900/98 to-slate-950/95 backdrop-blur-xl border-r border-white/5 z-40 lg:z-10 flex flex-col shadow-2xl ${isCollapsed ? "-translate-x-full lg:translate-x-0 lg:w-16" : "translate-x-0 w-64"}`}
+        className={`fixed left-0 top-16 bottom-0 bg-gradient-to-b from-slate-900/95 via-slate-900/98 to-slate-950/95 border-r border-white/5 z-40 lg:z-10 flex flex-col shadow-2xl ${isCollapsed ? "-translate-x-full lg:translate-x-0 lg:w-16" : "translate-x-0 w-64"}`}
         style={{
           fontFamily: fonts.poppins,
-          transition:
-            "transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+          transition: getTransitionStyle(),
           willChange: "transform, width",
+          backfaceVisibility: "hidden",
+          perspective: 1000,
         }}
       >
         {/* Decorative gradient overlay */}

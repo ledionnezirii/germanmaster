@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useSidebar } from "../context/SidebarContext"
-import { Menu, User, LogOut, ChevronDown, Star, Flame, X } from "lucide-react"
+import { Menu, User, LogOut, ChevronDown, Star, Flame } from "lucide-react"
 import mainLogo from "../../public/logoT.png"
 
 const fonts = {
@@ -17,7 +17,6 @@ const Navbar = () => {
   const { toggleSidebar } = useSidebar()
   const navigate = useNavigate()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const dropdownRef = useRef(null)
 
   const handleLogout = () => {
@@ -104,14 +103,9 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Left side - Logo and menu toggle */}
           <div className="flex items-center space-x-2 md:space-x-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden"
-            >
-              {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              <span className="sr-only">Toggle menu</span>
+            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="md:hidden">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle sidebar</span>
             </Button>
             <Link to="/" className="flex items-center space-x-2.5 group">
               <div className="relative flex items-center justify-center group-hover:scale-110 transition-all duration-300">
@@ -143,7 +137,7 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* Center - Navigation links (hidden on mobile, visible on desktop) */}
+          {/* Center - Navigation links */}
           <div className="hidden md:flex items-center space-x-1">
             {navLinks.map((link) => (
               <Link
@@ -165,7 +159,7 @@ const Navbar = () => {
               <div className="flex items-center space-x-2">
                 {user?.streakCount !== undefined && (
                   <div
-                    className="flex items-center space-x-1.5 bg-gradient-to-r from-orange-500/15 to-red-500/15 backdrop-blur-sm px-2 md:px-3 py-1.5 rounded-xl text-xs font-bold border border-orange-400/20 shadow-sm"
+                    className="flex items-center space-x-1.5 bg-gradient-to-r from-orange-500/15 to-red-500/15 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold border border-orange-400/20 shadow-sm"
                     style={{ fontFamily: fonts.poppins }}
                   >
                     <Flame className="h-3.5 w-3.5 text-orange-400 fill-orange-400/20" />
@@ -208,6 +202,7 @@ const Navbar = () => {
                     />
                   </button>
 
+                  {/* Dropdown Menu */}
                   {isDropdownOpen && (
                     <div
                       className="absolute right-0 mt-2 w-64 md:w-56 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 focus:outline-none z-50 overflow-hidden"
@@ -264,43 +259,17 @@ const Navbar = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center space-x-1.5 md:space-x-2">
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="md:size-default md:h-10 md:px-4"
-                  onClick={() => navigate("/signin")}
-                >
+              <div className="flex items-center space-x-2">
+                <Button variant="default" size="default" onClick={() => navigate("/signin")}>
                   Hyre
                 </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="md:size-default md:h-10 md:px-4"
-                  onClick={() => navigate("/signup")}
-                >
+                <Button variant="default" size="default" onClick={() => navigate("/signup")}>
                   Regjistrohu
                 </Button>
               </div>
             )}
           </div>
         </div>
-
-        {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-white/10 py-2 space-y-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className="block text-slate-300 hover:text-white hover:bg-white/5 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200"
-                style={{ fontFamily: fonts.poppins }}
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        )}
       </div>
     </nav>
   )
