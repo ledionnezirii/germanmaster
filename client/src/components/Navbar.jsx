@@ -260,10 +260,20 @@ const Navbar = () => {
               </div>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button variant="default" size="default" onClick={() => navigate("/signin")}>
+                <Button
+                  variant="default"
+                  size="default"
+                  className="h-8 px-2 md:h-10 md:py-2 md:px-4 md:text-sm text-xs"
+                  onClick={() => navigate("/signin")}
+                >
                   Hyre
                 </Button>
-                <Button variant="default" size="default" onClick={() => navigate("/signup")}>
+                <Button
+                  variant="default"
+                  size="default"
+                  className="h-8 px-2 md:h-10 md:py-2 md:px-4 md:text-sm text-xs"
+                  onClick={() => navigate("/signup")}
+                >
                   Regjistrohu
                 </Button>
               </div>
