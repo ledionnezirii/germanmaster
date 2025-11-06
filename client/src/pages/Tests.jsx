@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useAuth } from "../context/AuthContext"
-import logo from "../../public/wortii.png"
+import logo from "../../public/logo.png"
 import {
   ArrowLeft,
   Clock,

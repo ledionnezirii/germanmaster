@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useSidebar } from "../context/SidebarContext"
 import { Menu, User, LogOut, ChevronDown, Star, Flame } from "lucide-react"
-import mainLogo from "../../public/logoT.png"
+import mainLogo from "../../public/logo.png"
 
 const fonts = {
   poppins: ["Poppins", "sans-serif"].join(", "),
@@ -187,7 +187,7 @@ const Navbar = () => {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className="flex items-center space-x-1.5 md:space-x-2 hover:bg-white/5 px-2 md:px-3 py-1.5 rounded-xl text-xs md:text-sm font-semibold transition-all duration-200 group"
+                    className="flex items-center space-x-1.5 md:space-x-2 cursor-pointer hover:bg-white/5 px-2 md:px-3 py-1.5 rounded-xl text-xs md:text-sm font-semibold transition-all duration-200 group"
                     style={{ fontFamily: fonts.poppins }}
                   >
                     <Avatar
@@ -242,7 +242,7 @@ const Navbar = () => {
                           className="flex items-center px-4 py-2.5 text-slate-300 hover:bg-white/5 hover:text-white transition-all duration-200 group"
                           onClick={() => setIsDropdownOpen(false)}
                         >
-                          <div className="mr-3 w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors">
+                          <div className="mr-3 w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors cursor-pointer">
                             <User className="h-4 w-4" />
                           </div>
                           <span className="text-sm">Cilësimet e Llogarisë</span>
@@ -253,10 +253,10 @@ const Navbar = () => {
                           onClick={handleLogout}
                           className="flex items-center w-full px-4 py-2.5 text-rose-300 hover:bg-rose-500/10 hover:text-rose-200 transition-all duration-200 group"
                         >
-                          <div className="mr-3 w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors">
+                          <div className="mr-3 w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors cursor-pointer">
                             <LogOut className="h-4 w-4" />
                           </div>
-                          <span className="text-sm">Çkyqu</span>
+                          <span className="text-sm">Dil</span>
                         </button>
                       </div>
                     </div>
@@ -268,15 +268,15 @@ const Navbar = () => {
                 <Button
                   variant="secondary"
                   size="auth"
-                  className="text-xs md:text-sm font-bold tracking-wide"
+                  className="text-xs md:text-sm font-bold tracking-wide cursor-pointer"
                   onClick={() => navigate("/signin")}
                 >
-                  Hyre
+                  Kyçu
                 </Button>
                 <Button
                   variant="primary"
                   size="auth"
-                  className="text-xs md:text-sm font-bold tracking-wide"
+                  className="text-xs md:text-sm font-bold tracking-wide cursor-pointer"
                   onClick={() => navigate("/signup")}
                 >
                   Regjistrohu

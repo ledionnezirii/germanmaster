@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
-import webLogo from "../../public/gjuhagjermanelogo.png"
+import webLogo from "../../public/logo.png"
 import { LockIcon, Mail, User } from 'lucide-react';
 
 
