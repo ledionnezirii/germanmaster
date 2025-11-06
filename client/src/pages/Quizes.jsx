@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { quizService } from "../services/api"
-import { BookOpen, ArrowLeft, Check, X, Star, Trophy, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react"
+import { BookOpen, ArrowLeft, Check, X, Star, Trophy, ChevronLeft, ChevronRight, RotateCcw, Lock } from "lucide-react"
 
 const Quizes = () => {
   const [currentView, setCurrentView] = useState("list")
@@ -55,28 +55,44 @@ const Quizes = () => {
     fetchData()
   }, [])
 
+  const isQuizUnlocked = (quizIndex) => {
+    // First quiz is always unlocked
+    if (quizIndex === 0) return true
+
+    // Check if previous quiz is completed
+    const previousQuiz = filteredQuizzes[quizIndex - 1]
+    return previousQuiz && completedQuizzes.includes(previousQuiz._id)
+  }
+
   const getLevelColor = (level) => {
-    const colors = {
-      A1: "from-emerald-400 to-teal-500",
-      A2: "from-teal-400 to-cyan-500",
-      B1: "from-blue-400 to-indigo-500",
-      B2: "from-indigo-400 to-purple-500",
-      C1: "from-purple-400 to-pink-500",
-      C2: "from-pink-400 to-rose-500",
+    switch (level) {
+      case "A1":
+        return "from-[#CCFBF1] to-[#99F6E4]"
+      case "A2":
+        return "from-[#99F6E4] to-[#5EEAD4]"
+      case "B1":
+        return "from-[#5EEAD4] to-[#2DD4BF]"
+      case "B2":
+        return "from-[#2DD4BF] to-[#14B8A6]"
+      case "C1":
+        return "from-[#14B8A6] to-[#0D9488]"
+      case "C2":
+        return "from-[#0D9488] to-[#0F766E]"
+      default:
+        return "from-[#F0FDFA] to-[#CCFBF1]"
     }
-    return colors[level] || colors.A1
   }
 
   const getLevelBadgeColor = (level) => {
     const colors = {
-      A1: "bg-emerald-100 text-emerald-700 border-emerald-200",
-      A2: "bg-teal-100 text-teal-700 border-teal-200",
-      B1: "bg-blue-100 text-blue-700 border-blue-200",
-      B2: "bg-indigo-100 text-indigo-700 border-indigo-200",
-      C1: "bg-purple-100 text-purple-700 border-purple-200",
-      C2: "bg-pink-100 text-pink-700 border-pink-200",
+      A1: "bg-gradient-to-br from-[#CCFBF1] to-[#99F6E4] text-[#0D9488] border-[#5EEAD4]",
+      A2: "bg-gradient-to-br from-[#99F6E4] to-[#5EEAD4] text-[#0D9488] border-[#2DD4BF]",
+      B1: "bg-gradient-to-br from-[#5EEAD4] to-[#2DD4BF] text-[#0F766E] border-[#14B8A6]",
+      B2: "bg-gradient-to-br from-[#2DD4BF] to-[#14B8A6] text-white border-[#0D9488]",
+      C1: "bg-gradient-to-br from-[#14B8A6] to-[#0D9488] text-white border-[#0F766E]",
+      C2: "bg-gradient-to-br from-[#0D9488] to-[#0F766E] text-white border-[#115E59]",
     }
-    return colors[level] || colors.A1
+    return colors[level] || "bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] text-[#14B8A6] border-[#99F6E4]"
   }
 
   const startQuiz = (quiz) => {
@@ -152,7 +168,7 @@ const Quizes = () => {
       case "multiple-choice":
         return (
           <div className="space-y-3">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 border-2 border-blue-100">
+            <div className="bg-gradient-to-br from-[#CCFBF1] to-[#99F6E4] rounded-xl p-4 border-2 border-[#5EEAD4]">
               <h3 className="text-base font-bold text-gray-800 leading-relaxed">{question.questionText}</h3>
             </div>
 
@@ -163,14 +179,14 @@ const Quizes = () => {
                   onClick={() => handleAnswer(option)}
                   className={`w-full p-4 text-left rounded-xl border-2 transition-all duration-200 text-sm font-semibold ${
                     currentAnswer === option
-                      ? "border-blue-500 bg-blue-50 text-blue-900 shadow-md scale-[1.02]"
-                      : "border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50 hover:scale-[1.01]"
+                      ? "border-[#14B8A6] bg-gradient-to-br from-[#CCFBF1] to-[#99F6E4] text-[#0D9488] shadow-md scale-[1.02]"
+                      : "border-gray-200 bg-white hover:border-[#5EEAD4] hover:bg-gradient-to-br hover:from-[#F0FDFA] hover:to-[#CCFBF1] hover:scale-[1.01]"
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="flex-1 break-words pr-2">{option}</span>
                     {currentAnswer === option && (
-                      <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="w-5 h-5 bg-[#14B8A6] rounded-full flex items-center justify-center flex-shrink-0">
                         <Check className="w-3 h-3 text-white" />
                       </div>
                     )}
@@ -184,7 +200,7 @@ const Quizes = () => {
       case "fill-in":
         return (
           <div className="space-y-3">
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-4 border-2 border-purple-100">
+            <div className="bg-gradient-to-br from-[#99F6E4] to-[#5EEAD4] rounded-xl p-4 border-2 border-[#2DD4BF]">
               <h3 className="text-base font-bold text-gray-800 leading-relaxed">{question.questionText}</h3>
             </div>
             <input
@@ -192,7 +208,7 @@ const Quizes = () => {
               value={currentAnswer}
               onChange={(e) => handleAnswer(e.target.value)}
               placeholder="Shkruani përgjigjen tuaj këtu..."
-              className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:outline-none text-sm font-semibold bg-white shadow-sm"
+              className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-[#14B8A6] focus:outline-none text-sm font-semibold bg-white shadow-sm"
             />
           </div>
         )
@@ -201,8 +217,8 @@ const Quizes = () => {
       case "dropdown":
         return (
           <div className="space-y-4">
-            <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-xl p-4 border-2 border-teal-100">
-              <h3 className="text-base font-bold text-gray-800 leading-relaxed">{question.questionText}</h3>
+            <div className="bg-gradient-to-br from-[#5EEAD4] to-[#2DD4BF] rounded-xl p-4 border-2 border-[#14B8A6]">
+              <h3 className="text-base font-bold text-white leading-relaxed">{question.questionText}</h3>
             </div>
 
             <div className="min-h-[80px] p-4 bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-300 rounded-xl">
@@ -216,7 +232,7 @@ const Quizes = () => {
                     <button
                       key={idx}
                       onClick={() => handleRemoveWord(idx)}
-                      className="px-4 py-2.5 bg-gradient-to-r from-teal-100 to-cyan-100 text-teal-800 rounded-lg border-2 border-teal-300 text-sm font-bold hover:from-red-100 hover:to-red-200 hover:text-red-800 hover:border-red-300 transition-all duration-200 shadow-sm"
+                      className="px-4 py-2.5 bg-gradient-to-r from-[#99F6E4] to-[#5EEAD4] text-[#0D9488] rounded-lg border-2 border-[#2DD4BF] text-sm font-bold hover:from-red-100 hover:to-red-200 hover:text-red-800 hover:border-red-300 transition-all duration-200 shadow-sm"
                     >
                       {word}
                     </button>
@@ -236,7 +252,7 @@ const Quizes = () => {
                     className={`px-5 py-3 rounded-xl border-2 text-sm font-bold transition-all duration-200 ${
                       isUsed
                         ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed opacity-40"
-                        : "bg-white text-gray-800 border-gray-300 hover:border-teal-500 hover:bg-gradient-to-r hover:from-teal-50 hover:to-cyan-50 hover:text-teal-800 shadow-sm hover:shadow-md hover:scale-105"
+                        : "bg-white text-gray-800 border-gray-300 hover:border-[#14B8A6] hover:bg-gradient-to-r hover:from-[#CCFBF1] hover:to-[#99F6E4] hover:text-[#0D9488] shadow-sm hover:shadow-md hover:scale-105"
                     }`}
                   >
                     {option}
@@ -268,7 +284,7 @@ const Quizes = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
+      <div className="min-h-screen  flex items-center justify-center p-4">
         <div className="text-center space-y-4 max-w-md bg-white rounded-2xl shadow-xl p-8 border-2 border-red-100">
           <div className="w-16 h-16 bg-gradient-to-br from-red-100 to-red-200 rounded-full flex items-center justify-center mx-auto">
             <X className="w-8 h-8 text-red-600" />
@@ -288,9 +304,9 @@ const Quizes = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen  flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#CCFBF1] border-t-[#14B8A6]"></div>
           <p className="text-gray-600 font-semibold">Duke ngarkuar kuizet...</p>
         </div>
       </div>
@@ -305,37 +321,35 @@ const Quizes = () => {
     const alreadyCompleted = quizResults.alreadyCompleted
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-2xl border-2 border-gray-100 max-w-md w-full p-8 text-center">
+      <div className="min-h-screen  flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-2xl border-2 border-[#99F6E4] max-w-md w-full p-8 text-center">
           <div
             className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 ${
-              passed ? "bg-gradient-to-br from-orange-100 to-orange-200" : "bg-gradient-to-br from-red-100 to-red-200"
+              passed ? "bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A]" : "bg-gradient-to-br from-red-100 to-red-200"
             }`}
           >
-            {passed ? <Trophy className="w-10 h-10 text-orange-600" /> : <X className="w-10 h-10 text-red-600" />}
+            {passed ? <Trophy className="w-10 h-10 text-[#F59E0B]" /> : <X className="w-10 h-10 text-red-600" />}
           </div>
 
           <h2 className="text-2xl font-bold text-gray-800 mb-3">{passed ? "Kuizi u Përfundua!" : "Kuizi Dështoi"}</h2>
           <p className="text-gray-600 mb-4 font-semibold text-base">{quizResults.quizTitle}</p>
 
-          <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-5 mb-4 border-2 border-gray-200">
+          <div className="bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] rounded-2xl p-5 mb-4 border-2 border-[#99F6E4]">
             <div className="text-4xl font-bold text-gray-800 mb-2">
               {quizResults.correctAnswers}/{quizResults.totalQuestions}
             </div>
             <p className="text-gray-600 mb-3 font-semibold text-sm">Përgjigje të Sakta</p>
 
-            <div className={`text-3xl font-bold mb-2 ${passed ? "text-orange-600" : "text-red-600"}`}>
-              {percentage}%
-            </div>
+            <div className={`text-3xl font-bold mb-2 ${passed ? "text-[#0D9488]" : "text-red-600"}`}>{percentage}%</div>
             <p className="text-xs text-gray-500 font-semibold">
               {passed ? "Kaluar! (Duhet ≥70%)" : "Dështuar (Duhet ≥70%)"}
             </p>
           </div>
 
           {xpEarned > 0 && (
-            <div className="flex items-center justify-center gap-2 mb-4 p-3 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border-2 border-orange-200">
-              <Star className="w-5 h-5 text-orange-600 fill-orange-600" />
-              <span className="text-orange-600 font-bold text-base">+{xpEarned} XP Fituar</span>
+            <div className="flex items-center justify-center gap-2 mb-4 p-3 bg-gradient-to-r from-[#FEF3C7] to-[#FDE68A] rounded-xl border-2 border-[#F59E0B]">
+              <Star className="w-5 h-5 text-[#F59E0B] fill-[#F59E0B]" />
+              <span className="text-[#D97706] font-bold text-base">+{xpEarned} XP Fituar</span>
             </div>
           )}
 
@@ -370,7 +384,7 @@ const Quizes = () => {
                 setQuizResults(null)
                 setCurrentView("list")
               }}
-              className="w-full py-3 px-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-bold text-base transition-all duration-200 shadow-lg hover:shadow-xl"
+              className="w-full py-3 px-4 bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] hover:from-[#0D9488] hover:to-[#0891B2] text-white rounded-xl font-bold text-base transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               Kthehu te Kuizet
             </button>
@@ -399,7 +413,7 @@ const Quizes = () => {
     const currentQuestion = selectedQuiz.questions[currentQuestionIndex]
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="min-h-screen ">
         <div className="max-w-3xl mx-auto p-4 sm:p-6">
           <div className="mb-6">
             <button
@@ -408,14 +422,14 @@ const Quizes = () => {
                 setSelectedWords([])
                 window.scrollTo({ top: 0, behavior: "smooth" })
               }}
-              className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors text-sm font-semibold bg-white px-4 py-2.5 rounded-xl hover:bg-gray-50 border-2 border-gray-200 shadow-sm"
+              className="mb-4 flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors text-sm font-semibold bg-white px-4 py-2.5 rounded-xl hover:bg-gray-50 border-2 border-[#99F6E4] shadow-sm"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Kthehu te Kuizet</span>
             </button>
 
             <div
-              className={`bg-gradient-to-r ${getLevelColor(selectedQuiz.level)} rounded-2xl p-6 text-white shadow-xl`}
+              className={`bg-gradient-to-r ${getLevelColor(selectedQuiz.level)} rounded-2xl p-6 text-[#0D9488] shadow-xl border-2 border-[#5EEAD4]`}
             >
               <div className="flex items-center justify-between">
                 <div>
@@ -425,13 +439,13 @@ const Quizes = () => {
                       Niveli {selectedQuiz.level}
                     </span>
                     <div className="flex items-center gap-1.5 text-xs bg-white/30 backdrop-blur-sm px-3 py-1.5 rounded-full font-bold border border-white/40">
-                      <Star className="w-3.5 h-3.5 fill-white" />
+                      <Star className="w-3.5 h-3.5 fill-[#F59E0B] text-[#F59E0B]" />
                       {selectedQuiz.xp} XP
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-white/80 font-semibold mb-1">Pyetja</p>
+                  <p className="text-xs text-[#0D9488]/80 font-semibold mb-1">Pyetja</p>
                   <p className="text-2xl font-bold">
                     {currentQuestionIndex + 1}/{selectedQuiz.questions.length}
                   </p>
@@ -453,7 +467,7 @@ const Quizes = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg mb-5 p-5">
+          <div className="bg-white rounded-2xl border-2 border-[#99F6E4] shadow-lg mb-5 p-5">
             {renderQuestion(currentQuestion, currentQuestionIndex)}
           </div>
 
@@ -464,7 +478,7 @@ const Quizes = () => {
               className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all shadow-md ${
                 currentQuestionIndex === 0
                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-white border-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:shadow-lg"
+                  : "bg-white border-2 border-[#99F6E4] text-gray-700 hover:bg-gradient-to-br hover:from-[#F0FDFA] hover:to-[#CCFBF1] hover:border-[#5EEAD4] hover:shadow-lg"
               }`}
             >
               <ChevronLeft className="w-5 h-5" />E Mëparshme
@@ -490,7 +504,7 @@ const Quizes = () => {
                 className={`flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-bold transition-all ${
                   !answers[currentQuestionIndex]
                     ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl"
+                    : "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white hover:from-[#0D9488] hover:to-[#0891B2] shadow-lg hover:shadow-xl"
                 }`}
               >
                 Tjetri
@@ -504,23 +518,23 @@ const Quizes = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto p-4 sm:p-6">
-        <div className="bg-white rounded-3xl shadow-lg border-2 border-gray-200 p-6 sm:p-8 mb-6">
-          <div className="flex items-center gap-4 mb-3">
-            <div className="w-14 h-14 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center">
-              <BookOpen className="h-7 w-7 text-blue-600" />
+        <div className="bg-white rounded-2xl shadow-lg border-2 border-[#99F6E4] p-4 sm:p-5 mb-4">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-[#CCFBF1] to-[#99F6E4] rounded-xl flex items-center justify-center">
+              <BookOpen className="h-5 w-5 text-[#0D9488]" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Kuize te Gjuhes Gjermane</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Kuize te Gjuhes Gjermane</h1>
             </div>
           </div>
-          <p className="text-sm text-gray-600 ml-18 font-medium">Sfidoni njohurite tuaja Gjermane</p>
+          <p className="text-xs text-gray-600 ml-13 font-medium">Sfidoni njohurite tuaja Gjermane</p>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-lg border-2 border-gray-200 p-5 sm:p-6 mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="bg-white rounded-2xl shadow-lg border-2 border-[#99F6E4] p-3 sm:p-4 mb-4">
+          <div className="flex items-center gap-2 mb-3">
+            <svg className="w-4 h-4 text-[#0D9488]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -528,17 +542,17 @@ const Quizes = () => {
                 d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
               />
             </svg>
-            <h2 className="text-lg font-bold text-gray-900">Filtro sipas Nivelit</h2>
+            <h2 className="text-sm font-bold text-gray-900">Filtro sipas Nivelit</h2>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             <button
               onClick={() => {
                 setSelectedLevel("all")
                 setCurrentPage(1)
               }}
-              className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 border-2 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 border-2 ${
                 selectedLevel === "all"
-                  ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg border-transparent"
+                  ? "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white shadow-lg border-transparent"
                   : "bg-white text-gray-700 hover:bg-gray-50 border-gray-200"
               }`}
             >
@@ -551,9 +565,9 @@ const Quizes = () => {
                   setSelectedLevel(level)
                   setCurrentPage(1)
                 }}
-                className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 border-2 ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 border-2 ${
                   selectedLevel === level
-                    ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg border-transparent"
+                    ? "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white shadow-lg border-transparent"
                     : `${getLevelBadgeColor(level)} hover:scale-105`
                 }`}
               >
@@ -565,46 +579,60 @@ const Quizes = () => {
 
         {filteredQuizzes.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
-              {filteredQuizzes.slice(indexOfFirstQuiz, indexOfLastQuiz).map((quiz) => {
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+              {filteredQuizzes.slice(indexOfFirstQuiz, indexOfLastQuiz).map((quiz, index) => {
                 const isCompleted = completedQuizzes.includes(quiz._id)
+                const actualIndex = indexOfFirstQuiz + index
+                const isUnlocked = isQuizUnlocked(actualIndex)
 
                 return (
                   <div
                     key={quiz._id}
-                    className="group bg-white rounded-2xl border-2 border-gray-200 shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer overflow-hidden hover:scale-105"
-                    onClick={() => startQuiz(quiz)}
+                    className={`group bg-white rounded-xl border-2 shadow-md transition-all duration-300 overflow-hidden ${
+                      isUnlocked
+                        ? "border-[#99F6E4] hover:shadow-xl cursor-pointer hover:scale-105"
+                        : "border-gray-300 opacity-60 cursor-not-allowed"
+                    }`}
+                    onClick={() => isUnlocked && startQuiz(quiz)}
                   >
-                    <div className={`h-2 bg-gradient-to-r ${getLevelColor(quiz.level)}`}></div>
-                    <div className="p-5">
-                      <div className="flex items-start justify-between mb-4">
-                        <h3 className="text-base font-bold text-gray-900 leading-tight flex-1 pr-2 group-hover:text-blue-600 transition-colors">
+                    <div className={`h-1.5 bg-gradient-to-r ${getLevelColor(quiz.level)}`}></div>
+                    <div className="p-3">
+                      <div className="flex items-start justify-between mb-2">
+                        <h3
+                          className={`text-sm font-bold leading-tight flex-1 pr-2 transition-colors ${
+                            isUnlocked ? "text-gray-900 group-hover:text-[#0D9488]" : "text-gray-500"
+                          }`}
+                        >
                           {quiz.title}
                         </h3>
                         <div className="flex-shrink-0">
-                          {isCompleted ? (
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-md">
-                              <Check className="w-4 h-4 text-white" />
+                          {!isUnlocked ? (
+                            <div className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
+                              <Lock className="w-3 h-3 text-gray-500" />
+                            </div>
+                          ) : isCompleted ? (
+                            <div className="w-5 h-5 rounded-full bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] flex items-center justify-center shadow-md">
+                              <Check className="w-3 h-3 text-[#F59E0B]" />
                             </div>
                           ) : (
-                            <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center">
-                              <BookOpen className="w-4 h-4 text-gray-400" />
+                            <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
+                              <BookOpen className="w-3 h-3 text-gray-400" />
                             </div>
                           )}
                         </div>
                       </div>
 
-                      <div className="mb-4">
+                      <div className="mb-2">
                         <span
-                          className={`px-3 py-1.5 rounded-full text-xs font-bold border-2 ${getLevelBadgeColor(quiz.level)}`}
+                          className={`px-2 py-1 rounded-full text-[10px] font-bold border ${getLevelBadgeColor(quiz.level)}`}
                         >
                           Niveli {quiz.level}
                         </span>
                       </div>
 
-                      <div className="mb-4">
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="mb-2">
+                        <div className="flex items-center gap-1.5 text-gray-600">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path
                               strokeLinecap="round"
                               strokeLinejoin="round"
@@ -612,18 +640,21 @@ const Quizes = () => {
                               d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
                           </svg>
-                          <span className="text-sm font-semibold">{quiz.questions?.length || 0} Pyetje</span>
+                          <span className="text-xs font-semibold">{quiz.questions?.length || 0} Pyetje</span>
                         </div>
                       </div>
 
                       <button
-                        className={`w-full py-3 px-4 rounded-xl text-sm font-bold transition-all duration-200 shadow-md group-hover:shadow-lg ${
-                          isCompleted
-                            ? "bg-gradient-to-r from-amber-100 to-orange-100 text-amber-800 hover:from-amber-200 hover:to-orange-200 border-2 border-amber-200"
-                            : "bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700"
+                        disabled={!isUnlocked}
+                        className={`w-full py-2 px-3 rounded-lg text-xs font-bold transition-all duration-200 shadow-md ${
+                          !isUnlocked
+                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                            : isCompleted
+                              ? "bg-gradient-to-r from-[#FEF3C7] to-[#FDE68A] text-[#D97706] hover:from-[#FDE68A] hover:to-[#FCD34D] border-2 border-[#F59E0B] group-hover:shadow-lg"
+                              : "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white hover:from-[#0D9488] hover:to-[#0891B2] group-hover:shadow-lg"
                         }`}
                       >
-                        {isCompleted ? "Përserit" : "Fillo"}
+                        {!isUnlocked ? "I Bllokuar" : isCompleted ? "Përserit" : "Fillo"}
                       </button>
                     </div>
                   </div>
@@ -639,7 +670,7 @@ const Quizes = () => {
                   className={`p-3 rounded-xl transition-all shadow-md ${
                     currentPage === 1
                       ? "text-gray-300 cursor-not-allowed bg-gray-100"
-                      : "text-gray-600 hover:bg-white bg-white border-2 border-gray-200 hover:border-gray-300"
+                      : "text-gray-600 hover:bg-white bg-white border-2 border-[#99F6E4] hover:border-[#5EEAD4]"
                   }`}
                 >
                   <ChevronLeft className="w-5 h-5" />
@@ -665,7 +696,7 @@ const Quizes = () => {
                       onClick={() => paginate(pageNumber)}
                       className={`w-12 h-12 rounded-xl text-sm font-bold transition-all shadow-md ${
                         currentPage === pageNumber
-                          ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg scale-110"
+                          ? "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white shadow-lg scale-110"
                           : "text-gray-600 hover:bg-gray-50 bg-white border-2 border-gray-200"
                       }`}
                     >
@@ -680,7 +711,7 @@ const Quizes = () => {
                   className={`p-3 rounded-xl transition-all shadow-md ${
                     currentPage === totalPages
                       ? "text-gray-300 cursor-not-allowed bg-gray-100"
-                      : "text-gray-600 hover:bg-white bg-white border-2 border-gray-200 hover:border-gray-300"
+                      : "text-gray-600 hover:bg-white bg-white border-2 border-[#99F6E4] hover:border-[#5EEAD4]"
                   }`}
                 >
                   <ChevronRight className="w-5 h-5" />
@@ -697,9 +728,9 @@ const Quizes = () => {
           </>
         ) : (
           <div className="text-center py-16">
-            <div className="bg-white rounded-3xl p-12 inline-block border-2 border-gray-200 shadow-lg">
-              <div className="w-20 h-20 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                <BookOpen className="h-10 w-10 text-orange-600" />
+            <div className="bg-white rounded-3xl p-12 inline-block border-2 border-[#99F6E4] shadow-lg">
+              <div className="w-20 h-20 bg-gradient-to-br from-[#CCFBF1] to-[#99F6E4] rounded-full flex items-center justify-center mx-auto mb-4">
+                <BookOpen className="h-10 w-10 text-[#0D9488]" />
               </div>
               <h3 className="text-lg font-bold text-gray-800 mb-2">Nuk ka kuize të disponueshme</h3>
               <p className="text-gray-500 text-sm font-medium">

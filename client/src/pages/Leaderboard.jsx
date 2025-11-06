@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Trophy, Medal, Crown, Star, Flame, Users } from "lucide-react"
+import { Trophy, Crown, Zap, Medal } from "lucide-react"
 import { io } from "socket.io-client"
 import { motion } from "framer-motion"
 import api, { SOCKET_URL } from "../services/api"
@@ -44,171 +44,224 @@ const Leaderboard = () => {
     }
   }, [timeFrame, fetchLeaderboard])
 
-  const getRankIcon = (rank) => {
-    switch (rank) {
-      case 1:
-        return <Crown className="h-6 w-6 text-yellow-500" />
-      case 2:
-        return <Medal className="h-6 w-6 text-gray-400" />
-      case 3:
-        return <Trophy className="h-6 w-6 text-amber-600" />
-      default:
-        return <span className="text-lg font-bold text-gray-600">#{rank}</span>
-    }
-  }
-
-  const getLevelColor = (level) => {
-    const colors = {
-      A1: "bg-green-100 text-green-800",
-      A2: "bg-blue-100 text-blue-800",
-      B1: "bg-yellow-100 text-yellow-800",
-      B2: "bg-orange-100 text-orange-800",
-      C1: "bg-red-100 text-red-800",
-      C2: "bg-purple-100 text-purple-800",
-    }
-    return colors[level] || "bg-gray-100 text-gray-800"
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
       </div>
     )
   }
 
   const topThree = leaderboardData.slice(0, 3)
-  const podiumUsers = [topThree[1], topThree[0], topThree[2]].filter(Boolean)
+  const remainingUsers = leaderboardData.slice(3)
 
   return (
-    <div className="mx-auto space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="w-full space-y-6 p-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <Trophy className="h-6 w-6 text-yellow-500" />
-              Tabela e Renditjes
+            <h1
+              className="text-2xl font-bold text-gray-900 flex items-center gap-2"
+              style={{ fontFamily: "Poppins, sans-serif" }}
+            >
+              <Trophy className="h-7 w-7 text-yellow-500" />
+              <span>Tabela e Renditjes</span>
             </h1>
-            <p className="text-gray-600">Shiko si renditesh krahas përdoruesve të tjerë</p>
+            <p className="text-sm text-gray-500 mt-1" style={{ fontFamily: "Inter, sans-serif" }}>
+              Shiko si renditesh krahas përdoruesve të tjerë.
+            </p>
           </div>
           <div className="flex gap-2">
-            {[
-              { key: "weekly", label: "Javore" },
-              { key: "monthly", label: "Mujore" },
-              { key: "all-time", label: "Gjithë kohës" },
-            ].map((period) => (
-              <button
-                key={period.key}
-                onClick={() => setTimeFrame(period.key)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  timeFrame === period.key
-                    ? "bg-teal-600 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                {period.label}
-              </button>
-            ))}
+            <button
+              onClick={() => setTimeFrame("weekly")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                timeFrame === "weekly"
+                  ? "bg-teal-500 text-white shadow-sm"
+                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+              }`}
+              style={{ fontFamily: "Inter, sans-serif" }}
+            >
+              Javore
+            </button>
+            <button
+              onClick={() => setTimeFrame("monthly")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                timeFrame === "monthly"
+                  ? "bg-teal-500 text-white shadow-sm"
+                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+              }`}
+              style={{ fontFamily: "Inter, sans-serif" }}
+            >
+              Mujore
+            </button>
+            <button
+              onClick={() => setTimeFrame("all-time")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                timeFrame === "all-time"
+                  ? "bg-teal-500 text-white shadow-sm"
+                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+              }`}
+              style={{ fontFamily: "Inter, sans-serif" }}
+            >
+              Gjithë kohës
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Podium */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6 text-center">Performuesit Kryesorë</h2>
-        <div className="flex justify-center items-end gap-8">
-          {podiumUsers.map((user, index) => {
-            const heights = ["h-24", "h-32", "h-20"]
-            const podiumHeightIndex = user.rank === 1 ? 1 : user.rank === 2 ? 0 : 2
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <h2
+          className="text-lg font-semibold text-gray-900 mb-8 text-center"
+          style={{ fontFamily: "Poppins, sans-serif" }}
+        >
+          Performuesit Kryesorë
+        </h2>
 
-            return (
-              <motion.div
-                key={user.rank}
-                initial={{ y: 50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: index * 0.2, type: "spring", stiffness: 120 }}
-                className="flex flex-col items-center"
-              >
-                <div className="mb-1">
-                  {user.rank === 1 ? <Crown className="h-8 w-8 text-yellow-400" /> : user.rank === 2 ? <Medal className="h-8 w-8 text-gray-400" /> : <Trophy className="h-8 w-8 text-amber-600" />}
-                </div>
+        {topThree.length >= 3 && (
+          <div className="flex justify-center items-end gap-4 sm:gap-8 mb-4">
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0, type: "spring", stiffness: 120 }}
+              className="flex flex-col items-center"
+            >
+              <Medal className="h-6 w-6 text-gray-400 mb-2" />
+              <div className="relative mb-3">
                 <img
-                  src={user.avatar || "/placeholder.svg"}
-                  alt={user.name}
-                  className={`${
-                    user.rank === 1 ? "w-20 h-20" : "w-16 h-16"
-                  } rounded-full border-4 shadow-lg ${
-                    user.rank === 1 ? "border-yellow-400" : "border-gray-300"
-                  }`}
+                  src={topThree[1]?.avatar || "/placeholder.svg"}
+                  alt={topThree[1]?.name}
+                  className="w-16 h-16 rounded-full border-4 border-gray-300 object-cover"
                 />
-                <div
-                  className={`${heights[podiumHeightIndex]} w-16 mt-2 rounded-t-xl flex items-center justify-center text-white font-bold bg-gradient-to-t ${
-                    user.rank === 1
-                      ? "from-yellow-400 to-yellow-500"
-                      : user.rank === 2
-                      ? "from-gray-300 to-gray-400"
-                      : "from-amber-500 to-amber-600"
-                  }`}
-                >
-                  {user.rank}
-                </div>
-                <p className="mt-2 text-sm font-semibold">{user.name.split(" ")[0]}</p>
-                <p className="text-xs text-gray-600">{user.xp} XP</p>
-              </motion.div>
-            )
-          })}
-        </div>
+              </div>
+              <div className="bg-gray-200 w-20 h-24 rounded-t-xl flex items-center justify-center">
+                <span className="text-4xl font-bold text-gray-600" style={{ fontFamily: "Poppins, sans-serif" }}>
+                  2
+                </span>
+              </div>
+              <p className="mt-3 text-sm font-semibold text-gray-900" style={{ fontFamily: "Inter, sans-serif" }}>
+                {topThree[1]?.name}
+              </p>
+              <p className="text-xs text-gray-500" style={{ fontFamily: "Inter, sans-serif" }}>
+                {topThree[1]?.xp?.toLocaleString()} XP
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 120 }}
+              className="flex flex-col items-center -mt-4"
+            >
+              <Trophy className="h-8 w-8 text-yellow-500 mb-2" />
+              <div className="relative mb-3">
+                <img
+                  src={topThree[0]?.avatar || "/placeholder.svg"}
+                  alt={topThree[0]?.name}
+                  className="w-24 h-24 rounded-full border-4 border-yellow-400 object-cover shadow-lg"
+                />
+              </div>
+              <div className="bg-gradient-to-b from-yellow-300 to-yellow-400 w-24 h-32 rounded-t-xl flex items-center justify-center shadow-md">
+                <span className="text-5xl font-bold text-yellow-700" style={{ fontFamily: "Poppins, sans-serif" }}>
+                  1
+                </span>
+              </div>
+              <p className="mt-3 text-base font-bold text-gray-900" style={{ fontFamily: "Inter, sans-serif" }}>
+                {topThree[0]?.name}
+              </p>
+              <p className="text-sm text-teal-600 font-semibold" style={{ fontFamily: "Inter, sans-serif" }}>
+                {topThree[0]?.xp?.toLocaleString()} XP
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.4, type: "spring", stiffness: 120 }}
+              className="flex flex-col items-center"
+            >
+              <Medal className="h-6 w-6 text-pink-400 mb-2" />
+              <div className="relative mb-3">
+                <img
+                  src={topThree[2]?.avatar || "/placeholder.svg"}
+                  alt={topThree[2]?.name}
+                  className="w-16 h-16 rounded-full border-4 border-pink-300 object-cover"
+                />
+              </div>
+              <div className="bg-pink-200 w-20 h-20 rounded-t-xl flex items-center justify-center">
+                <span className="text-4xl font-bold text-pink-600" style={{ fontFamily: "Poppins, sans-serif" }}>
+                  3
+                </span>
+              </div>
+              <p className="mt-3 text-sm font-semibold text-gray-900" style={{ fontFamily: "Inter, sans-serif" }}>
+                {topThree[2]?.name}
+              </p>
+              <p className="text-xs text-gray-500" style={{ fontFamily: "Inter, sans-serif" }}>
+                {topThree[2]?.xp?.toLocaleString()} XP
+              </p>
+            </motion.div>
+          </div>
+        )}
       </div>
 
-      {/* Full Rankings */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <Users className="h-5 w-5 text-teal-600" />
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-6 border-b border-gray-100">
+          <h2
+            className="text-lg font-semibold text-gray-900 flex items-center gap-2"
+            style={{ fontFamily: "Poppins, sans-serif" }}
+          >
+            <Crown className="h-5 w-5 text-teal-500" />
             Renditja e Plotë
           </h2>
         </div>
-        <div className="divide-y divide-gray-200">
-          {leaderboardData.map((user, index) => (
+
+        <div className="divide-y divide-gray-100">
+          <div className="px-6 py-3 bg-gray-50">
+            <div
+              className="flex items-center justify-between text-xs font-medium text-gray-500 uppercase tracking-wider"
+              style={{ fontFamily: "Inter, sans-serif" }}
+            >
+              <div className="flex items-center gap-4">
+                <span className="w-8">Vendi</span>
+                <span>Përdoruesi</span>
+              </div>
+              <span>XP</span>
+            </div>
+          </div>
+
+          {remainingUsers.map((user, index) => (
             <motion.div
               key={user.rank}
               initial={{ x: -50, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: index * 0.05 }}
-              className="p-4 hover:bg-gray-50 transition-colors"
+              className="px-6 py-4 hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center justify-center w-8">{getRankIcon(user.rank)}</div>
+                <div className="flex items-center gap-4">
+                  <div className="w-8 text-center">
+                    <span className="text-lg font-semibold text-gray-700" style={{ fontFamily: "Poppins, sans-serif" }}>
+                      {user.rank}
+                    </span>
+                  </div>
                   <img
                     src={user.avatar || "/placeholder.svg"}
                     alt={user.name}
-                    className="w-10 h-10 rounded-full"
+                    className="w-10 h-10 rounded-full object-cover"
                   />
                   <div>
-                    <p className="font-medium text-gray-900">{user.name}</p>
-                    <div className="flex items-center space-x-2">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${getLevelColor(
-                          user.level
-                        )}`}
-                      >
-                        Niveli {user.level}
-                      </span>
-                      <div className="flex items-center space-x-1">
-                        <Flame className="h-3 w-3 text-orange-500" />
-                        <span className="text-xs text-gray-500">{user.streak} ditë</span>
-                      </div>
-                    </div>
+                    <p className="font-medium text-gray-900" style={{ fontFamily: "Inter, sans-serif" }}>
+                      {user.name}
+                    </p>
+                    <p className="text-xs text-gray-500" style={{ fontFamily: "Inter, sans-serif" }}>
+                      Niveli {user.level} · {user.streak} ditë
+                    </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="flex items-center space-x-1">
-                    <Star className="h-4 w-4 text-yellow-500" />
-                    <span className="font-semibold text-gray-900">{user.xp}</span>
-                  </div>
-                  <p className="text-xs text-gray-500">Pikë XP</p>
+                <div className="flex items-center gap-1">
+                  <Zap className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                  <span className="font-semibold text-gray-900" style={{ fontFamily: "Inter, sans-serif" }}>
+                    {user.xp?.toLocaleString()}
+                  </span>
                 </div>
               </div>
             </motion.div>

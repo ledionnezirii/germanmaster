@@ -21,7 +21,6 @@ import {
   Coffee,
   Film,
   TreePine,
-  Filter,
   Guitar,
   HardHat,
   Book,
@@ -426,49 +425,39 @@ const Category = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-3 sm:p-4 lg:p-6">
+    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 lg:p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sm:p-8 mb-6">
-          <div className="flex items-start gap-4">
-            <div className="bg-gradient-to-br from-teal-500 to-blue-600 p-3 rounded-xl shadow-md flex-shrink-0">
-              <FolderOpen className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 text-balance">Kategoritë e Fjalëve</h1>
-              <p className="text-gray-600 text-base leading-relaxed">
-                Eksploroni fjalorin gjermanisht të organizuar sipas temave dhe kategorive. Mësoni fjalë të reja dhe
-                zgjeroni fjalorin tuaj në mënyrë sistematike.
-              </p>
-            </div>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Word Categories</h1>
+          <p className="text-gray-600">
+            Explore our organized German vocabulary. Learn new words and expand your dictionary systematically.
+          </p>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5 mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <Filter className="h-4 w-4 text-gray-600" />
-            <p className="text-sm font-medium text-gray-700">Filtro sipas llojit:</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {availableWordTypes.map((type) => (
-              <button
-                key={type.value}
-                onClick={() => setSelectedCategoryFilter(type.value)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                  selectedCategoryFilter === type.value
-                    ? "bg-gradient-to-r from-teal-600 to-blue-600 text-white shadow-md"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                {type.label}
-              </button>
-            ))}
-            <div className="ml-auto">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              {availableWordTypes.map((type) => (
+                <button
+                  key={type.value}
+                  onClick={() => setSelectedCategoryFilter(type.value)}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                    selectedCategoryFilter === type.value
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  {type.label}
+                </button>
+              ))}
+            </div>
+            <div>
               <select
                 value={selectedLevelFilter}
                 onChange={(e) => setSelectedLevelFilter(e.target.value)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 cursor-pointer"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
               >
-                <option value="all">Të gjitha nivelët</option>
+                <option value="all">All levels</option>
                 <option value="A1">A1</option>
                 <option value="A2">A2</option>
                 <option value="B1">B1</option>
@@ -483,7 +472,7 @@ const Category = () => {
         {loading ? (
           <div className="flex items-center justify-center min-h-64">
             <div className="flex flex-col items-center gap-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
               <p className="text-sm text-gray-600">Duke ngarkuar kategoritë...</p>
             </div>
           </div>
@@ -495,62 +484,14 @@ const Category = () => {
                   const IconComponent = iconMap[category.icon] || iconMap.default
 
                   const colorClasses = [
-                    {
-                      gradient: "from-blue-500 to-blue-600",
-                      bg: "bg-blue-50",
-                      text: "text-blue-700",
-                      border: "border-blue-100",
-                      hover: "hover:border-blue-200",
-                    },
-                    {
-                      gradient: "from-emerald-500 to-emerald-600",
-                      bg: "bg-emerald-50",
-                      text: "text-emerald-700",
-                      border: "border-emerald-100",
-                      hover: "hover:border-emerald-200",
-                    },
-                    {
-                      gradient: "from-cyan-500 to-cyan-600",
-                      bg: "bg-cyan-50",
-                      text: "text-cyan-700",
-                      border: "border-cyan-100",
-                      hover: "hover:border-cyan-200",
-                    },
-                    {
-                      gradient: "from-violet-500 to-violet-600",
-                      bg: "bg-violet-50",
-                      text: "text-violet-700",
-                      border: "border-violet-100",
-                      hover: "hover:border-violet-200",
-                    },
-                    {
-                      gradient: "from-pink-500 to-pink-600",
-                      bg: "bg-pink-50",
-                      text: "text-pink-700",
-                      border: "border-pink-100",
-                      hover: "hover:border-pink-200",
-                    },
-                    {
-                      gradient: "from-amber-500 to-amber-600",
-                      bg: "bg-amber-50",
-                      text: "text-amber-700",
-                      border: "border-amber-100",
-                      hover: "hover:border-amber-200",
-                    },
-                    {
-                      gradient: "from-indigo-500 to-indigo-600",
-                      bg: "bg-indigo-50",
-                      text: "text-indigo-700",
-                      border: "border-indigo-100",
-                      hover: "hover:border-indigo-200",
-                    },
-                    {
-                      gradient: "from-teal-500 to-teal-600",
-                      bg: "bg-teal-50",
-                      text: "text-teal-700",
-                      border: "border-teal-100",
-                      hover: "hover:border-teal-200",
-                    },
+                    { bg: "bg-blue-100", icon: "bg-blue-100" },
+                    { bg: "bg-purple-100", icon: "bg-purple-100" },
+                    { bg: "bg-pink-100", icon: "bg-pink-100" },
+                    { bg: "bg-orange-100", icon: "bg-orange-100" },
+                    { bg: "bg-cyan-100", icon: "bg-cyan-100" },
+                    { bg: "bg-yellow-100", icon: "bg-yellow-100" },
+                    { bg: "bg-emerald-100", icon: "bg-emerald-100" },
+                    { bg: "bg-indigo-100", icon: "bg-indigo-100" },
                   ]
                   const colorClass = colorClasses[index % colorClasses.length]
 
@@ -561,76 +502,32 @@ const Category = () => {
                     <div
                       key={category._id}
                       onClick={() => fetchCategoryDetails(category._id, category.category)}
-                      className={`group relative rounded-2xl border-2 transition-all duration-300 cursor-pointer overflow-hidden h-[180px] ${
-                        isCompleted
-                          ? "bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 border-amber-300 hover:border-amber-400 hover:shadow-xl hover:scale-[1.02]"
-                          : `bg-white ${colorClass.border} ${colorClass.hover} hover:shadow-lg hover:scale-[1.02]`
-                      }`}
+                      className="group bg-white rounded-xl border border-gray-200 p-5 hover:shadow-lg transition-all duration-200 cursor-pointer"
                     >
-                      {/* Background decoration */}
-                      <div
-                        className={`absolute inset-0 opacity-5 ${isCompleted ? "bg-gradient-to-br from-amber-400 to-orange-400" : `bg-gradient-to-br ${colorClass.gradient}`}`}
-                      />
-
-                      {/* Shimmer effect for completed */}
-                      {isCompleted && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
-                      )}
-
-                      <div className="relative p-5 flex flex-col h-full">
-                        {/* Icon section */}
-                        <div className="flex items-start justify-between mb-3">
-                          <div
-                            className={`p-3 rounded-xl shadow-sm transition-transform duration-300 group-hover:scale-110 flex-shrink-0 ${
-                              isCompleted
-                                ? "bg-gradient-to-br from-amber-400 to-orange-500"
-                                : `bg-gradient-to-br ${colorClass.gradient}`
-                            }`}
-                          >
-                            <IconComponent className="h-6 w-6 text-white" />
-                          </div>
-
-                          {/* Completed badge */}
-                          {isCompleted && (
-                            <div className="flex items-center gap-1 px-2.5 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold rounded-full shadow-md flex-shrink-0">
-                              <CheckCircle className="h-3.5 w-3.5" />
-                              <span>Kryer</span>
-                            </div>
-                          )}
+                      <div className="flex items-start justify-between mb-4">
+                        <div
+                          className={`w-12 h-12 ${colorClass.icon} rounded-xl flex items-center justify-center flex-shrink-0`}
+                        >
+                          <IconComponent className="h-6 w-6 text-gray-700" />
                         </div>
 
-                        <div className="flex-1 flex flex-col min-h-0">
-                          <h3
-                            className={`text-base font-bold leading-tight mb-3 line-clamp-2 ${
-                              isCompleted ? "text-amber-900" : "text-gray-900"
-                            }`}
-                          >
-                            {category.category}
-                          </h3>
-
-                          {/* Type badge - always at bottom */}
-                          <div className="mt-auto">
-                            <span
-                              className={`inline-flex items-center px-3 py-1 text-xs font-semibold rounded-full ${
-                                isCompleted
-                                  ? "bg-amber-100 text-amber-800 border border-amber-200"
-                                  : `${colorClass.bg} ${colorClass.text} border ${colorClass.border}`
-                              }`}
-                            >
-                              {availableWordTypes.find((t) => t.value === category.type)?.label || "Kategori"}
-                            </span>
+                        {isCompleted && (
+                          <div className="flex items-center gap-1 bg-green-50 text-green-700 px-2.5 py-1 rounded-full text-xs font-medium border border-green-200">
+                            <CheckCircle className="h-3.5 w-3.5" />
+                            <span>Completed</span>
                           </div>
-                        </div>
+                        )}
                       </div>
 
-                      {/* Hover indicator */}
-                      <div
-                        className={`absolute bottom-0 left-0 right-0 h-1 transition-all duration-300 ${
-                          isCompleted
-                            ? "bg-gradient-to-r from-amber-400 via-orange-500 to-amber-400"
-                            : `bg-gradient-to-r ${colorClass.gradient}`
-                        } opacity-0 group-hover:opacity-100`}
-                      />
+                      <h3 className="text-base font-semibold text-gray-900 mb-3 line-clamp-2 group-hover:text-gray-700 transition-colors">
+                        {category.category}
+                      </h3>
+
+                      <div className="mt-auto">
+                        <span className="inline-block bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-xs font-medium">
+                          {availableWordTypes.find((t) => t.value === category.type)?.label || "Kategori"}
+                        </span>
+                      </div>
                     </div>
                   )
                 })

@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useRef, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
@@ -46,19 +44,24 @@ const Navbar = () => {
 
   const Button = ({ children, variant = "default", size = "default", className = "", onClick, ...props }) => {
     const baseClasses =
-      "inline-flex items-center justify-center rounded-xl text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
+      "inline-flex items-center justify-center rounded-xl text-sm font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none"
     const variants = {
       default:
         "bg-gradient-to-r from-emerald-500 to-teal-600 text-white hover:from-emerald-600 hover:to-teal-700 shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30",
       ghost: "text-slate-300 hover:bg-white/5 hover:text-white backdrop-blur-sm",
       outline:
         "border-2 border-slate-700 text-slate-200 hover:bg-white/5 hover:border-slate-600 hover:text-white backdrop-blur-sm",
+      primary: 
+        "bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20 hover:border-white/30 shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-black/20 hover:scale-[1.02] active:scale-[0.98]",
+      secondary:
+        "bg-transparent backdrop-blur-sm text-white border border-white/30 hover:bg-white/10 hover:border-white/40 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]",
     }
     const sizes = {
       default: "h-10 py-2 px-4",
       sm: "h-8 px-2 rounded-lg",
       lg: "h-11 px-8 rounded-xl",
       icon: "h-9 w-9",
+      auth: "h-9 px-5 md:h-10 md:px-6",
     }
     return (
       <button
@@ -70,6 +73,8 @@ const Navbar = () => {
       </button>
     )
   }
+
+  // ... keep existing code (Avatar component and rest)
 
   const Avatar = ({ src, alt, fallback, className = "" }) => {
     const [imageError, setImageError] = useState(false)
@@ -117,7 +122,7 @@ const Navbar = () => {
                   height={40}
                   className="md:w-[50px] md:h-[50px] rounded-full relative z-10 ring-2 ring-emerald-400/30 group-hover:ring-emerald-300/50 shadow-lg shadow-emerald-500/20 group-hover:shadow-2xl group-hover:shadow-emerald-400/40 transition-all duration-300"
                   alt="logo"
-                  style={{ clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)" }}
+               
                 />
               </div>
               <div className="flex flex-col items-start">
@@ -240,7 +245,7 @@ const Navbar = () => {
                           <div className="mr-3 w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors">
                             <User className="h-4 w-4" />
                           </div>
-                          <span className="font-semibold">Cilësimet e Llogarisë</span>
+                          <span className="text-sm">Cilësimet e Llogarisë</span>
                         </Link>
 
                         {/* Logout Button */}
@@ -251,7 +256,7 @@ const Navbar = () => {
                           <div className="mr-3 w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors">
                             <LogOut className="h-4 w-4" />
                           </div>
-                          <span className="font-semibold">Çkyqu</span>
+                          <span className="text-sm">Çkyqu</span>
                         </button>
                       </div>
                     </div>
@@ -259,19 +264,19 @@ const Navbar = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2.5">
                 <Button
-                  variant="default"
-                  size="default"
-                  className="h-8 px-2 md:h-10 md:py-2 md:px-4 md:text-sm text-xs"
+                  variant="secondary"
+                  size="auth"
+                  className="text-xs md:text-sm font-bold tracking-wide"
                   onClick={() => navigate("/signin")}
                 >
                   Hyre
                 </Button>
                 <Button
-                  variant="default"
-                  size="default"
-                  className="h-8 px-2 md:h-10 md:py-2 md:px-4 md:text-sm text-xs"
+                  variant="primary"
+                  size="auth"
+                  className="text-xs md:text-sm font-bold tracking-wide"
                   onClick={() => navigate("/signup")}
                 >
                   Regjistrohu

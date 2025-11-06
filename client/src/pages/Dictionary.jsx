@@ -179,7 +179,7 @@ const Dictionary = () => {
         </div>
 
         {/* Search & Filters */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6">
+        <div className="bg-white/80 backdrop-blur-sm flex items-center gap-2 rounded-2xl shadow-sm border border-gray-200/50 p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6">
           {/* Level Filters */}
           <div className="space-y-3 md:space-y-4">
             <div className="flex items-center gap-2 md:gap-3">

@@ -319,27 +319,27 @@ export default function PlanPage() {
       <FontImport />
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 py-6 sm:py-10 lg:py-12 px-4 sm:px-6 lg:px-12">
         <div className="mx-auto max-w-7xl">
-          <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-5 sm:p-8 md:p-10 mb-6 sm:mb-10 lg:mb-12 animate-fadeInUp">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-emerald-100/30 to-teal-100/30 rounded-full blur-3xl -z-10" />
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-cyan-100/20 to-blue-100/20 rounded-full blur-3xl -z-10" />
+          <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/40 p-4 md:p-8 shadow-xl backdrop-blur-md mb-6 sm:mb-10 lg:mb-12 animate-fadeInUp">
+            <div className="absolute -top-[50px] -right-[50px] w-[200px] h-[200px] bg-[radial-gradient(circle,rgba(20,184,166,0.15),transparent_70%)] rounded-full blur-[40px] pointer-events-none" />
+            <div className="absolute -bottom-[30px] -left-[30px] w-[150px] h-[150px] bg-[radial-gradient(circle,rgba(6,182,212,0.15),transparent_70%)] rounded-full blur-[40px] pointer-events-none" />
 
-            <div className="flex flex-col gap-4 sm:gap-6">
-              <div className="flex items-start gap-3 sm:gap-5">
-                <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                  <Target className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" strokeWidth={1.5} />
-                </div>
-                <div className="flex-1">
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-emerald-900 bg-clip-text text-transparent mb-1 sm:mb-2">
-                    Gjermanisht {plan.level}
-                  </h1>
-                  <p className="text-gray-600 text-sm sm:text-base md:text-lg leading-relaxed">
-                    Ndiqni progresin tuaj përmes temave thelbësore
-                  </p>
+            <div className="relative z-10 flex flex-col items-center gap-4 md:gap-6 text-center md:flex-row md:text-left">
+              <div className="flex-shrink-0">
+                <div className="flex h-12 w-12 md:h-16 md:w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[#14B8A6] to-[#06B6D4] shadow-lg">
+                  <Target className="h-6 w-6 md:h-8 md:w-8 text-white" strokeWidth={1.5} />
                 </div>
               </div>
+
+              <div className="flex-1">
+                <h1 className="mb-1 md:mb-2 bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] bg-clip-text text-2xl md:text-4xl font-bold text-transparent">
+                  Gjermanisht {plan.level}
+                </h1>
+                <p className="text-sm md:text-base text-gray-600">Ndiqni progresin tuaj përmes temave thelbësore</p>
+              </div>
+
               <button
                 onClick={() => setSelectedLevel(null)}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-gray-900 text-white px-6 py-3 sm:py-3.5 rounded-xl sm:rounded-2xl hover:bg-gray-800 transition-all text-sm font-medium shadow-xl shadow-gray-900/30 hover:shadow-2xl"
+                className="flex-shrink-0 inline-flex items-center justify-center gap-2.5 bg-gray-900 text-white px-6 py-3 md:py-3.5 rounded-xl md:rounded-2xl hover:bg-gray-800 transition-all text-sm font-medium shadow-xl shadow-gray-900/30 hover:shadow-2xl whitespace-nowrap"
               >
                 <ArrowLeft className="h-4 w-4" strokeWidth={2} />
                 Ndrysho Nivelin

@@ -227,7 +227,7 @@ const Sidebar = () => {
                 className="text-[10px] text-slate-500 font-medium leading-relaxed"
                 style={{ fontFamily: fonts.inter }}
               >
-                <p className="mb-0.5">© {new Date().getFullYear()} German Tutor</p>
+                <p className="mb-0.5">© {new Date().getFullYear()} gjuhagjermane</p>
                 <p className="text-slate-600">Të gjitha të drejtat e rezervuara.</p>
               </div>
             </div>

@@ -91,12 +91,9 @@ export default function Words() {
   }
 
   const generateMultipleChoiceOptions = (correctWord, allWords) => {
-    // Get 3 random wrong answers
     const wrongWords = allWords.filter((w) => w._id !== correctWord._id)
     const shuffledWrong = shuffleArray(wrongWords)
     const wrongOptions = shuffledWrong.slice(0, 3)
-
-    // Combine correct answer with wrong answers and shuffle
     const allOptions = [correctWord, ...wrongOptions]
     return shuffleArray(allOptions)
   }
@@ -181,7 +178,7 @@ export default function Words() {
   }
 
   const handleRemoveWord = async (id) => {
-    if (!confirm("Jeni i sigurt që dëshironi të fshini këtë fjalë?")) return
+    if (!window.confirm("Jeni i sigurt që dëshironi të fshini këtë fjalë?")) return
 
     try {
       await wordsService.removeLearnedWord(id)
@@ -247,37 +244,8 @@ export default function Words() {
     setQuizResult(null)
   }
 
-  const checkAnswer = async () => {
-    if (!selectedAnswer) {
-      showNotification("Ju lutem zgjidhni një përgjigje", "error")
-      return
-    }
-
-    const isCorrect = selectedAnswer._id === currentQuizWord._id
-    setQuizResult(isCorrect)
-    setQuizScore((prev) => ({
-      correct: prev.correct + (isCorrect ? 1 : 0),
-      total: prev.total + 1,
-    }))
-
-    if (isCorrect) {
-      const xpEarned = 1
-      setTotalXP((prev) => prev + xpEarned)
-      try {
-        await wordsService.addQuizXp(1)
-      } catch (error) {
-        console.error("Error awarding XP:", error)
-      }
-    }
-
-    setTimeout(() => {
-      loadNextQuizWord()
-    }, 1500)
-  }
-
   const handleAnswerSelection = (option) => {
     setSelectedAnswer(option)
-    // Immediately check the answer after selection
     setTimeout(() => {
       const isCorrect = option._id === currentQuizWord._id
       setQuizResult(isCorrect)
@@ -294,15 +262,10 @@ export default function Words() {
         })
       }
 
-      // Auto-advance to next question after showing result
       setTimeout(() => {
         loadNextQuizWord()
       }, 1500)
     }, 100)
-  }
-
-  const nextQuestion = () => {
-    loadNextQuizWord()
   }
 
   const endQuiz = () => {
@@ -432,13 +395,13 @@ export default function Words() {
             <h1 className="text-xl font-bold text-gray-800">Modaliteti i Kuizit</h1>
           </div>
           <div className="flex gap-3 text-xs">
-            <p className="text-gray-600">
+            <p className="text-gray-600 bg-[#f4f5f7]/60 backdrop-blur-md border border-white/70 rounded-2xl shadow-lg p-2">
               Rezultati:{" "}
               <strong className="text-[#0D9488]">
-                {quizScore.correct} / {quizScore.total}
+                {quizScore.correct}/{quizScore.total}
               </strong>
             </p>
-            <p className="text-[#D97706] flex items-center gap-1">
+            <p className="text-[#D97706] flex items-center gap-1 bg-[#f4f5f7]/60 backdrop-blur-md border border-white/30 rounded-2xl shadow-lg p-2">
               <Zap size={14} />
               <strong>{totalXP} XP</strong>
             </p>
@@ -447,59 +410,60 @@ export default function Words() {
 
         <div className="border-2 border-[#99F6E4] rounded-xl p-4 bg-white shadow-lg">
           <div>
-            <div className="text-center py-4 px-4 mb-4 bg-gradient-to-br from-[#14B8A6] via-[#0D9488] to-[#06B6D4] rounded-xl shadow-lg shadow-teal-500/30">
-              <p className="text-xs text-white/90 mb-2 font-semibold uppercase tracking-wide">Përktheni këtë fjalë:</p>
-              <h2 className="text-3xl font-bold text-white mb-3">{currentQuizWord.word}</h2>
+            <div className="text-center py-8 px-4 mb-4 bg-gradient-to-br from-[#CCFBF1] to-[#99F6E4] rounded-xl">
+              <p className="text-xs text-gray-600 mb-2 font-medium uppercase tracking-wide">PËRKTHENI KËTË FJALË:</p>
+              <h2 className="text-5xl font-bold text-[#14B8A6] mb-4">{currentQuizWord.word}</h2>
               <button
                 onClick={() => handleSpeak(currentQuizWord.word)}
-                className="mt-2 px-3 py-1.5 bg-white/20 border-2 border-white/30 rounded-lg text-white hover:bg-white/30 transition-all inline-flex items-center gap-2 text-xs font-semibold"
+                className="mt-2 px-4 py-2 bg-white border-2 border-[#14B8A6] rounded-lg text-[#14B8A6] hover:bg-[#F0FDFA] transition-all inline-flex items-center gap-2 text-sm font-semibold"
               >
-                <Volume2 size={14} />
+                <Volume2 size={16} />
                 Dëgjo
               </button>
             </div>
 
-            <div className="space-y-2 mb-3">
-              <p className="text-xs font-semibold text-gray-700 mb-2">Zgjidhni përkthimin e saktë:</p>
-              {multipleChoiceOptions.map((option) => {
-                const isSelected = selectedAnswer?._id === option._id
-                const isCorrect = option._id === currentQuizWord._id
-                const showResult = quizResult !== null
+            <div className="space-y-3 mb-4">
+              <p className="text-sm font-semibold text-gray-700 mb-3">Zgjidhni përkthimin e saktë:</p>
+              <div className="grid grid-cols-2 gap-3">
+                {multipleChoiceOptions.map((option) => {
+                  const isSelected = selectedAnswer?._id === option._id
+                  const isCorrect = option._id === currentQuizWord._id
+                  const showResult = quizResult !== null
 
-                let buttonClass = "w-full p-3 text-left rounded-lg border-2 transition-all font-medium text-sm "
+                  let buttonClass = "w-full p-4 text-left rounded-lg border-2 transition-all font-medium text-sm "
 
-                if (showResult) {
-                  if (isSelected && isCorrect) {
-                    buttonClass += "border-green-500 bg-green-50 text-green-700"
-                  } else if (isSelected && !isCorrect) {
-                    buttonClass += "border-red-500 bg-red-50 text-red-700"
-                  } else if (isCorrect) {
-                    buttonClass += "border-green-500 bg-green-50 text-green-700"
+                  if (showResult) {
+                    if (isSelected && isCorrect) {
+                      buttonClass += "border-green-500 bg-green-50 text-green-700"
+                    } else if (isSelected && !isCorrect) {
+                      buttonClass += "border-red-500 bg-red-50 text-red-700"
+                    } else if (isCorrect) {
+                      buttonClass += "border-green-500 bg-green-50 text-green-700"
+                    } else {
+                      buttonClass += "border-gray-200 bg-gray-50 text-gray-400"
+                    }
+                  } else if (isSelected) {
+                    buttonClass += "border-[#14B8A6] bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] text-[#0D9488]"
                   } else {
-                    buttonClass += "border-gray-200 bg-gray-50 text-gray-400"
+                    buttonClass += "border-[#E5E7EB] bg-white hover:border-[#14B8A6] hover:bg-[#F0FDFA] text-gray-700"
                   }
-                } else if (isSelected) {
-                  buttonClass += "border-[#14B8A6] bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] text-[#0D9488]"
-                } else {
-                  buttonClass +=
-                    "border-[#99F6E4] bg-white hover:border-[#5EEAD4] hover:bg-gradient-to-br hover:from-[#F0FDFA] hover:to-[#CCFBF1] text-gray-700"
-                }
 
-                return (
-                  <button
-                    key={option._id}
-                    onClick={() => !showResult && handleAnswerSelection(option)}
-                    disabled={showResult}
-                    className={buttonClass}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span>{option.translation || option.word}</span>
-                      {showResult && isCorrect && <CheckCircle size={18} className="text-green-500" />}
-                      {showResult && isSelected && !isCorrect && <XCircle size={18} className="text-red-500" />}
-                    </div>
-                  </button>
-                )
-              })}
+                  return (
+                    <button
+                      key={option._id}
+                      onClick={() => !showResult && handleAnswerSelection(option)}
+                      disabled={showResult}
+                      className={buttonClass}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span>{option.translation || option.word}</span>
+                        {showResult && isCorrect && <CheckCircle size={18} className="text-green-500" />}
+                        {showResult && isSelected && !isCorrect && <XCircle size={18} className="text-red-500" />}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
             {quizResult !== null && (
@@ -526,7 +490,7 @@ export default function Words() {
             <div className="flex justify-end">
               <button
                 onClick={endQuiz}
-                className="py-2 px-4 bg-white hover:bg-gradient-to-br hover:from-[#F0FDFA] hover:to-[#CCFBF1] text-[#0D9488] border-2 border-[#99F6E4] rounded-lg text-xs font-semibold transition-all"
+                className="py-2 px-4 bg-white hover:bg-gradient-to-br hover:from-[#F0FDFA] hover:to-[#CCFBF1] text-[#0D9488] border-2 border-[#99F6E4] rounded-lg text-sm font-semibold transition-all"
               >
                 Mbyll Kuizin
               </button>
@@ -584,7 +548,7 @@ export default function Words() {
               className="px-4 py-2.5 bg-white hover:bg-gradient-to-br hover:from-[#CCFBF1] hover:to-[#99F6E4] text-[#14B8A6] hover:text-[#0D9488] border-2 border-[#14B8A6] rounded-lg text-sm font-semibold transition-all shadow-sm flex items-center gap-2"
             >
               <HelpCircle size={18} />
-              Si funkcionon
+              Si funksionon
             </button>
           </div>
         </div>
@@ -609,7 +573,7 @@ export default function Words() {
         <h2 className="text-base font-bold mb-1.5 text-gray-800">Shto Fjalë të Re</h2>
         <p className="text-gray-500 mb-4 text-xs">Shtoni një fjalë të re gjermane që keni mësuar</p>
         <form onSubmit={handleAddWord}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
             <div>
               <label className="block text-xs font-semibold mb-1.5 text-gray-700">Fjala Gjermane *</label>
               <input
@@ -621,13 +585,9 @@ export default function Words() {
                 disabled={adding}
                 className="w-full px-3 py-2.5 border-2 border-[#99F6E4] rounded-md text-sm focus:outline-none focus:border-[#14B8A6] focus:ring-2 focus:ring-[#14B8A6]/20 disabled:bg-gray-100"
               />
-              <div className="mt-2">
-                <p className="text-xs text-gray-500 mb-1 font-semibold">Shkronja Gjermane:</p>
-                <UmlautButtons inputRef={newWordInputRef} setValue={setNewWord} />
-              </div>
             </div>
             <div>
-              <label className="block text-xs font-semibold mb-1.5 text-gray-700">Përkthimi</label>
+              <label className="block text-xs font-semibold mb-1.5 text-gray-700">Përkthimi Shqip *</label>
               <input
                 type="text"
                 placeholder="p.sh., Përshëndetje"
@@ -638,34 +598,43 @@ export default function Words() {
               />
             </div>
           </div>
-          <button
-            type="submit"
-            disabled={adding}
-            className="px-5 py-2.5 bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] hover:from-[#0D9488] hover:to-[#0891B2] disabled:bg-gray-400 text-white rounded-md text-sm font-semibold transition-all shadow-lg shadow-teal-500/30 hover:shadow-xl hover:shadow-teal-500/40 flex items-center gap-2 disabled:cursor-not-allowed"
-          >
-            <Plus size={16} />
-            {adding ? "Duke shtuar..." : "Shto Fjalën"}
-          </button>
+
+          <div className="mb-3">
+            <p className="text-xs text-gray-500 mb-1.5 font-semibold">Shkronja Gjermane:</p>
+            <UmlautButtons inputRef={newWordInputRef} setValue={setNewWord} />
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={adding}
+              className="px-5 py-2.5 bg-green-500 hover:from-[#0D9488] hover:to-[#0891B2] disabled:bg-gray-400 text-white rounded-md text-sm font-semibold transition-all shadow-lg shadow-teal-500/30 hover:shadow-xl hover:shadow-teal-500/40 flex items-center gap-2 disabled:cursor-not-allowed"
+            >
+              <Plus size={16} />
+              {adding ? "Duke shtuar..." : "Shto Fjalën"}
+            </button>
+          </div>
         </form>
       </div>
 
       <div className="border-2 border-[#99F6E4] rounded-lg p-5 bg-white shadow-md">
-        <div className="mb-4">
-          <input
-            type="text"
-            placeholder="Kërkoni fjalë ose përkthim..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-3 py-2.5 border-2 border-[#99F6E4] rounded-md text-sm focus:outline-none focus:border-[#14B8A6] focus:ring-2 focus:ring-[#14B8A6]/20"
-          />
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+          <div>
+            <h2 className="text-base font-bold mb-1 text-gray-800">Fjalët Tuaja të Mësuara</h2>
+            <p className="text-gray-500 text-xs">
+              {filteredWords.length === 0 ? "Nuk ka fjalë ende" : `${filteredWords.length} fjalë në koleksionin tuaj`}
+            </p>
+          </div>
+          <div className="w-full sm:w-auto sm:min-w-[300px]">
+            <input
+              type="text"
+              placeholder="Kërkoni fjalë ose përkthim..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-3 py-2.5 border-2 border-[#99F6E4] rounded-md text-sm focus:outline-none focus:border-[#14B8A6] focus:ring-2 focus:ring-[#14B8A6]/20"
+            />
+          </div>
         </div>
-
-        <h2 className="text-base font-bold mb-1.5 text-gray-800">Fjalët Tuaja të Mësuara</h2>
-        <p className="text-gray-500 mb-4 text-xs">
-          {filteredWords.length === 0
-            ? "Nuk ka fjalë ende. Filloni të shtoni fjalën tuaj të parë!"
-            : `${filteredWords.length} fjalë në koleksionin tuaj`}
-        </p>
 
         {filteredWords.length === 0 ? (
           <div className="text-center py-10 text-gray-500">
