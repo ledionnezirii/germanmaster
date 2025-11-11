@@ -4,17 +4,15 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import webLogo from "../../public/logo.png"
-import { LockIcon, Mail, User } from 'lucide-react';
-
 
 const SignUp = () => {
-const [formData, setFormData] = useState({
-  firstName: "",
-  lastName: "",
-  email: "",
-  password: "",
-})
-
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    termsAccepted: false,
+  })
 
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -25,9 +23,10 @@ const [formData, setFormData] = useState({
   const navigate = useNavigate()
 
   const handleChange = (e) => {
+    const value = e.target.type === "checkbox" ? e.target.checked : e.target.value
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: value,
     })
     setError("")
   }
@@ -36,6 +35,12 @@ const [formData, setFormData] = useState({
     e.preventDefault()
     setLoading(true)
     setError("")
+
+    if (!formData.termsAccepted) {
+      setError("Ju duhet të pranoni kushtet dhe afatet për të vazhduar.")
+      setLoading(false)
+      return
+    }
 
     try {
       await register(formData)
@@ -46,6 +51,8 @@ const [formData, setFormData] = useState({
         setError("Ky email është tashmë i regjistruar. Ju lutemi përdorni një email tjetër.")
       } else if (errorMessage.toLowerCase().includes("password")) {
         setError("Fjalëkalimi nuk është i vlefshëm. Ju lutemi provoni një fjalëkalim tjetër.")
+      } else if (errorMessage.toLowerCase().includes("terms")) {
+        setError("Ju duhet të pranoni kushtet dhe afatet për të vazhduar.")
       } else {
         setError("Regjistrimi dështoi. Ju lutemi provoni përsëri.")
       }
@@ -90,13 +97,13 @@ const [formData, setFormData] = useState({
   }
 
   return (
-    <div className="flex items-center justify-center p-5">
-      <div className="bg-white/95  backdrop-blur-lg rounded-3xl p-10 w-full max-w-md shadow-2xl border border-white/20">
+    <div className="min-h-screen flex items-center justify-center p-5">
+      <div className="bg-white/95 backdrop-blur-lg rounded-3xl p-10 w-full max-w-md shadow-2xl border border-white/20">
         <div className="text-center mb-8">
           <img
-            src={webLogo}
+            src={webLogo || "/placeholder.svg"}
             alt="Logo"
-            className="w-20 h-20 mb-4 rounded-full shadow-lg mx-auto"
+            className="w-20 h-20 mb-4 rounded-full shadow-lg mx-auto object-cover"
           />
           <h1 className="text-3xl font-bold text-gray-700 mb-2">Regjistrohu</h1>
           <p className="text-gray-600 text-base">Krijo llogarinë tënde për të mësuar shqip</p>
@@ -121,7 +128,8 @@ const [formData, setFormData] = useState({
                   value={formData.firstName}
                   onChange={handleChange}
                   placeholder="Emri"
- className="w-full p-3 border border-gray-300 rounded-lg text-base bg-gray-50 outline-none transition-all duration-200 focus:border-amber-600 focus:ring-4 focus:ring-amber-600/10"                />
+                  className="w-full p-3 border border-gray-300 rounded-lg text-base bg-gray-50 outline-none transition-all duration-200 focus:border-amber-600 focus:ring-4 focus:ring-amber-600/10"
+                />
               </div>
             </div>
 
@@ -149,11 +157,12 @@ const [formData, setFormData] = useState({
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Shkruani email-in tuaj"
- className="w-full p-3 border border-gray-300 rounded-lg text-base bg-gray-50 outline-none transition-all duration-200 focus:border-amber-600 focus:ring-4 focus:ring-amber-600/10"              />
+                className="w-full p-3 border border-gray-300 rounded-lg text-base bg-gray-50 outline-none transition-all duration-200 focus:border-amber-600 focus:ring-4 focus:ring-amber-600/10"
+              />
             </div>
           </div>
 
-          <div className="mb-8">
+          <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Fjalëkalimi</label>
             <div className="relative">
               <input
@@ -163,7 +172,8 @@ const [formData, setFormData] = useState({
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Krijoni një fjalëkalim"
- className="w-full p-3 border border-gray-300 rounded-lg text-base bg-gray-50 outline-none transition-all duration-200 focus:border-amber-600 focus:ring-4 focus:ring-amber-600/10"              />
+                className="w-full p-3 border border-gray-300 rounded-lg text-base bg-gray-50 outline-none transition-all duration-200 focus:border-amber-600 focus:ring-4 focus:ring-amber-600/10"
+              />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
@@ -172,6 +182,32 @@ const [formData, setFormData] = useState({
                 {showPassword ? "🙈" : "👁️"}
               </button>
             </div>
+          </div>
+
+          <div className="mb-8">
+            <label className="flex items-start cursor-pointer group">
+              <input
+                type="checkbox"
+                name="termsAccepted"
+                checked={formData.termsAccepted}
+                onChange={handleChange}
+                required
+                className="mt-1 w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-600 focus:ring-2 cursor-pointer accent-amber-600"
+              />
+              <span className="ml-3 text-sm text-gray-700 leading-relaxed">
+                Unë pranoj{" "}
+                <a
+                  href="/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-amber-600 hover:text-amber-700 underline font-medium"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Kushtet dhe Afatet
+                </a>{" "}
+                dhe jam dakord me rregullat e përdorimit të platformës.
+              </span>
+            </label>
           </div>
 
           <button
