@@ -30,6 +30,15 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    termsAccepted: {
+      type: Boolean,
+      required: [true, "You must accept the terms and conditions"],
+      default: false,
+    },
+    termsAcceptedAt: {
+      type: Date,
+      default: null,
+    },
     xp: {
       type: Number,
       default: 0,

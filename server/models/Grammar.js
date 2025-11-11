@@ -1,22 +1,5 @@
 const mongoose = require("mongoose")
 
-const exampleSchema = new mongoose.Schema({
-  german: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  english: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  explanation: {
-    type: String,
-    trim: true,
-  },
-})
-
 const exerciseSchema = new mongoose.Schema({
   question: {
     type: String,
@@ -68,7 +51,6 @@ const grammarSchema = new mongoose.Schema(
       required: [true, "Content is required"],
       trim: true,
     },
-    examples: [exampleSchema],
     exercises: [exerciseSchema],
     difficulty: {
       type: Number,

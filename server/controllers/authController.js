@@ -1,57 +1,61 @@
-const User = require("../models/User");
-const { generateToken } = require("../utils/generateToken");
-const { ApiError } = require("../utils/ApiError");
-const { ApiResponse } = require("../utils/ApiResponse");
-const { asyncHandler } = require("../utils/asyncHandler");
-const crypto = require("crypto");
-const sendEmail = require("../utils/sendEmail");
+const User = require("../models/User")
+const { generateToken } = require("../utils/generateToken")
+const { ApiError } = require("../utils/ApiError")
+const { ApiResponse } = require("../utils/ApiResponse")
+const { asyncHandler } = require("../utils/asyncHandler")
+const crypto = require("crypto")
+const sendEmail = require("../utils/sendEmail")
 
 // Helper function to construct the base URL for images
 const getBaseUrl = (req) => {
-  const protocol = req.protocol || "http";
-  const host = req.get("host") || `localhost:${process.env.PORT || 5000}`;
-  return `${protocol}://${host}`;
-};
+  const protocol = req.protocol || "http"
+  const host = req.get("host") || `localhost:${process.env.PORT || 5000}`
+  return `${protocol}://${host}`
+}
 
 // Helper to get full profile picture URL
 const getProfilePictureUrl = (req, user) => {
-  if (!user.profilePicture) return null;
-  return `${getBaseUrl(req)}${user.profilePicture}`;
-};
+  if (!user.profilePicture) return null
+  return `${getBaseUrl(req)}${user.profilePicture}`
+}
 
 const normalizeGmailAddress = (email) => {
-  if (!email) return email;
+  if (!email) return email
 
-  const [localPart, domain] = email.toLowerCase().split("@");
+  const [localPart, domain] = email.toLowerCase().split("@")
 
   // For Gmail addresses, remove dots from local part
   if (domain === "gmail.com") {
-    return localPart.replace(/\./g, "") + "@" + domain;
+    return localPart.replace(/\./g, "") + "@" + domain
   }
 
-  return email.toLowerCase();
-};
+  return email.toLowerCase()
+}
 
 // @desc    Register user with 2-day free trial
 // @route   POST /api/auth/signup
 // @access  Public
 const signup = asyncHandler(async (req, res) => {
-  const { emri, mbiemri, email, password } = req.body;
+  const { emri, mbiemri, email, password, termsAccepted } = req.body
 
-  const normalizedEmail = normalizeGmailAddress(email);
+  if (!termsAccepted) {
+    throw new ApiError(400, "Ju duhet të pranoni Kushtet dhe Afatet për t'u regjistruar")
+  }
+
+  const normalizedEmail = normalizeGmailAddress(email)
 
   // Check if user exists with normalized email
-  const userExists = await User.findOne({ email: normalizedEmail });
+  const userExists = await User.findOne({ email: normalizedEmail })
   if (userExists) {
-    throw new ApiError(400, "Përdoruesi ekziston tashmë me këtë email");
+    throw new ApiError(400, "Përdoruesi ekziston tashmë me këtë email")
   }
 
   // Set role (admin or user)
-  const role = normalizedEmail === process.env.ADMIN_EMAIL ? "admin" : "user";
+  const role = normalizedEmail === process.env.ADMIN_EMAIL ? "admin" : "user"
 
   // Set free trial start and expiry (2 days from now)
-  const now = new Date();
-  const trialExpiry = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000); // 2 days later
+  const now = new Date()
+  const trialExpiry = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000) // 2 days later
 
   const user = await User.create({
     emri,
@@ -62,33 +66,35 @@ const signup = asyncHandler(async (req, res) => {
     subscriptionType: "free_trial",
     trialStartedAt: now,
     subscriptionExpiresAt: trialExpiry,
-  });
+    termsAccepted: true,
+    termsAcceptedAt: now,
+  })
 
   if (user) {
     // Generate email verification token
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-    user.verificationToken = verificationToken;
-    user.verificationTokenExpires = Date.now() + 60 * 60 * 1000; // 1 hour
-    await user.save({ validateBeforeSave: false });
+    const verificationToken = crypto.randomBytes(32).toString("hex")
+    user.verificationToken = verificationToken
+    user.verificationTokenExpires = Date.now() + 60 * 60 * 1000 // 1 hour
+    await user.save({ validateBeforeSave: false })
 
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`
     const message = `
       <h1>Verifikimi i Email-it</h1>
       <p>Përshëndetje ${user.emri},</p>
       <p>Ju lutem verifikoni email-in tuaj duke klikuar në lidhjen më poshtë:</p>
       <a href="${verificationUrl}" target="_blank">Verifiko Email-in</a>
-    `;
+    `
     await sendEmail({
       to: user.email,
       subject: "Verifikoni email-in tuaj",
       htmlContent: message,
-    });
+    })
 
     // Optionally update streak on signup
     try {
-      await user.updateStreakOnLogin();
+      await user.updateStreakOnLogin()
     } catch (error) {
-      console.error("Gabim gjatë përditësimit të streak në regjistrim:", error);
+      console.error("Gabim gjatë përditësimit të streak në regjistrim:", error)
     }
 
     // Respond without token yet, user must verify first
@@ -98,67 +104,61 @@ const signup = asyncHandler(async (req, res) => {
         new ApiResponse(
           201,
           {},
-          "Përdoruesi u regjistrua me sukses. Ju lutem kontrolloni email-in për të verifikuar llogarinë tuaj."
-        )
-      );
+          "Përdoruesi u regjistrua me sukses. Ju lutem kontrolloni email-in për të verifikuar llogarinë tuaj.",
+        ),
+      )
   } else {
-    throw new ApiError(400, "Të dhënat e përdoruesit janë jo të vlefshme");
+    throw new ApiError(400, "Të dhënat e përdoruesit janë jo të vlefshme")
   }
-});
+})
 
 // @desc    Authenticate user (Login) and return subscription info
 // @route   POST /api/auth/login
 // @access  Public
 const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password } = req.body
 
-  const normalizedEmail = normalizeGmailAddress(email);
+  const normalizedEmail = normalizeGmailAddress(email)
 
   // Find user with normalized email and include password
-  const user = await User.findOne({ email: normalizedEmail }).select(
-    "+password"
-  );
+  const user = await User.findOne({ email: normalizedEmail }).select("+password")
   if (!user) {
-    throw new ApiError(401, "Kredenciale të pavlefshme");
+    throw new ApiError(401, "Kredenciale të pavlefshme")
   }
 
   // Check if user verified email
   if (!user.isVerified) {
-    throw new ApiError(
-      401,
-      "Ju lutem verifikoni email-in tuaj para se të hyni"
-    );
+    throw new ApiError(401, "Ju lutem verifikoni email-in tuaj para se të hyni")
   }
 
   // Check password
-  const isMatch = await user.comparePassword(password);
+  const isMatch = await user.comparePassword(password)
   if (!isMatch) {
-    throw new ApiError(401, "Kredenciale të pavlefshme");
+    throw new ApiError(401, "Kredenciale të pavlefshme")
   }
 
   try {
     // Update streak on login
-    await user.updateStreakOnLogin();
+    await user.updateStreakOnLogin()
   } catch (error) {
-    console.error("Gabim gjatë përditësimit të streak në hyrje:", error);
+    console.error("Gabim gjatë përditësimit të streak në hyrje:", error)
   }
 
   // Generate token
-  const token = generateToken(user._id, user.emri);
+  const token = generateToken(user._id, user.emri)
 
   // Construct full profile picture URL for login response
-  const fullProfilePictureUrl = getProfilePictureUrl(req, user);
+  const fullProfilePictureUrl = getProfilePictureUrl(req, user)
 
   // Calculate subscription status info
-  const now = new Date();
-  const isSubscriptionActive =
-    user.subscriptionExpiresAt && user.subscriptionExpiresAt > now;
+  const now = new Date()
+  const isSubscriptionActive = user.subscriptionExpiresAt && user.subscriptionExpiresAt > now
 
   const subscriptionStatus = {
     active: isSubscriptionActive,
     type: user.subscriptionType,
     expiresAt: user.subscriptionExpiresAt,
-  };
+  }
 
   res.json(
     new ApiResponse(
@@ -178,21 +178,21 @@ const login = asyncHandler(async (req, res) => {
           subscription: subscriptionStatus,
         },
       },
-      "Hyrje me sukses"
-    )
-  );
-});
+      "Hyrje me sukses",
+    ),
+  )
+})
 
 // @desc    Get current user
 // @route   GET /api/auth/me
 // @access  Private
 const getMe = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user.id);
+  const user = await User.findById(req.user.id)
 
   // Construct full profile picture URL for getMe response
-  let fullProfilePictureUrl = null;
+  let fullProfilePictureUrl = null
   if (user.profilePicture) {
-    fullProfilePictureUrl = `${getBaseUrl(req)}${user.profilePicture}`;
+    fullProfilePictureUrl = `${getBaseUrl(req)}${user.profilePicture}`
   }
 
   res.json(
@@ -211,84 +211,78 @@ const getMe = asyncHandler(async (req, res) => {
         achievements: user.achievements,
         streakCount: user.streakCount || 0,
       },
-    })
-  );
-});
+    }),
+  )
+})
 
 const forgotPassword = asyncHandler(async (req, res) => {
-  const { email } = req.body;
+  const { email } = req.body
 
-  const normalizedEmail = normalizeGmailAddress(email);
+  const normalizedEmail = normalizeGmailAddress(email)
 
-  const user = await User.findOne({ email: normalizedEmail });
+  const user = await User.findOne({ email: normalizedEmail })
 
-  if (!user) throw new ApiError(404, "Përdoruesi nuk u gjet");
+  if (!user) throw new ApiError(404, "Përdoruesi nuk u gjet")
 
   // Generate reset token
-  const resetToken = crypto.randomBytes(32).toString("hex");
-  user.resetPasswordToken = crypto
-    .createHash("sha256")
-    .update(resetToken)
-    .digest("hex");
-  user.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // 1 hour
-  await user.save({ validateBeforeSave: false });
+  const resetToken = crypto.randomBytes(32).toString("hex")
+  user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex")
+  user.resetPasswordExpires = Date.now() + 60 * 60 * 1000 // 1 hour
+  await user.save({ validateBeforeSave: false })
 
-  console.log("RESET TOKEN:", resetToken);
+  console.log("RESET TOKEN:", resetToken)
 
   // Send reset email
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+  const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`
   const message = `
     <h1>Rivendosja e Fjalëkalimit</h1>
     <p>Përshëndetje ${user.emri},</p>
     <p>Keni kërkuar rivendosjen e fjalëkalimit. Klikoni në lidhjen më poshtë për të vendosur një fjalëkalim të ri:</p>
     <a href="${resetUrl}" target="_blank">Rivendos Fjalëkalimin</a>
-  `;
+  `
 
   await sendEmail({
     to: user.email,
     subject: "Kërkesa për rivendosjen e fjalëkalimit",
     htmlContent: message,
-  });
+  })
 
-  res.json(
-    new ApiResponse(200, {}, "Email për rivendosjen e fjalëkalimit dërguar")
-  );
-});
+  res.json(new ApiResponse(200, {}, "Email për rivendosjen e fjalëkalimit dërguar"))
+})
 
 const resetPassword = asyncHandler(async (req, res) => {
-  const { token } = req.params;
-  const { newPassword } = req.body;
+  const { token } = req.params
+  const { newPassword } = req.body
 
-  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex")
 
   const user = await User.findOne({
     resetPasswordToken: hashedToken,
     resetPasswordExpires: { $gt: Date.now() },
-  });
+  })
 
-  if (!user) throw new ApiError(400, "Token i pavlefshëm ose ka skaduar");
+  if (!user) throw new ApiError(400, "Token i pavlefshëm ose ka skaduar")
 
-  user.password = newPassword;
-  user.resetPasswordToken = undefined;
-  user.resetPasswordExpires = undefined;
-  await user.save();
+  user.password = newPassword
+  user.resetPasswordToken = undefined
+  user.resetPasswordExpires = undefined
+  await user.save()
 
-  res.json(new ApiResponse(200, {}, "Fjalëkalimi u rivendos me sukses"));
-});
+  res.json(new ApiResponse(200, {}, "Fjalëkalimi u rivendos me sukses"))
+})
 
 const verifyEmail = asyncHandler(async (req, res) => {
-  const { token } = req.params;
+  const { token } = req.params
 
-  const user = await User.findOne({ verificationToken: token });
-  if (!user)
-    throw new ApiError(400, "Token verifikimi i pavlefshëm ose ka skaduar");
+  const user = await User.findOne({ verificationToken: token })
+  if (!user) throw new ApiError(400, "Token verifikimi i pavlefshëm ose ka skaduar")
 
-  user.isVerified = true;
-  user.verificationToken = undefined;
-  await user.save();
+  user.isVerified = true
+  user.verificationToken = undefined
+  await user.save()
 
-  res.json(new ApiResponse(200, {}, "Email-i u verifikua me sukses"));
-});
+  res.json(new ApiResponse(200, {}, "Email-i u verifikua me sukses"))
+})
 
 module.exports = {
   signup,
@@ -297,4 +291,4 @@ module.exports = {
   forgotPassword,
   resetPassword,
   verifyEmail,
-};
+}
