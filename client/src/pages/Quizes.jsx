@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { quizService } from "../services/api"
-import { BookOpen, ArrowLeft, Check, X, Star, Trophy, ChevronLeft, ChevronRight, RotateCcw, Lock } from "lucide-react"
+import { BookOpen, ArrowLeft, Check, X, Star, Trophy, ChevronLeft, ChevronRight, RotateCcw, Lock, Lightbulb } from "lucide-react"
 
 const Quizes = () => {
   const [currentView, setCurrentView] = useState("list")
@@ -521,9 +521,9 @@ const Quizes = () => {
     <div className="min-h-screen">
       <div className="max-w-7xl mx-auto p-4 sm:p-6">
         <div className="bg-white rounded-2xl shadow-lg border-2 border-[#99F6E4] p-4 sm:p-5 mb-4">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-[#CCFBF1] to-[#99F6E4] rounded-xl flex items-center justify-center">
-              <BookOpen className="h-5 w-5 text-[#0D9488]" />
+              <Lightbulb className="" />
             </div>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Kuize te Gjuhes Gjermane</h1>

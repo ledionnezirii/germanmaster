@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { dictionaryService, favoritesService } from "../services/api"
-import { BookOpen, Volume2, Heart, Filter, ChevronLeft, ChevronRight } from "lucide-react"
+import { BookOpen, Volume2, Heart, Filter, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const Dictionary = () => {
   const [words, setWords] = useState([])
@@ -14,7 +14,7 @@ const Dictionary = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalWords, setTotalWords] = useState(0)
-  const wordsPerPage = 30
+  const wordsPerPage = 32
 
   useEffect(() => {
     fetchWords()
@@ -157,21 +157,21 @@ const Dictionary = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
-      <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-8">
+      <div className="max-w-7xl mx-auto p-2 md:p-4 space-y-4">
         {/* Hero Header */}
-        <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-5 md:p-8 lg:p-10">
+        <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-3 md:p-4">
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-emerald-100/30 to-teal-100/30 rounded-full blur-3xl -z-10" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-cyan-100/20 to-blue-100/20 rounded-full blur-3xl -z-10" />
 
-          <div className="flex items-start gap-3 md:gap-4">
-            <div className="flex-shrink-0 w-10 h-10 md:w-14 md:h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              <BookOpen className="w-5 h-5 md:w-7 md:h-7 text-white" />
+          <div className="flex items-start gap-2 md:gap-3">
+            <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg md:rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <BookOpen className="w-4 h-4 md:w-5 md:h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-emerald-900 bg-clip-text text-transparent mb-1 md:mb-2 leading-tight">
+              <h1 className="text-lg md:text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-emerald-900 bg-clip-text text-transparent mb-0.5 leading-tight">
                 Fjalor Gjermanisht
               </h1>
-              <p className="text-gray-600 text-sm md:text-base lg:text-lg leading-relaxed">
+              <p className="text-gray-600 text-xs md:text-sm lg:text-base leading-tight">
                 Eksploroni fjalorin gjermanisht të organizuar sipas niveleve të gjuhës
               </p>
             </div>
@@ -179,21 +179,21 @@ const Dictionary = () => {
         </div>
 
         {/* Search & Filters */}
-        <div className="bg-white/80 backdrop-blur-sm flex items-center gap-2 rounded-2xl shadow-sm border border-gray-200/50 p-4 md:p-6 lg:p-8 space-y-4 md:space-y-6">
+        <div className="bg-white/80 backdrop-blur-sm flex items-center gap-2 rounded-xl shadow-sm border border-gray-200/50 p-3 md:p-4 space-y-3 md:space-y-4">
           {/* Level Filters */}
-          <div className="space-y-3 md:space-y-4">
+          <div className="space-y-2 md:space-y-3">
             <div className="flex items-center gap-2 md:gap-3">
-              <div className="flex items-center gap-2 text-xs md:text-sm font-semibold text-gray-700">
-                <Filter className="h-3.5 w-3.5 md:h-4 md:w-4 text-emerald-600" />
+              <div className="flex items-center gap-1.5 bg-yellow-400/40 rounded-4xl p-1 text-xs md:text-sm font-semibold text-gray-700">
+                <Filter className="h-3 w-3 md:h-3.5 md:w-3.5 rounded-full text-emerald-600" />
                 <span>Niveli i gjuhës</span>
               </div>
             </div>
-            <div className="flex flex-wrap gap-1.5 md:gap-2">
+            <div className="flex flex-wrap gap-1 md:gap-1.5">
               {levels.map((level) => (
                 <button
                   key={level}
                   onClick={() => handleLevelChange(level)}
-                  className={`px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl text-xs md:text-sm font-semibold transition-all border ${
+                  className={`px-2.5 md:px-3 py-1.5 md:py-2 rounded-lg text-xs font-semibold transition-all border ${
                     selectedLevel === level
                       ? level === "all"
                         ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-lg shadow-emerald-500/25"
@@ -208,20 +208,20 @@ const Dictionary = () => {
           </div>
 
           {/* Favorites Toggle */}
-          <div className="pt-3 md:pt-2 border-t border-gray-100">
+          <div className="pt-2 md:pt-2 border-t mt-3.5 border-gray-100">
             <button
               onClick={handleFavoritesToggle}
-              className={`w-full md:w-auto flex items-center justify-center md:justify-start gap-2 md:gap-2.5 px-4 md:px-5 py-2.5 rounded-lg md:rounded-xl text-xs md:text-sm font-semibold transition-all ${
+              className={`w-full md:w-auto flex items-center justify-center md:justify-start gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all ${
                 showFavorites
                   ? "bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/25"
                   : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
               }`}
             >
-              <Heart className={`h-3.5 w-3.5 md:h-4 md:w-4 ${showFavorites ? "fill-current" : ""}`} />
+              <Heart className={`h-3 w-3 md:h-3.5 md:w-3.5 ${showFavorites ? "fill-current" : ""}`} />
               <span>Të Preferuarat</span>
               {favorites.length > 0 && (
                 <span
-                  className={`px-2 py-0.5 rounded-full text-xs font-bold ${
+                  className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
                     showFavorites ? "bg-white/20" : "bg-rose-50 text-rose-600"
                   }`}
                 >
@@ -234,17 +234,17 @@ const Dictionary = () => {
 
         {/* Words Grid */}
         {loading ? (
-          <div className="flex items-center justify-center min-h-[500px]">
-            <div className="text-center space-y-4">
-              <div className="relative w-16 h-16 mx-auto">
+          <div className="flex items-center justify-center min-h-[300px]">
+            <div className="text-center space-y-3">
+              <div className="relative w-12 h-12 mx-auto">
                 <div className="absolute inset-0 border-4 border-emerald-200 rounded-full"></div>
                 <div className="absolute inset-0 border-4 border-emerald-600 rounded-full border-t-transparent animate-spin"></div>
               </div>
-              <p className="text-gray-500 font-medium">Po ngarkohet...</p>
+              <p className="text-gray-500 font-medium text-sm">Po ngarkohet...</p>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
             {filteredWords.map((word) => {
               const isFavorite = favorites.some((fav) => fav._id === word._id)
               const firstExample = word.examples && word.examples.length > 0 ? word.examples[0] : null
@@ -252,48 +252,48 @@ const Dictionary = () => {
               return (
                 <div
                   key={word._id}
-                  className="group relative bg-white rounded-2xl shadow-sm border border-gray-200/50 hover:shadow-xl hover:border-emerald-200/50 transition-all duration-300 p-5 flex flex-col h-full"
+                  className="group relative bg-white rounded-xl shadow-sm border border-gray-200/50 hover:shadow-lg hover:border-emerald-200/50 transition-all duration-300 p-3 flex flex-col h-full"
                 >
                   {/* Hover Glow */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
 
                   <div className="relative flex flex-col h-full">
                     {/* Header */}
-                    <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="flex items-start justify-between gap-2 mb-3">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-bold text-gray-900 mb-1.5 leading-tight">{word.word}</h3>
-                        <p className="text-gray-600 text-sm font-medium leading-relaxed">{word.translation}</p>
+                        <h3 className="text-base font-bold text-gray-900 mb-1 leading-tight">{word.word}</h3>
+                        <p className="text-gray-600 text-xs font-medium leading-tight">{word.translation}</p>
                       </div>
-                      <div className="flex items-center gap-1 flex-shrink-0">
+                      <div className="flex items-center gap-0.5 flex-shrink-0">
                         <button
                           onClick={() => playPronunciation(word.word)}
-                          className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                          className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
                           title="Luaj shqiptimin"
                         >
-                          <Volume2 className="h-4 w-4" />
+                          <Volume2 className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={() => toggleFavorite(word._id)}
-                          className={`p-2 rounded-lg transition-all ${
+                          className={`p-1.5 rounded-lg transition-all ${
                             isFavorite
                               ? "text-rose-500 bg-rose-50"
                               : "text-gray-400 hover:text-rose-500 hover:bg-rose-50"
                           }`}
                           title={isFavorite ? "Hiq nga të preferuarat" : "Shto te të preferuarat"}
                         >
-                          <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
+                          <Heart className={`h-3.5 w-3.5 ${isFavorite ? "fill-current" : ""}`} />
                         </button>
                       </div>
                     </div>
 
                     {/* Badges */}
-                    <div className="flex items-center gap-2 mb-4 flex-wrap">
-                      <span className={`px-3 py-1 rounded-lg text-xs font-bold border ${getLevelColor(word.level)}`}>
+                    <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+                      <span className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${getLevelColor(word.level)}`}>
                         {word.level}
                       </span>
                       {word.partOfSpeech && (
                         <span
-                          className={`px-3 py-1 rounded-lg text-xs font-semibold ${getPartOfSpeechColor(word.partOfSpeech)}`}
+                          className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${getPartOfSpeechColor(word.partOfSpeech)}`}
                         >
                           {word.partOfSpeech}
                         </span>
@@ -302,8 +302,8 @@ const Dictionary = () => {
 
                     {/* Example */}
                     {firstExample && firstExample.german && (
-                      <div className="mt-auto bg-gradient-to-br from-emerald-50/50 to-teal-50/50 rounded-xl p-3 border border-emerald-200/30">
-                        <p className="text-gray-700 text-xs italic leading-relaxed line-clamp-3">
+                      <div className="mt-auto bg-gradient-to-br from-emerald-50/50 to-teal-50/50 rounded-lg p-2 border border-emerald-200/30">
+                        <p className="text-gray-700 text-xs italic leading-tight line-clamp-3">
                           "{firstExample.german}"
                         </p>
                       </div>
@@ -317,28 +317,28 @@ const Dictionary = () => {
 
         {/* Pagination */}
         {totalPages > 1 && !loading && (
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-6">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="text-sm text-gray-600 font-medium">
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-4">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+              <div className="text-xs text-gray-600 font-medium">
                 Faqja <span className="font-bold text-gray-900">{currentPage}</span> nga{" "}
                 <span className="font-bold text-gray-900">{totalPages}</span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={handlePreviousPage}
                   disabled={currentPage === 1}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     currentPage === 1
                       ? "bg-gray-50 text-gray-400 cursor-not-allowed border border-gray-200"
                       : "bg-white text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-200 hover:border-emerald-200 shadow-sm"
                   }`}
                 >
-                  <ChevronLeft className="h-4 w-4" />
+                  <ChevronLeft className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">E mëparshme</span>
                 </button>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                     let pageNum
                     if (totalPages <= 5) {
@@ -355,7 +355,7 @@ const Dictionary = () => {
                       <button
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
-                        className={`min-w-[40px] px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                        className={`min-w-[32px] px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                           currentPage === pageNum
                             ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25"
                             : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
@@ -370,14 +370,14 @@ const Dictionary = () => {
                 <button
                   onClick={handleNextPage}
                   disabled={currentPage === totalPages}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     currentPage === totalPages
                       ? "bg-gray-50 text-gray-400 cursor-not-allowed border border-gray-200"
                       : "bg-white text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-200 hover:border-emerald-200 shadow-sm"
                   }`}
                 >
                   <span className="hidden sm:inline">E ardhshme</span>
-                  <ChevronRight className="h-4 w-4" />
+                  <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
@@ -386,16 +386,16 @@ const Dictionary = () => {
 
         {/* Empty State */}
         {filteredWords.length === 0 && !loading && (
-          <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex items-center justify-center min-h-[300px]">
             <div className="text-center max-w-md">
-              <div className="relative w-20 h-20 mx-auto mb-6">
+              <div className="relative w-16 h-16 mx-auto mb-4">
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-2xl"></div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <BookOpen className="h-10 w-10 text-emerald-600" />
+                  <BookOpen className="h-8 w-8 text-emerald-600" />
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Nuk u gjetën fjalë</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <h3 className="text-base font-bold text-gray-900 mb-1.5">Nuk u gjetën fjalë</h3>
+              <p className="text-gray-600 leading-tight text-xs">
                 {searchTerm
                   ? `Asnjë fjalë nuk përputhet me "${searchTerm}"`
                   : showFavorites
