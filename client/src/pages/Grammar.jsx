@@ -1,4 +1,5 @@
 "use client"
+
 import { useState, useEffect, useMemo, useCallback } from "react"
 import React from "react"
 
@@ -7,8 +8,6 @@ import {
   GraduationCap,
   BookOpen,
   Filter,
-  Star,
-  Tag,
   Target,
   ArrowLeft,
   CheckCircle,
@@ -18,33 +17,29 @@ import {
   Volume2,
   RefreshCw,
   AlertCircle,
-  Headphones,
   Play,
   RotateCcw,
   Award,
   Brain,
-  Clock,
-  MessageCircle,
-  Users,
-  Hash,
+  ListCheck,
 } from "lucide-react"
 
 const getLevelColor = (level) => {
   switch (level) {
     case "A1":
-      return "bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-800 border-emerald-300 shadow-emerald-100"
+      return "bg-emerald-50 text-emerald-700 border-emerald-300"
     case "A2":
-      return "bg-gradient-to-r from-teal-100 to-cyan-100 text-teal-800 border-teal-300 shadow-teal-100"
+      return "bg-teal-50 text-teal-700 border-teal-300"
     case "B1":
-      return "bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border-blue-300 shadow-blue-100"
+      return "bg-blue-50 text-blue-700 border-blue-300"
     case "B2":
-      return "bg-gradient-to-r from-indigo-100 to-purple-100 text-indigo-800 border-indigo-300 shadow-indigo-100"
+      return "bg-indigo-50 text-indigo-700 border-indigo-300"
     case "C1":
-      return "bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800 border-purple-300 shadow-purple-100"
+      return "bg-purple-50 text-purple-700 border-purple-300"
     case "C2":
-      return "bg-gradient-to-r from-pink-100 to-rose-100 text-pink-800 border-pink-300 shadow-pink-100"
+      return "bg-pink-50 text-pink-700 border-pink-300"
     default:
-      return "bg-gradient-to-r from-gray-100 to-slate-100 text-gray-800 border-gray-300 shadow-gray-100"
+      return "bg-gray-50 text-gray-700 border-gray-300"
   }
 }
 
@@ -53,29 +48,18 @@ const getLevelDescription = (level) => {
     case "A1":
       return "Fillestar - Bazat e gjuhës"
     case "A2":
-      return "Fillestar i avancuar - Komunikim i thjeshtë"
+      return "Fillestar i avancuar"
     case "B1":
-      return "I mesëm - Komunikim i pavarur"
+      return "I mesëm"
     case "B2":
-      return "I mesëm i avancuar - Komunikim i lirë"
+      return "I mesëm i avancuar"
     case "C1":
-      return "I avancuar - Komunikim efikas"
+      return "I avancuar"
     case "C2":
-      return "Mjeshtëri - Komunikim i përsosur"
+      return "Mjeshtëri"
     default:
       return "Të gjitha nivelet"
   }
-}
-
-const getDifficultyStars = (difficulty) => {
-  return Array.from({ length: 5 }, (_, i) => (
-    <Star
-      key={i}
-      className={`h-4 w-4 transition-all ${
-        i < difficulty ? "text-amber-500 fill-amber-400 drop-shadow-sm" : "text-gray-300"
-      }`}
-    />
-  ))
 }
 
 const Grammar = () => {
@@ -94,7 +78,7 @@ const Grammar = () => {
   const [finishedTopics, setFinishedTopics] = useState([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
 
- useEffect(() => {
+  useEffect(() => {
     fetchTopics()
     fetchFinishedTopics()
   }, [selectedLevel])
@@ -102,11 +86,9 @@ const Grammar = () => {
   const fetchFinishedTopics = async () => {
     try {
       const response = await grammarService.getFinishedTopics()
-      console.log("[v0] Fetched finished topics response:", response)
       const finishedIds = response.data?.finishedTopics || response.data || []
       const finishedIdsAsStrings = finishedIds.map((id) => String(id))
       setFinishedTopics(finishedIdsAsStrings)
-      console.log("[v0] Set finished topics to:", finishedIdsAsStrings)
     } catch (error) {
       console.error("Error fetching finished topics:", error)
       setFinishedTopics([])
@@ -118,8 +100,6 @@ const Grammar = () => {
 
     try {
       const response = await grammarService.markTopicAsFinished(selectedTopic._id)
-      console.log("[v0] Mark as finished response:", response)
-
       const topicIdString = String(selectedTopic._id)
 
       setFinishedTopics((prev) => {
@@ -128,16 +108,6 @@ const Grammar = () => {
         }
         return prev
       })
-
-      if (user) {
-        const updatedGrammarFinished = response.data?.grammarFinished || [
-          ...(user.grammarFinished || []),
-          topicIdString,
-        ]
-        updateUser({
-          grammarFinished: updatedGrammarFinished.map((id) => String(id)),
-        })
-      }
 
       alert("Urime! Keni përfunduar këtë temë të gramatikës!")
     } catch (error) {
@@ -151,7 +121,6 @@ const Grammar = () => {
     return finishedTopics.includes(topicIdString)
   }
 
-
   const fetchTopics = async () => {
     try {
       setLoading(true)
@@ -161,7 +130,6 @@ const Grammar = () => {
           ? await grammarService.getAllTopics()
           : await grammarService.getTopicsByLevel(selectedLevel)
 
-      // Handle different response structures
       let topicsData = []
       if (response.data?.topics) {
         topicsData = response.data.topics
@@ -202,14 +170,6 @@ const Grammar = () => {
     return Array.isArray(topics) ? topics : []
   }, [topics])
 
-  const levelStats = useMemo(() => {
-    return filteredTopics.reduce((acc, topic) => {
-      const level = topic.level || "unknown"
-      acc[level] = (acc[level] || 0) + 1
-      return acc
-    }, {})
-  }, [filteredTopics])
-
   const handleTopicClick = useCallback((topic) => {
     fetchTopicDetails(topic._id)
     window.scrollTo({ top: 0, behavior: "smooth" })
@@ -248,7 +208,6 @@ const Grammar = () => {
         setShowDetailedContent(true)
       }
 
-      // Auto-advance to next question after 2 seconds
       if (exerciseIndex < selectedTopic.exercises.length - 1) {
         setTimeout(() => {
           setCurrentQuestionIndex(exerciseIndex + 1)
@@ -297,12 +256,7 @@ const Grammar = () => {
 
   const isAllExercisesCompleted = () => {
     if (!selectedTopic?.exercises) return false
-    const allCompleted = selectedTopic.exercises.every((_, index) => showResults[index])
-    console.log("[v0] Total exercises:", selectedTopic.exercises.length)
-    console.log("[v0] Completed exercises:", Object.keys(showResults).length)
-    console.log("[v0] All exercises completed:", allCompleted)
-    console.log("[v0] Is topic finished:", isTopicFinished(selectedTopic._id))
-    return allCompleted
+    return selectedTopic.exercises.every((_, index) => showResults[index])
   }
 
   const levels = ["all", "A1", "A2", "B1", "B2", "C1", "C2"]
@@ -317,69 +271,48 @@ const Grammar = () => {
     ))
   }, [filteredTopics, handleTopicClick, finishedTopics])
 
-  // If a topic is selected, show the detailed view
   if (selectedTopic) {
     return (
-      <div className="max-w-6xl mx-auto space-y-6">
-        <div className="bg-gradient-to-br from-white via-blue-50/50 to-indigo-50/30 rounded-xl shadow-md border border-blue-200/50 p-6 backdrop-blur-sm">
+      <div className="max-w-5xl mx-auto space-y-4">
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
           <button
             onClick={handleBackToTopics}
-            className="flex items-center gap-2 text-gray-600 hover:text-blue-700 mb-6 transition-all group bg-white/80 px-3 py-2 rounded-full shadow-sm hover:shadow-md text-sm"
+            className="flex items-center gap-2 text-gray-600 hover:text-blue-600 mb-4 transition-colors text-sm font-medium"
             aria-label="Kthehu te lista e temave"
           >
-            <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-semibold">Kthehu te Lista e Temave</span>
+            <ArrowLeft className="h-4 w-4" />
+            <span>Kthehu te Lista e Temave</span>
           </button>
 
           {topicLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-8 w-8 border-3 border-blue-200 border-t-blue-600"></div>
-              <span className="ml-4 text-gray-700 text-lg font-medium">Duke ngarkuar detajet e temës...</span>
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-200 border-t-blue-600"></div>
+              <span className="ml-3 text-gray-600 text-sm">Duke ngarkuar...</span>
             </div>
           ) : (
             <>
-              <div className="flex items-start justify-between mb-6">
+              <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-3 rounded-xl shadow-md">
-                      <Brain className="h-6 w-6 text-white" />
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="bg-blue-500 p-1.5 rounded-lg">
+                      <Brain className="h-4 w-4 text-white" />
                     </div>
-                    <div>
-                      <h1 className="text-2xl font-bold text-gray-900 mb-1 text-balance leading-tight">
-                        {selectedTopic.name}
-                      </h1>
-                      <div className="flex items-center gap-2">
-                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">
-                          Gramatikë Gjermane
-                        </span>
-                        <span className="text-gray-500">•</span>
-                        <span className="text-gray-600 font-medium text-sm">Mësim Interaktiv</span>
-                      </div>
-                    </div>
+                    <h1 className="text-lg font-bold text-gray-900">{selectedTopic.name}</h1>
                   </div>
-                  <p className="text-gray-700 text-base leading-relaxed text-pretty bg-white/60 p-4 rounded-lg border border-gray-200/50">
-                    {selectedTopic.description}
-                  </p>
+                  <p className="text-gray-600 text-sm leading-relaxed">{selectedTopic.description}</p>
                 </div>
               </div>
 
               {selectedTopic.tags && selectedTopic.tags.length > 0 && (
-                <div className="bg-white/60 p-4 rounded-lg border border-gray-200/50">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Tag className="h-4 w-4 text-gray-600" />
-                    <span className="font-semibold text-gray-700 text-sm">Tema kryesore:</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedTopic.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center gap-1 px-3 py-1 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-800 text-xs font-medium rounded-full border border-blue-200 hover:from-blue-100 hover:to-indigo-100 hover:shadow-sm transition-all cursor-default"
-                      >
-                        <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedTopic.tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-medium rounded border border-blue-200"
+                    >
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               )}
             </>
@@ -387,25 +320,21 @@ const Grammar = () => {
         </div>
 
         {!topicLoading && (
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
-            <div className="flex border-b border-gray-200 overflow-x-auto bg-gray-50/50">
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div className="flex border-b border-gray-200 overflow-x-auto bg-gray-50">
               <button
                 onClick={() => {
                   setActiveTab("content")
                   window.scrollTo({ top: 0, behavior: "smooth" })
                 }}
-                className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all whitespace-nowrap relative text-sm ${
+                className={`flex items-center gap-2 px-4 py-2.5 font-medium transition-colors whitespace-nowrap text-xs ${
                   activeTab === "content"
-                    ? "text-blue-700 bg-white border-b-2 border-blue-600 shadow-sm"
-                    : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
+                    ? "text-blue-600 bg-white border-b-2 border-blue-600"
+                    : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
                 }`}
-                aria-label="Shiko përmbajtjen e mësimit"
               >
-                <BookOpen className="h-4 w-4" />
-                <div className="text-left">
-                  <div>Përmbajtja e Mësimit</div>
-                  <div className="text-xs opacity-75">Teoria dhe shpjegimi</div>
-                </div>
+                <BookOpen className="h-3.5 w-3.5" />
+                Përmbajtja
               </button>
 
               {hasNumbers(selectedTopic) && (
@@ -414,18 +343,14 @@ const Grammar = () => {
                     setActiveTab("numbers")
                     window.scrollTo({ top: 0, behavior: "smooth" })
                   }}
-                  className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all whitespace-nowrap relative text-sm ${
+                  className={`flex items-center gap-2 px-4 py-2.5 font-medium transition-colors whitespace-nowrap text-xs ${
                     activeTab === "numbers"
-                      ? "text-teal-700 bg-white border-b-2 border-teal-600 shadow-sm"
-                      : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
+                      ? "text-teal-600 bg-white border-b-2 border-teal-600"
+                      : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
                   }`}
-                  aria-label={`Mëso numrat (${selectedTopic.numbers?.length || 0})`}
                 >
-                  <span className="text-lg font-bold">🔢</span>
-                  <div className="text-left">
-                    <div>Numrat Gjermanë</div>
-                    <div className="text-xs opacity-75">{selectedTopic.numbers?.length || 0} numra</div>
-                  </div>
+                  <span>🔢</span>
+                  Numrat ({selectedTopic.numbers?.length || 0})
                 </button>
               )}
 
@@ -434,18 +359,14 @@ const Grammar = () => {
                   setActiveTab("examples")
                   window.scrollTo({ top: 0, behavior: "smooth" })
                 }}
-                className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all whitespace-nowrap relative text-sm ${
+                className={`flex items-center gap-2 px-4 py-2.5 font-medium transition-colors whitespace-nowrap text-xs ${
                   activeTab === "examples"
-                    ? "text-amber-700 bg-white border-b-2 border-amber-600 shadow-sm"
-                    : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
+                    ? "text-amber-600 bg-white border-b-2 border-amber-600"
+                    : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
                 }`}
-                aria-label={`Shiko shembujt (${selectedTopic.examples?.length || 0})`}
               >
-                <Lightbulb className="h-4 w-4" />
-                <div className="text-left">
-                  <div>Shembuj Praktikë</div>
-                  <div className="text-xs opacity-75">{selectedTopic.examples?.length || 0} shembuj</div>
-                </div>
+                <Lightbulb className="h-3.5 w-3.5" />
+                Shembuj ({selectedTopic.examples?.length || 0})
               </button>
 
               <button
@@ -453,91 +374,63 @@ const Grammar = () => {
                   setActiveTab("exercises")
                   window.scrollTo({ top: 0, behavior: "smooth" })
                 }}
-                className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all whitespace-nowrap relative text-sm ${
+                className={`flex items-center gap-2 px-4 py-2.5 font-medium transition-colors whitespace-nowrap text-xs ${
                   activeTab === "exercises"
-                    ? "text-purple-700 bg-white border-b-2 border-purple-600 shadow-sm"
-                    : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
+                    ? "text-purple-600 bg-white border-b-2 border-purple-600"
+                    : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"
                 }`}
-                aria-label={`Fillo ushtrimet (${selectedTopic.exercises?.length || 0})`}
               >
-                <Target className="h-4 w-4" />
-                <div className="text-left">
-                  <div>Ushtrime Praktike</div>
-                  <div className="text-xs opacity-75">{selectedTopic.exercises?.length || 0} ushtrime</div>
-                </div>
+                <Target className="h-3.5 w-3.5" />
+                Ushtrime ({selectedTopic.exercises?.length || 0})
               </button>
             </div>
 
-            <div className="p-6">
+            <div className="p-4">
               {activeTab === "content" && (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 rounded-xl shadow-md">
-                      <BookOpen className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900">Shpjegimi i Gramatikës</h3>
-                      <p className="text-gray-600 text-sm">Teoria dhe rregullat kryesore</p>
-                    </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <BookOpen className="h-4 w-4 text-blue-600" />
+                    <h3 className="text-base font-bold text-gray-900">Shpjegimi i Gramatikës</h3>
                   </div>
 
                   {typeof selectedTopic.content === "string" ? (
-                    <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-6 rounded-xl border-2 border-blue-200/50 shadow-md">
-                      <div className="prose prose-blue max-w-none">
-                        <div className="bg-blue-100 p-2 rounded-lg w-fit mb-4">
-                          <MessageCircle className="h-4 w-4 text-blue-600 inline mr-2" />
-                          <span className="font-bold text-blue-800 text-sm">Shpjegimi kryesor:</span>
-                        </div>
-                        <p className="text-gray-800 leading-relaxed text-base whitespace-pre-line font-medium">
-                          {selectedTopic.content}
-                        </p>
-                      </div>
+                    <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                      <p className="text-gray-800 leading-relaxed text-sm whitespace-pre-line">
+                        {selectedTopic.content}
+                      </p>
                     </div>
                   ) : (
-                    <div className="space-y-6">
+                    <div className="space-y-3">
                       {selectedTopic.content?.english && (
-                        <div className="bg-gradient-to-br from-blue-50 via-white to-blue-100 p-6 rounded-xl border-2 border-blue-300/50 shadow-md">
-                          <h4 className="font-bold text-blue-800 mb-4 flex items-center gap-3 text-lg">
-                            <div className="bg-blue-200 p-2 rounded-lg">
-                              <Globe className="h-4 w-4 text-blue-700" />
-                            </div>
-                            <div>
-                              <div>Shpjegimi në Gjuhën Angleze</div>
-                              <div className="text-xs font-normal text-blue-600 mt-1">English Explanation</div>
-                            </div>
-                          </h4>
-                          <div className="prose prose-blue max-w-none">
-                            <p className="text-blue-800 leading-relaxed text-base whitespace-pre-line font-medium bg-white/60 p-4 rounded-lg">
-                              {selectedTopic.content.english}
-                            </p>
+                        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Globe className="h-3.5 w-3.5 text-blue-600" />
+                            <h4 className="font-semibold text-blue-800 text-xs">English Explanation</h4>
                           </div>
+                          <p className="text-blue-900 leading-relaxed text-sm whitespace-pre-line">
+                            {selectedTopic.content.english}
+                          </p>
                         </div>
                       )}
 
                       {selectedTopic.content?.german && (
-                        <div className="bg-gradient-to-br from-teal-50 via-white to-teal-100 p-6 rounded-xl border-2 border-teal-300/50 shadow-md">
-                          <h4 className="font-bold text-teal-800 mb-4 flex items-center gap-3 text-lg">
-                            <div className="bg-teal-200 p-2 rounded-lg">
-                              <Globe className="h-4 w-4 text-teal-700" />
-                            </div>
-                            <div className="flex-1">
-                              <div>Shpjegimi në Gjuhën Gjermane</div>
-                              <div className="text-xs font-normal text-teal-600 mt-1">Deutsche Erklärung</div>
+                        <div className="bg-teal-50 p-3 rounded-lg border border-teal-200">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Globe className="h-3.5 w-3.5 text-teal-600" />
+                              <h4 className="font-semibold text-teal-800 text-xs">Deutsche Erklärung</h4>
                             </div>
                             <button
                               onClick={() => speakGerman(selectedTopic.content.german)}
-                              className="p-3 text-teal-600 hover:text-teal-800 hover:bg-teal-200 rounded-xl transition-all shadow-sm hover:shadow-md bg-white/80"
-                              title="Dëgjo shqiptimin gjerman"
-                              aria-label="Dëgjo shqiptimin gjerman"
+                              className="p-1.5 text-teal-600 hover:text-teal-800 hover:bg-teal-100 rounded transition-colors"
+                              title="Dëgjo shqiptimin"
                             >
-                              <Volume2 className="h-4 w-4" />
+                              <Volume2 className="h-3.5 w-3.5" />
                             </button>
-                          </h4>
-                          <div className="prose prose-teal max-w-none">
-                            <p className="text-teal-800 leading-relaxed text-base whitespace-pre-line font-medium bg-white/60 p-4 rounded-lg">
-                              {selectedTopic.content.german}
-                            </p>
                           </div>
+                          <p className="text-teal-900 leading-relaxed text-sm whitespace-pre-line">
+                            {selectedTopic.content.german}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -546,101 +439,51 @@ const Grammar = () => {
               )}
 
               {activeTab === "numbers" && hasNumbers(selectedTopic) && (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="bg-gradient-to-br from-teal-100 to-blue-100 p-2 rounded-lg">
-                      <span className="text-lg font-bold text-teal-600">🔢</span>
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-gray-900">Numrat Gjermanë</h3>
-                      <p className="text-gray-600 text-sm">Mëso dhe praktiko numrat gjermanë me shqiptim të saktë</p>
-                    </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-base">🔢</span>
+                    <h3 className="text-base font-bold text-gray-900">Numrat Gjermanë</h3>
                   </div>
 
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200 shadow-sm">
-                    <div className="flex items-start gap-3">
-                      <div className="bg-blue-100 p-2 rounded-lg">
-                        <Headphones className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-blue-800 mb-1 text-sm">Këshillë për Mësim</h4>
-                        <p className="text-blue-700 text-xs leading-relaxed">
-                          Kliko butonin e zërit për të dëgjuar shqiptimin e saktë të çdo numri në gjermanisht. Përsërite
-                          disa herë për të përmirësuar shqiptimin tuaj.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
                     {selectedTopic.numbers.map((numberItem, index) => (
                       <div
                         key={index}
-                        className={`bg-gradient-to-br from-white to-gray-50 p-4 rounded-lg border-2 transition-all hover:shadow-md hover:scale-105 ${
+                        className={`bg-white p-2 rounded border transition-all ${
                           currentPlayingNumber === numberItem.number
-                            ? "border-teal-300 bg-gradient-to-br from-teal-50 to-teal-100 shadow-md scale-105"
-                            : "border-gray-200 hover:border-teal-200"
+                            ? "border-teal-400 bg-teal-50"
+                            : "border-gray-200 hover:border-teal-300"
                         }`}
                       >
                         <div className="text-center">
-                          {/* Enhanced number display */}
                           <div
-                            className={`text-2xl font-bold w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3 transition-all ${
+                            className={`text-base font-bold w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-1.5 ${
                               currentPlayingNumber === numberItem.number
-                                ? "bg-teal-200 text-teal-800 animate-pulse"
-                                : "bg-teal-100 text-teal-800"
+                                ? "bg-teal-200 text-teal-800"
+                                : "bg-gray-100 text-gray-700"
                             }`}
                           >
                             {numberItem.number}
                           </div>
-
-                          {/* German number with enhanced pronunciation button */}
-                          <div className="mb-3">
-                            <div className="flex items-center justify-center gap-1 mb-1">
-                              <span className="text-xs font-bold text-gray-600 uppercase tracking-wide">
-                                Gjermanisht:
-                              </span>
-                              <button
-                                onClick={() => speakNumber(numberItem)}
-                                disabled={isPlaying}
-                                className={`p-2 rounded-full transition-all shadow-sm ${
-                                  currentPlayingNumber === numberItem.number
-                                    ? "bg-teal-200 text-teal-800 animate-pulse"
-                                    : "text-teal-600 hover:text-teal-800 hover:bg-teal-100"
-                                } ${isPlaying ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:shadow-md"}`}
-                                title={`Dëgjo shqiptimin e numrit ${numberItem.number}`}
-                                aria-label={`Dëgjo shqiptimin e numrit ${numberItem.number}`}
-                              >
-                                {currentPlayingNumber === numberItem.number ? (
-                                  <Volume2 className="h-4 w-4" />
-                                ) : (
-                                  <Play className="h-4 w-4" />
-                                )}
-                              </button>
-                            </div>
-                            <p className="text-lg font-bold text-gray-900 mb-1">{numberItem.german}</p>
+                          <div className="flex items-center justify-center gap-1 mb-1">
+                            <p className="text-sm font-semibold text-gray-900">{numberItem.german}</p>
+                            <button
+                              onClick={() => speakNumber(numberItem)}
+                              disabled={isPlaying}
+                              className="p-1 rounded hover:bg-teal-100 text-teal-600 transition-colors disabled:opacity-50"
+                              title="Dëgjo"
+                            >
+                              <Play className="h-3 w-3" />
+                            </button>
                           </div>
-
-                          {/* Albanian number name if available */}
-                          {numberItem.albanian && (
-                            <div className="text-xs text-gray-600 bg-gray-100 p-2 rounded-lg">
-                              <span className="font-semibold">Shqip:</span> {numberItem.albanian}
-                            </div>
-                          )}
                         </div>
                       </div>
                     ))}
                   </div>
 
-                  {/* Enhanced practice section */}
-                  <div className="bg-gradient-to-r from-teal-50 via-blue-50 to-indigo-50 p-6 rounded-lg border border-teal-200 shadow-sm">
-                    <h4 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-                      <div className="bg-teal-100 p-2 rounded-lg">
-                        <Target className="h-5 w-5 text-teal-600" />
-                      </div>
-                      Praktiko Numrat
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2">Praktiko</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       <button
                         onClick={() => {
                           const randomNumber =
@@ -648,13 +491,10 @@ const Grammar = () => {
                           speakNumber(randomNumber)
                         }}
                         disabled={isPlaying}
-                        className="flex items-center justify-center gap-2 p-3 bg-white border-2 border-teal-200 rounded-lg hover:bg-teal-50 hover:border-teal-300 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                        aria-label="Dëgjo një numër të rastësishëm"
+                        className="flex items-center justify-center gap-1.5 p-2 bg-white border border-teal-200 rounded hover:bg-teal-50 transition-colors text-xs font-medium disabled:opacity-50"
                       >
-                        <RotateCcw className="h-4 w-4 text-teal-600" />
-                        <span className="font-medium">Numër i Rastësishëm</span>
+                        <RotateCcw className="h-3 w-3" />I Rastësishëm
                       </button>
-
                       <button
                         onClick={() => {
                           selectedTopic.numbers.slice(0, 10).forEach((numberItem, index) => {
@@ -662,13 +502,10 @@ const Grammar = () => {
                           })
                         }}
                         disabled={isPlaying}
-                        className="flex items-center justify-center gap-2 p-3 bg-white border-2 border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                        aria-label="Dëgjo numrat 0-9"
+                        className="p-2 bg-white border border-blue-200 rounded hover:bg-blue-50 transition-colors text-xs font-medium disabled:opacity-50"
                       >
-                        <span className="text-xl">🔊</span>
-                        <span className="font-medium">0-9</span>
+                        0-9
                       </button>
-
                       <button
                         onClick={() => {
                           selectedTopic.numbers.slice(10, 20).forEach((numberItem, index) => {
@@ -676,13 +513,10 @@ const Grammar = () => {
                           })
                         }}
                         disabled={isPlaying}
-                        className="flex items-center justify-center gap-2 p-3 bg-white border-2 border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-300 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                        aria-label="Dëgjo numrat 10-19"
+                        className="p-2 bg-white border border-purple-200 rounded hover:bg-purple-50 transition-colors text-xs font-medium disabled:opacity-50"
                       >
-                        <span className="text-xl">🔊</span>
-                        <span className="font-medium">10-19</span>
+                        10-19
                       </button>
-
                       <button
                         onClick={() => {
                           const twentyPlus = selectedTopic.numbers.filter((n) => n.number >= 20)
@@ -691,11 +525,9 @@ const Grammar = () => {
                           })
                         }}
                         disabled={isPlaying}
-                        className="flex items-center justify-center gap-2 p-3 bg-white border-2 border-orange-200 rounded-lg hover:bg-orange-50 hover:border-orange-300 transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                        aria-label="Dëgjo numrat 20+"
+                        className="p-2 bg-white border border-orange-200 rounded hover:bg-orange-50 transition-colors text-xs font-medium disabled:opacity-50"
                       >
-                        <span className="text-xl">🔊</span>
-                        <span className="font-medium">20+</span>
+                        20+
                       </button>
                     </div>
                   </div>
@@ -703,136 +535,91 @@ const Grammar = () => {
               )}
 
               {activeTab === "examples" && (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="bg-gradient-to-br from-amber-500 to-orange-600 p-2 rounded-xl shadow-md">
-                      <Lightbulb className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900">Shembuj Praktikë</h3>
-                      <p className="text-gray-600 text-sm">Shembuj të detajuar për të kuptuar përdorimin praktik</p>
-                    </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Lightbulb className="h-4 w-4 text-amber-600" />
+                    <h3 className="text-base font-bold text-gray-900">Shembuj Praktikë</h3>
                   </div>
 
                   {selectedTopic.examples && selectedTopic.examples.length > 0 ? (
-                    <div className="space-y-6">
+                    <div className="space-y-3">
                       {selectedTopic.examples.map((example, index) => (
-                        <div
-                          key={index}
-                          className="bg-gradient-to-br from-white via-amber-50/30 to-orange-50/20 p-6 rounded-xl border-2 border-amber-200/50 shadow-md hover:shadow-lg transition-all"
-                        >
-                          <div className="flex items-center gap-3 mb-6">
-                            <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 rounded-xl font-bold text-base shadow-md">
+                        <div key={index} className="bg-white p-3 rounded-lg border border-gray-200">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-semibold">
                               Shembulli {index + 1}
-                            </div>
-                            <div className="flex items-center gap-2 text-amber-700">
-                              <Clock className="h-4 w-4" />
-                              <span className="text-xs font-medium">Shiko me kujdes</span>
-                            </div>
+                            </span>
                           </div>
 
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <div className="space-y-2">
                             {example.english && (
-                              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border-2 border-blue-200 shadow-md">
-                                <div className="flex items-center gap-2 mb-3">
-                                  <div className="bg-blue-200 p-2 rounded-lg">
-                                    <Globe className="h-4 w-4 text-blue-700" />
-                                  </div>
-                                  <span className="text-xs font-bold text-blue-700 uppercase tracking-wide">Shqip</span>
+                              <div className="bg-blue-50 p-2 rounded border border-blue-200">
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  <Globe className="h-3 w-3 text-blue-600" />
+                                  <span className="text-xs font-semibold text-blue-700">Shqip</span>
                                 </div>
-                                <p className="text-blue-900 text-base leading-relaxed font-medium bg-white/60 p-4 rounded-lg">
-                                  {example.english}
-                                </p>
+                                <p className="text-blue-900 text-sm leading-relaxed">{example.english}</p>
                               </div>
                             )}
 
                             {example.german && (
-                              <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-4 rounded-xl border-2 border-teal-200 shadow-md">
-                                <div className="flex items-center justify-between mb-3">
-                                  <div className="flex items-center gap-2">
-                                    <div className="bg-teal-200 p-2 rounded-lg">
-                                      <Globe className="h-4 w-4 text-teal-700" />
-                                    </div>
-                                    <span className="text-xs font-bold text-teal-700 uppercase tracking-wide">
-                                      Gjermanisht
-                                    </span>
+                              <div className="bg-teal-50 p-2 rounded border border-teal-200">
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <Globe className="h-3 w-3 text-teal-600" />
+                                    <span className="text-xs font-semibold text-teal-700">Gjermanisht</span>
                                   </div>
                                   <button
                                     onClick={() => speakGerman(example.german)}
-                                    className="p-3 text-teal-600 hover:text-teal-800 hover:bg-teal-200 rounded-xl transition-all shadow-sm hover:shadow-md bg-white/80"
-                                    title="Dëgjo shqiptimin gjerman"
-                                    aria-label="Dëgjo shqiptimin gjerman"
+                                    className="p-1 text-teal-600 hover:bg-teal-100 rounded transition-colors"
+                                    title="Dëgjo"
                                   >
-                                    <Volume2 className="h-4 w-4" />
+                                    <Volume2 className="h-3 w-3" />
                                   </button>
                                 </div>
-                                <p className="text-teal-900 font-bold text-base leading-relaxed bg-white/60 p-4 rounded-lg">
-                                  {example.german}
-                                </p>
+                                <p className="text-teal-900 font-semibold text-sm leading-relaxed">{example.german}</p>
+                              </div>
+                            )}
+
+                            {example.explanation && (
+                              <div className="bg-gray-50 p-2 rounded border border-gray-200">
+                                <p className="text-gray-700 text-xs leading-relaxed italic">{example.explanation}</p>
                               </div>
                             )}
                           </div>
-
-                          {example.explanation && (
-                            <div className="mt-6 bg-gradient-to-r from-gray-50 to-slate-50 p-4 rounded-xl border-2 border-gray-200 shadow-md">
-                              <div className="flex items-center gap-2 mb-3">
-                                <div className="bg-gray-200 p-2 rounded-lg">
-                                  <Brain className="h-4 w-4 text-gray-700" />
-                                </div>
-                                <span className="text-xs font-bold text-gray-700 uppercase tracking-wide">
-                                  Shpjegimi i detajuar:
-                                </span>
-                              </div>
-                              <p className="text-gray-800 italic leading-relaxed text-base bg-white/60 p-4 rounded-lg font-medium">
-                                {example.explanation}
-                              </p>
-                            </div>
-                          )}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-16 bg-gradient-to-br from-gray-50 to-slate-50 rounded-xl border-2 border-gray-200">
-                      <Lightbulb className="h-16 w-16 text-gray-400 mx-auto mb-6" />
-                      <h4 className="text-lg font-semibold text-gray-900 mb-3">Nuk ka shembuj të disponueshëm</h4>
-                      <p className="text-gray-600 max-w-md mx-auto text-sm">
-                        Shembujt për këtë temë do të shtohen së shpejti.
-                      </p>
+                    <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
+                      <Lightbulb className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-600 text-sm">Nuk ka shembuj të disponueshëm</p>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Enhanced Exercises Tab */}
               {activeTab === "exercises" && (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-2 rounded-xl shadow-md">
-                      <Target className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900">Ushtrime Praktike</h3>
-                      <p className="text-gray-600 text-sm">Testo njohuritë tuaja me ushtrime interaktive</p>
-                    </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Target className="h-4 w-4 text-purple-600" />
+                    <h3 className="text-base font-bold text-gray-900">Ushtrime Praktike</h3>
                   </div>
 
                   {selectedTopic.exercises && selectedTopic.exercises.length > 0 ? (
-                    <div className="space-y-6">
-                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl border-2 border-purple-200 shadow-md">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-2">
-                            <Brain className="h-5 w-5 text-purple-600" />
-                            <span className="font-bold text-purple-800 text-sm">
-                              Pyetja {currentQuestionIndex + 1} nga {selectedTopic.exercises.length}
-                            </span>
-                          </div>
-                          <div className="text-xs text-purple-600 font-medium">
+                    <div className="space-y-3">
+                      <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-semibold text-purple-800 text-sm">
+                            Pyetja {currentQuestionIndex + 1} / {selectedTopic.exercises.length}
+                          </span>
+                          <span className="text-xs text-purple-600">
                             {Object.keys(showResults).length} të përfunduara
-                          </div>
+                          </span>
                         </div>
-                        <div className="w-full bg-purple-200 rounded-full h-2">
+                        <div className="w-full bg-purple-200 rounded-full h-1.5">
                           <div
-                            className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full transition-all duration-500"
+                            className="bg-purple-600 h-1.5 rounded-full transition-all duration-500"
                             style={{
                               width: `${((currentQuestionIndex + 1) / selectedTopic.exercises.length) * 100}%`,
                             }}
@@ -844,140 +631,101 @@ const Grammar = () => {
                         const exercise = selectedTopic.exercises[currentQuestionIndex]
                         const index = currentQuestionIndex
                         return (
-                          <div className="bg-gradient-to-br from-white via-purple-50/30 to-pink-50/20 p-6 rounded-xl border-2 border-purple-200/50 shadow-md hover:shadow-lg transition-all">
-                            <div className="flex items-center justify-between mb-6">
-                              <div className="flex items-center gap-3">
-                                <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-xl font-bold text-base shadow-md">
-                                  Ushtrimi {index + 1}
-                                </div>
-                              </div>
+                          <div className="bg-white p-3 rounded-lg border border-gray-200">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs font-semibold">
+                                Ushtrimi {index + 1}
+                              </span>
                               {showResults[index] && (
                                 <div
-                                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold shadow-md ${
+                                  className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
                                     showResults[index].isCorrect
-                                      ? "bg-green-100 text-green-800 border border-green-200"
-                                      : "bg-red-100 text-red-800 border border-red-200"
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-red-100 text-red-700"
                                   }`}
                                 >
                                   {showResults[index].isCorrect ? (
-                                    <CheckCircle className="h-4 w-4" />
+                                    <CheckCircle className="h-3 w-3" />
                                   ) : (
-                                    <XCircle className="h-4 w-4" />
+                                    <XCircle className="h-3 w-3" />
                                   )}
-                                  {showResults[index].isCorrect ? "E saktë!" : "E gabuar"}
+                                  {showResults[index].isCorrect ? "E saktë" : "E gabuar"}
                                 </div>
                               )}
                             </div>
 
                             {exercise.question && (
-                              <div className="mb-6 bg-gradient-to-br from-gray-50 to-slate-50 p-4 rounded-xl border-2 border-gray-200 shadow-md">
-                                <p className="text-gray-900 font-semibold text-base leading-relaxed">
-                                  {exercise.question}
-                                </p>
+                              <div className="mb-3 bg-gray-50 p-2.5 rounded border border-gray-200">
+                                <p className="text-gray-900 font-medium text-sm leading-relaxed">{exercise.question}</p>
                               </div>
                             )}
 
                             {exercise.options && exercise.options.length > 0 && (
-                              <div className="mb-6">
-                                <div className="grid grid-cols-1 gap-4">
-                                  {exercise.options.map((option, optIndex) => (
-                                    <button
-                                      key={optIndex}
-                                      onClick={() => handleAnswerSelect(index, option)}
-                                      disabled={showResults[index]}
-                                      className={`p-4 text-left rounded-xl border-3 transition-all text-base font-medium shadow-sm hover:shadow-lg ${
-                                        selectedAnswers[index] === option
-                                          ? showResults[index]
-                                            ? option === exercise.correctAnswer
-                                              ? "bg-green-50 border-green-300 text-green-800 shadow-lg"
-                                              : "bg-red-50 border-red-300 text-red-800 shadow-lg"
-                                            : "bg-purple-50 border-purple-300 text-purple-800 shadow-lg"
-                                          : showResults[index] && option === exercise.correctAnswer
-                                            ? "bg-green-50 border-green-300 text-green-800 shadow-lg"
-                                            : "bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
-                                      } ${showResults[index] ? "cursor-not-allowed opacity-75" : "cursor-pointer"}`}
-                                      aria-label={`Zgjidh përgjigjen: ${option}`}
-                                    >
-                                      <div className="flex items-center justify-between">
-                                        <span>{option}</span>
-                                        {showResults[index] && (
-                                          <>
-                                            {option === exercise.correctAnswer && (
-                                              <CheckCircle className="h-5 w-5 text-green-600" />
-                                            )}
-                                            {selectedAnswers[index] === option && option !== exercise.correctAnswer && (
-                                              <XCircle className="h-5 w-5 text-red-600" />
-                                            )}
-                                          </>
-                                        )}
-                                      </div>
-                                    </button>
-                                  ))}
-                                </div>
+                              <div className="mb-3 space-y-2">
+                                {exercise.options.map((option, optIndex) => (
+                                  <button
+                                    key={optIndex}
+                                    onClick={() => handleAnswerSelect(index, option)}
+                                    disabled={showResults[index]}
+                                    className={`w-full p-2.5 text-left rounded-lg border-2 transition-all text-sm font-medium ${
+                                      selectedAnswers[index] === option
+                                        ? showResults[index]
+                                          ? option === exercise.correctAnswer
+                                            ? "bg-green-50 border-green-400 text-green-800"
+                                            : "bg-red-50 border-red-400 text-red-800"
+                                          : "bg-purple-50 border-purple-400 text-purple-800"
+                                        : showResults[index] && option === exercise.correctAnswer
+                                          ? "bg-green-50 border-green-400 text-green-800"
+                                          : "bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
+                                    } ${showResults[index] ? "cursor-not-allowed opacity-75" : "cursor-pointer"}`}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <span>{option}</span>
+                                      {showResults[index] && (
+                                        <>
+                                          {option === exercise.correctAnswer && (
+                                            <CheckCircle className="h-4 w-4 text-green-600" />
+                                          )}
+                                          {selectedAnswers[index] === option && option !== exercise.correctAnswer && (
+                                            <XCircle className="h-4 w-4 text-red-600" />
+                                          )}
+                                        </>
+                                      )}
+                                    </div>
+                                  </button>
+                                ))}
                               </div>
                             )}
 
                             {showDetailedContent && showResults[index] && (
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-gradient-to-r from-gray-50 to-slate-50 p-4 rounded-xl border-2 border-gray-200 shadow-md">
+                              <div className="space-y-2 bg-gray-50 p-2 rounded border border-gray-200">
                                 {exercise.english && (
-                                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-xl border-2 border-blue-200 shadow-md">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <div className="bg-blue-200 p-2 rounded-lg">
-                                        <Globe className="h-4 w-4 text-blue-700" />
-                                      </div>
-                                      <span className="font-bold text-blue-700 text-xs uppercase tracking-wide">
-                                        Në Shqip:
-                                      </span>
-                                    </div>
-                                    <p className="text-blue-800 leading-relaxed font-medium text-sm">
-                                      {exercise.english}
-                                    </p>
+                                  <div className="bg-blue-50 p-2 rounded border border-blue-200">
+                                    <span className="font-semibold text-blue-700 text-xs">Shqip:</span>
+                                    <p className="text-blue-800 text-xs mt-0.5">{exercise.english}</p>
                                   </div>
                                 )}
                                 {exercise.german && (
-                                  <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-3 rounded-xl border-2 border-teal-200 shadow-md">
-                                    <div className="flex items-center justify-between mb-2">
-                                      <div className="flex items-center gap-2">
-                                        <div className="bg-teal-200 p-2 rounded-lg">
-                                          <Globe className="h-4 w-4 text-teal-700" />
-                                        </div>
-                                        <span className="font-bold text-teal-700 text-xs uppercase tracking-wide">
-                                          Në Gjermanisht:
-                                        </span>
-                                      </div>
+                                  <div className="bg-teal-50 p-2 rounded border border-teal-200">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-semibold text-teal-700 text-xs">Gjermanisht:</span>
                                       <button
                                         onClick={() => speakGerman(exercise.german)}
-                                        className="p-3 text-teal-600 hover:text-teal-800 hover:bg-teal-200 rounded-xl transition-all shadow-sm hover:shadow-md"
-                                        title="Dëgjo shqiptimin gjerman"
-                                        aria-label="Dëgjo shqiptimin gjerman"
+                                        className="p-1 text-teal-600 hover:bg-teal-100 rounded"
                                       >
-                                        <Volume2 className="h-4 w-4" />
+                                        <Volume2 className="h-3 w-3" />
                                       </button>
                                     </div>
-                                    <p className="text-teal-800 font-medium leading-relaxed text-sm">
-                                      {exercise.german}
-                                    </p>
+                                    <p className="text-teal-800 font-medium text-xs mt-0.5">{exercise.german}</p>
                                   </div>
                                 )}
                                 {exercise.explanation && (
-                                  <div className="bg-gradient-to-br from-gray-100 to-slate-100 p-3 rounded-xl border-2 border-gray-200 shadow-md">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <div className="bg-gray-200 p-2 rounded-lg">
-                                        <Brain className="h-4 w-4 text-gray-700" />
-                                      </div>
-                                      <span className="font-bold text-gray-700 text-xs uppercase tracking-wide">
-                                        Shpjegimi:
-                                      </span>
-                                    </div>
-                                    <p className="text-gray-700 italic leading-relaxed font-medium text-sm">
-                                      {exercise.explanation}
-                                    </p>
+                                  <div className="bg-gray-100 p-2 rounded border border-gray-200">
+                                    <p className="text-gray-700 text-xs italic">{exercise.explanation}</p>
                                   </div>
                                 )}
                               </div>
                             )}
-
-                            {/* The question will automatically advance after 2 seconds */}
                           </div>
                         )
                       })()}
@@ -985,20 +733,18 @@ const Grammar = () => {
                       {isAllExercisesCompleted() &&
                         currentQuestionIndex === selectedTopic.exercises.length - 1 &&
                         !isTopicFinished(selectedTopic._id) && (
-                          <div className="text-center pt-6 border-t-2 border-gray-200">
-                            <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-6 rounded-2xl border-2 border-orange-200 shadow-xl">
-                              <CheckCircle className="h-16 w-16 text-orange-500 mx-auto mb-4" />
-                              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                          <div className="text-center pt-4 border-t border-gray-200">
+                            <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                              <CheckCircle className="h-10 w-10 text-orange-500 mx-auto mb-2" />
+                              <h3 className="text-base font-bold text-gray-900 mb-2">
                                 Të gjitha ushtrimet u përfunduan!
                               </h3>
-                              <p className="text-gray-600 text-base mb-6 max-w-2xl mx-auto leading-relaxed">
-                                Keni përfunduar me sukses të gjitha ushtrimet për këtë temë të gramatikës. Kliko butonin
-                                më poshtë për të shënuar këtë temë si të përfunduar.
+                              <p className="text-gray-600 text-sm mb-3">
+                                Kliko për të shënuar këtë temë si të përfunduar.
                               </p>
                               <button
                                 onClick={handleMarkAsFinished}
-                                className="px-8 py-4 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-2xl hover:from-orange-700 hover:to-amber-700 transition-all font-bold shadow-lg hover:shadow-xl text-base"
-                                aria-label="Shëno si të përfunduar"
+                                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-semibold text-sm"
                               >
                                 Përfundo Temën
                               </button>
@@ -1006,22 +752,19 @@ const Grammar = () => {
                           </div>
                         )}
 
-                      {/* Enhanced completion message */}
                       {isAllExercisesCompleted() &&
                         currentQuestionIndex === selectedTopic.exercises.length - 1 &&
                         isTopicFinished(selectedTopic._id) && (
-                          <div className="text-center pt-12 border-t-2 border-gray-200">
-                            <div className="bg-gradient-to-br from-green-50 to-teal-50 p-8 rounded-2xl border-2 border-green-200 shadow-xl">
-                              <Award className="h-20 w-20 text-green-500 mx-auto mb-6" />
-                              <h3 className="text-3xl font-bold text-gray-900 mb-4">Urime! Punë e shkëlqyer!</h3>
-                              <p className="text-gray-600 text-lg mb-8 max-w-3xl mx-auto leading-relaxed">
-                                Keni përfunduar me sukses të gjitha ushtrimet për këtë temë të gramatikës. Vazhdoni me
-                                tema të tjera për të përmirësuar njohuritë tuaja.
+                          <div className="text-center pt-4 border-t border-gray-200">
+                            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                              <Award className="h-12 w-12 text-green-500 mx-auto mb-2" />
+                              <h3 className="text-lg font-bold text-gray-900 mb-2">Urime! Punë e shkëlqyer!</h3>
+                              <p className="text-gray-600 text-sm mb-3">
+                                Keni përfunduar me sukses këtë temë. Vazhdoni me tema të tjera.
                               </p>
                               <button
                                 onClick={handleBackToTopics}
-                                className="px-8 py-4 bg-gradient-to-r from-teal-600 to-blue-600 text-white rounded-2xl hover:from-teal-700 hover:to-blue-700 transition-all font-bold shadow-lg hover:shadow-xl text-base"
-                                aria-label="Kthehu te lista e temave"
+                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold text-sm"
                               >
                                 Vazhdo me Tema të Tjera
                               </button>
@@ -1030,12 +773,9 @@ const Grammar = () => {
                         )}
                     </div>
                   ) : (
-                    <div className="text-center py-16 bg-gradient-to-br from-gray-50 to-slate-50 rounded-2xl border-2 border-gray-200">
-                      <Target className="h-16 w-16 text-gray-400 mx-auto mb-6" />
-                      <h4 className="text-lg font-semibold text-gray-900 mb-3">Nuk ka ushtrime të disponueshme</h4>
-                      <p className="text-gray-600 max-w-md mx-auto text-sm">
-                        Ushtrimet për këtë temë do të shtohen së shpejti.
-                      </p>
+                    <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
+                      <Target className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-600 text-sm">Nuk ka ushtrime të disponueshme</p>
                     </div>
                   )}
                 </div>
@@ -1048,44 +788,38 @@ const Grammar = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-teal-50 to-blue-50 rounded-xl shadow-sm border border-gray-200 p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-3 flex items-center gap-3">
-          <div className="bg-teal-100 p-3 rounded-full">
-            <GraduationCap className="h-8 w-8 text-teal-600" />
-          </div>
+    <div className="max-w-7xl mx-auto space-y-4">
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h1 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
+          <GraduationCap className="h-5 w-5 text-teal-600" />
           Gramatika Gjermane
         </h1>
-        <p className="text-gray-700 text-lg leading-relaxed">
-          Zotëroni gramatikën gjermane me mësime të strukturuara, shembuj praktikë dhe ushtrime interaktive. Përparoni
-          nga niveli fillestar deri në mjeshtëri të plotë.
+        <p className="text-gray-600 text-sm leading-relaxed">
+          Zotëroni gramatikën gjermane me mësime të strukturuara dhe ushtrime interaktive.
         </p>
       </div>
 
-      {/* Level Filter */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center gap-2 mb-6">
-          <Filter className="h-5 w-5 text-gray-600" />
-          <h2 className="text-xl font-semibold text-gray-900">Filtro sipas Nivelit të Gjuhës</h2>
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Filter className="h-4 w-4 text-gray-600" />
+          <h2 className="text-sm font-semibold text-gray-900">Filtro sipas Nivelit</h2>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
           {levels.map((level) => (
             <button
               key={level}
               onClick={() => setSelectedLevel(level)}
-              className={`p-3 rounded-lg text-xs font-medium transition-all border-2 ${
+              className={`p-2 rounded-lg text-xs font-medium transition-all border ${
                 selectedLevel === level
                   ? level === "all"
-                    ? "bg-teal-600 text-white border-teal-700 shadow-md"
-                    : `${getLevelColor(level)} shadow-md`
-                  : "bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200 hover:border-gray-300"
+                    ? "bg-teal-600 text-white border-teal-700"
+                    : `${getLevelColor(level)} border-current`
+                  : "bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200"
               }`}
-              aria-label={`Filtro sipas nivelit ${level === "all" ? "Të gjitha nivelet" : level}`}
             >
               <div className="text-center">
-                <div className="font-bold text-base">{level === "all" ? "Të Gjitha" : level}</div>
-                <div className="text-xs mt-1 opacity-75">{getLevelDescription(level)}</div>
+                <div className="font-bold">{level === "all" ? "Të Gjitha" : level}</div>
+                <div className="text-[10px] mt-0.5 opacity-75 truncate">{getLevelDescription(level)}</div>
               </div>
             </button>
           ))}
@@ -1093,48 +827,46 @@ const Grammar = () => {
       </div>
 
       {error && (
-        <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
           <div className="flex items-center gap-2 mb-2">
-            <AlertCircle className="h-5 w-5 text-red-600" />
-            <h3 className="font-semibold text-red-800 text-base">Gabim gjatë ngarkimit</h3>
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <h3 className="font-semibold text-red-800 text-sm">Gabim gjatë ngarkimit</h3>
           </div>
-          <p className="text-red-700 mb-3 text-sm">{error}</p>
+          <p className="text-red-700 mb-2 text-xs">{error}</p>
           <button
             onClick={fetchTopics}
-            className="flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm"
-            aria-label="Provo përsëri"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-xs font-medium"
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className="h-3 w-3" />
             Provo Përsëri
           </button>
         </div>
       )}
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center min-h-80 bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600 mb-3"></div>
-          <p className="text-gray-600 text-base">Duke ngarkuar temat e gramatikës...</p>
+        <div className="flex flex-col items-center justify-center min-h-60 bg-white rounded-lg border border-gray-200">
+          <div className="animate-spin rounded-full h-6 w-6 border-2 border-teal-200 border-t-teal-600 mb-2"></div>
+          <p className="text-gray-600 text-sm">Duke ngarkuar...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{renderTopicGrid}</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">{renderTopicGrid}</div>
       )}
 
       {topics.length === 0 && !loading && !error && (
-        <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-200">
-          <GraduationCap className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Nuk ka tema të disponueshme</h3>
-          <p className="text-gray-600 mb-4 max-w-md mx-auto text-sm">
+        <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
+          <GraduationCap className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+          <h3 className="text-sm font-semibold text-gray-900 mb-1">Nuk ka tema të disponueshme</h3>
+          <p className="text-gray-600 text-xs mb-3">
             {selectedLevel === "all"
-              ? "Temat e gramatikës gjermane do të shfaqen këtu kur të shtohen në sistem."
-              : `Aktualisht nuk ka tema të disponueshme për nivelin ${selectedLevel}. Provoni një nivel tjetër ose kontrolloni përsëri më vonë.`}
+              ? "Temat e gramatikës do të shfaqen këtu."
+              : `Nuk ka tema për nivelin ${selectedLevel}.`}
           </p>
           <button
             onClick={fetchTopics}
-            className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium mx-auto text-sm"
-            aria-label="Rifresko listën e temave"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 text-white rounded hover:bg-teal-700 transition-colors text-xs font-medium mx-auto"
           >
-            <RefreshCw className="h-4 w-4" />
-            Rifresko Listën
+            <RefreshCw className="h-3 w-3" />
+            Rifresko
           </button>
         </div>
       )}
@@ -1145,38 +877,50 @@ const Grammar = () => {
 const TopicCard = React.memo(({ topic, onClick, isFinished }) => (
   <div
     onClick={() => onClick(topic)}
-    className={`bg-white rounded-lg shadow-sm p-4 hover:shadow-md transition-all cursor-pointer hover:scale-105 ${
+    className={`rounded-lg p-4 hover:shadow-lg transition-all cursor-pointer relative overflow-hidden group ${
       isFinished
-        ? "border-2 border-orange-500 bg-gradient-to-br from-orange-50 to-amber-50"
-        : "border border-gray-200 hover:border-teal-200"
+        ? "border-1 border-orange-300 bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50 shadow-md"
+        : "bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 hover:border-teal-400 shadow-sm hover:shadow-teal-200/50"
     }`}
-    aria-label={`Mëso për temën: ${topic.name || "Temë pa titull"}`}
   >
-    <div className="flex items-center justify-between mb-3">
-      {isFinished && (
-        <div className="flex items-center gap-1 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold">
-          <CheckCircle className="h-3 w-3" />
-          <span>Përfunduar</span>
+  
+    <div className="relative z-10">
+      <div className="flex items-center justify-between mb-3">
+        {isFinished && (
+          <div className="flex items-center gap-1 bg-gradient-to-r from-orange-500 to-amber-500 text-white px-2.5 py-1 rounded-full text-xs font-bold shadow-md">
+            <CheckCircle className="h-3.5 w-3.5" />
+            Përfunduar
+          </div>
+        )}
+        <div
+          className={`flex items-center gap-1.5 text-xs font-semibold ${isFinished ? "text-orange-600 ml-auto" : "ml-auto text-gray-600"}`}
+        >
+          <ListCheck className="h-4 w-4" />
+          <span className="bg-gray-200 px-2 py-0.5 rounded">{topic.exercises?.length || 0}</span>
         </div>
+      </div>
+
+      <h3 className={`font-bold text-base mb-2 line-clamp-2 ${isFinished ? "text-orange-900" : "text-gray-900"}`}>
+        {topic.name || "Temë pa titull"}
+      </h3>
+
+      {topic.description && (
+        <p className={`text-xs mb-3 line-clamp-2 leading-relaxed ${isFinished ? "text-orange-700" : "text-gray-600"}`}>
+          {topic.description}
+        </p>
       )}
-      <div className={`flex items-center gap-1 text-gray-500 ${isFinished ? "" : "ml-auto"}`}>
-        <BookOpen className="h-4 w-4" />
-        <span className="text-xs">{topic.exercises?.length || 0} ushtr.</span>
-      </div>
-    </div>
 
-    <h3 className="font-bold text-base text-gray-900 mb-2 line-clamp-2">{topic.name || "Temë pa titull"}</h3>
-
-    {topic.description && <p className="text-gray-600 text-xs mb-3 line-clamp-2">{topic.description}</p>}
-
-    <div className="flex items-center justify-between text-xs text-gray-500">
-      <div className="flex items-center gap-1">
-        <Users className="h-3 w-3" />
-        <span>{topic.examples?.length || 0} shembuj</span>
-      </div>
-      <div className="flex items-center gap-1">
-        <Hash className="h-3 w-3" />
-        <span>ID: {topic._id?.slice(-4) || "N/A"}</span>
+      <div
+        className={`flex items-center justify-between text-xs font-medium ${isFinished ? "text-orange-600" : "text-gray-600"}`}
+      >
+        <div className="flex items-center gap-2">
+          <Lightbulb className="h-4 w-4" />
+          <span>{topic.examples?.length || 0} shembuj</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Target className="h-4 w-4" />
+          <span>{topic.exercises?.length || 0} ushtrime</span>
+        </div>
       </div>
     </div>
   </div>

@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useRef, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
@@ -51,7 +53,7 @@ const Navbar = () => {
       ghost: "text-slate-300 hover:bg-white/5 hover:text-white backdrop-blur-sm",
       outline:
         "border-2 border-slate-700 text-slate-200 hover:bg-white/5 hover:border-slate-600 hover:text-white backdrop-blur-sm",
-      primary: 
+      primary:
         "bg-white/10 backdrop-blur-md text-white border border-white/20 hover:bg-white/20 hover:border-white/30 shadow-lg shadow-black/10 hover:shadow-xl hover:shadow-black/20 hover:scale-[1.02] active:scale-[0.98]",
       secondary:
         "bg-transparent backdrop-blur-sm text-white border border-white/30 hover:bg-white/10 hover:border-white/40 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]",
@@ -61,7 +63,7 @@ const Navbar = () => {
       sm: "h-8 px-2 rounded-lg",
       lg: "h-11 px-8 rounded-xl",
       icon: "h-9 w-9",
-      auth: "h-9 px-5 md:h-10 md:px-6",
+      auth: "h-8 px-3 md:h-10 md:px-6",
     }
     return (
       <button
@@ -122,7 +124,6 @@ const Navbar = () => {
                   height={40}
                   className="md:w-[50px] md:h-[50px] rounded-full relative z-10 ring-2 ring-emerald-400/30 group-hover:ring-emerald-300/50 shadow-lg shadow-emerald-500/20 group-hover:shadow-2xl group-hover:shadow-emerald-400/40 transition-all duration-300"
                   alt="logo"
-               
                 />
               </div>
               <div className="flex flex-col items-start">
@@ -264,7 +265,7 @@ const Navbar = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center space-x-2.5">
+              <div className="flex items-center space-x-1.5 md:space-x-2.5">
                 <Button
                   variant="secondary"
                   size="auth"

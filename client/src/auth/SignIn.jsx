@@ -64,7 +64,7 @@ const SignIn = () => {
         <div className="text-center mb-8">
           <div className="flex justify-center mb-6">
             <img
-              src={webLogo}
+              src={webLogo || "/placeholder.svg"}
               alt="Logo"
               className="w-20 h-20 rounded-full shadow-lg object-cover"
             />
@@ -101,7 +101,7 @@ const SignIn = () => {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="Shkruani email-in tuaj"
-                className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-base bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200"
+                className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-base bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200"
               />
             </div>
           </div>
@@ -126,7 +126,7 @@ const SignIn = () => {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Shkruani fjalëkalimin tuaj"
-                className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg text-base bg-gray-50 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200"
+                className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg text-base bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200"
               />
               <button
                 type="button"
@@ -154,8 +154,11 @@ const SignIn = () => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3.5 px-4 rounded-lg text-base font-semibold transition-all duration-200 flex items-center justify-center ${loading ? "bg-gray-400 cursor-not-allowed" : "bg-amber-600 hover:bg-amber-700 active:bg-amber-800"
-              } text-white shadow-lg hover:shadow-xl`}
+            className={`w-full py-3.5 px-4 rounded-lg text-base font-semibold transition-all duration-200 flex items-center justify-center ${
+              loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] hover:from-teal-600 hover:to-cyan-600"
+            } text-white shadow-lg hover:shadow-xl`}
           >
             {loading ? (
               <>
