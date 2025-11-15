@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useSidebar } from "../context/SidebarContext"
-import { Menu, User, LogOut, ChevronDown, Star, Flame } from "lucide-react"
+import { Menu, User, LogOut, ChevronDown, Star, Flame } from 'lucide-react'
+import { generateDicebearUrl } from "../services/api"
 import mainLogo from "../../public/logo.png"
 
 const fonts = {
@@ -76,8 +77,6 @@ const Navbar = () => {
     )
   }
 
-  // ... keep existing code (Avatar component and rest)
-
   const Avatar = ({ src, alt, fallback, className = "" }) => {
     const [imageError, setImageError] = useState(false)
     return (
@@ -100,6 +99,11 @@ const Navbar = () => {
       </div>
     )
   }
+
+ const avatarUrl = user && user.id && user.avatarStyle 
+    ? generateDicebearUrl(user.id, user.avatarStyle)
+    : null
+
 
   return (
     <nav
@@ -192,7 +196,7 @@ const Navbar = () => {
                     style={{ fontFamily: fonts.poppins }}
                   >
                     <Avatar
-                      src={user?.profilePicture || "/placeholder.svg"}
+                      src={avatarUrl}
                       alt="Profile"
                       fallback={user?.firstName ? user.firstName.charAt(0).toUpperCase() : "U"}
                     />

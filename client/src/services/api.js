@@ -77,10 +77,8 @@ export const authService = {
       emri: data.firstName,
       mbiemri: data.lastName,
     }),
-  uploadProfilePicture: (formData) =>
-    api.post("/users/profile-picture", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    }),
+  updateAvatarStyle: (avatarStyle) =>
+    api.put("/users/avatar-style", { avatarStyle }),
   updateStudyHours: (hours) => api.put("/users/study-hours", { hours }),
   getUserXp: () => api.get("/users/xp"),
   addXp: (xp, reason) => api.post("/users/add-xp", { xp, reason }),
@@ -89,6 +87,9 @@ export const authService = {
   resetPassword: (token, newPassword) => api.post(`/auth/reset-password/${token}`, { newPassword }),
   verifyEmail: (token) => api.get(`/auth/verify/${token}`),
 }
+export const generateDicebearUrl = (userId, avatarStyle = "adventurer") =>
+  `https://api.dicebear.com/7.x/${avatarStyle}/svg?seed=${userId}`
+
 
 export const dictionaryService = {
   getAllWords: (params = {}) => api.get("/dictionary", { params }),

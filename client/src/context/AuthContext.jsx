@@ -59,7 +59,6 @@ export const AuthProvider = ({ children }) => {
             return // Exit early if no data
           }
 
-          // Ensure ALL relevant user data is captured from the profile response
           const fetchedUser = {
             id: userDataFromResponse.id,
             firstName: userDataFromResponse.firstName || userDataFromResponse.emri,
@@ -71,8 +70,8 @@ export const AuthProvider = ({ children }) => {
             studyHours: userDataFromResponse.studyHours,
             completedTests: userDataFromResponse.completedTests,
             achievements: userDataFromResponse.achievements,
-            streakCount: userDataFromResponse.streakCount, // Ensure streakCount is always included
-            // Add any other fields you expect from your profile response here
+            streakCount: userDataFromResponse.streakCount,
+            avatarStyle: userDataFromResponse.avatarStyle || "adventurer", // <-- ADDED
           }
           console.log("AuthContext: Fetched user data (before setting state):", JSON.stringify(fetchedUser, null, 2))
           setUser(fetchedUser)
@@ -115,7 +114,6 @@ export const AuthProvider = ({ children }) => {
       }
 
       localStorage.setItem("authToken", newToken)
-      // Ensure ALL user data is included when storing after login
       const userToStore = {
         id: userData.id,
         firstName: userData.emri,
@@ -127,8 +125,8 @@ export const AuthProvider = ({ children }) => {
         studyHours: userData.studyHours,
         completedTests: userData.completedTests,
         achievements: userData.achievements,
-        streakCount: userData.streakCount, // Ensure streakCount is always included
-        // Add any other fields you expect from your login response here
+        streakCount: userData.streakCount,
+        avatarStyle: userData.avatarStyle || "adventurer", // <-- ADDED
       }
       console.log("AuthContext: User data to store after login:", JSON.stringify(userToStore, null, 2))
       // Store the full user data in localStorage upon login
@@ -142,27 +140,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, [])
 
-  const register = useCallback(async (userData) => {
-    try {
-      const response = await authService.register(userData)
-      console.log(
-        "AuthContext: Register successful. Response data:",
-        response.data ? JSON.stringify(response.data, null, 2) : null,
-      )
-      return response
-    } catch (error) {
-      console.error("AuthContext: Register error:", error)
-      throw error
-    }
-  }, [])
-
-  const logout = useCallback(() => {
-    console.log("AuthContext: Logging out. Clearing localStorage.")
-    localStorage.removeItem("authToken")
-    localStorage.removeItem("user") // Clear user data from localStorage on logout
-    setToken(null)
-    setUser(null)
-  }, [])
 
   const updateUser = useCallback((updatedData) => {
     setUser((prev) => {
@@ -183,8 +160,26 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     login,
-    register,
-    logout,
+    register: useCallback(async (userData) => {
+      try {
+        const response = await authService.register(userData)
+        console.log(
+          "AuthContext: Register successful. Response data:",
+          response.data ? JSON.stringify(response.data, null, 2) : null,
+        )
+        return response
+      } catch (error) {
+        console.error("AuthContext: Register error:", error)
+        throw error
+      }
+    }, []),
+    logout: useCallback(() => {
+      console.log("AuthContext: Logging out. Clearing localStorage.")
+      localStorage.removeItem("authToken")
+      localStorage.removeItem("user") // Clear user data from localStorage on logout
+      setToken(null)
+      setUser(null)
+    }, []),
     updateUser,
     isAuthenticated: !!token,
   }

@@ -1,10 +1,11 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Trophy, Crown, Zap, Medal } from "lucide-react"
+import { Trophy, Crown, Zap, Medal } from 'lucide-react'
 import { io } from "socket.io-client"
 import { motion } from "framer-motion"
-import api, { SOCKET_URL } from "../services/api"
+import api, { SOCKET_URL, generateDicebearUrl } from "../services/api"
+import { Flame } from 'lucide-react'
 
 const Leaderboard = () => {
   const [leaderboardData, setLeaderboardData] = useState([])
@@ -128,7 +129,7 @@ const Leaderboard = () => {
               <Medal className="h-6 w-6 text-gray-400 mb-2" />
               <div className="relative mb-3">
                 <img
-                  src={topThree[1]?.avatar || "/placeholder.svg"}
+                  src={generateDicebearUrl(topThree[1]?._id, topThree[1]?.avatarStyle || "adventurer")}
                   alt={topThree[1]?.name}
                   className="w-16 h-16 rounded-full border-4 border-gray-300 object-cover"
                 />
@@ -155,7 +156,7 @@ const Leaderboard = () => {
               <Trophy className="h-8 w-8 text-yellow-500 mb-2" />
               <div className="relative mb-3">
                 <img
-                  src={topThree[0]?.avatar || "/placeholder.svg"}
+                  src={generateDicebearUrl(topThree[0]?._id, topThree[0]?.avatarStyle || "adventurer")}
                   alt={topThree[0]?.name}
                   className="w-24 h-24 rounded-full border-4 border-yellow-400 object-cover shadow-lg"
                 />
@@ -182,7 +183,7 @@ const Leaderboard = () => {
               <Medal className="h-6 w-6 text-pink-400 mb-2" />
               <div className="relative mb-3">
                 <img
-                  src={topThree[2]?.avatar || "/placeholder.svg"}
+                  src={generateDicebearUrl(topThree[2]?._id, topThree[2]?.avatarStyle || "adventurer")}
                   alt={topThree[2]?.name}
                   className="w-16 h-16 rounded-full border-4 border-pink-300 object-cover"
                 />
@@ -244,17 +245,16 @@ const Leaderboard = () => {
                     </span>
                   </div>
                   <img
-                    src={user.avatar || "/placeholder.svg"}
+                    src={generateDicebearUrl(user._id, user.avatarStyle) || "/placeholder.svg"}
                     alt={user.name}
-                    className="w-10 h-10 rounded-full object-cover"
+                    className="h-12 w-12 rounded-full border-2 border-white"
                   />
-                  <div>
-                    <p className="font-medium text-gray-900" style={{ fontFamily: "Inter, sans-serif" }}>
-                      {user.name}
-                    </p>
-                    <p className="text-xs text-gray-500" style={{ fontFamily: "Inter, sans-serif" }}>
-                      Niveli {user.level} · {user.streak} ditë
-                    </p>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-white truncate">{user.name}</div>
+                    <div className="text-sm text-gray-400 flex items-center gap-1">
+                      <Flame className="h-3 w-3 text-orange-400" />
+                      {user.streak} ditë streak
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
