@@ -9,19 +9,18 @@ const getAbsoluteUrl = (protocol, host, relativePath) => {
   return `${protocol}://${host}${normalizedPath}`
 }
 
-// Helper function to get leaderboard data
-// Modified to accept protocol and host instead of req
 const getLeaderboard = async (protocol, host, filter = {}, limit = 10) => {
   try {
     console.log("Fetching leaderboard with filter:", filter, "and limit:", limit)
     const leaderboard = await User.find(filter)
       .sort({ xp: -1, streakCount: -1 }) // Sort by XP, then by streak for tie-breaking
       .limit(limit)
-      .select("emri mbiemri xp level profilePicture streakCount") // Select relevant fields
+      .select("emri mbiemri xp level profilePicture avatarStyle streakCount") // Select relevant fields
       .lean() // Return plain JavaScript objects
 
     // Add rank and transform profilePicture to absolute URL for each user
     return leaderboard.map((user, index) => ({
+      _id: user._id, // Include user ID for avatar generation
       rank: index + 1,
       name: `${user.emri} ${user.mbiemri}`,
       xp: user.xp,
@@ -30,6 +29,7 @@ const getLeaderboard = async (protocol, host, filter = {}, limit = 10) => {
       avatar: user.profilePicture
         ? getAbsoluteUrl(protocol, host, user.profilePicture)
         : "/placeholder.svg?height=40&width=40",
+      avatarStyle: user.avatarStyle || "adventurer",
       streak: user.streakCount,
     }))
   } catch (error) {
@@ -37,6 +37,7 @@ const getLeaderboard = async (protocol, host, filter = {}, limit = 10) => {
     throw new Error("Could not fetch leaderboard data")
   }
 }
+
 
 // Get all-time leaderboard
 exports.getAllTimeLeaderboard = async (req, res) => {

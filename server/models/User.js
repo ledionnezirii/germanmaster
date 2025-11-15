@@ -48,9 +48,36 @@ const userSchema = new mongoose.Schema(
       enum: ["A1", "A2", "B1", "B2", "C1", "C2"],
       default: null,
     },
-    profilePicture: {
+    avatarStyle: {
       type: String,
-      default: "",
+      enum: [
+        "adventurer",
+        "avataaars",
+        "big-ears",
+        "big-smile",
+        "bottts",
+        "croodles",
+        "faces",
+        "fun-emoji",
+        "glass",
+        "icons",
+        "identicon",
+        "initials",
+        "lorelei",
+        "micah",
+        "miniavs",
+        "notionists",
+        "personas",
+        "pixel-art",
+        "rings",
+        "shapes",
+        "thumbs",
+      ],
+      default: "adventurer",
+    },
+    lastAvatarChangeDate: {
+      type: Date,
+      default: null,
     },
     studyHours: {
       type: Number,
@@ -226,34 +253,6 @@ const userSchema = new mongoose.Schema(
     timestamps: true,
   },
 )
-
-userSchema.methods.updateStreakOnLogin = async function () {
-  const now = new Date()
-  let shouldUpdateLastLoginDate = false
-
-  if (this.lastLoginDate) {
-    const diffTime = now.getTime() - this.lastLoginDate.getTime()
-    const diffHours = diffTime / (1000 * 60 * 60)
-
-    if (diffHours >= 24 && diffHours < 48) {
-      this.streakCount = (this.streakCount || 0) + 1
-      shouldUpdateLastLoginDate = true
-    } else if (diffHours >= 48) {
-      this.streakCount = 1
-      shouldUpdateLastLoginDate = true
-    }
-  } else {
-    this.streakCount = 1
-    shouldUpdateLastLoginDate = true
-  }
-
-  if (shouldUpdateLastLoginDate) {
-    this.lastLoginDate = now
-  }
-
-  this.lastLogin = now
-  await this.save()
-}
 
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next()

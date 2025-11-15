@@ -2,39 +2,7 @@ const User = require("../models/User")
 const { ApiError } = require("../utils/ApiError")
 const { ApiResponse } = require("../utils/ApiResponse")
 const { asyncHandler } = require("../utils/asyncHandler")
-const multer = require("multer")
-const path = require("path")
-const fs = require("fs")
-const cloudinary = require("../utils/cloudinary");
-const streamifier = require("streamifier");
-
-
-
-
-const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif/;
-    const extname = allowedTypes.test(file.originalname.toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    if (extname && mimetype) return cb(null, true);
-    cb(new ApiError(400, "Only image files are allowed"));
-  },
-});
-
-
-
-const getBaseUrl = (req) => {
-  // In a production environment, you should use a fixed environment variable
-  // like process.env.BACKEND_URL. For development, we can construct it.
-  // Assuming your backend runs on the port defined in process.env.PORT
-  const protocol = req.protocol || "http"
-  const host = req.get("host") || `localhost:${process.env.PORT || 5000}` // Fallback to localhost:5000
-  return `${protocol}://${host}`
-}
-
+const achievementsService = require("../services/achievementsService") // Assuming achievementsService is required
 
 const getProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id)
@@ -45,17 +13,7 @@ const getProfile = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
-  // Fix for profile picture URL
-  let fullProfilePictureUrl = null;
-  if (user.profilePicture) {
-    // If the picture is already a full URL (Cloudinary), use it directly
-    if (user.profilePicture.startsWith("http")) {
-      fullProfilePictureUrl = user.profilePicture;
-    } else {
-      // Otherwise, it's a local file; prefix with backend URL
-      fullProfilePictureUrl = `${getBaseUrl(req)}${user.profilePicture}`;
-    }
-  }
+  const avatarUrl = `https://api.dicebear.com/7.x/${user.avatarStyle}/svg?seed=${user._id}`;
 
   res.json(
     new ApiResponse(200, {
@@ -63,7 +21,8 @@ const getProfile = asyncHandler(async (req, res) => {
       firstName: user.emri,
       lastName: user.mbiemri,
       email: user.email,
-      profilePicture: fullProfilePictureUrl,
+      avatar: avatarUrl,
+      avatarStyle: user.avatarStyle,
       xp: user.xp,
       level: user.level,
       studyHours: user.studyHours,
@@ -79,8 +38,6 @@ const getProfile = asyncHandler(async (req, res) => {
   );
 });
 
-
-
 const getUserXp = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id).select("xp")
   if (!user) {
@@ -88,7 +45,6 @@ const getUserXp = asyncHandler(async (req, res) => {
   }
   res.json(new ApiResponse(200, { xp: user.xp }))
 })
-
 
 const updateStudyHours = asyncHandler(async (req, res) => {
   const { hours } = req.body
@@ -113,46 +69,80 @@ const updateStudyHours = asyncHandler(async (req, res) => {
   )
 })
 
+const updateAvatarStyle = asyncHandler(async (req, res) => {
+  const { avatarStyle } = req.body;
 
-const uploadProfilePicture = [
-  upload.single("profilePicture"),
-  asyncHandler(async (req, res) => {
-    if (!req.file) throw new ApiError(400, "Please upload an image");
+  if (!avatarStyle) {
+    throw new ApiError(400, "Avatar style is required");
+  }
 
-    const user = await User.findById(req.user.id);
-    if (!user) throw new ApiError(404, "User not found");
+  const validStyles = [
+    "adventurer",
+    "avataaars",
+    "big-ears",
+    "big-smile",
+    "bottts",
+    "croodles",
+    "faces",
+    "fun-emoji",
+    "glass",
+    "icons",
+    "identicon",
+    "initials",
+    "lorelei",
+    "micah",
+    "miniavs",
+    "notionists",
+    "personas",
+    "pixel-art",
+    "rings",
+    "shapes",
+    "thumbs",
+  ];
 
-    // Upload to Cloudinary
-    const streamUpload = (req) => {
-      return new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { folder: "profiles", public_id: `profile-${user._id}-${Date.now()}` },
-          (error, result) => {
-            if (result) resolve(result);
-            else reject(error);
-          }
-        );
-        streamifier.createReadStream(req.file.buffer).pipe(stream);
-      });
-    };
+  if (!validStyles.includes(avatarStyle)) {
+    throw new ApiError(400, "Invalid avatar style");
+  }
 
-    const result = await streamUpload(req);
+  const user = await User.findById(req.user.id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
 
-    // Save URL in database
-    user.profilePicture = result.secure_url;
-    await user.save();
+  if (user.lastAvatarChangeDate) {
+    const now = new Date();
+    const lastChange = new Date(user.lastAvatarChangeDate);
+    const oneMinuteAgo = new Date(now.getTime() - 60 * 1000); // 1 minute = 60 seconds * 1000 milliseconds
 
-    res.json(
-      new ApiResponse(
-        200,
-        { profilePicture: user.profilePicture },
-        "Profile picture uploaded successfully"
-      )
-    );
-  }),
-];
+    if (lastChange > oneMinuteAgo) {
+      const nextChangeDate = new Date(lastChange.getTime() + 60 * 1000); // Add 1 minute
+      const secondsRemaining = Math.ceil((nextChangeDate - now) / 1000);
+      throw new ApiError(
+        429,
+        `You can change your avatar again in ${secondsRemaining} seconds. Last changed: ${lastChange.toLocaleString()}`
+      );
+    }
+  }
 
+  user.avatarStyle = avatarStyle;
+  user.lastAvatarChangeDate = new Date();
+  await user.save();
 
+  const avatarUrl = `https://api.dicebear.com/7.x/${user.avatarStyle}/svg?seed=${user._id}`;
+
+  res.json(
+    new ApiResponse(
+      200,
+      { 
+        avatar: avatarUrl,
+        avatarStyle: user.avatarStyle,
+        lastAvatarChangeDate: user.lastAvatarChangeDate,
+        nextAvailableChange: new Date(user.lastAvatarChangeDate.getTime() + 60 * 1000) // 1 minute from now
+      },
+      "Avatar style updated successfully"
+    )
+  );
+});
 
 const updateProfile = asyncHandler(async (req, res) => {
   const { emri, mbiemri } = req.body
@@ -187,7 +177,6 @@ const addXp = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
-  // Use service to evaluate milestones and add achievements
   const newAchievements = await achievementsService.evaluateXpMilestones(user, xp);
 
   res.json(
@@ -200,36 +189,18 @@ const addXp = asyncHandler(async (req, res) => {
         newAchievements,
         reason: reason || "XP added",
       },
-     newAchievements.length
-  ? `Congratulations! You earned new achievements: ${newAchievements.map(a => a.name).join(", ")}`
-  : "XP added successfully"
-
+      newAchievements.length
+        ? `Congratulations! You earned new achievements: ${newAchievements.map(a => a.name).join(", ")}`
+        : "XP added successfully"
     )
   );
 });
-const handleAddXp = async () => {
-  try {
-    const apiResponse = await authService.addXp({ xp: 150, reason: "Complete lesson 1" });
-    // Update React user state with latest achievements and XP
-    updateUser(prevUser => ({
-      ...prevUser,
-      xp: apiResponse.data.xp,
-      level: apiResponse.data.level,
-      achievements: apiResponse.data.achievements,
-      newAchievements: apiResponse.data.newAchievements,
-    }));
-  } catch (error) {
-    console.error("Failed to add XP:", error);
-  }
-}
-
 
 module.exports = {
   getProfile,
   getUserXp,
   updateStudyHours,
-  uploadProfilePicture,
+  updateAvatarStyle,
   updateProfile,
   addXp,
-  handleAddXp
 }

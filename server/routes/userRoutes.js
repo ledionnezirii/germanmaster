@@ -3,11 +3,11 @@ const {
   getProfile,
   getUserXp,
   updateStudyHours,
-  uploadProfilePicture,
+  updateAvatarStyle,
   updateProfile,
   addXp,
 } = require("../controllers/userController")
-const  auth  = require("../middleware/auth")
+const auth = require("../middleware/auth")
 
 const router = express.Router()
 
@@ -17,7 +17,7 @@ router.use(auth)
 router.get("/profile", getProfile)
 router.get("/xp", getUserXp)
 router.put("/study-hours", updateStudyHours)
-router.post("/profile-picture", uploadProfilePicture)
+router.put("/avatar-style", updateAvatarStyle)
 router.put("/profile", updateProfile)
 router.post("/add-xp", addXp)
 

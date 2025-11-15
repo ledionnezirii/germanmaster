@@ -112,45 +112,37 @@ const signup = asyncHandler(async (req, res) => {
   }
 })
 
-// @desc    Authenticate user (Login) and return subscription info
-// @route   POST /api/auth/login
-// @access  Public
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body
 
   const normalizedEmail = normalizeGmailAddress(email)
 
-  // Find user with normalized email and include password
   const user = await User.findOne({ email: normalizedEmail }).select("+password")
   if (!user) {
     throw new ApiError(401, "Kredenciale të pavlefshme")
   }
 
-  // Check if user verified email
   if (!user.isVerified) {
     throw new ApiError(401, "Ju lutem verifikoni email-in tuaj para se të hyni")
   }
 
-  // Check password
   const isMatch = await user.comparePassword(password)
   if (!isMatch) {
     throw new ApiError(401, "Kredenciale të pavlefshme")
   }
 
   try {
-    // Update streak on login
     await user.updateStreakOnLogin()
   } catch (error) {
     console.error("Gabim gjatë përditësimit të streak në hyrje:", error)
   }
 
-  // Generate token
   const token = generateToken(user._id, user.emri)
 
-  // Construct full profile picture URL for login response
-  const fullProfilePictureUrl = getProfilePictureUrl(req, user)
+  const avatarUrl = user.avatarStyle
+    ? `https://api.dicebear.com/7.x/${user.avatarStyle}/svg?seed=${user._id}`
+    : `https://api.dicebear.com/7.x/adventurer/svg?seed=${user._id}`;
 
-  // Calculate subscription status info
   const now = new Date()
   const isSubscriptionActive = user.subscriptionExpiresAt && user.subscriptionExpiresAt > now
 
@@ -173,7 +165,8 @@ const login = asyncHandler(async (req, res) => {
           role: user.role,
           xp: user.xp,
           level: user.level,
-          profilePicture: fullProfilePictureUrl,
+          avatarUrl,
+          avatarStyle: user.avatarStyle || "adventurer",
           streakCount: user.streakCount || 0,
           subscription: subscriptionStatus,
         },
@@ -183,17 +176,12 @@ const login = asyncHandler(async (req, res) => {
   )
 })
 
-// @desc    Get current user
-// @route   GET /api/auth/me
-// @access  Private
 const getMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id)
 
-  // Construct full profile picture URL for getMe response
-  let fullProfilePictureUrl = null
-  if (user.profilePicture) {
-    fullProfilePictureUrl = `${getBaseUrl(req)}${user.profilePicture}`
-  }
+  const avatarUrl = user.avatarStyle
+    ? `https://api.dicebear.com/7.x/${user.avatarStyle}/svg?seed=${user._id}`
+    : `https://api.dicebear.com/7.x/adventurer/svg?seed=${user._id}`;
 
   res.json(
     new ApiResponse(200, {
@@ -205,7 +193,8 @@ const getMe = asyncHandler(async (req, res) => {
         role: user.role,
         xp: user.xp,
         level: user.level,
-        profilePicture: fullProfilePictureUrl,
+        avatarUrl,
+        avatarStyle: user.avatarStyle || "adventurer",
         studyHours: user.studyHours,
         completedTests: user.completedTests,
         achievements: user.achievements,
