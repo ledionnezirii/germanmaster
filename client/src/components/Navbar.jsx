@@ -100,10 +100,9 @@ const Navbar = () => {
     )
   }
 
- const avatarUrl = user && user.id && user.avatarStyle 
-    ? generateDicebearUrl(user.id, user.avatarStyle)
+  const avatarUrl = user && user.avatarStyle
+    ? `https://api.dicebear.com/7.x/${user.avatarStyle.split('-').slice(0, -1).join('-')}/svg?seed=${user.avatarStyle}`
     : null
-
 
   return (
     <nav
@@ -202,9 +201,9 @@ const Navbar = () => {
                     />
                     <span className="hidden sm:block text-slate-200 group-hover:text-white transition-colors">
                       {user?.firstName && user?.lastName
-                        ? `${user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1).toLowerCase()} ${user.lastName.charAt(0).toUpperCase() + user.lastName.slice(1).toLowerCase()}`
-                        : user?.firstName
-                          ? user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1).toLowerCase()
+                        ? `${user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1).toLowerCase()} ${user.lastName.charAt(0).toUpperCase() + user.lastName.slice(1).toLowerCase()}` 
+                        : user?.firstName 
+                          ? user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1).toLowerCase() 
                           : "Profili"}
                     </span>
                     <ChevronDown
@@ -225,8 +224,8 @@ const Navbar = () => {
                             {user?.firstName && (
                               <p className="font-bold text-white">
                                 {user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1).toLowerCase()}{" "}
-                                {user?.lastName
-                                  ? user.lastName.charAt(0).toUpperCase() + user.lastName.slice(1).toLowerCase()
+                                {user?.lastName 
+                                  ? user.lastName.charAt(0).toUpperCase() + user.lastName.slice(1).toLowerCase() 
                                   : ""}
                               </p>
                             )}

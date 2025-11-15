@@ -3,35 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { categoriesService } from "../services/api"
 import { useAuth } from "../context/AuthContext"
-import {
-  FolderOpen,
-  ArrowLeft,
-  BookOpen,
-  Calendar,
-  Palette,
-  Smile,
-  Heart,
-  User,
-  Grid,
-  Globe,
-  Leaf,
-  Bus,
-  Briefcase,
-  Hand,
-  Coffee,
-  Film,
-  TreePine,
-  Guitar,
-  HardHat,
-  Book,
-  Sword,
-  BellRing,
-  Castle,
-  Swords,
-  Hammer,
-  CheckCircle,
-  Trophy,
-} from "lucide-react"
+import { FolderOpen, ArrowLeft, BookOpen, Calendar, Palette, Smile, Heart, User, Grid, Globe, Leaf, Bus, Briefcase, Hand, Coffee, Film, TreePine, Guitar, HardHat, Book, Sword, BellRing, Castle, Swords, Hammer, CheckCircle, Trophy } from 'lucide-react'
 
 const iconMap = {
   default: FolderOpen,
@@ -263,19 +235,19 @@ const Category = () => {
   const getLevelColor = (level) => {
     switch (level) {
       case "A1":
-        return "bg-emerald-50 text-emerald-700 border-emerald-200"
+        return "bg-gradient-to-br from-[#CCFBF1] to-[#99F6E4] text-[#0D9488] border-[#5EEAD4]"
       case "A2":
-        return "bg-emerald-100 text-emerald-700 border-emerald-300"
+        return "bg-gradient-to-br from-[#99F6E4] to-[#5EEAD4] text-[#0D9488] border-[#2DD4BF]"
       case "B1":
-        return "bg-blue-50 text-blue-700 border-blue-200"
+        return "bg-gradient-to-br from-[#5EEAD4] to-[#2DD4BF] text-[#0F766E] border-[#14B8A6]"
       case "B2":
-        return "bg-blue-100 text-blue-700 border-blue-300"
+        return "bg-gradient-to-br from-[#2DD4BF] to-[#14B8A6] text-white border-[#0D9488]"
       case "C1":
-        return "bg-purple-50 text-purple-700 border-purple-200"
+        return "bg-gradient-to-br from-[#14B8A6] to-[#0D9488] text-white border-[#0F766E]"
       case "C2":
-        return "bg-purple-100 text-purple-700 border-purple-300"
+        return "bg-gradient-to-br from-[#0D9488] to-[#0F766E] text-white border-[#115E59]"
       default:
-        return "bg-gray-50 text-gray-600 border-gray-200"
+        return "bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] text-[#14B8A6] border-[#99F6E4]"
     }
   }
 
@@ -320,16 +292,16 @@ const Category = () => {
     const isCategoryFinished = finishedCategoryIds.includes(categoryIdStr)
 
     return (
-      <div className="min-h-screen bg-gray-50 p-3 sm:p-4 lg:p-6">
+      <div className="min-h-screen bg-gray-50 p-2 sm:p-3 lg:p-4">
         <div className="max-w-7xl mx-auto">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 text-balance">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 mb-3 sm:mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <h1 className="text-lg sm:text-xl font-semibold text-gray-900 text-balance">
                   {selectedCategory.name}
                 </h1>
                 {selectedCategory.type && (
-                  <span className="inline-flex items-center px-2.5 py-1 text-xs font-medium bg-teal-50 text-teal-700 rounded-full border border-teal-200 w-fit">
+                  <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-teal-50 text-teal-700 rounded-full border border-teal-200 w-fit">
                     {availableWordTypes.find((t) => t.value === selectedCategory.type)?.label || selectedCategory.type}
                   </span>
                 )}
@@ -337,16 +309,16 @@ const Category = () => {
               <div className="flex gap-2">
                 <button
                   onClick={() => setSelectedCategory(null)}
-                  className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all duration-200 px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md w-fit"
+                  className="flex items-center gap-1.5 text-xs font-medium text-gray-700 hover:text-gray-900 bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 transition-all duration-200 px-3 py-2 rounded-lg shadow-sm hover:shadow-md w-fit"
                   aria-label="Kthehu te Kategoritë"
                 >
-                  <ArrowLeft className="h-4 w-4" />
+                  <ArrowLeft className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">Kthehu</span>
                 </button>
                 <button
                   onClick={handleFinishCategory}
                   disabled={finishingCategory || isCategoryFinished}
-                  className={`flex items-center gap-2 text-sm font-medium text-white transition-all duration-200 px-6 py-2.5 rounded-lg shadow-md disabled:cursor-not-allowed ${
+                  className={`flex items-center gap-1.5 text-xs font-medium text-white transition-all duration-200 px-4 py-2 rounded-lg shadow-md disabled:cursor-not-allowed ${
                     isCategoryFinished
                       ? "bg-gray-400 cursor-not-allowed"
                       : "bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 hover:shadow-lg"
@@ -355,17 +327,17 @@ const Category = () => {
                 >
                   {finishingCategory ? (
                     <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></div>
                       <span>Duke përfunduar...</span>
                     </>
                   ) : isCategoryFinished ? (
                     <>
-                      <CheckCircle className="h-4 w-4" />
+                      <CheckCircle className="h-3.5 w-3.5" />
                       <span>E përfunduar</span>
                     </>
                   ) : (
                     <>
-                      <CheckCircle className="h-4 w-4" />
+                      <CheckCircle className="h-3.5 w-3.5" />
                       <span>Përfundo</span>
                     </>
                   )}
@@ -381,25 +353,25 @@ const Category = () => {
                 </div>
               </div>
             ) : selectedCategory.words && selectedCategory.words.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3">
                 {selectedCategory.words.map((wordObj, index) => (
                   <div
                     key={index}
-                    className="bg-gray-50 rounded-lg p-4 border border-gray-100 hover:border-gray-200 transition-colors"
+                    className="bg-gray-50 rounded-lg p-3 border border-gray-100 hover:border-gray-200 transition-colors"
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-base font-medium text-gray-900 truncate">{wordObj.word}</h3>
+                        <h3 className="text-sm font-medium text-gray-900 truncate">{wordObj.word}</h3>
                       </div>
-                      <p className="text-sm text-gray-700 mb-1">{wordObj.translation}</p>
+                      <p className="text-xs text-gray-700 mb-1">{wordObj.translation}</p>
                       {wordObj.pronunciation && (
                         <p className="text-xs text-gray-500 italic">/{wordObj.pronunciation}/</p>
                       )}
                     </div>
                     {wordObj.examples && wordObj.examples.length > 0 && (
-                      <div className="mt-3">
-                        <h4 className="text-xs font-medium text-gray-700 mb-2">Shembuj:</h4>
-                        <ul className="space-y-1">
+                      <div className="mt-2">
+                        <h4 className="text-xs font-medium text-gray-700 mb-1">Shembuj:</h4>
+                        <ul className="space-y-0.5">
                           {wordObj.examples.slice(0, 2).map((example, exIndex) => (
                             <li key={exIndex} className="text-xs text-gray-600 leading-relaxed">
                               • {example}
@@ -425,23 +397,31 @@ const Category = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-3 sm:p-4 lg:p-6">
+    <div className="min-h-screen bg-gray-50 p-2 sm:p-3 lg:p-4">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Word Categories</h1>
-          <p className="text-gray-600">
-            Explore our organized German vocabulary. Learn new words and expand your dictionary systematically.
-          </p>
-        </div>
+        {/* Header section like translate */}
+        <header className="mb-4">
+          <div className="bg-white rounded-xl shadow-lg border-2 border-[#99F6E4] p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">Word Categories</h1>
+                <p className="text-gray-600">Explore our organized German vocabulary. Learn new words and expand your dictionary systematically.</p>
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 mt-2">
+              Kategori të përfunduara: {finishedCategoryIds.length}
+            </p>
+          </div>
+        </header>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5 mb-6">
-          <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 mb-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2 flex-wrap">
               {availableWordTypes.map((type) => (
                 <button
                   key={type.value}
                   onClick={() => setSelectedCategoryFilter(type.value)}
-                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
                     selectedCategoryFilter === type.value
                       ? "bg-gray-900 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -455,7 +435,7 @@ const Category = () => {
               <select
                 value={selectedLevelFilter}
                 onChange={(e) => setSelectedLevelFilter(e.target.value)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
+                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
               >
                 <option value="all">All levels</option>
                 <option value="A1">A1</option>
@@ -478,7 +458,7 @@ const Category = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {Array.isArray(filteredCategories) && filteredCategories.length > 0 ? (
                 filteredCategories.slice(0, visibleCategories).map((category, index) => {
                   const IconComponent = iconMap[category.icon] || iconMap.default
@@ -502,32 +482,52 @@ const Category = () => {
                     <div
                       key={category._id}
                       onClick={() => fetchCategoryDetails(category._id, category.category)}
-                      className="group bg-white rounded-xl border border-gray-200 p-5 hover:shadow-lg transition-all duration-200 cursor-pointer"
+                      className={`group rounded-lg p-3 border-2 transition-all duration-200 cursor-pointer relative overflow-hidden hover:shadow-xl ${
+                        isCompleted
+                          ? "bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] border-[#F59E0B] hover:border-[#D97706]"
+                          : "bg-white border-gray-200 hover:shadow-lg"
+                      }`}
                     >
-                      <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start justify-between mb-3">
                         <div
-                          className={`w-12 h-12 ${colorClass.icon} rounded-xl flex items-center justify-center flex-shrink-0`}
+                          className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                            isCompleted ? "bg-[#FDE68A]" : colorClass.icon
+                          }`}
                         >
-                          <IconComponent className="h-6 w-6 text-gray-700" />
+                          <IconComponent className={`h-5 w-5 ${isCompleted ? "text-[#D97706]" : "text-gray-700"}`} />
                         </div>
 
                         {isCompleted && (
-                          <div className="flex items-center gap-1 bg-green-50 text-green-700 px-2.5 py-1 rounded-full text-xs font-medium border border-green-200">
-                            <CheckCircle className="h-3.5 w-3.5" />
+                          <div className="flex items-center gap-1 bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white px-2 py-0.5 rounded-full text-xs font-medium shadow-sm">
+                            <CheckCircle className="h-3 w-3" />
                             <span>Completed</span>
                           </div>
                         )}
                       </div>
 
-                      <h3 className="text-base font-semibold text-gray-900 mb-3 line-clamp-2 group-hover:text-gray-700 transition-colors">
+                      <h3 className={`text-sm font-semibold mb-2 line-clamp-2 transition-colors ${
+                        isCompleted 
+                          ? "text-[#D97706] group-hover:text-[#92400E]" 
+                          : "text-gray-900 group-hover:text-gray-700"
+                      }`}>
                         {category.category}
                       </h3>
 
                       <div className="mt-auto">
-                        <span className="inline-block bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-xs font-medium">
+                        <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${
+                          isCompleted
+                            ? "bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white shadow-sm"
+                            : "bg-gray-100 text-gray-700"
+                        }`}>
                           {availableWordTypes.find((t) => t.value === category.type)?.label || "Kategori"}
                         </span>
                       </div>
+
+                      <BookOpen
+                        className={`absolute -bottom-4 -right-4 w-16 h-16 ${
+                          isCompleted ? "text-[#FDE68A]" : "text-gray-100"
+                        }`}
+                      />
                     </div>
                   )
                 })
@@ -551,16 +551,16 @@ const Category = () => {
             </div>
 
             {filteredCategories.length > visibleCategories && (
-              <div id="load-more-sentinel" className="mt-8 flex justify-center">
+              <div id="load-more-sentinel" className="mt-6 flex justify-center">
                 {loadingMore ? (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-xs text-gray-600">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-teal-600"></div>
                     Duke ngarkuar më shumë...
                   </div>
                 ) : (
                   <button
                     onClick={loadMoreCategories}
-                    className="px-6 py-3 text-sm font-medium text-teal-600 bg-white border border-teal-200 rounded-lg hover:bg-teal-50 hover:border-teal-300 transition-all duration-200 shadow-sm hover:shadow-md"
+                    className="px-4 py-2 text-xs font-medium text-teal-600 bg-white border border-teal-200 rounded-lg hover:bg-teal-50 hover:border-teal-300 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     Ngarko më shumë ({filteredCategories.length - visibleCategories} të tjera)
                   </button>

@@ -129,7 +129,7 @@ const Leaderboard = () => {
               <Medal className="h-6 w-6 text-gray-400 mb-2" />
               <div className="relative mb-3">
                 <img
-                  src={generateDicebearUrl(topThree[1]?._id, topThree[1]?.avatarStyle || "adventurer")}
+                  src={generateDicebearUrl(topThree[1]?._id, topThree[1]?.avatarStyle || "adventurer-2")}
                   alt={topThree[1]?.name}
                   className="w-16 h-16 rounded-full border-4 border-gray-300 object-cover"
                 />
@@ -156,7 +156,7 @@ const Leaderboard = () => {
               <Trophy className="h-8 w-8 text-yellow-500 mb-2" />
               <div className="relative mb-3">
                 <img
-                  src={generateDicebearUrl(topThree[0]?._id, topThree[0]?.avatarStyle || "adventurer")}
+                  src={generateDicebearUrl(topThree[0]?._id, topThree[0]?.avatarStyle || "adventurer-1")}
                   alt={topThree[0]?.name}
                   className="w-24 h-24 rounded-full border-4 border-yellow-400 object-cover shadow-lg"
                 />
@@ -183,7 +183,7 @@ const Leaderboard = () => {
               <Medal className="h-6 w-6 text-pink-400 mb-2" />
               <div className="relative mb-3">
                 <img
-                  src={generateDicebearUrl(topThree[2]?._id, topThree[2]?.avatarStyle || "adventurer")}
+                  src={generateDicebearUrl(topThree[2]?._id, topThree[2]?.avatarStyle || "adventurer-3")}
                   alt={topThree[2]?.name}
                   className="w-16 h-16 rounded-full border-4 border-pink-300 object-cover"
                 />
@@ -245,7 +245,7 @@ const Leaderboard = () => {
                     </span>
                   </div>
                   <img
-                    src={generateDicebearUrl(user._id, user.avatarStyle) || "/placeholder.svg"}
+                    src={generateDicebearUrl(user.avatarStyle) || "/placeholder.svg"}
                     alt={user.name}
                     className="h-12 w-12 rounded-full border-2 border-white"
                   />

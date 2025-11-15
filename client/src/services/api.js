@@ -328,5 +328,52 @@ export const phraseService = {
 export const ttsService = {
   getAudioUrl: (text, lang = "de", speakingRate = 0.8) => api.post("/tts", { text, lang, speakingRate }),
 }
+export const generateAvatarOptions = () => {
+  // DiceBear styles available
+  const styles = [
+    "adventurer",
+    "adventurer-neutral",
+    "avataaars",
+    "avataaars-neutral",
+    "big-ears",
+    "big-ears-neutral",
+    "big-smile",
+    "bottts",
+    "bottts-neutral",
+    "croodles",
+    "croodles-neutral",
+    "faces",
+    "fun-emoji",
+    "glass",
+    "icons",
+    "identicon",
+    "initials",
+    "lorelei",
+    "micah",
+    "miniavs",
+    "notionists",
+    "notionists-neutral",
+    "personas",
+    "personas-neutral",
+    "pixel-art",
+    "pixel-art-neutral",
+    "rings",
+    "shapes",
+    "shapes-neutral",
+    "thumbs",
+  ];
+
+  // Generate multiple variations for each style
+  const seedPrefixes = Array.from({ length: 17 }, (_, i) => i + 1);
+  
+  const avatars = [];
+  for (const style of styles) {
+    for (const prefix of seedPrefixes) {
+      avatars.push(`${style}-${prefix}`);
+    }
+  }
+
+  return avatars; // Returns ~510 unique avatar options
+};
 
 export default api

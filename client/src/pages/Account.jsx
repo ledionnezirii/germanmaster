@@ -2,20 +2,25 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "../context/AuthContext"
-import { authService, certificatesService, achievementsService } from "../services/api"
-import { User, Star, BookOpen, Flame, Award, Download, FileText, Pencil, X } from 'lucide-react'
+import { authService, certificatesService, achievementsService, generateAvatarOptions } from "../services/api"
+import { User, Star, BookOpen, Flame, Award, Download, FileText, Pencil, X, Search } from 'lucide-react'
 import { useNavigate } from "react-router-dom"
+import logo from "../../public/logo.png"
 
 const Account = () => {
   const { user, logout, updateUser, loading: authLoading } = useAuth()
   const navigate = useNavigate()
 
-  const [selectedAvatarStyle, setSelectedAvatarStyle] = useState(user?.avatarStyle || "adventurer")
+  const [selectedAvatarStyle, setSelectedAvatarStyle] = useState(user?.avatarStyle || "adventurer-1")
   const [updating, setUpdating] = useState(false)
   const [showAvatarSelector, setShowAvatarSelector] = useState(false)
   const [avatarError, setAvatarError] = useState(null)
   const [nextAvatarChangeDate, setNextAvatarChangeDate] = useState(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [currentPage, setCurrentPage] = useState(0)
+  const [avatarStyles, setAvatarStyles] = useState([])
 
+  // ... existing certificate and achievement state ...
   const [certificates, setCertificates] = useState([])
   const [loadingCertificates, setLoadingCertificates] = useState(true)
   const [downloadingCert, setDownloadingCert] = useState(null)
@@ -28,87 +33,62 @@ const Account = () => {
 
   const [achievementCarouselIndex, setAchievementCarouselIndex] = useState(0)
 
-  const avatarStyles = [
-    "adventurer",
-    "avataaars",
-    "big-ears",
-    "big-smile",
-    "bottts",
-    "croodles",
-    "faces",
-    "fun-emoji",
-    "glass",
-    "icons",
-    "identicon",
-    "initials",
-    "lorelei",
-    "micah",
-    "miniavs",
-    "notionists",
-    "personas",
-    "pixel-art",
-    "rings",
-    "shapes",
-    "thumbs",
-  ]
+  const AVATARS_PER_PAGE = 20;
 
   useEffect(() => {
-    setSelectedAvatarStyle(user?.avatarStyle || "adventurer")
+    const allAvatars = generateAvatarOptions();
+    setAvatarStyles(allAvatars);
+  }, []);
+
+  useEffect(() => {
+    setSelectedAvatarStyle(user?.avatarStyle || "adventurer-1")
   }, [user])
 
+  const getFilteredAvatars = () => {
+    if (!searchQuery.trim()) {
+      return avatarStyles;
+    }
+    return avatarStyles.filter(style => 
+      style.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  };
+
+  const filteredAvatars = getFilteredAvatars();
+  const totalPages = Math.ceil(filteredAvatars.length / AVATARS_PER_PAGE);
+  const paginatedAvatars = filteredAvatars.slice(
+    currentPage * AVATARS_PER_PAGE,
+    (currentPage + 1) * AVATARS_PER_PAGE
+  );
+
+  // ... existing certificate fetching code ...
   useEffect(() => {
     const fetchCertificates = async () => {
       try {
         setLoadingCertificates(true)
-        console.log("[v0] Fetching certificates for user:", user?.id, "level:", user?.level)
-
         const response = await certificatesService.getUserCertificates()
         const userCertificates = response.data.certificates || []
-        console.log("[v0] Fetched certificates:", userCertificates.length)
         setCertificates(userCertificates)
 
         if (user && user.level) {
-          console.log("[v0] User has level:", user.level)
           const hasCertificateForCurrentLevel = userCertificates.some((cert) => cert.level === user.level)
-          console.log("[v0] Has certificate for current level:", hasCertificateForCurrentLevel)
-          console.log("[v0] Is issuing certificate:", issuingCertificate)
-
+          
           if (!hasCertificateForCurrentLevel && !issuingCertificate) {
             setIssuingCertificate(true)
             try {
-              console.log("[v0] Auto-issuing certificate for level:", user.level)
               const issueResponse = await certificatesService.issueCertificate()
-              console.log("[v0] Issue response:", issueResponse.data)
-
               if (issueResponse.data.success) {
-                console.log("[v0] Certificate issued successfully")
                 const refreshResponse = await certificatesService.getUserCertificates()
-                console.log("[v0] Refreshed certificates:", refreshResponse.data.certificates?.length)
                 setCertificates(refreshResponse.data.certificates || [])
-              } else {
-                console.log("[v0] Certificate issue failed:", issueResponse.data.message)
               }
             } catch (issueError) {
-              console.error("[v0] Error auto-issuing certificate:", issueError)
-              console.error("[v0] Error response:", issueError.response?.data)
+              console.error("Error auto-issuing certificate:", issueError)
             } finally {
               setIssuingCertificate(false)
             }
-          } else {
-            console.log("[v0] Skipping auto-issue:", {
-              hasCertificate: hasCertificateForCurrentLevel,
-              isIssuing: issuingCertificate,
-            })
           }
-        } else {
-          console.log("[v0] User or level not set:", { user: !!user, level: user?.level })
         }
       } catch (error) {
-        console.error("[v0] Error fetching certificates:", error)
-        console.error("[v0] Error response:", error.response?.data)
-        if (error.response?.status !== 404) {
-          console.error("[v0] Unexpected error:", error)
-        }
+        console.error("Error fetching certificates:", error)
       } finally {
         setLoadingCertificates(false)
       }
@@ -116,20 +96,15 @@ const Account = () => {
 
     if (user) {
       fetchCertificates()
-    } else {
-      console.log("[v0] No user, skipping certificate fetch")
     }
   }, [user])
 
   useEffect(() => {
     const fetchAchievements = async () => {
-      if (!user?.id) {
-        return
-      }
+      if (!user?.id) return
 
       try {
         setLoadingAchievements(true)
-
         const response = await achievementsService.getUserAchievements(user.id)
 
         if (response && response.data) {
@@ -197,11 +172,11 @@ const Account = () => {
     }
   }
 
+  // ... existing certificate download and other methods ...
   const handleDownloadCertificate = async (certificateId, level) => {
     try {
       setDownloadingCert(certificateId)
       const response = await certificatesService.downloadCertificate(certificateId)
-
       const blob = new Blob([response.data], { type: "application/pdf" })
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement("a")
@@ -245,7 +220,6 @@ const Account = () => {
 
   const getAchievementBadgeColor = (category, isUnlocked) => {
     if (!isUnlocked) return "from-gray-50 to-gray-100 border-gray-300"
-
     const colors = {
       xp: "from-yellow-50 to-yellow-100 border-yellow-300",
       streak: "from-orange-50 to-orange-100 border-orange-300",
@@ -256,35 +230,12 @@ const Account = () => {
 
   const getAchievementIconColor = (category, isUnlocked) => {
     if (!isUnlocked) return "text-gray-400"
-
     const colors = {
       xp: "text-yellow-600",
       streak: "text-orange-600",
       tests: "text-purple-600",
     }
     return colors[category] || "text-blue-600"
-  }
-
-  const getCategoryDisplayName = (category) => {
-    const names = {
-      xp: "Pikë XP",
-      streak: "Ditë Rresht",
-      tests: "Teste",
-    }
-    return names[category] || category
-  }
-
-  const getCategoryIcon = (category) => {
-    switch (category) {
-      case "xp":
-        return Star
-      case "streak":
-        return Flame
-      case "tests":
-        return BookOpen
-      default:
-        return Award
-    }
   }
 
   const handleAchievementPrev = () => {
@@ -308,6 +259,7 @@ const Account = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 p-4">
+      {/* ... existing profile header section ... */}
       <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200 p-8">
         <div className="flex flex-col md:flex-row items-center gap-8">
           <div className="relative">
@@ -321,7 +273,7 @@ const Account = () => {
               title="Kliko për të ndryshuar avatarin"
             >
               <img
-                src={`https://api.dicebear.com/7.x/${selectedAvatarStyle}/svg?seed=${user.id}`}
+                src={`https://api.dicebear.com/7.x/${selectedAvatarStyle.split('-').slice(0, -1).join('-')}/svg?seed=${selectedAvatarStyle}`}
                 alt="Avatar"
                 className="w-full h-full object-cover"
               />
@@ -342,7 +294,7 @@ const Account = () => {
                 <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-teal-50 to-blue-50">
                   <div>
                     <h3 className="text-2xl font-bold text-gray-900">Zgjidhni Avatarin Tuaj</h3>
-                    <p className="text-sm text-gray-600 mt-1">Zgjidhni një stil që ju përfaqëson</p>
+                    <p className="text-sm text-gray-600 mt-1">Zgjidhni nga mbi 500 opsione të ndryshme</p>
                   </div>
                   <button
                     onClick={() => {
@@ -356,45 +308,83 @@ const Account = () => {
                   </button>
                 </div>
 
-                <div className="overflow-y-auto p-6 flex-1">
+                <div className="p-6 flex-1 overflow-y-auto">
+                  <div className="mb-6 flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-lg">
+                    <Search className="h-5 w-5 text-gray-500" />
+                    <input
+                      type="text"
+                      placeholder="Kërkoni avatar (p.sh., 'adventurer', 'pixel')..."
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setCurrentPage(0);
+                      }}
+                      className="flex-1 bg-transparent outline-none text-gray-700"
+                    />
+                    {searchQuery && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery("");
+                          setCurrentPage(0);
+                        }}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+
                   {avatarError && (
                     <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
                       <p className="text-sm text-red-800 font-medium">{avatarError}</p>
-                      {nextAvatarChangeDate && (
-                        <p className="text-xs text-red-700 mt-2">
-                          Mund ta ndryshoni përsëri pas: {new Date(nextAvatarChangeDate).toLocaleString("sq-AL", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit"
-                          })}
-                        </p>
-                      )}
                     </div>
                   )}
+
                   <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {avatarStyles.map((style) => (
-                      <button
-                        key={style}
-                        onClick={() => handleAvatarStyleSelect(style)}
-                        className={`flex flex-col items-center gap-3 p-4 rounded-xl transition-all duration-200 ${
-                          selectedAvatarStyle === style
-                            ? "border-3 border-teal-500 bg-teal-50 shadow-lg scale-105"
-                            : "border-2 border-gray-200 hover:border-teal-300 hover:shadow-md hover:scale-102"
-                        }`}
-                        disabled={updating}
-                      >
-                        <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 shadow-sm">
-                          <img
-                            src={`https://api.dicebear.com/7.x/${style}/svg?seed=${user.id}`}
-                            alt={style}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <span className="text-xs text-gray-700 text-center capitalize font-medium leading-tight">{style.replace('-', ' ')}</span>
-                      </button>
-                    ))}
+                    {paginatedAvatars.map((style) => {
+                      const styleName = style.split('-').slice(0, -1).join('-');
+                      return (
+                        <button
+                          key={style}
+                          onClick={() => handleAvatarStyleSelect(style)}
+                          className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-200 ${
+                            selectedAvatarStyle === style
+                              ? "border-3 border-teal-500 bg-teal-50 shadow-lg scale-105"
+                              : "border-2 border-gray-200 hover:border-teal-300 hover:shadow-md"
+                          }`}
+                          disabled={updating}
+                        >
+                          <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 shadow-sm">
+                            <img
+                              src={`https://api.dicebear.com/7.x/${styleName}/svg?seed=${style}`}
+                              alt={style}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <span className="text-xs text-gray-700 text-center capitalize font-medium leading-tight">{style.replace('-', ' ')}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-between">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                      disabled={currentPage === 0}
+                      className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Mbrapa
+                    </button>
+                    <span className="text-sm text-gray-600">
+                      Faqja {currentPage + 1} nga {totalPages} ({filteredAvatars.length} avatarë)
+                    </span>
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                      disabled={currentPage >= totalPages - 1}
+                      className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Përpara
+                    </button>
                   </div>
                 </div>
               </div>
@@ -435,6 +425,7 @@ const Account = () => {
         </div>
       </div>
 
+      {/* ... existing stats grid, certificates section, and achievements ... */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-gradient-to-br from-yellow-50 via-yellow-100 to-yellow-50 rounded-2xl p-6 hover:shadow-lg transition-all duration-200 border border-yellow-200 hover:scale-105">
           <div className="flex items-center gap-4">
@@ -492,6 +483,7 @@ const Account = () => {
         </div>
       </div>
 
+      {/* Certificates Section */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
         <div className="flex items-center gap-3 mb-6">
           <div className="bg-teal-100 p-3 rounded-xl">
@@ -518,8 +510,11 @@ const Account = () => {
                 className="bg-gradient-to-br from-purple-50 via-purple-100 to-pink-50 rounded-2xl p-6 border-2 border-purple-300 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2"
               >
                 <div className="flex flex-col items-center text-center gap-4">
-                  <div className="bg-white p-5 rounded-full shadow-md">
-                    <Award className="h-12 w-12 text-purple-600" />
+                  <div className="bg-white p-1 rounded-full shadow-md">
+                    <img
+                      src={logo || "/placeholder.svg"}
+                      className="w-24 h-24 rounded-full"
+                    />
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 text-2xl mb-2">Niveli {certificate.level}</h3>
@@ -530,9 +525,6 @@ const Account = () => {
                         month: "short",
                         year: "numeric",
                       })}
-                    </p>
-                    <p className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded">
-                      #{certificate.serialNumber}
                     </p>
                   </div>
                   <button
@@ -563,17 +555,6 @@ const Account = () => {
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-3">Ende Nuk Keni Certifikata</h3>
             <p className="text-gray-600 mb-6 max-w-md mx-auto">Vazhdoni të mësoni dhe përfundoni testet për të fituar certifikatën tuaj të parë!</p>
-            <div className="bg-gradient-to-r from-teal-50 to-teal-100 rounded-xl p-6 max-w-md mx-auto border border-teal-200">
-              {user.level ? (
-                <p className="text-sm text-teal-800 font-medium">
-                  <strong>Certifikata juaj po përgatitet!</strong> Nëse sapo keni përfunduar një test, rifreskoni faqen për të parë certifikatën tuaj të Nivelit {user.level}.
-                </p>
-              ) : (
-                <p className="text-sm text-teal-800 font-medium">
-                  <strong>Certifikata e ardhshme:</strong> Përfundoni testin e nivelit A1 për të fituar certifikatën tuaj të parë!
-                </p>
-              )}
-            </div>
           </div>
         )}
       </div>

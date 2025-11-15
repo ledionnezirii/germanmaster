@@ -72,37 +72,10 @@ const updateStudyHours = asyncHandler(async (req, res) => {
 const updateAvatarStyle = asyncHandler(async (req, res) => {
   const { avatarStyle } = req.body;
 
-  if (!avatarStyle) {
-    throw new ApiError(400, "Avatar style is required");
+  if (!avatarStyle || typeof avatarStyle !== "string") {
+    throw new ApiError(400, "Avatar style is required and must be a string");
   }
 
-  const validStyles = [
-    "adventurer",
-    "avataaars",
-    "big-ears",
-    "big-smile",
-    "bottts",
-    "croodles",
-    "faces",
-    "fun-emoji",
-    "glass",
-    "icons",
-    "identicon",
-    "initials",
-    "lorelei",
-    "micah",
-    "miniavs",
-    "notionists",
-    "personas",
-    "pixel-art",
-    "rings",
-    "shapes",
-    "thumbs",
-  ];
-
-  if (!validStyles.includes(avatarStyle)) {
-    throw new ApiError(400, "Invalid avatar style");
-  }
 
   const user = await User.findById(req.user.id);
   if (!user) {
@@ -112,10 +85,10 @@ const updateAvatarStyle = asyncHandler(async (req, res) => {
   if (user.lastAvatarChangeDate) {
     const now = new Date();
     const lastChange = new Date(user.lastAvatarChangeDate);
-    const oneMinuteAgo = new Date(now.getTime() - 60 * 1000); // 1 minute = 60 seconds * 1000 milliseconds
+    const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
 
     if (lastChange > oneMinuteAgo) {
-      const nextChangeDate = new Date(lastChange.getTime() + 60 * 1000); // Add 1 minute
+      const nextChangeDate = new Date(lastChange.getTime() + 60 * 1000);
       const secondsRemaining = Math.ceil((nextChangeDate - now) / 1000);
       throw new ApiError(
         429,
@@ -137,12 +110,13 @@ const updateAvatarStyle = asyncHandler(async (req, res) => {
         avatar: avatarUrl,
         avatarStyle: user.avatarStyle,
         lastAvatarChangeDate: user.lastAvatarChangeDate,
-        nextAvailableChange: new Date(user.lastAvatarChangeDate.getTime() + 60 * 1000) // 1 minute from now
+        nextAvailableChange: new Date(user.lastAvatarChangeDate.getTime() + 60 * 1000)
       },
       "Avatar style updated successfully"
     )
   );
 });
+
 
 const updateProfile = asyncHandler(async (req, res) => {
   const { emri, mbiemri } = req.body
