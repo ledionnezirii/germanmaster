@@ -12,6 +12,11 @@ const practiceSchema = new mongoose.Schema(
       required: [true, "Category is required"],
       enum: [
         "Verben",
+        "Gramatike",
+        "W-fragen",
+        "Folje Modale",
+        "Nominativ",
+        "Zahlen & Zeit",
         "Artikel",
         "Präpositionen",
         "Adjektive",
