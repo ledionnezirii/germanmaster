@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect, useRef } from "react"
 import { listenService } from "../services/api"
-import { Volume2, Play, Pause, Check, X, Filter, LogOut, Star, Zap, TrendingUp } from "lucide-react"
+import { Volume2, Play, Pause, Check, X, Filter, LogOut, Star, Zap, TrendingUp } from 'lucide-react'
 
 const Listen = () => {
   const [tests, setTests] = useState([])
@@ -333,19 +333,19 @@ const Listen = () => {
   const getLevelColor = (level) => {
     switch (level) {
       case "A1":
-        return "bg-gradient-to-br from-[#CCFBF1] to-[#99F6E4] text-[#0D9488] border-[#5EEAD4]"
+        return "bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 border-emerald-200"
       case "A2":
-        return "bg-gradient-to-br from-[#99F6E4] to-[#5EEAD4] text-[#0D9488] border-[#2DD4BF]"
+        return "bg-gradient-to-br from-blue-50 to-cyan-50 text-blue-600 border-blue-200"
       case "B1":
-        return "bg-gradient-to-br from-[#5EEAD4] to-[#2DD4BF] text-[#0F766E] border-[#14B8A6]"
+        return "bg-gradient-to-br from-violet-50 to-purple-50 text-violet-600 border-violet-200"
       case "B2":
-        return "bg-gradient-to-br from-[#2DD4BF] to-[#14B8A6] text-white border-[#0D9488]"
+        return "bg-gradient-to-br from-amber-50 to-orange-50 text-amber-600 border-amber-200"
       case "C1":
-        return "bg-gradient-to-br from-[#14B8A6] to-[#0D9488] text-white border-[#0F766E]"
+        return "bg-gradient-to-br from-rose-50 to-pink-50 text-rose-600 border-rose-200"
       case "C2":
-        return "bg-gradient-to-br from-[#0D9488] to-[#0F766E] text-white border-[#115E59]"
+        return "bg-gradient-to-br from-indigo-50 to-blue-50 text-indigo-600 border-indigo-200"
       default:
-        return "bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] text-[#14B8A6] border-[#99F6E4]"
+        return "bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 border-emerald-200"
     }
   }
 
@@ -353,38 +353,38 @@ const Listen = () => {
 
   if (selectedTest) {
     return (
-      <div className="h-[750px] bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] p-2 sm:p-4 rounded-xl shadow-lg border-2 border-[#99F6E4] overflow-hidden">
+      <div className="h-[750px] bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 p-2 sm:p-4 rounded-xl shadow-lg border-2 border-emerald-200 overflow-hidden">
         {showXpAnimation && (
           <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-            <div className="bg-gradient-to-r from-[#FEF3C7] to-[#FDE68A] text-[#D97706] px-8 py-6 rounded-2xl shadow-2xl border-2 border-[#F59E0B] animate-[xpBounce_0.6s_ease-out]">
+            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 px-8 py-6 rounded-2xl shadow-2xl border-2 border-emerald-500 animate-[xpBounce_0.6s_ease-out]">
               <div className="flex items-center gap-3">
-                <Star className="h-10 w-10 text-[#F59E0B] animate-[starSpin_1s_ease-in-out]" />
+                <Star className="h-10 w-10 text-emerald-600 animate-[starSpin_1s_ease-in-out]" />
                 <div>
                   <div className="text-3xl font-bold">+{xpGained} XP</div>
                   <div className="text-sm font-medium">Urime!</div>
                 </div>
-                <Zap className="h-10 w-10 text-[#F59E0B] animate-[pulse_0.5s_ease-in-out_infinite]" />
+                <Zap className="h-10 w-10 text-emerald-600 animate-[pulse_0.5s_ease-in-out_infinite]" />
               </div>
             </div>
           </div>
         )}
 
         <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 h-full">
-          <div className="bg-white rounded-xl shadow-lg border-2 border-[#99F6E4] p-3 sm:p-6">
+          <div className="bg-white rounded-xl shadow-lg border-2 border-emerald-200 p-3 sm:p-6">
             <div className="flex items-center justify-between mb-3 sm:mb-4">
               <div className="flex-1">
                 <h1 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{selectedTest.title}</h1>
               </div>
               <button
                 onClick={resetTest}
-                className="text-[#14B8A6] hover:text-[#0D9488] p-1 transition-colors"
+                className="text-emerald-600 hover:text-emerald-700 p-1 transition-colors"
                 aria-label="Kthehu te Testet"
               >
                 <LogOut className="h-5 w-5 sm:h-6 sm:w-6 cursor-pointer" />
               </button>
             </div>
             <div className="space-y-4 sm:space-y-6">
-              <div className="bg-gradient-to-br from-[#14B8A6] via-[#0D9488] to-[#06B6D4] rounded-lg p-4 sm:p-6 text-center shadow-lg shadow-teal-500/30">
+              <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg p-4 sm:p-6 text-center shadow-lg shadow-emerald-500/30">
                 <button
                   onClick={() => playAudio(selectedTest.text)}
                   className="bg-white/20 backdrop-blur-sm text-white p-3 sm:p-4 rounded-full hover:bg-white/30 transition-all shadow-lg hover:shadow-xl hover:scale-105"
@@ -407,9 +407,9 @@ const Listen = () => {
                     >
                       Shkruani atë që dëgjuat:
                     </label>
-                    <div className="flex items-center gap-1 bg-gradient-to-r from-[#FEF3C7] to-[#FDE68A] px-3 py-1 rounded-full border border-[#F59E0B]">
-                      <Star className="h-3 w-3 text-[#F59E0B]" />
-                      <span className="text-xs font-bold text-[#D97706]">
+                    <div className="flex items-center gap-1 bg-gradient-to-r from-emerald-50 to-teal-50 px-3 py-1 rounded-full border border-emerald-500">
+                      <Star className="h-3 w-3 text-emerald-600" />
+                      <span className="text-xs font-bold text-emerald-700">
                         {selectedTest.xpReward || getBaseXP(selectedTest.level)} XP
                       </span>
                     </div>
@@ -436,7 +436,7 @@ const Listen = () => {
                             textarea.setSelectionRange(start + 1, start + 1)
                           }, 0)
                         }}
-                        className="px-2 py-1 sm:px-3 sm:py-1 bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] hover:from-[#CCFBF1] hover:to-[#99F6E4] border border-[#99F6E4] rounded text-xs sm:text-sm font-medium text-[#0D9488] transition-all shadow-sm hover:shadow-md"
+                        className="px-2 py-1 sm:px-3 sm:py-1 bg-gradient-to-br from-emerald-50 to-teal-50 hover:from-emerald-100 hover:to-teal-100 border border-emerald-200 rounded text-xs sm:text-sm font-medium text-emerald-700 transition-all shadow-sm hover:shadow-md"
                         style={{ fontFamily: "Poppins, sans-serif" }}
                       >
                         {char}
@@ -447,7 +447,7 @@ const Listen = () => {
                     id="user-answer"
                     value={userAnswer}
                     onChange={(e) => setUserAnswer(e.target.value)}
-                    className="w-full p-3 border-2 border-[#99F6E4] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#14B8A6] focus:border-[#14B8A6] text-gray-800 placeholder-gray-500 text-sm sm:text-base shadow-sm"
+                    className="w-full p-3 border-2 border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-gray-800 placeholder-gray-500 text-sm sm:text-base shadow-sm"
                     rows="10"
                     placeholder="Shkruani tekstin gjermanisht që dëgjuat..."
                     style={{ fontFamily: "Inter, sans-serif" }}
@@ -455,7 +455,7 @@ const Listen = () => {
                   <button
                     onClick={handleSubmit}
                     disabled={!userAnswer.trim()}
-                    className="w-full bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white py-2.5 sm:py-3 rounded-lg hover:from-[#0D9488] hover:to-[#0891B2] disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold text-sm sm:text-base shadow-lg shadow-teal-500/30 hover:shadow-xl hover:shadow-teal-500/40"
+                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-2.5 sm:py-3 rounded-lg hover:from-emerald-600 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold text-sm sm:text-base shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40"
                     style={{ fontFamily: "Poppins, sans-serif" }}
                   >
                     Kontrollo Përgjigjen
@@ -467,19 +467,19 @@ const Listen = () => {
                 <div
                   className={`p-3 sm:p-4 rounded-lg border-2 shadow-lg ${
                     result.correct
-                      ? "bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] border-[#F59E0B]"
-                      : "bg-gradient-to-br from-[#FEE2E2] to-[#FECACA] border-[#EF4444]"
+                      ? "bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-500"
+                      : "bg-gradient-to-br from-red-50 to-rose-50 border-red-500"
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-2">
                     {result.correct ? (
-                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-[#D97706]" />
+                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
                     ) : (
-                      <X className="h-4 w-4 sm:h-5 sm:w-5 text-[#DC2626]" />
+                      <X className="h-4 w-4 sm:h-5 sm:w-5 text-red-600" />
                     )}
                     <p
                       className={`font-medium text-sm sm:text-base ${
-                        result.correct ? "text-[#D97706]" : "text-[#DC2626]"
+                        result.correct ? "text-emerald-700" : "text-red-700"
                       }`}
                     >
                       {result.message}
@@ -487,14 +487,14 @@ const Listen = () => {
                   </div>
                   {result.correct && (
                     <div className="mt-2 flex items-center gap-2 bg-white/50 px-3 py-2 rounded-lg">
-                      <TrendingUp className="h-5 w-5 text-[#F59E0B]" />
-                      <span className="font-bold text-[#D97706]">+{xpGained} XP fituar!</span>
+                      <TrendingUp className="h-5 w-5 text-emerald-600" />
+                      <span className="font-bold text-emerald-700">+{xpGained} XP fituar!</span>
                     </div>
                   )}
                   <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <button
                       onClick={resetTest}
-                      className="bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white px-3 sm:px-4 py-2 rounded-lg hover:from-[#0D9488] hover:to-[#0891B2] transition-all font-semibold text-sm sm:text-base shadow-lg shadow-teal-500/30"
+                      className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all font-semibold text-sm sm:text-base shadow-lg shadow-emerald-500/30"
                     >
                       Kthehu te Testet
                     </button>
@@ -504,7 +504,7 @@ const Listen = () => {
                           setShowResult(false)
                           setUserAnswer("")
                         }}
-                        className="bg-gradient-to-br from-[#99F6E4] to-[#5EEAD4] text-[#0D9488] px-3 sm:px-4 py-2 rounded-lg hover:from-[#5EEAD4] hover:to-[#2DD4BF] transition-all font-semibold text-sm sm:text-base shadow-md"
+                        className="bg-gradient-to-br from-teal-50 to-emerald-100 text-emerald-700 px-3 sm:px-4 py-2 rounded-lg hover:from-teal-100 hover:to-emerald-200 transition-all font-semibold text-sm sm:text-base shadow-md border border-emerald-200"
                       >
                         Provoni Përsëri
                       </button>
@@ -518,13 +518,13 @@ const Listen = () => {
                   {!showFullText ? (
                     <button
                       onClick={() => setShowFullText(true)}
-                      className="bg-gradient-to-r from-[#0D9488] to-[#0F766E] text-white px-3 sm:px-4 py-2 rounded-lg hover:from-[#0F766E] hover:to-[#115E59] transition-all font-semibold text-sm sm:text-base shadow-lg"
+                      className="bg-gradient-to-r from-slate-700 to-slate-800 text-white px-3 sm:px-4 py-2 rounded-lg hover:from-slate-800 hover:to-slate-900 transition-all font-semibold text-sm sm:text-base shadow-lg"
                     >
                       Shfaq Tekstin e Plotë ({failedAttempts} tentativa)
                     </button>
                   ) : (
-                    <div className="bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] p-3 sm:p-4 rounded-lg border-2 border-[#99F6E4] text-gray-800 text-left shadow-md">
-                      <p className="font-semibold mb-2 text-sm sm:text-base text-[#0D9488]">Teksti Origjinal:</p>
+                    <div className="bg-gradient-to-br from-slate-50 to-gray-100 p-3 sm:p-4 rounded-lg border-2 border-gray-300 text-gray-800 text-left shadow-md">
+                      <p className="font-semibold mb-2 text-sm sm:text-base text-slate-700">Teksti Origjinal:</p>
                       <p className="text-sm sm:text-base">{selectedTest.text}</p>
                       <p className="text-xs text-gray-600 mt-2 italic">
                         Mund ta kopjoni tekstin, por do të merrni{" "}
@@ -545,7 +545,7 @@ const Listen = () => {
     <div className="h-min-screen p-4 flex flex-col">
       <div className="max-w-6xl mx-auto w-full">
         <header className="mb-4 flex-shrink-0">
-          <div className="bg-white rounded-xl shadow-lg border-2 border-[#99F6E4] p-6">
+          <div className="bg-white rounded-xl shadow-lg border-2 border-emerald-200 p-6">
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Praktikë Dëgjimi</h1>
@@ -558,9 +558,9 @@ const Listen = () => {
           </div>
         </header>
 
-        <div className="bg-white border-2 border-[#99F6E4] p-3 rounded-lg mb-4 shadow-md flex-shrink-0">
+        <div className="bg-white border-2 border-emerald-200 p-3 rounded-lg mb-4 shadow-md flex-shrink-0">
           <div className="flex items-center gap-2 mb-2">
-            <Filter size={16} className="text-[#14B8A6]" />
+            <Filter size={16} className="text-emerald-600" />
             <h2 className="text-sm font-medium text-gray-800">Filtro sipas Nivelit</h2>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -571,9 +571,9 @@ const Listen = () => {
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border-2 shadow-sm hover:shadow-md ${
                   selectedLevel === level
                     ? level === "all"
-                      ? "bg-gradient-to-r from-[#14B8A6] to-[#a0dae4] text-[#000c0bfb] border-[#0D9488] shadow-teal-500/30"
+                      ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-emerald-500 shadow-emerald-500/30"
                       : getLevelColor(level)
-                    : "bg-gradient-to-br from-[#F0FDFA] to-[#b3e4d9] text-[#000c0bfb] hover:from-[#CCFBF1] hover:to-[#99F6E4] border-[#99F6E4]"
+                    : "bg-gradient-to-br from-slate-50 to-gray-100 text-gray-700 hover:from-gray-100 hover:to-gray-200 border-gray-200"
                 }`}
               >
                 {level === "all" ? "Të gjitha Nivelet" : level}
@@ -589,7 +589,7 @@ const Listen = () => {
 
         {loading ? (
           <div className="flex items-center justify-center min-h-96">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#14B8A6]"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 flex-1 overflow-y-auto">
@@ -602,8 +602,8 @@ const Listen = () => {
                     key={test._id}
                     className={`p-3 rounded-lg shadow-md border-2 transition-all cursor-pointer overflow-hidden relative group h-fit hover:shadow-xl ${
                       isCompleted
-                        ? "bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] border-[#F59E0B] hover:border-[#D97706]"
-                        : "bg-white border-[#99F6E4] hover:border-[#5EEAD4]"
+                        ? "bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-500 hover:border-emerald-600"
+                        : "bg-white border-emerald-200 hover:border-emerald-400"
                     }`}
                     onClick={() => setSelectedTest(test)}
                   >
@@ -614,29 +614,29 @@ const Listen = () => {
                     </div>
                     <Volume2
                       className={`absolute -bottom-4 -right-4 w-16 h-16 ${
-                        isCompleted ? "text-[#FDE68A]" : "text-[#CCFBF1]"
+                        isCompleted ? "text-emerald-100" : "text-slate-100"
                       }`}
                     />
                     <div className="relative z-10">
                       <h3
                         className={`text-sm font-semibold mb-1 pr-12 truncate ${
                           isCompleted
-                            ? "text-[#D97706] group-hover:text-[#92400E]"
-                            : "text-gray-800 group-hover:text-[#0D9488]"
+                            ? "text-emerald-700 group-hover:text-emerald-800"
+                            : "text-gray-800 group-hover:text-emerald-700"
                         }`}
                       >
                         {test.title}
                       </h3>
-                      <p className={`text-xs line-clamp-2 ${isCompleted ? "text-[#92400E]" : "text-gray-600"}`}>
+                      <p className={`text-xs line-clamp-2 ${isCompleted ? "text-emerald-600" : "text-gray-600"}`}>
                         {test.text ? test.text.substring(0, 80) + "..." : "Ushtrim Audio"}
                       </p>
                       <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center">
-                        <span className={`text-xs ${isCompleted ? "text-[#92400E]" : "text-gray-500"}`}>
+                        <span className={`text-xs ${isCompleted ? "text-emerald-600" : "text-gray-500"}`}>
                           Gjermanisht • Audio
                         </span>
                         <div className="flex items-center gap-1">
                           {!isCompleted && (
-                            <span className="text-xs bg-gradient-to-r from-[#FEF3C7] to-[#FDE68A] text-[#D97706] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shadow-sm">
+                            <span className="text-xs bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shadow-sm border border-emerald-200">
                               <Star className="h-3 w-3" />
                               {potentialXP}
                             </span>
@@ -644,8 +644,8 @@ const Listen = () => {
                           <span
                             className={`text-xs px-1.5 py-0.5 rounded font-medium shadow-sm ${
                               isCompleted
-                                ? "bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white"
-                                : "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white"
+                                ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white"
+                                : "bg-gradient-to-r from-emerald-500 to-teal-600 text-white"
                             }`}
                           >
                             {isCompleted ? "Përfunduar" : "Dëgjo"}
@@ -658,8 +658,8 @@ const Listen = () => {
               })
             ) : (
               <div className="col-span-full text-center py-8">
-                <div className="bg-white rounded-lg p-6 inline-block border-2 border-[#99F6E4] shadow-lg">
-                  <Volume2 className="text-[#14B8A6] w-10 h-10 mx-auto mb-3" />
+                <div className="bg-white rounded-lg p-6 inline-block border-2 border-emerald-200 shadow-lg">
+                  <Volume2 className="text-emerald-500 w-10 h-10 mx-auto mb-3" />
                   <h3 className="text-sm font-medium text-gray-800 mb-2">Nuk u gjetën teste</h3>
                   <p className="text-gray-500 text-xs">
                     Provoni të zgjidhni nivele të ndryshme ose kontrolloni më vonë
