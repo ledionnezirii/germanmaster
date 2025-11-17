@@ -52,7 +52,6 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "adventurer",
     },
-
     lastAvatarChangeDate: {
       type: Date,
       default: null,
@@ -69,7 +68,7 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
-    lastLoginDate: {
+    lastLogin: {
       type: Date,
       default: null,
     },
@@ -209,7 +208,6 @@ const userSchema = new mongoose.Schema(
     resetPasswordExpires: {
       type: Date,
     },
-    lastLogin: Date,
     quizStats: {
       totalQuizzes: { type: Number, default: 0 },
       wins: { type: Number, default: 0 },

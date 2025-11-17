@@ -6,6 +6,7 @@ const {
   updateAvatarStyle,
   updateProfile,
   addXp,
+  updateStreak
 } = require("../controllers/userController")
 const auth = require("../middleware/auth")
 
@@ -20,5 +21,6 @@ router.put("/study-hours", updateStudyHours)
 router.put("/avatar-style", updateAvatarStyle)
 router.put("/profile", updateProfile)
 router.post("/add-xp", addXp)
+router.post("/update-streak", updateStreak); 
 
 module.exports = router

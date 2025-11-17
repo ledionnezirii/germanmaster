@@ -75,6 +75,9 @@ const signup = asyncHandler(async (req, res) => {
     const verificationToken = crypto.randomBytes(32).toString("hex")
     user.verificationToken = verificationToken
     user.verificationTokenExpires = Date.now() + 60 * 60 * 1000 // 1 hour
+    
+    user.streakCount = 1
+    user.lastLogin = new Date()
     await user.save({ validateBeforeSave: false })
 
     const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`
@@ -89,13 +92,6 @@ const signup = asyncHandler(async (req, res) => {
       subject: "Verifikoni email-in tuaj",
       htmlContent: message,
     })
-
-    // Optionally update streak on signup
-    try {
-      await user.updateStreakOnLogin()
-    } catch (error) {
-      console.error("Gabim gjatë përditësimit të streak në regjistrim:", error)
-    }
 
     // Respond without token yet, user must verify first
     res
@@ -131,11 +127,31 @@ const login = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Kredenciale të pavlefshme")
   }
 
-  try {
-    await user.updateStreakOnLogin()
-  } catch (error) {
-    console.error("Gabim gjatë përditësimit të streak në hyrje:", error)
+  const now = new Date()
+  const lastLogin = user.lastLogin
+  
+  if (!lastLogin) {
+    // First time login
+    user.streakCount = 1
+    user.lastLogin = now
+  } else {
+    const lastLoginDate = new Date(lastLogin)
+    const timeDiff = now - lastLoginDate
+    const daysDiff = timeDiff / (1000 * 60 * 60 * 24)
+
+    if (daysDiff >= 1 && daysDiff < 2) {
+      // Logged in on consecutive day
+      user.streakCount = (user.streakCount || 0) + 1
+      user.lastLogin = now
+    } else if (daysDiff >= 2) {
+      // Streak broken, reset to 1
+      user.streakCount = 1
+      user.lastLogin = now
+    }
+    // If daysDiff < 1 (same day), don't update streak
   }
+  
+  await user.save({ validateBeforeSave: false })
 
   const token = generateToken(user._id, user.emri)
 
@@ -143,8 +159,8 @@ const login = asyncHandler(async (req, res) => {
     ? `https://api.dicebear.com/7.x/${user.avatarStyle}/svg?seed=${user._id}`
     : `https://api.dicebear.com/7.x/adventurer/svg?seed=${user._id}`;
 
-  const now = new Date()
-  const isSubscriptionActive = user.subscriptionExpiresAt && user.subscriptionExpiresAt > now
+  const nowDate = new Date()
+  const isSubscriptionActive = user.subscriptionExpiresAt && user.subscriptionExpiresAt > nowDate
 
   const subscriptionStatus = {
     active: isSubscriptionActive,
