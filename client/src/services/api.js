@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api"
+const API_BASE_URL = "/api"
 export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com"
 
 export const getAbsoluteImageUrl = (path) => {
@@ -61,8 +61,30 @@ api.interceptors.response.use(
   },
 )
 
+
 export const authService = {
-  login: (credentials) => api.post("/auth/login", credentials),
+  // --- Auth ---
+  login: async (credentials) => {
+    const response = await api.post("/auth/login", credentials);
+    if (response.data?.token) {
+      try {
+        await api.post("/users/update-streak");
+        // Fetch the updated user profile with new streak count
+        const profileResponse = await api.get("/auth/me");
+        return {
+          ...response,
+          data: {
+            ...response.data,
+            user: profileResponse.data
+          }
+        };
+      } catch (error) {
+        console.error("[v0] Streak update failed (non-critical):", error);
+      }
+    }
+    return response;
+  },
+
   register: (userData) =>
     api.post("/auth/signup", {
       emri: userData.firstName,
@@ -71,6 +93,13 @@ export const authService = {
       password: userData.password,
       termsAccepted: userData.termsAccepted,
     }),
+
+  forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
+  resetPassword: (token, newPassword) =>
+    api.post(`/auth/reset-password/${token}`, { newPassword }),
+  verifyEmail: (token) => api.get(`/auth/verify/${token}`),
+
+  // --- User Profile ---
   getProfile: () => api.get("/auth/me"),
   updateProfile: (data) =>
     api.put("/users/profile", {
@@ -80,16 +109,16 @@ export const authService = {
   updateAvatarStyle: (avatarStyle) =>
     api.put("/users/avatar-style", { avatarStyle }),
   updateStudyHours: (hours) => api.put("/users/study-hours", { hours }),
+
+  // --- XP & Streak ---
   getUserXp: () => api.get("/users/xp"),
   addXp: (xp, reason) => api.post("/users/add-xp", { xp, reason }),
+  updateStreak: () => api.post("/users/update-streak"),
+};
 
-  forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
-  resetPassword: (token, newPassword) => api.post(`/auth/reset-password/${token}`, { newPassword }),
-  verifyEmail: (token) => api.get(`/auth/verify/${token}`),
-}
+// --- Dicebear Avatar URL Generator ---
 export const generateDicebearUrl = (userId, avatarStyle = "adventurer") =>
-  `https://api.dicebear.com/7.x/${avatarStyle}/svg?seed=${userId}`
-
+  `https://api.dicebear.com/7.x/${avatarStyle}/svg?seed=${userId}`;
 
 export const dictionaryService = {
   getAllWords: (params = {}) => api.get("/dictionary", { params }),
