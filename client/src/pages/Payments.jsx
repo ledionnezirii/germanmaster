@@ -1,8 +1,27 @@
 import { Check, Lock, Calendar, Headphones, Star } from 'lucide-react'
 
+// ID-të tuaja të çmimeve (Price IDs)
+const MONTHLY_PRICE_ID = 'pri_01kac2nw5dah485s5mz9qcm5ev';
+const THREE_MONTH_PRICE_ID = 'pri_03example3month'; 
+const ANNUAL_PRICE_ID = 'pri_02exampleAnnual'; 
+
 export default function PricingPage() {
+  
+  // Funksion i FIKSUAR - Përdor 'prices' për ridrejtimin e drejtpërdrejtë të V2
+  const handleCheckout = (priceId) => {
+    
+    // URL-ja e saktë e Paddle Billing (V2) për çmime: përdor 'prices'
+    const checkoutUrl = `https://checkout.paddle.com/prices/${priceId}`;
+    
+    // Hap dritaren e re, e cila do të tregojë checkout-in e Paddle
+    window.open(checkoutUrl, '_blank');
+    
+    // Shënim: Pas pagesës, klienti ridrejtohet në URL-në e "Thank You Page" të konfiguruar në Paddle.
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-blue-100 to-blue-50 py-8 px-4">
+      
       {/* Header Section */}
       <div className="max-w-4xl mx-auto text-center mb-8">
         <h1 className="text-4xl font-bold text-slate-900 mb-2">Zgjidh Planin Tënd</h1>
@@ -15,11 +34,11 @@ export default function PricingPage() {
           <Lock className="w-4 h-4 text-green-600" />
           <span className="text-sm font-medium">Pagesa të Sigurta</span>
         </div>
-        <div className="flex items-center gap-2 text-slate-700  bg-white p-2 rounded-4xl">
+        <div className="flex items-center gap-2 text-slate-700 bg-white p-2 rounded-4xl">
           <Calendar className="w-4 h-4 text-green-600" />
           <span className="text-sm font-medium">Qasje e plotë</span>
         </div>
-        <div className="flex items-center gap-2 text-slate-700  bg-white p-2 rounded-4xl">
+        <div className="flex items-center gap-2 text-slate-700 bg-white p-2 rounded-4xl">
           <Headphones className="w-4 h-4 text-green-600" />
           <span className="text-sm font-medium">Suport 24/7</span>
         </div>
@@ -27,11 +46,12 @@ export default function PricingPage() {
 
       {/* Pricing Cards */}
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+        
         {/* Monthly Plan */}
         <div className="bg-white rounded-xl p-6 shadow-lg">
           <h3 className="text-lg font-bold text-slate-900 mb-3">Mujor</h3>
           <div className="mb-6">
-            <span className="text-3xl font-bold text-slate-900">$9.99</span>
+            <span className="text-3xl font-bold text-slate-900">€1.00</span>
             <span className="text-sm text-slate-600">/muaj</span>
           </div>
 
@@ -49,7 +69,10 @@ export default function PricingPage() {
             ))}
           </ul>
 
-          <button className="w-full bg-slate-900 text-white py-2 rounded-lg font-semibold text-sm hover:bg-slate-800 transition">
+          <button
+            onClick={() => handleCheckout(MONTHLY_PRICE_ID)} 
+            className="w-full bg-slate-900 text-white py-2 rounded-lg font-semibold text-sm hover:bg-slate-800 transition"
+          >
             Fillo Tani
           </button>
         </div>
@@ -72,7 +95,7 @@ export default function PricingPage() {
             </div>
 
             <div className="mb-6">
-              <span className="text-3xl font-bold text-purple-600">$24.99</span>
+              <span className="text-3xl font-bold text-purple-600">€2.49</span>
               <span className="text-sm text-slate-600">/3 muaj</span>
             </div>
 
@@ -91,7 +114,10 @@ export default function PricingPage() {
               ))}
             </ul>
 
-            <button className="w-full bg-purple-600 text-white py-2 rounded-lg font-semibold text-sm hover:bg-purple-700 transition">
+            <button
+              onClick={() => handleCheckout(THREE_MONTH_PRICE_ID)} 
+              className="w-full bg-purple-600 text-white py-2 rounded-lg font-semibold text-sm hover:bg-purple-700 transition"
+            >
               Zgjidh Planin
             </button>
           </div>
@@ -107,7 +133,7 @@ export default function PricingPage() {
           </div>
 
           <div className="mb-6">
-            <span className="text-3xl font-bold text-slate-900">$99.99</span>
+            <span className="text-3xl font-bold text-slate-900">€9.99</span>
             <span className="text-sm text-slate-600">/vit</span>
           </div>
 
@@ -126,7 +152,10 @@ export default function PricingPage() {
             ))}
           </ul>
 
-          <button className="w-full bg-slate-900 text-white py-2 rounded-lg font-semibold text-sm hover:bg-slate-800 transition">
+          <button
+            onClick={() => handleCheckout(ANNUAL_PRICE_ID)} 
+            className="w-full bg-slate-900 text-white py-2 rounded-lg font-semibold text-sm hover:bg-slate-800 transition"
+          >
             Fillo Tani
           </button>
         </div>

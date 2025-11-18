@@ -16,5 +16,16 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
+    <script type="text/javascript">
+      // Client ID-ja juaj LIVE që sapo dërguat
+      const YOUR_CLIENT_ID = 'live_0ef1c5946ac5d34cf6db8d711cd'; 
+
+      Paddle.Setup({ 
+        client: YOUR_CLIENT_ID, 
+        // Përdorni 'production' pasi ID-ja juaj fillon me 'live_'
+        environment: "production" 
+      }); 
+    </script>
   </body>
 </html>
