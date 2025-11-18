@@ -530,7 +530,7 @@ const Account = () => {
                   <button
                     onClick={() => handleDownloadCertificate(certificate._id, certificate.level)}
                     disabled={downloadingCert === certificate._id}
-                    className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white px-4 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-105"
+                    className="w-full text-gray-700  px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer  font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-105"
                   >
                     {downloadingCert === certificate._id ? (
                       <>
