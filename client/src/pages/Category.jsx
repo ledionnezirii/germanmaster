@@ -397,33 +397,32 @@ const Category = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-2 sm:p-3 lg:p-4">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header section like translate */}
-        <header className="mb-4">
-          <div className="bg-white rounded-xl shadow-lg border-2 border-[#99F6E4] p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Word Categories</h1>
-                <p className="text-gray-600">Explore our organized German vocabulary. Learn new words and expand your dictionary systematically.</p>
-              </div>
+        <header className="mb-6">
+          <div className="bg-white rounded-xl shadow-sm border-2 border-[#99F6E4] p-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Kategoritë e Fjalëve</h1>
+              <p className="text-gray-600 leading-relaxed">
+                Eksploroni fjalorin tonë të organizuar gjerman. Mësoni fjalë të reja dhe zgjeroni fjalorin tuaj në mënyrë sistematike.
+              </p>
             </div>
-            <p className="text-xs text-gray-400 mt-2">
+            <p className="text-xs text-gray-400 mt-3">
               Kategori të përfunduara: {finishedCategoryIds.length}
             </p>
           </div>
         </header>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 mb-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2 flex-wrap">
               {availableWordTypes.map((type) => (
                 <button
                   key={type.value}
                   onClick={() => setSelectedCategoryFilter(type.value)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 ${
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
                     selectedCategoryFilter === type.value
-                      ? "bg-gray-900 text-white"
+                      ? "bg-gray-900 text-white shadow-md"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -435,9 +434,9 @@ const Category = () => {
               <select
                 value={selectedLevelFilter}
                 onChange={(e) => setSelectedLevelFilter(e.target.value)}
-                className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
               >
-                <option value="all">All levels</option>
+                <option value="all">Të gjitha nivelet</option>
                 <option value="A1">A1</option>
                 <option value="A2">A2</option>
                 <option value="B1">B1</option>
@@ -458,22 +457,10 @@ const Category = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {Array.isArray(filteredCategories) && filteredCategories.length > 0 ? (
                 filteredCategories.slice(0, visibleCategories).map((category, index) => {
                   const IconComponent = iconMap[category.icon] || iconMap.default
-
-                  const colorClasses = [
-                    { bg: "bg-blue-100", icon: "bg-blue-100" },
-                    { bg: "bg-purple-100", icon: "bg-purple-100" },
-                    { bg: "bg-pink-100", icon: "bg-pink-100" },
-                    { bg: "bg-orange-100", icon: "bg-orange-100" },
-                    { bg: "bg-cyan-100", icon: "bg-cyan-100" },
-                    { bg: "bg-yellow-100", icon: "bg-yellow-100" },
-                    { bg: "bg-emerald-100", icon: "bg-emerald-100" },
-                    { bg: "bg-indigo-100", icon: "bg-indigo-100" },
-                  ]
-                  const colorClass = colorClasses[index % colorClasses.length]
 
                   const categoryIdStr = String(category._id?._id || category._id)
                   const isCompleted = finishedCategoryIds.includes(categoryIdStr)
@@ -482,52 +469,54 @@ const Category = () => {
                     <div
                       key={category._id}
                       onClick={() => fetchCategoryDetails(category._id, category.category)}
-                      className={`group rounded-lg p-3 border-2 transition-all duration-200 cursor-pointer relative overflow-hidden hover:shadow-xl ${
+                      className={`group rounded-xl p-4 border-2 transition-all duration-200 cursor-pointer relative overflow-hidden hover:shadow-lg ${
                         isCompleted
-                          ? "bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] border-[#F59E0B] hover:border-[#D97706]"
-                          : "bg-white border-gray-200 hover:shadow-lg"
+                          ? "bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] border-[#FDE68A]"
+                          : "bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] border-[#FDE68A]"
                       }`}
                     >
                       <div className="flex items-start justify-between mb-3">
-                        <div
-                          className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                            isCompleted ? "bg-[#FDE68A]" : colorClass.icon
-                          }`}
-                        >
-                          <IconComponent className={`h-5 w-5 ${isCompleted ? "text-[#D97706]" : "text-gray-700"}`} />
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                          isCompleted ? "bg-[#FDE68A]" : "bg-[#FDE68A]"
+                        }`}>
+                          <IconComponent className="h-6 w-6 text-gray-700" />
                         </div>
 
                         {isCompleted && (
-                          <div className="flex items-center gap-1 bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white px-2 py-0.5 rounded-full text-xs font-medium shadow-sm">
-                            <CheckCircle className="h-3 w-3" />
-                            <span>Completed</span>
+                          <div className="flex items-center gap-1.5 bg-gradient-to-r from-teal-400 to-emerald-400 text-white px-2.5 py-1 rounded-full text-xs font-medium shadow-sm">
+                            <CheckCircle className="h-3.5 w-3.5" />
+                            <span>E përfunduar</span>
                           </div>
                         )}
                       </div>
 
-                      <h3 className={`text-sm font-semibold mb-2 line-clamp-2 transition-colors ${
-                        isCompleted 
-                          ? "text-[#D97706] group-hover:text-[#92400E]" 
-                          : "text-gray-900 group-hover:text-gray-700"
-                      }`}>
+                      <h3 className="text-base font-semibold mb-3 line-clamp-2 text-gray-900 min-h-[3rem]">
                         {category.category}
                       </h3>
 
                       <div className="mt-auto">
-                        <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-medium ${
-                          isCompleted
-                            ? "bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white shadow-sm"
-                            : "bg-gray-100 text-gray-700"
-                        }`}>
-                          {availableWordTypes.find((t) => t.value === category.type)?.label || "Kategori"}
-                        </span>
+                        {category.type && (
+                          <span className={`inline-block px-3 py-1 rounded-md text-xs font-medium ${
+                            category.type === "Gramatikë" 
+                              ? "bg-[#FCA5A5] text-[#7F1D1D]"
+                              : category.type === "Të Përgjithshme"
+                              ? "bg-[#FDE047] text-[#713F12]"
+                              : category.type === "Mbiemra"
+                              ? "bg-[#F9A8D4] text-[#831843]"
+                              : category.type === "Vocabulary"
+                              ? "bg-[#93C5FD] text-[#1E3A8A]"
+                              : category.type === "Folje"
+                              ? "bg-[#C4B5FD] text-[#4C1D95]"
+                              : category.type === "Kulturë"
+                              ? "bg-[#D8B4FE] text-[#581C87]"
+                              : category.type === "Gramatikë"
+                              ? "bg-[#FCA5A5] text-[#7F1D1D]"
+                              : "bg-gray-200 text-gray-700"
+                          }`}>
+                            {availableWordTypes.find((t) => t.value === category.type)?.label || category.type}
+                          </span>
+                        )}
                       </div>
-
-                      <BookOpen
-                        className={`absolute -bottom-4 -right-4 w-16 h-16 ${
-                          isCompleted ? "text-[#FDE68A]" : "text-gray-100"
-                        }`}
-                      />
                     </div>
                   )
                 })

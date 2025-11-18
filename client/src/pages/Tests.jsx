@@ -3,20 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useAuth } from "../context/AuthContext"
 import logo from "../../public/logo.png"
-import {
-  ArrowLeft,
-  Clock,
-  BookOpen,
-  RotateCcw,
-  FileText,
-  Lightbulb,
-  Award,
-  Lock,
-  CheckCircle,
-  AlertCircle,
-  X,
-  Check,
-} from "lucide-react"
+import { ArrowLeft, Clock, BookOpen, RotateCcw, FileText, Lightbulb, Award, Lock, CheckCircle, AlertCircle, X, Check } from 'lucide-react'
 import { testService } from "../services/api"
 
 const Tests = () => {
@@ -285,22 +272,22 @@ const Tests = () => {
     }
 
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="w-full max-w-sm mx-auto bg-white rounded-lg shadow-lg border border-gray-200">
-          <div className="p-6 text-center space-y-4">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-3">
+        <div className="w-full max-w-xs mx-auto bg-white rounded-lg shadow-lg border border-gray-200">
+          <div className="p-4 text-center space-y-3">
             {isPassed ? (
               <>
-                <div className="mx-auto w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
+                <div className="mx-auto w-10 h-10 bg-green-50 rounded-full flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
                 </div>
-                <div className="space-y-2">
-                  <h2 className="text-lg font-semibold text-green-600">Urime!</h2>
-                  <div className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 px-2.5 py-1 rounded-full text-xs font-medium">
-                    <Award className="w-3.5 h-3.5" />
+                <div className="space-y-1.5">
+                  <h2 className="text-base font-semibold text-green-600">Urime!</h2>
+                  <div className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
+                    <Award className="w-3 h-3" />
                     <span>+{xpEarned} XP</span>
                   </div>
                 </div>
-                <div className="space-y-1.5 text-gray-600 text-xs leading-relaxed">
+                <div className="space-y-1 text-gray-600 text-xs leading-relaxed">
                   <p>
                     Ju morët {result.percentage}% dhe kaluat testin e nivelit {result.level}!
                   </p>
@@ -313,11 +300,11 @@ const Tests = () => {
               </>
             ) : (
               <>
-                <div className="mx-auto w-12 h-12 bg-red-50 rounded-full flex items-center justify-center">
-                  <AlertCircle className="w-6 h-6 text-red-600" />
+                <div className="mx-auto w-10 h-10 bg-red-50 rounded-full flex items-center justify-center">
+                  <AlertCircle className="w-5 h-5 text-red-600" />
                 </div>
-                <div className="space-y-2">
-                  <h2 className="text-lg font-semibold text-red-600">Akoma jo aty</h2>
+                <div className="space-y-1.5">
+                  <h2 className="text-base font-semibold text-red-600">Akoma jo aty</h2>
                   <p className="text-gray-600 text-xs leading-relaxed">
                     Ju morët {result.percentage}% por nevojitet 85% për të kaluar.
                   </p>
@@ -328,7 +315,7 @@ const Tests = () => {
 
             <button
               onClick={handleClose}
-              className={`w-full px-3 py-2 rounded-md font-medium transition-colors text-xs ${
+              className={`w-full px-2.5 py-1.5 rounded-md font-medium transition-colors text-xs ${
                 isPassed ? "bg-gray-800 hover:bg-gray-900 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
               }`}
             >
@@ -343,21 +330,21 @@ const Tests = () => {
   const CloseButton = ({ onClick, className = "" }) => (
     <button
       onClick={onClick}
-      className={`group flex items-center justify-center w-7 h-7 rounded-md bg-gray-50 hover:bg-gray-100 transition-colors ${className}`}
+      className={`group flex items-center justify-center w-6 h-6 rounded-md bg-gray-50 hover:bg-gray-100 transition-colors ${className}`}
       aria-label="Close modal"
     >
-      <X className="w-4 h-4 text-gray-500 group-hover:text-gray-700 transition-colors" />
+      <X className="w-3.5 h-3.5 text-gray-500 group-hover:text-gray-700 transition-colors" />
     </button>
   )
 
   const TestInstructionsModal = ({ test, onClose, onStartTest }) => {
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="w-full max-w-xl max-h-[90vh] bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
-          <div className="flex-shrink-0 p-4 bg-gray-50 border-b border-gray-200">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-3">
+        <div className="w-full max-w-lg max-h-[90vh] bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+          <div className="flex-shrink-0 p-3 bg-gray-50 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold text-gray-900">Udhëzime për Testin</h2>
+                <h2 className="text-sm font-semibold text-gray-900">Udhëzime për Testin</h2>
                 <p className="text-xs text-gray-600 mt-0.5">
                   {test.title} - Niveli {test.level}
                 </p>
@@ -366,10 +353,10 @@ const Tests = () => {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            <div className="bg-amber-50 border border-amber-200 rounded-md p-2.5">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+          <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+            <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                 <div>
                   <h3 className="font-medium text-amber-800 text-xs">Koha e Testit: 30 Minuta</h3>
                   <p className="text-xs text-amber-700 mt-0.5">
@@ -379,29 +366,29 @@ const Tests = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <h3 className="text-xs font-semibold text-gray-900 flex items-center gap-1.5">
-                <FileText className="w-3.5 h-3.5" />
+            <div className="space-y-1.5">
+              <h3 className="text-xs font-semibold text-gray-900 flex items-center gap-1">
+                <FileText className="w-3 h-3" />
                 Udhëzime të Përgjithshme:
               </h3>
-              <div className="space-y-1.5 text-xs text-gray-700 leading-relaxed">
-                <div className="flex items-start gap-2">
+              <div className="space-y-1 text-xs text-gray-700 leading-relaxed">
+                <div className="flex items-start gap-1.5">
                   <span className="font-semibold text-gray-800 shrink-0">1.</span>
                   <p>
                     Ju keni <strong>30 minuta</strong> për të përfunduar testin.
                   </p>
                 </div>
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-1.5">
                   <span className="font-semibold text-gray-800 shrink-0">2.</span>
                   <p>
                     Çdo pyetje ka <strong>vetëm një përgjigje të saktë</strong>.
                   </p>
                 </div>
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-1.5">
                   <span className="font-semibold text-gray-800 shrink-0">3.</span>
                   <p>Ju mund të ndryshoni përgjigjet tuaja përpara se të dorëzoni testin.</p>
                 </div>
-                <div className="flex items-start gap-2">
+                <div className="flex items-start gap-1.5">
                   <span className="font-semibold text-gray-800 shrink-0">4.</span>
                   <p>
                     Nevojitet <strong>85% ose më shumë</strong> për të kaluar testin.
@@ -410,9 +397,9 @@ const Tests = () => {
               </div>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-2.5">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <BookOpen className="w-3.5 h-3.5 text-blue-600" />
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-2">
+              <div className="flex items-center gap-1 mb-1">
+                <BookOpen className="w-3 h-3 text-blue-600" />
                 <h3 className="font-medium text-blue-800 text-xs">Sistemi i Progresit</h3>
               </div>
               <div className="space-y-0.5 text-xs text-blue-700 leading-relaxed">
@@ -434,9 +421,9 @@ const Tests = () => {
               </div>
             </div>
 
-            <div className="bg-orange-50 border border-orange-200 rounded-md p-2.5">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <RotateCcw className="w-3.5 h-3.5 text-orange-600" />
+            <div className="bg-orange-50 border border-orange-200 rounded-md p-2">
+              <div className="flex items-center gap-1 mb-1">
+                <RotateCcw className="w-3 h-3 text-orange-600" />
                 <h3 className="font-medium text-orange-800 text-xs">Politika e Rimarrjes së Testit</h3>
               </div>
               <div className="space-y-0.5 text-xs text-orange-700 leading-relaxed">
@@ -452,9 +439,9 @@ const Tests = () => {
               </div>
             </div>
 
-            <div className="bg-gray-50 border border-gray-200 rounded-md p-2.5">
-              <h3 className="font-medium text-gray-900 mb-2 text-xs">Detajet e Testit:</h3>
-              <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="bg-gray-50 border border-gray-200 rounded-md p-2">
+              <h3 className="font-medium text-gray-900 mb-1.5 text-xs">Detajet e Testit:</h3>
+              <div className="grid grid-cols-2 gap-1.5 text-xs">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Gjithsej Pyetje:</span>
                   <span className="font-medium text-gray-900">{test.questions?.length || 0}</span>
@@ -474,9 +461,9 @@ const Tests = () => {
               </div>
             </div>
 
-            <div className="bg-green-50 border border-green-200 rounded-md p-2.5">
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <Lightbulb className="w-3.5 h-3.5 text-green-600" />
+            <div className="bg-green-50 border border-green-200 rounded-md p-2">
+              <div className="flex items-center gap-1 mb-1">
+                <Lightbulb className="w-3 h-3 text-green-600" />
                 <h3 className="font-medium text-green-800 text-xs">Këshilla për Sukses</h3>
               </div>
               <div className="space-y-0.5 text-xs text-green-700 leading-relaxed">
@@ -489,17 +476,17 @@ const Tests = () => {
             </div>
           </div>
 
-          <div className="flex-shrink-0 p-3 bg-gray-50 border-t border-gray-200">
+          <div className="flex-shrink-0 p-2.5 bg-gray-50 border-t border-gray-200">
             <div className="flex gap-2 justify-end">
               <button
                 onClick={onClose}
-                className="px-3 py-1.5 rounded-md bg-white text-gray-700 hover:bg-gray-100 transition-colors font-medium text-xs border border-gray-200"
+                className="px-2.5 py-1.5 rounded-md bg-white text-gray-700 hover:bg-gray-100 transition-colors font-medium text-xs border border-gray-200"
               >
                 Anulo
               </button>
               <button
                 onClick={onStartTest}
-                className="px-3 py-1.5 bg-gray-800 hover:bg-gray-900 text-white rounded-md font-medium transition-colors text-xs"
+                className="px-2.5 py-1.5 bg-gray-800 hover:bg-gray-900 text-white rounded-md font-medium transition-colors text-xs"
               >
                 Fillo Testin
               </button>
@@ -515,20 +502,20 @@ const Tests = () => {
   const GermanExamView = ({ test }) => {
     if (!test.questions || test.questions.length === 0) {
       return (
-        <div className="min-h-screen bg-gray-50 p-4">
+        <div className="min-h-screen bg-gray-50 p-3">
           <div className="max-w-2xl mx-auto">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-6 text-center">
-                <h2 className="text-lg font-semibold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
+              <div className="p-4 text-center">
+                <h2 className="text-base font-semibold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
                   {test.title}
                 </h2>
-                <p className="text-red-600 mt-2 text-xs">
+                <p className="text-red-600 mt-1.5 text-xs">
                   Nuk ka pyetje të disponueshme për këtë test. Ju lutemi kontaktoni mbështetjen.
                 </p>
               </div>
-              <div className="p-4 text-center border-t border-gray-200">
+              <div className="p-3 text-center border-t border-gray-200">
                 <button
-                  className="px-3 py-1.5 rounded-md bg-white text-gray-700 hover:bg-gray-100 transition-colors border border-gray-200 text-xs font-medium"
+                  className="px-2.5 py-1.5 rounded-md bg-white text-gray-700 hover:bg-gray-100 transition-colors border border-gray-200 text-xs font-medium"
                   onClick={() => {
                     setTakingTest(false)
                     setUserAnswers({})
@@ -590,38 +577,38 @@ const Tests = () => {
 
     return (
       <div
-        className="min-h-screen bg-gray-50 p-4 select-none"
+        className="min-h-screen bg-gray-50 p-3 select-none"
         onCopy={(e) => e.preventDefault()}
         onCut={(e) => e.preventDefault()}
         onPaste={(e) => e.preventDefault()}
         onContextMenu={(e) => e.preventDefault()}
       >
-        <div className="max-w-4xl mx-auto space-y-3">
+        <div className="max-w-4xl mx-auto space-y-2.5">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="p-4 text-center">
+            <div className="p-3 text-center">
               <p
                 className="text-xs font-semibold text-blue-600 uppercase tracking-wide"
                 style={{ fontFamily: "Inter, sans-serif" }}
               >
                 TEST YOUR GERMAN SKILLS
               </p>
-              <h1 className="text-2xl font-bold text-gray-900 mt-2" style={{ fontFamily: "Poppins, sans-serif" }}>
+              <h1 className="text-xl font-bold text-gray-900 mt-1.5" style={{ fontFamily: "Poppins, sans-serif" }}>
                 {test.title}
               </h1>
-              <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: "Inter, sans-serif" }}>
+              <p className="text-xs text-gray-600 mt-1" style={{ fontFamily: "Inter, sans-serif" }}>
                 Niveli: {test.level} • Koha: 30 minuta • Pyetjet: {test.questions?.length}
               </p>
 
               {timeRemaining !== null && (
-                <div className={`mt-4 flex items-center justify-center gap-1.5 ${getTimerColor()}`}>
+                <div className={`mt-3 flex items-center justify-center gap-1 ${getTimerColor()}`}>
                   <Clock className="w-4 h-4" />
-                  <span className="text-xl font-bold" style={{ fontFamily: "Poppins, sans-serif" }}>
+                  <span className="text-lg font-bold" style={{ fontFamily: "Poppins, sans-serif" }}>
                     {formatTime(timeRemaining)}
                   </span>
                 </div>
               )}
 
-              <div className="mt-3 space-y-1.5">
+              <div className="mt-2.5 space-y-1">
                 <div className="flex justify-between text-xs text-gray-600" style={{ fontFamily: "Inter, sans-serif" }}>
                   <span>Progresi</span>
                   <span>
@@ -638,30 +625,30 @@ const Tests = () => {
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
             {test.questions?.map((question, index) => (
               <div key={question._id || index} className="bg-white rounded-lg shadow-sm border border-gray-200 h-fit">
-                <div className="p-4 border-b border-gray-100">
-                  <div className="flex items-start gap-2">
+                <div className="p-3 border-b border-gray-100">
+                  <div className="flex items-start gap-1.5">
                     <span
-                      className="shrink-0 inline-flex items-center px-2 py-1 rounded text-sm font-semibold bg-gray-100 text-gray-700"
+                      className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-700"
                       style={{ fontFamily: "Poppins, sans-serif" }}
                     >
                       {question.questionNumber || index + 1}
                     </span>
                     <h3
-                      className="text-sm font-medium leading-relaxed text-gray-900"
+                      className="text-xs font-medium leading-relaxed text-gray-900"
                       style={{ fontFamily: "Inter, sans-serif" }}
                     >
                       {question.questionText}
                     </h3>
                   </div>
                 </div>
-                <div className="p-3 space-y-2">
+                <div className="p-2.5 space-y-1.5">
                   {question.options?.map((option, optIndex) => (
                     <label
                       key={optIndex}
-                      className="flex items-start gap-2.5 p-3 rounded-md bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
+                      className="flex items-start gap-2 p-2 rounded-md bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
                     >
                       <input
                         type="radio"
@@ -672,7 +659,7 @@ const Tests = () => {
                         className="mt-0.5 text-gray-800 focus:ring-gray-500 focus:ring-1"
                       />
                       <span
-                        className="text-sm leading-relaxed text-gray-700"
+                        className="text-xs leading-relaxed text-gray-700"
                         style={{ fontFamily: "Inter, sans-serif" }}
                       >
                         <strong className="text-gray-800">{option.label})</strong> {option.text}
@@ -685,7 +672,7 @@ const Tests = () => {
           </div>
 
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="p-4 text-center space-y-2">
+            <div className="p-3 text-center space-y-1.5">
               <div className="text-xs text-gray-600" style={{ fontFamily: "Inter, sans-serif" }}>
                 {answeredQuestions === totalQuestions
                   ? "Të gjitha pyetjet u përgjigjën! Gati për dorëzim."
@@ -695,13 +682,13 @@ const Tests = () => {
                 <button
                   onClick={submitTest}
                   disabled={answeredQuestions === 0 || isSubmittingRef.current}
-                  className="px-3 py-2 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-md font-medium transition-colors text-xs"
+                  className="px-2.5 py-1.5 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-md font-medium transition-colors text-xs"
                   style={{ fontFamily: "Poppins, sans-serif" }}
                 >
                   {isSubmittingRef.current ? "Duke dorëzuar..." : "Dorëzo Testin"}
                 </button>
                 <button
-                  className="px-3 py-2 rounded-md bg-white text-gray-700 hover:bg-gray-100 transition-colors border border-gray-200 font-medium text-xs"
+                  className="px-2.5 py-1.5 rounded-md bg-white text-gray-700 hover:bg-gray-100 transition-colors border border-gray-200 font-medium text-xs"
                   style={{ fontFamily: "Poppins, sans-serif" }}
                   onClick={handleCancelTest}
                   disabled={isSubmittingRef.current}
@@ -816,8 +803,8 @@ const Tests = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="w-full max-w-xs bg-white rounded-lg shadow-sm border border-gray-200">
-          <div className="p-6 text-center">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-800 mx-auto mb-2"></div>
+          <div className="p-4 text-center">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-800 mx-auto mb-1.5"></div>
             <p className="text-gray-600 text-xs">Duke ngarkuar testet...</p>
           </div>
         </div>
@@ -845,18 +832,18 @@ const Tests = () => {
 
   if (!selectedLevel) {
     return (
-      <div className="min-h-screen bg-gray-50 p-4">
-        <div className="max-w-5xl mx-auto space-y-6">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 text-center">
-            <h1 className="text-3xl font-bold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
+      <div className="min-h-screen bg-gray-50 p-3">
+        <div className="max-w-5xl mx-auto space-y-4">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-5 text-center">
+            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
               Testet e Gramatikës Gjermane
             </h1>
-            <p className="text-base text-gray-600 mt-2" style={{ fontFamily: "Inter, sans-serif" }}>
+            <p className="text-sm text-gray-600 mt-1.5" style={{ fontFamily: "Inter, sans-serif" }}>
               Testoni njohuritë tuaja të gjermanishtes në të gjitha nivelet CEFR
             </p>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
             {germanLevels.map((level) => {
               const availability = getLevelAvailability(level.code)
               const isAvailable = availability.available
@@ -871,9 +858,9 @@ const Tests = () => {
                   }`}
                   onClick={isAvailable && !isLocked ? () => handleLevelSelect(level.code) : undefined}
                 >
-                  <div className="absolute top-4 left-4">
+                  <div className="absolute top-3 left-3">
                     <span
-                      className="inline-flex items-center px-3 py-1.5 rounded-lg text-base font-bold border-2 bg-white shadow-sm"
+                      className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-bold border-2 bg-white shadow-sm"
                       style={{ fontFamily: "Poppins, sans-serif" }}
                     >
                       {level.code}
@@ -881,39 +868,39 @@ const Tests = () => {
                   </div>
 
                   {isLocked && (
-                    <div className="absolute top-4 right-4 p-2 bg-white/70 rounded-lg shadow-sm">
-                      <LockIcon className="w-5 h-5 text-gray-600" />
+                    <div className="absolute top-3 right-3 p-1.5 bg-white/70 rounded-lg shadow-sm">
+                      <LockIcon className="w-4 h-4 text-gray-600" />
                     </div>
                   )}
 
                   {availability.reason === "passed" && (
-                    <div className="absolute top-4 right-4 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-md">
-                      <Check className="w-5 h-5 text-white stroke-[3]" />
+                    <div className="absolute top-3 right-3 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center shadow-md">
+                      <Check className="w-4 h-4 text-white stroke-[3]" />
                     </div>
                   )}
 
-                  <div className="p-5 pt-16">
+                  <div className="p-4 pt-12">
                     <div>
-                      <h3 className="text-lg font-bold" style={{ fontFamily: "Poppins, sans-serif" }}>
+                      <h3 className="text-base font-bold" style={{ fontFamily: "Poppins, sans-serif" }}>
                         {level.name}
                       </h3>
-                      <p className="mt-1 text-sm opacity-90" style={{ fontFamily: "Inter, sans-serif" }}>
+                      <p className="mt-1 text-xs opacity-90" style={{ fontFamily: "Inter, sans-serif" }}>
                         {level.description}
                       </p>
                     </div>
                   </div>
 
-                  <div className="px-5 pb-5 space-y-3">
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm" style={{ fontFamily: "Inter, sans-serif" }}>
+                  <div className="px-4 pb-4 space-y-2.5">
+                    <div className="space-y-1.5">
+                      <div className="flex justify-between text-xs" style={{ fontFamily: "Inter, sans-serif" }}>
                         <span className="opacity-80">
                           {availability.reason === "passed" ? "Përfunduar" : "Progresi"}
                         </span>
                         <span className="font-semibold">{availability.reason === "passed" ? "100%" : "0%"}</span>
                       </div>
-                      <div className="w-full bg-white/40 rounded-full h-2">
+                      <div className="w-full bg-white/40 rounded-full h-1.5">
                         <div
-                          className={`h-2 rounded-full transition-all ${
+                          className={`h-1.5 rounded-full transition-all ${
                             availability.reason === "passed" ? "bg-green-500 w-full" : "bg-gray-300 w-0"
                           }`}
                         ></div>
@@ -921,7 +908,7 @@ const Tests = () => {
                     </div>
 
                     {availability.reason === "passed" && availability.lastScore && (
-                      <div className="text-sm" style={{ fontFamily: "Poppins, sans-serif" }}>
+                      <div className="text-xs" style={{ fontFamily: "Poppins, sans-serif" }}>
                         <span className="opacity-80">Rezultati: </span>
                         <span className="font-bold">{availability.lastScore}%</span>
                       </div>
@@ -934,7 +921,7 @@ const Tests = () => {
                     )}
 
                     <button
-                      className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 text-sm flex items-center justify-center gap-2 ${
+                      className={`w-full py-2 px-3 rounded-lg font-semibold transition-all duration-200 text-xs flex items-center justify-center gap-1.5 ${
                         isAvailable && !isLocked
                           ? `${level.buttonColor} text-white shadow-md hover:shadow-lg`
                           : "bg-gray-200 text-gray-500 cursor-not-allowed"
@@ -944,7 +931,7 @@ const Tests = () => {
                     >
                       {isLocked ? (
                         <>
-                          <LockIcon className="w-4 h-4" />
+                          <LockIcon className="w-3.5 h-3.5" />
                           Njohuri në nivel gjuhëtari
                         </>
                       ) : isAvailable ? (
@@ -966,36 +953,36 @@ const Tests = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gray-50 p-3">
+      <div className="max-w-5xl mx-auto space-y-4">
         <button
-          className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors text-sm font-medium"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-100 text-green-700 hover:bg-green-200 transition-colors text-xs font-medium"
           style={{ fontFamily: "Inter, sans-serif" }}
           onClick={() => {
             setSelectedLevel(null)
             setLevelTests([])
           }}
         >
-          <ArrowLeft size={16} /> Kthehu te Zgjedhja e Nivelit
+          <ArrowLeft size={14} /> Kthehu te Zgjedhja e Nivelit
         </button>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
+              <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
                 Testet e Gramatikës Gjermane
               </h1>
-              <p className="text-sm text-gray-600 mt-1" style={{ fontFamily: "Inter, sans-serif" }}>
+              <p className="text-xs text-gray-600 mt-1" style={{ fontFamily: "Inter, sans-serif" }}>
                 Zgjidhni një test për të filluar vlerësimin tuaj për nivelin {selectedLevel}.
               </p>
             </div>
             <div className="text-4xl">
-              <img src={logo || "/placeholder.svg"} className="rounded-full" width={48} height={48} alt="" />
+              <img src={logo || "/placeholder.svg"} className="rounded-full" width={40} height={40} alt="" />
             </div>
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {levelTests.map((test) => {
             const levelInfo = germanLevels.find((l) => l.code === test.level)
             const badgeColor =
@@ -1016,63 +1003,50 @@ const Tests = () => {
                 key={test._id}
                 className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden"
               >
-                <div className="p-5 space-y-4">
+                <div className="p-4 space-y-3">
                   {/* Level badge and question mark icon */}
                   <div className="flex items-start justify-between">
                     <span
-                      className={`inline-flex items-center px-3 py-1 rounded-lg text-sm font-bold ${badgeColor}`}
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold ${badgeColor}`}
                       style={{ fontFamily: "Poppins, sans-serif" }}
                     >
                       {test.level}
                     </span>
-                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
                       <img
                         src={logo || "/placeholder.svg"}
                         className="rounded-full"
-                        width={48}
-                        height={48}
+                        width={40}
+                        height={40}
                         alt=""
-                      />{" "}
+                      />
                     </div>
                   </div>
 
                   {/* Question count and duration */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      <span className="text-sm font-medium" style={{ fontFamily: "Inter, sans-serif" }}>
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 text-gray-700">
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span className="text-xs font-medium" style={{ fontFamily: "Inter, sans-serif" }}>
                         {test.questions?.length || 1} Pyetje
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <Clock className="w-4 h-4" />
-                      <span className="text-sm font-medium" style={{ fontFamily: "Inter, sans-serif" }}>
+                    <div className="flex items-center gap-1.5 text-gray-700">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span className="text-xs font-medium" style={{ fontFamily: "Inter, sans-serif" }}>
                         30 Minuta
                       </span>
                     </div>
                   </div>
 
                   {/* Buttons */}
-                  <div className="flex gap-2 pt-2">
+                  <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => {
                         setSelectedTest(test)
                         setShowInstructions(true)
                       }}
-                      className="flex-1 px-4 py-2.5 rounded-lg border-2 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors text-sm font-semibold"
+                      className="flex-1 px-3 py-2 rounded-lg border-2 border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors text-xs font-semibold"
                       style={{ fontFamily: "Poppins, sans-serif" }}
                     >
                       Shiko
@@ -1085,7 +1059,7 @@ const Tests = () => {
                         setTimeRemaining(30 * 60)
                         setTakingTest(true)
                       }}
-                      className="flex-1 px-4 py-2.5 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors text-sm font-semibold"
+                      className="flex-1 px-3 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors text-xs font-semibold"
                       style={{ fontFamily: "Poppins, sans-serif" }}
                     >
                       Merr Testin
@@ -1099,8 +1073,8 @@ const Tests = () => {
 
         {levelTests.length === 0 && !loading && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="p-6 text-center space-y-2">
-              <h3 className="text-sm font-semibold text-gray-900">
+            <div className="p-4 text-center space-y-1.5">
+              <h3 className="text-xs font-semibold text-gray-900">
                 Nuk ka teste të disponueshme për nivelin {selectedLevel}
               </h3>
               <p className="text-gray-600 text-xs">Kontrolloni më vonë për teste të reja të gramatikës gjermane!</p>
