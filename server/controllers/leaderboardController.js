@@ -9,23 +9,28 @@ const getAbsoluteUrl = (protocol, host, relativePath) => {
   return `${protocol}://${host}${normalizedPath}`
 }
 
-const getLeaderboard = async (protocol, host, filter = {}, limit = 10) => {
+const getLeaderboard = async (protocol, host, filter = {}, limit = 10, xpField = "xp") => {
   try {
-    console.log("Fetching leaderboard with filter:", filter, "and limit:", limit)
+    console.log("Fetching leaderboard with filter:", filter, "limit:", limit, "xpField:", xpField)
+    
+    // Build the sort object dynamically based on xpField
+    const sortObj = {}
+    sortObj[xpField] = -1
+    sortObj.streakCount = -1 // Tie-breaker
+    
     const leaderboard = await User.find(filter)
-      .sort({ xp: -1, streakCount: -1 }) // Sort by XP, then by streak for tie-breaking
+      .sort(sortObj)
       .limit(limit)
-      .select("emri mbiemri xp level profilePicture avatarStyle streakCount") // Select relevant fields
-      .lean() // Return plain JavaScript objects
+      .select(`emri mbiemri xp weeklyXp monthlyXp level profilePicture avatarStyle streakCount`) 
+      .lean()
 
     // Add rank and transform profilePicture to absolute URL for each user
     return leaderboard.map((user, index) => ({
-      _id: user._id, // Include user ID for avatar generation
+      _id: user._id,
       rank: index + 1,
       name: `${user.emri} ${user.mbiemri}`,
-      xp: user.xp,
+      xp: user[xpField], // Use the appropriate XP field
       level: user.level,
-      // Use the getAbsoluteUrl helper to convert the relative path to an absolute URL
       avatar: user.profilePicture
         ? getAbsoluteUrl(protocol, host, user.profilePicture)
         : "/placeholder.svg?height=40&width=40",
@@ -37,43 +42,41 @@ const getLeaderboard = async (protocol, host, filter = {}, limit = 10) => {
     throw new Error("Could not fetch leaderboard data")
   }
 }
-
+// </CHANGE>
 
 // Get all-time leaderboard
 exports.getAllTimeLeaderboard = async (req, res) => {
   try {
-    const limit = Number.parseInt(req.query.limit) || 10 // Default limit to 10
+    const limit = Number.parseInt(req.query.limit) || 10
     const protocol = req.protocol
     const host = req.get("host")
-    const leaderboard = await getLeaderboard(protocol, host, {}, limit) // Pass protocol and host
+    const leaderboard = await getLeaderboard(protocol, host, {}, limit, "xp")
     res.status(200).json({ success: true, data: leaderboard })
   } catch (error) {
     res.status(500).json({ success: false, message: error.message })
   }
 }
 
-// Get weekly leaderboard (users active in the last 7 days, ranked by total XP)
 exports.getWeeklyLeaderboard = async (req, res) => {
   try {
     const limit = Number.parseInt(req.query.limit) || 10
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
     const protocol = req.protocol
     const host = req.get("host")
-    const leaderboard = await getLeaderboard(protocol, host, { lastLoginDate: { $gte: sevenDaysAgo } }, limit) // Pass protocol and host
+    // Use weeklyXp field for weekly leaderboard
+    const leaderboard = await getLeaderboard(protocol, host, {}, limit, "weeklyXp")
     res.status(200).json({ success: true, data: leaderboard })
   } catch (error) {
     res.status(500).json({ success: false, message: error.message })
   }
 }
 
-// Get monthly leaderboard (users active in the last 30 days, ranked by total XP)
 exports.getMonthlyLeaderboard = async (req, res) => {
   try {
     const limit = Number.parseInt(req.query.limit) || 10
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
     const protocol = req.protocol
     const host = req.get("host")
-    const leaderboard = await getLeaderboard(protocol, host, { lastLoginDate: { $gte: thirtyDaysAgo } }, limit) // Pass protocol and host
+    // Use monthlyXp field for monthly leaderboard
+    const leaderboard = await getLeaderboard(protocol, host, {}, limit, "monthlyXp")
     res.status(200).json({ success: true, data: leaderboard })
   } catch (error) {
     res.status(500).json({ success: false, message: error.message })

@@ -3,6 +3,8 @@ const { ApiError } = require("../utils/ApiError");
 const { ApiResponse } = require("../utils/ApiResponse");
 const { asyncHandler } = require("../utils/asyncHandler");
 const achievementsService = require("../services/achievementsService");
+const { addUserXp } = require("./xpController");
+// </CHANGE>
 
 const getProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id)
@@ -110,23 +112,29 @@ const updateProfile = asyncHandler(async (req, res) => {
 });
 
 const addXp = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user.id);
-
-  if (!user) {
-    throw new ApiError(404, "User not found");
+  const xpAmount = req.body.xp || 0;
+  
+  if (xpAmount <= 0) {
+    throw new ApiError(400, "XP amount must be greater than 0");
   }
 
-  user.xp += req.body.xp || 0;
+  const result = await addUserXp(req.user.id, xpAmount);
+  
+  // Calculate new level based on total XP
+  const user = await User.findById(req.user.id);
   user.level = Math.floor(user.xp / 1000) + 1;
   await user.save();
 
   res.json(
     new ApiResponse(200, {
-      xp: user.xp,
+      xp: result.totalXp,
+      weeklyXp: result.weeklyXp,
+      monthlyXp: result.monthlyXp,
       level: user.level,
       message: "XP added successfully",
     })
   );
+  // </CHANGE>
 });
 
 const updateStreak = asyncHandler(async (req, res) => {
@@ -175,8 +183,6 @@ const updateStreak = asyncHandler(async (req, res) => {
 
   user.lastLogin = new Date();
   await user.save();
-
-  console.log(`[v0] Streak updated for user ${user._id}: ${user.streakCount} days`);
 
   res.json(
     new ApiResponse(200, {

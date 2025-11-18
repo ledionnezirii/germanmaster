@@ -23,4 +23,6 @@ router.put("/profile", updateProfile)
 router.post("/add-xp", addXp)
 router.post("/update-streak", updateStreak); 
 
+
+
 module.exports = router
