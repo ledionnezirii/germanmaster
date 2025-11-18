@@ -465,9 +465,21 @@ exports.cancelSubscription = async (req, res) => {
       });
     }
 
-    // Note: You need to call Paddle API to actually cancel the subscription
-    // This is just updating the local database
-    // You should use Paddle SDK to cancel: paddle.subscriptions.cancel(subscriptionId)
+    if (payment.paddleSubscriptionId) {
+      try {
+        await paddle.Subscription.Cancel({
+          subscriptionID: payment.paddleSubscriptionId,
+        });
+        console.log(`Paddle subscription cancelled: ${payment.paddleSubscriptionId}`);
+      } catch (paddleError) {
+        console.error("Paddle API error:", paddleError);
+        return res.status(400).json({
+          success: false,
+          message: "Failed to cancel subscription in Paddle",
+          error: paddleError.message,
+        });
+      }
+    }
 
     res.status(200).json({
       success: true,
