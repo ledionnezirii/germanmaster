@@ -1,21 +1,74 @@
+import React, { useEffect, useState } from 'react'; // Shtohet React dhe Hooks
 import { Check, Lock, Calendar, Headphones, Star } from 'lucide-react'
 
 // ID-të tuaja të çmimeve (Price IDs)
 const MONTHLY_PRICE_ID = 'pri_01kac2nw5dah485s5mz9qcm5ev';
-// Duhet të përdorni ID-të e vërteta për planet 3-Mujor dhe Vjetor!
-const THREE_MONTH_PRICE_ID = 'pri_03example3month'; 
-const ANNUAL_PRICE_ID = 'pri_02exampleAnnual'; 
+
+// ID-të e rreme janë të çaktivizuara (siç u diskutua)
+// const THREE_MONTH_PRICE_ID = 'pri_01xyz123abc456def789ghi012jkl'; 
+// const ANNUAL_PRICE_ID = 'pri_01mno345pqr678stu901vwx234yza'; 
 
 export default function PricingPage() {
-  
-  // Funksioni i rregulluar: Ridrejtimi direkt në URL-në e saktë të V2
+    const [isPaddleLoaded, setIsPaddleLoaded] = useState(false);
+    
+    // RREGULLIM: E bëmë PADDLE_SELLER_ID të jetë një numër (integer) duke hequr thonjëzat.
+    const PADDLE_SELLER_ID = 257357; 
+
+    useEffect(() => {
+        // Funksioni për ngarkimin e skriptit të Paddle
+        const loadPaddleScript = () => {
+            if (window.Paddle) {
+                // Skripti është ngarkuar, tani inicializoje
+                window.Paddle.Setup({
+                    seller: PADDLE_SELLER_ID,
+                    eventCallback: function(data) {
+                        // Këtu mund të vendosni logjikën për ngjarjet e checkout-it
+                        console.log('Paddle Event:', data);
+                    }
+                });
+                setIsPaddleLoaded(true);
+            } else {
+                console.error("Paddle.js nuk u ngarkua saktë.");
+            }
+        };
+
+        // Krijimi i elementit të skriptit
+        const script = document.createElement('script');
+        script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
+        script.async = true;
+        script.onload = loadPaddleScript;
+        
+        // Shto skriptin në body
+        document.body.appendChild(script);
+
+        // Funksioni i pastrimit
+        return () => {
+            // Sigurohu që të heqësh skriptin kur komponenti çngarkohet
+            if (document.body.contains(script)) {
+                document.body.removeChild(script);
+            }
+        };
+    }, []); 
+
+  // Funksioni i rregulluar: Përdorimi i Paddle.js për të hapur overlay-in
   const handleCheckout = (priceId) => {
-    
-    // URL-ja e saktë e Paddle Billing (V2) për çmime: përdor 'prices'
-    const checkoutUrl = `https://checkout.paddle.com/prices/${priceId}`;
-    
-    // Hap dritaren e re, e cila do të tregojë checkout-in e Paddle
-    window.open(checkoutUrl, '_blank');
+        if (!isPaddleLoaded) {
+            // Ky mesazh tani parandalohet nga butoni i çaktivizuar
+            console.warn('Paddle nuk është ngarkuar akoma. Provoni përsëri pas pak.'); 
+            return;
+        }
+
+        // Përdorni funksionin e ndërfaqes (Overlay) të Paddle.js.
+        // Shtohet 'method: popup' dhe 'customer.email' për të shmangur gabimet e CSP/400.
+        window.Paddle.Checkout.open({
+            items: [{ priceId: priceId }],
+            // Detyro Paddle të hapë dritaren si pop-up, duke shmangur disa çështje iFrame/CSP
+            method: 'popup', 
+            // Siguron një email bazë, shpesh i nevojshëm për të shmangur gabimet 400 (Bad Request)
+            customer: {
+                email: 'test@example.com' 
+            }
+        });
   };
 
   return (
@@ -68,15 +121,23 @@ export default function PricingPage() {
             ))}
           </ul>
 
+            {/* BUTONI I PËRDITËSUAR ME NDALUESIN E NGARKIMIT */}
           <button
             onClick={() => handleCheckout(MONTHLY_PRICE_ID)} 
-            className="w-full bg-slate-900 text-white py-2 rounded-lg font-semibold text-sm hover:bg-slate-800 transition"
+            disabled={!isPaddleLoaded}
+            className={`w-full py-2 rounded-lg font-semibold text-sm transition ${
+                isPaddleLoaded 
+                    ? 'bg-slate-900 text-white hover:bg-slate-800' 
+                    : 'bg-slate-300 text-slate-500 cursor-not-allowed flex items-center justify-center'
+            }`}
           >
-            Fillo Tani
+            {isPaddleLoaded ? 'Fillo Tani (Testo këtë!)' : (
+                <><svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Duke ngarkuar...</>
+            )}
           </button>
         </div>
 
-        {/* 3-Month Plan (Most Popular) */}
+        {/* 3-Month Plan (Most Popular) - BUTTON I ÇAKTIVIZUAR PËR TESTIM */}
         <div className="relative">
           <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
             <div className="bg-purple-600 text-white px-4 py-1.5 rounded-full font-semibold text-xs flex items-center gap-1.5">
@@ -114,15 +175,15 @@ export default function PricingPage() {
             </ul>
 
             <button
-              onClick={() => handleCheckout(THREE_MONTH_PRICE_ID)} 
-              className="w-full bg-purple-600 text-white py-2 rounded-lg font-semibold text-sm hover:bg-purple-700 transition"
+              disabled 
+              className="w-full bg-purple-300 text-white py-2 rounded-lg font-semibold text-sm cursor-not-allowed"
             >
-              Zgjidh Planin
+              Së Shpejti...
             </button>
           </div>
         </div>
 
-        {/* Annual Plan */}
+        {/* Annual Plan - BUTTON I ÇAKTIVIZUAR PËR TESTIM */}
         <div className="bg-white rounded-xl p-6 shadow-lg">
           <h3 className="text-lg font-bold text-slate-900 mb-3">Vjetor</h3>
           <div className="mb-2">
@@ -134,7 +195,7 @@ export default function PricingPage() {
           <div className="mb-6">
             <span className="text-3xl font-bold text-slate-900">€9.99</span>
             <span className="text-sm text-slate-600">/vit</span>
-          </div>
+            </div>
 
           <ul className="space-y-3 mb-6">
             {[
@@ -152,10 +213,10 @@ export default function PricingPage() {
           </ul>
 
           <button
-            onClick={() => handleCheckout(ANNUAL_PRICE_ID)} 
-            className="w-full bg-slate-900 text-white py-2 rounded-lg font-semibold text-sm hover:bg-slate-800 transition"
+            disabled 
+            className="w-full bg-slate-300 text-white py-2 rounded-lg font-semibold text-sm cursor-not-allowed"
           >
-            Fillo Tani
+            Së Shpejti...
           </button>
         </div>
       </div>
