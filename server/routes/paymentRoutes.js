@@ -1,15 +1,20 @@
 const express = require("express");
 const router = express.Router();
-const {
-  createPayment,
-  handleCallback,
-  successPage,
-  cancelPage,
-} = require("../controllers/paymentController");
+const paymentController = require("../controllers/paymentController");
 
-router.post("/create", createPayment);
-router.post("/callback", handleCallback);
-router.get("/success", successPage);
-router.get("/cancel", cancelPage);
+// Create checkout session
+router.post("/checkout/create", paymentController.createCheckoutSession);
+
+// Paddle webhook endpoint (must be raw body)
+router.post("/webhook", paymentController.handleWebhook);
+
+// Get user's active subscription
+router.get("/subscription/:userId", paymentController.getUserSubscription);
+
+// Get all user payments
+router.get("/payments/:userId", paymentController.getUserPayments);
+
+// Cancel subscription
+router.post("/subscription/cancel", paymentController.cancelSubscription);
 
 module.exports = router;
