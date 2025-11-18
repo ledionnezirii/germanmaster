@@ -6,10 +6,12 @@ export default function Payments() {
   const [hasSubscription, setHasSubscription] = useState(false)
   const [subscriptionData, setSubscriptionData] = useState(null)
   const [toast, setToast] = useState(null)
+  const [user, setUser] = useState(null)
 
   // Your Paddle product details from the screenshot
   const PADDLE_PRODUCT_ID = "pro_01kac2n1hcxsyhang2nv1g99xa"
   const PADDLE_PRICE_ID = "pri_01kac2nw5dah48555mz9cgm5ev"
+  const PADDLE_SELLER_ID = "257357"
 
   const showToast = (title, description, variant = "default") => {
     setToast({ title, description, variant })
@@ -17,6 +19,17 @@ export default function Payments() {
   }
 
   useEffect(() => {
+    const storedUser = localStorage.getItem("user")
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser)
+        setUser(parsedUser)
+        console.log("[v0] Loaded user from localStorage:", parsedUser)
+      } catch (error) {
+        console.error("[v0] Failed to parse user data:", error)
+      }
+    }
+
     // Load Paddle.js
     const script = document.createElement("script")
     script.src = "https://cdn.paddle.com/paddle/v2/paddle.js"
@@ -25,31 +38,54 @@ export default function Payments() {
 
     script.onload = () => {
       if (window.Paddle) {
-        // Initialize Paddle with your vendor ID (sandbox mode)
-        window.Paddle.Environment.set("sandbox")
-        window.Paddle.Initialize({
-          token: process.env.REACT_APP_PADDLE_CLIENT_TOKEN || "test_your_paddle_client_token",
+        window.Paddle.Environment.set("production")
+        const paddleToken = import.meta.env.VITE_PADDLE_CLIENT_TOKEN
+        
+        console.log("[v0] Initializing Paddle with seller ID:", PADDLE_SELLER_ID)
+        
+        // Initialize with seller ID (required for production)
+        window.Paddle.Setup({
+          seller: parseInt(PADDLE_SELLER_ID),
         })
+        
+        console.log("[v0] Paddle initialized successfully")
       }
     }
 
-    // Check if user already has subscription
-    checkSubscriptionStatus()
+    script.onerror = () => {
+      console.error("[v0] Failed to load Paddle script")
+      showToast("Error", "Failed to load payment system", "destructive")
+    }
 
     return () => {
-      document.body.removeChild(script)
+      if (document.body.contains(script)) {
+        document.body.removeChild(script)
+      }
     }
   }, [])
 
+  useEffect(() => {
+    if (user?.id) {
+      checkSubscriptionStatus()
+    }
+  }, [user])
+
   const checkSubscriptionStatus = async () => {
+    if (!user?.id) {
+      console.log("[v0] No user ID found")
+      return
+    }
+
     try {
-      const response = await api.get("/payments/subscription/status")
+      console.log("[v0] Checking subscription for user:", user.id)
+      const response = await api.get(`/payments/subscription/${user.id}`)
       if (response.data?.subscription) {
         setHasSubscription(true)
         setSubscriptionData(response.data.subscription)
+        console.log("[v0] Active subscription found:", response.data.subscription)
       }
     } catch (error) {
-      console.log("No active subscription found")
+      console.log("[v0] No active subscription found:", error.response?.data?.message)
     }
   }
 
@@ -59,15 +95,23 @@ export default function Payments() {
       return
     }
 
+    if (!user?.id) {
+      showToast("Error", "Please log in to subscribe", "destructive")
+      return
+    }
+
     setLoading(true)
 
     try {
-      // Get checkout URL from your backend
-      const response = await api.post("/payments/create-checkout", {
+      console.log("[v0] Creating checkout for user:", user.id)
+      console.log("[v0] Price ID:", PADDLE_PRICE_ID)
+
+      const response = await api.post("/payments/checkout/create", {
+        userId: user.id,
         priceId: PADDLE_PRICE_ID,
       })
 
-      const { checkoutUrl } = response.data
+      console.log("[v0] Checkout response:", response.data)
 
       // Open Paddle checkout
       window.Paddle.Checkout.open({
@@ -77,16 +121,25 @@ export default function Payments() {
             quantity: 1,
           },
         ],
+        customer: user.email ? { email: user.email } : undefined,
         customData: {
-          userId: localStorage.getItem("userId") || "",
+          userId: user.id,
         },
-        successUrl: window.location.origin + "/payment-success",
-        closeUrl: window.location.origin + "/payments",
+        successCallback: (data) => {
+          console.log("[v0] Checkout success:", data)
+          showToast("Success", "Subscription activated!")
+          checkSubscriptionStatus()
+        },
+        closeCallback: (data) => {
+          console.log("[v0] Checkout closed:", data)
+          setLoading(false)
+        },
       })
+
+      showToast("Success", "Opening checkout...")
     } catch (error) {
-      console.error("Checkout error:", error)
+      console.error("[v0] Checkout error:", error)
       showToast("Error", error.response?.data?.message || "Failed to start checkout", "destructive")
-    } finally {
       setLoading(false)
     }
   }
@@ -96,6 +149,8 @@ export default function Payments() {
 
     try {
       setLoading(true)
+      console.log("[v0] Cancelling subscription:", subscriptionData.paddleSubscriptionId)
+      
       await api.post("/payments/subscription/cancel", {
         subscriptionId: subscriptionData.paddleSubscriptionId,
       })
@@ -105,6 +160,7 @@ export default function Payments() {
       setHasSubscription(false)
       setSubscriptionData(null)
     } catch (error) {
+      console.error("[v0] Cancel error:", error)
       showToast("Error", error.response?.data?.message || "Failed to cancel subscription", "destructive")
     } finally {
       setLoading(false)
@@ -113,6 +169,7 @@ export default function Payments() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 p-6">
+      {/* Toast notification */}
       {toast && (
         <div className="fixed right-4 top-4 z-50 animate-in slide-in-from-top-2">
           <div className={`rounded-lg border p-4 shadow-lg ${
@@ -288,10 +345,10 @@ export default function Payments() {
             ) : (
               <button
                 onClick={handleSubscribe}
-                disabled={loading}
+                disabled={loading || !user}
                 className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? "Loading..." : "Subscribe Now"}
+                {loading ? "Loading..." : !user ? "Please Log In" : "Subscribe Now"}
               </button>
             )}
           </div>
