@@ -588,14 +588,14 @@ const Quizes = () => {
                 return (
                   <div
                     key={quiz._id}
-                    className={`group bg-white rounded-xl border-2 shadow-md transition-all duration-300 overflow-hidden ${
+                    className={`group bg-white border-1 rounded-xl transition-all duration-300 overflow-hidden ${
                       isUnlocked
                         ? "border-[#99F6E4] hover:shadow-xl cursor-pointer hover:scale-105"
                         : "border-gray-300 opacity-60 cursor-not-allowed"
                     }`}
                     onClick={() => isUnlocked && startQuiz(quiz)}
                   >
-                    <div className={`h-1.5 bg-gradient-to-r ${getLevelColor(quiz.level)}`}></div>
+                    <div className={`h-1.5`}></div>
                     <div className="p-3">
                       <div className="flex items-start justify-between mb-2">
                         <h3
@@ -616,7 +616,7 @@ const Quizes = () => {
                             </div>
                           ) : (
                             <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
-                              <BookOpen className="w-3 h-3 text-gray-400" />
+                              <Lightbulb className="w-3 h-3 text-gray-400" />
                             </div>
                           )}
                         </div>
