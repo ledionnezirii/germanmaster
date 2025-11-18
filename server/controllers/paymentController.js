@@ -467,9 +467,10 @@ exports.cancelSubscription = async (req, res) => {
 
     if (payment.paddleSubscriptionId) {
       try {
-        await paddle.Subscription.Cancel({
-          subscriptionID: payment.paddleSubscriptionId,
-        });
+        await paddleClient.subscriptions.cancel(
+          payment.paddleSubscriptionId,
+          { effectiveFrom: "next_billing_period" }
+        );
         console.log(`Paddle subscription cancelled: ${payment.paddleSubscriptionId}`);
       } catch (paddleError) {
         console.error("Paddle API error:", paddleError);
@@ -481,9 +482,20 @@ exports.cancelSubscription = async (req, res) => {
       }
     }
 
+    payment.status = "cancelled";
+    payment.cancelledAt = new Date();
+    await payment.save();
+
+    const user = await User.findById(userId);
+    if (user) {
+      user.isPaid = false;
+      user.subscriptionType = null;
+      await user.save();
+    }
+
     res.status(200).json({
       success: true,
-      message: "Subscription cancellation initiated",
+      message: "Subscription cancelled successfully",
       data: {
         paddleSubscriptionId: payment.paddleSubscriptionId,
       },
