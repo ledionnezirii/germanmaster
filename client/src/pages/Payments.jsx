@@ -7,8 +7,9 @@ export default function Payments() {
   const [subscriptionData, setSubscriptionData] = useState(null)
   const [toast, setToast] = useState(null)
   const [user, setUser] = useState(null)
+  const [paddleReady, setPaddleReady] = useState(false)
 
-  // Your Paddle product details from the screenshot
+  // Your Paddle product details
   const PADDLE_PRODUCT_ID = "pro_01kac2n1hcxsyhang2nv1g99xa"
   const PADDLE_PRICE_ID = "pri_01kac2nw5dah48555mz9cgm5ev"
   const PADDLE_SELLER_ID = "257357"
@@ -38,17 +39,27 @@ export default function Payments() {
 
     script.onload = () => {
       if (window.Paddle) {
-        window.Paddle.Environment.set("production")
-        const paddleToken = import.meta.env.VITE_PADDLE_CLIENT_TOKEN
-        
-        console.log("[v0] Initializing Paddle with seller ID:", PADDLE_SELLER_ID)
-        
-        // Initialize with seller ID (required for production)
-        window.Paddle.Setup({
-          seller: parseInt(PADDLE_SELLER_ID),
-        })
-        
-        console.log("[v0] Paddle initialized successfully")
+        try {
+          const clientToken = import.meta.env.VITE_PADDLE_CLIENT_TOKEN
+          
+          if (!clientToken) {
+            console.warn("[v0] VITE_PADDLE_CLIENT_TOKEN not set. Using seller ID for initialization.")
+          }
+
+          // Initialize Paddle with clientToken OR seller ID
+          window.Paddle.Initialize({
+            token: clientToken || PADDLE_SELLER_ID,
+            pwCustomer: {
+              email: user?.email,
+            },
+          })
+
+          console.log("[v0] Paddle initialized successfully")
+          setPaddleReady(true)
+        } catch (error) {
+          console.error("[v0] Failed to initialize Paddle:", error)
+          showToast("Error", "Failed to initialize payment system", "destructive")
+        }
       }
     }
 
@@ -79,18 +90,18 @@ export default function Payments() {
     try {
       console.log("[v0] Checking subscription for user:", user.id)
       const response = await api.get(`/payments/subscription/${user.id}`)
-      if (response.data?.subscription) {
+      if (response.data?.data) {
         setHasSubscription(true)
-        setSubscriptionData(response.data.subscription)
-        console.log("[v0] Active subscription found:", response.data.subscription)
+        setSubscriptionData(response.data.data)
+        console.log("[v0] Active subscription found:", response.data.data)
       }
     } catch (error) {
-      console.log("[v0] No active subscription found:", error.response?.data?.message)
+      console.log("[v0] No active subscription found:", error.response?.data?.message || error.message)
     }
   }
 
   const handleSubscribe = async () => {
-    if (!window.Paddle) {
+    if (!paddleReady || !window.Paddle) {
       showToast("Error", "Payment system is loading. Please try again.", "destructive")
       return
     }
@@ -113,46 +124,47 @@ export default function Payments() {
 
       console.log("[v0] Checkout response:", response.data)
 
-      // Open Paddle checkout
-      window.Paddle.Checkout.open({
-        items: [
-          {
-            priceId: PADDLE_PRICE_ID,
-            quantity: 1,
+      if (window.Paddle.Checkout) {
+        window.Paddle.Checkout.open({
+          items: [
+            {
+              priceId: PADDLE_PRICE_ID,
+              quantity: 1,
+            },
+          ],
+          customer: user?.email ? { email: user.email } : undefined,
+          customData: {
+            userId: user.id,
           },
-        ],
-        customer: user.email ? { email: user.email } : undefined,
-        customData: {
-          userId: user.id,
-        },
-        successCallback: (data) => {
-          console.log("[v0] Checkout success:", data)
-          showToast("Success", "Subscription activated!")
-          checkSubscriptionStatus()
-        },
-        closeCallback: (data) => {
-          console.log("[v0] Checkout closed:", data)
-          setLoading(false)
-        },
-      })
+          settings: {
+            successUrl: `${window.location.origin}/payments?success=true`,
+            theme: "light",
+          },
+        })
+      } else {
+        throw new Error("Paddle Checkout not available")
+      }
 
       showToast("Success", "Opening checkout...")
     } catch (error) {
       console.error("[v0] Checkout error:", error)
-      showToast("Error", error.response?.data?.message || "Failed to start checkout", "destructive")
+      showToast("Error", error.response?.data?.message || error.message || "Failed to start checkout", "destructive")
       setLoading(false)
     }
   }
 
   const handleCancelSubscription = async () => {
-    if (!subscriptionData?.paddleSubscriptionId) return
+    if (!subscriptionData?.paddleSubscriptionId) {
+      showToast("Error", "Subscription ID not found", "destructive")
+      return
+    }
 
     try {
       setLoading(true)
       console.log("[v0] Cancelling subscription:", subscriptionData.paddleSubscriptionId)
       
       await api.post("/payments/subscription/cancel", {
-        subscriptionId: subscriptionData.paddleSubscriptionId,
+        userId: user.id,
       })
       
       showToast("Success", "Subscription cancelled successfully")
@@ -345,10 +357,10 @@ export default function Payments() {
             ) : (
               <button
                 onClick={handleSubscribe}
-                disabled={loading || !user}
+                disabled={loading || !user || !paddleReady}
                 className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? "Loading..." : !user ? "Please Log In" : "Subscribe Now"}
+                {!paddleReady ? "Loading payment system..." : loading ? "Loading..." : !user ? "Please Log In" : "Subscribe Now"}
               </button>
             )}
           </div>
