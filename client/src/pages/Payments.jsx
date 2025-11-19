@@ -4,13 +4,16 @@ import { initializePaddle } from '@paddle/paddle-js';
 // Të dhënat tuaja të konfirmuara LIVE
 const VENDOR_ID = 257357; 
 
-// Përdorim ID-në e re të produktit të Abonimit për shkak se ishte e sapokrijuar
+// TOKEN-i juaj i ri i Front-end-it
+const CLIENT_SIDE_TOKEN = 'live_0ef1c5946ac5d34cf6db8d711cd'; 
+
+// Përdorim ID-në e re të abonimit (më pak gjasa të ketë problem konfigurimi)
 const LIVE_PRICE_ID = 'pri_01kaeqv42kdc02p39rzrb8gme3'; 
 
 // Adresa juaj e vendosur në Netlify
 const SUCCESS_DOMAIN = 'https://17061968.netlify.app'; 
 
-// Zëvendësojeni me emailin e përdoruesit aktual të kyçur
+// Email i detyrueshëm për LIVE
 const CUSTOMER_EMAIL_TEST = 'ledion.678@gmail.com'; 
 
 const Payments = () => {
@@ -23,18 +26,23 @@ const Payments = () => {
     
     const initialize = async () => {
       try {
+        console.log("Inicializimi i Paddle LIVE me Client-Side Token...");
+        
+        // NDERRIMI KRYESOR: Përdorim tokenin në vend të VENDOR_ID
         const paddle = await initializePaddle({
           environment: 'production', 
-          vendor: VENDOR_ID,
+          token: CLIENT_SIDE_TOKEN, 
+          // Në Paddle Billing, 'vendor' shpesh nuk nevojitet kur përdoret 'token'
         });
 
         if (isMounted) {
           setPaddleInstance(paddle);
           setIsLoading(false);
+          console.log("Paddle u inicializua me sukses. Gati për Checkout.");
         }
 
       } catch (error) {
-        console.error("Gabim gjatë inicializimit të Paddle. Kontrolloni konsolën.", error);
+        console.error("Gabim gjatë inicializimit të Paddle:", error);
         if (isMounted) {
             setIsLoading(false);
         }
@@ -60,12 +68,11 @@ const Payments = () => {
           }
         ],
 
-        // SHTESA KRYESORE: Këto janë fushat minimale që shpesh kërkohen nga Paddle Billing
         customer: {
             email: CUSTOMER_EMAIL_TEST,
-            // Shtojmë vendin për të ndihmuar Paddle në llogaritjen e taksave
+            // Shtojmë vendin për të shmangur gabimet e faturimit
             address: {
-                country: 'XK', // Përdor 'XK' (Kosova) ose 'AL' (Shqipëria)
+                country: 'XK', 
             }
         },
 
@@ -74,7 +81,7 @@ const Payments = () => {
             currency: 'EUR',
             successUrl: SUCCESS_DOMAIN + '/pagesa-sukses', 
         },
-        
+
         eventCallback: (data) => {
             if (data.event === 'Checkout.Complete') {
                 console.log("Pagesa LIVE u krye me sukses! Të dhënat:", data);
