@@ -1,41 +1,80 @@
 import React, { useEffect, useState } from 'react';
-import { initializePaddle } from '@paddle/paddle-js';
 
-// ✅ Të dhënat tuaja të konfirmuara LIVE
-// Për Paddle Billing (v2), preferohet përdorimi VETËM i tokenit për Front-end
-const CLIENT_SIDE_TOKEN = 'live_0ef1c5946ac5d34cf6db8d711cd'; 
-const LIVE_PRICE_ID = 'pri_01kaeqv42kdc02p39rzrb8gme3'; // ID e Abonimit (€1.00/muaj)
+// Fiksimi i Gabimit: Për shkak të pamundësisë së kompilatorit për të zgjidhur @paddle/paddle-js, 
+// po përdorim funksionin për të ngarkuar skriptin Paddle.js direkt nga CDN.
+
+// Funksioni për të ngarkuar skriptin e Paddle
+const loadPaddleScript = (token, environment) => {
+    return new Promise((resolve, reject) => {
+        if (window.Paddle) {
+            // Nëse tashmë është ngarkuar, thjesht inicializoje dhe zgjidhe
+            window.Paddle.Setup({
+                token: token,
+                environment: environment,
+            });
+            return resolve(window.Paddle);
+        }
+
+        const script = document.createElement('script');
+        script.src = 'https://cdn.paddle.com/paddle/v2/paddle.js';
+        script.onload = () => {
+            if (window.Paddle) {
+                // Konfigurimi i instancës pasi skripti të jetë ngarkuar
+                window.Paddle.Setup({
+                    token: token,
+                    environment: environment,
+                });
+                resolve(window.Paddle);
+            } else {
+                reject(new Error("Skripti i Paddle u ngarkua, por objekti Paddle nuk u gjet."));
+            }
+        };
+        script.onerror = (error) => reject(error);
+        document.head.appendChild(script);
+    });
+};
+
+// ✅ Të dhënat tuaja të konfirmuara LIVE të marra nga environment-i i Netlify
+const LIVE_PRICE_ID = 'pri_01kaeqv42kdc02p39rzrb8gme3'; 
 const SUCCESS_DOMAIN = 'https://17061968.netlify.app'; 
-const CUSTOMER_EMAIL = 'ledion.678@gmail.com'; //
-const CUSTOMER_COUNTRY = 'XK'; // I detyrueshëm për transaksionet LIVE
-
+const CUSTOMER_EMAIL = 'ledion.678@gmail.com'; 
+const CUSTOMER_COUNTRY = 'XK'; // Kodi i vendit (Kosova)
 
 function Payments() {
     
-    // Përdorim useState për të ruajtur instancën e Paddle dhe statusin e ngarkimit
+    // Përdorim useState për të ruajtur instancën e Paddle (i cili tani është window.Paddle)
     const [paddleInstance, setPaddleInstance] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         let isMounted = true;
         
         const initialize = async () => {
+            // Lexoni variablat e mjedisit të vendosura në Netlify
+            const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN || 'live_0ef1c5946ac5d34cf6db8d711cd';
+            const environment = (process.env.NEXT_PUBLIC_PADDLE_ENV === 'production' ? 'production' : 'sandbox');
+
+            if (!token) {
+                setError("NEXT_PUBLIC_PADDLE_CLIENT_TOKEN nuk është vendosur!");
+                setIsLoading(false);
+                return;
+            }
+
             try {
-                // 🛑 1. Përdorim 'await' për të pritur inicializimin
-                // 🛑 2. Përdorim vetëm 'token' dhe 'environment: production'
-                const paddle = await initializePaddle({
-                    environment: 'production', 
-                    token: CLIENT_SIDE_TOKEN,
-                });
+                // Inicializimi duke ngarkuar skriptin nga CDN
+                const paddle = await loadPaddleScript(token, environment);
 
                 if (isMounted) {
                     setPaddleInstance(paddle);
                     setIsLoading(false);
                 }
 
-            } catch (error) {
-                console.error("Gabim gjatë inicializimit të Paddle:", error);
+            } catch (err) {
+                const errorMessage = "Gabim gjatë inicializimit të Paddle. Kontrolloni tokenin dhe domenët e miratuar.";
+                console.error(errorMessage, err);
                 if (isMounted) {
+                    setError(errorMessage);
                     setIsLoading(false);
                 }
             }
@@ -50,9 +89,9 @@ function Payments() {
 
     const handleCheckout = () => {
         // Kontrolloni nëse instanca Paddle është ngarkuar
-        if (!paddleInstance) {
-            alert("Shërbimi i pagesave ende nuk është gati. Ju lutem provoni përsëri.");
-            return;
+        if (!paddleInstance || error) {
+             console.error("Shërbimi i pagesave nuk është gati. Gabimi:", error);
+             return;
         }
 
         // ✅ Thirrja e Checkout me të gjithë parametrat e detyrueshëm
@@ -90,25 +129,29 @@ function Payments() {
 
     return (
         <div style={{ textAlign: 'center', marginTop: '50px' }}>
-            <h2>Abonohu në Premium (€1.00/muaj)</h2>
+            <h2 style={{ fontFamily: 'Inter, sans-serif' }}>Abonohu në Premium (€1.00/muaj)</h2>
             
             <button
                 onClick={handleCheckout}
-                disabled={isLoading} // Butoni është i fikur gjatë ngarkimit
+                disabled={isLoading || error} // Butoni është i fikur gjatë ngarkimit ose gabimit
                 style={{
-                    padding: '10px 20px',
-                    fontSize: '16px',
+                    padding: '12px 24px',
+                    fontSize: '18px',
+                    fontWeight: '600',
                     backgroundColor: '#0070f3',
                     color: '#fff',
                     border: 'none',
-                    borderRadius: '5px',
-                    cursor: isLoading ? 'not-allowed' : 'pointer',
-                    opacity: isLoading ? 0.7 : 1,
+                    borderRadius: '8px',
+                    cursor: (isLoading || error) ? 'not-allowed' : 'pointer',
+                    opacity: (isLoading || error) ? 0.6 : 1,
+                    boxShadow: '0 4px 15px rgba(0, 112, 243, 0.4)',
+                    transition: 'all 0.3s ease-in-out'
                 }}
             >
-                {isLoading ? 'Duke u ngarkuar...' : 'Bli Tani'}
+                {isLoading ? 'Duke u ngarkuar...' : (error ? 'Gabim: Shih Konsolën' : 'Bli Tani')}
             </button>
-            {isLoading && <p>Duke inicializuar shërbimin e pagesave...</p>}
+            {isLoading && <p style={{ color: '#555', marginTop: '10px' }}>Duke inicializuar shërbimin e pagesave...</p>}
+            {error && <p style={{ color: 'red', marginTop: '10px', fontWeight: 'bold' }}>{error}</p>}
         </div>
     );
 }
