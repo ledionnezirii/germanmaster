@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-// Importi i saktë
 import { initializePaddle } from '@paddle/paddle-js'; 
 
 // Të dhënat tuaja të konfirmuara LIVE
 const VENDOR_ID = 257357; 
-const PRICE_ID = 'pri_01kac2nw5dah48555mzd9cgm5ev'; // €1.00/muaj
 
-// Zëvendësoje këtë me emailin e përdoruesit të kyçur në sistemin tënd
+// ID-ja e re e produktit që sapo krijuat
+const LIVE_PRICE_ID = 'pri_01kaeqv42kdc02p39rzrb8gme3'; 
+
+// Email-i i klientit duhet të jetë dinamik
 const CUSTOMER_EMAIL_PLACEHOLDER = 'ledion.678@gmail.com'; 
 
 const Payments = () => {
@@ -19,14 +20,16 @@ const Payments = () => {
     
     const initialize = async () => {
       try {
+        console.log("Inicializimi i Paddle LIVE me VENDOR ID:", VENDOR_ID);
         const paddle = await initializePaddle({
-          environment: 'production', // DUHET TË JETË 'production' PËR LIVE ID-TË
+          environment: 'production', 
           vendor: VENDOR_ID,
         });
 
         if (isMounted) {
           setPaddleInstance(paddle);
           setIsLoading(false);
+          console.log("Paddle u inicializua me sukses.");
         }
 
       } catch (error) {
@@ -46,34 +49,38 @@ const Payments = () => {
 
   const handleCheckout = () => {
     if (paddleInstance) {
+      console.log(`Po tentohet hapja e checkout-it për Price ID: ${LIVE_PRICE_ID}`);
+      
       paddleInstance.Checkout.open({
         
-        // ZGJIDHJA E GABIMIT 400: Përdorimi i strukturës 'items'
+        // Përdorimi i Price ID-së së re LIVE në strukturën 'items'
         items: [
           {
-            priceId: PRICE_ID, // ID-ja e çmimit tuaj
+            priceId: LIVE_PRICE_ID, 
             quantity: 1, 
           }
         ],
 
-        // Parametrat e domosdoshëm për LIVE
         customer: {
             email: CUSTOMER_EMAIL_PLACEHOLDER 
         },
 
         settings: {
             locale: 'sq', 
-            currency: 'EUR'
+            currency: 'EUR',
+            successUrl: window.location.origin + '/pagesa-sukses', 
         },
 
         eventCallback: (data) => {
             if (data.event === 'Checkout.Complete') {
-                console.log("Pagesa LIVE u krye me sukses! Të dhënat:", data);
+                console.log("Pagesa u krye me sukses! Transaksioni:", data);
+            } else if (data.event === 'Checkout.Error') {
+                console.error("Gabim gjatë procesimit të pagesës:", data);
             }
         }
       });
     } else {
-      alert("Shërbimi i pagesave ende nuk është gati. Ju lutemi provoni përsëri.");
+      alert("Shërbimi i pagesave ende nuk është gati.");
     }
   };
 
