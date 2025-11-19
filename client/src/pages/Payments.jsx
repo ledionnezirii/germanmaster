@@ -4,11 +4,13 @@ import { initializePaddle } from '@paddle/paddle-js';
 // Të dhënat tuaja të konfirmuara LIVE
 const VENDOR_ID = 257357; 
 
-// ID-ja e re e produktit që sapo krijuat
-const LIVE_PRICE_ID = 'pri_01kaeqv42kdc02p39rzrb8gme3'; 
+// Përdorim ID-në origjinale të produktit 'premium' (EUR 1.00/muaj)
+const LIVE_PRICE_ID = 'pri_01kaeqvvk2kdc02p39zrb8gne3'; 
+// NËSE DONI TË PËRDORNI TË REJËN: const LIVE_PRICE_ID = 'pri_01kaeqv42kdc02p39rzrb8gme3';
 
-// Email-i i klientit duhet të jetë dinamik
-const CUSTOMER_EMAIL_PLACEHOLDER = 'ledion.678@gmail.com'; 
+// Zëvendësojeni me emailin e përdoruesit të kyçur në aplikacionin tuaj
+const CUSTOMER_EMAIL_TEST = 'ledion.678@gmail.com'; 
+const SUCCESS_DOMAIN = 'https://17061968.netlify.app'; // Domeni juaj i miratuar
 
 const Payments = () => {
     
@@ -20,20 +22,19 @@ const Payments = () => {
     
     const initialize = async () => {
       try {
-        console.log("Inicializimi i Paddle LIVE me VENDOR ID:", VENDOR_ID);
+        console.log("Inicializimi i Paddle LIVE...");
         const paddle = await initializePaddle({
-          environment: 'production', 
+          environment: 'production', // Mjedisi LIVE
           vendor: VENDOR_ID,
         });
 
         if (isMounted) {
           setPaddleInstance(paddle);
           setIsLoading(false);
-          console.log("Paddle u inicializua me sukses.");
         }
 
       } catch (error) {
-        console.error("Gabim fatal gjatë inicializimit të Paddle:", error);
+        console.error("Gabim gjatë inicializimit të Paddle. Kontrolloni konsolën.", error);
         if (isMounted) {
             setIsLoading(false);
         }
@@ -49,11 +50,10 @@ const Payments = () => {
 
   const handleCheckout = () => {
     if (paddleInstance) {
-      console.log(`Po tentohet hapja e checkout-it për Price ID: ${LIVE_PRICE_ID}`);
       
       paddleInstance.Checkout.open({
         
-        // Përdorimi i Price ID-së së re LIVE në strukturën 'items'
+        // Përdorimi i strukturës 'items'
         items: [
           {
             priceId: LIVE_PRICE_ID, 
@@ -62,20 +62,19 @@ const Payments = () => {
         ],
 
         customer: {
-            email: CUSTOMER_EMAIL_PLACEHOLDER 
+            email: CUSTOMER_EMAIL_TEST 
         },
 
+        // Shtojmë URL-në e suksesit duke përdorur domenin e miratuar
         settings: {
             locale: 'sq', 
             currency: 'EUR',
-            successUrl: window.location.origin + '/pagesa-sukses', 
+            successUrl: SUCCESS_DOMAIN + '/pagesa-sukses', 
         },
 
         eventCallback: (data) => {
             if (data.event === 'Checkout.Complete') {
-                console.log("Pagesa u krye me sukses! Transaksioni:", data);
-            } else if (data.event === 'Checkout.Error') {
-                console.error("Gabim gjatë procesimit të pagesës:", data);
+                console.log("Pagesa LIVE u krye me sukses! Të dhënat:", data);
             }
         }
       });
