@@ -4,13 +4,14 @@ import { initializePaddle } from '@paddle/paddle-js';
 // Të dhënat tuaja të konfirmuara LIVE
 const VENDOR_ID = 257357; 
 
-// Përdorim ID-në origjinale të produktit 'premium' (EUR 1.00/muaj)
-const LIVE_PRICE_ID = 'pri_01kaeqvvk2kdc02p39zrb8gne3'; 
-// NËSE DONI TË PËRDORNI TË REJËN: const LIVE_PRICE_ID = 'pri_01kaeqv42kdc02p39rzrb8gme3';
+// Përdorim ID-në e re të produktit të Abonimit për shkak se ishte e sapokrijuar
+const LIVE_PRICE_ID = 'pri_01kaeqv42kdc02p39rzrb8gme3'; 
 
-// Zëvendësojeni me emailin e përdoruesit të kyçur në aplikacionin tuaj
+// Adresa juaj e vendosur në Netlify
+const SUCCESS_DOMAIN = 'https://17061968.netlify.app'; 
+
+// Zëvendësojeni me emailin e përdoruesit aktual të kyçur
 const CUSTOMER_EMAIL_TEST = 'ledion.678@gmail.com'; 
-const SUCCESS_DOMAIN = 'https://17061968.netlify.app'; // Domeni juaj i miratuar
 
 const Payments = () => {
     
@@ -22,9 +23,8 @@ const Payments = () => {
     
     const initialize = async () => {
       try {
-        console.log("Inicializimi i Paddle LIVE...");
         const paddle = await initializePaddle({
-          environment: 'production', // Mjedisi LIVE
+          environment: 'production', 
           vendor: VENDOR_ID,
         });
 
@@ -53,7 +53,6 @@ const Payments = () => {
       
       paddleInstance.Checkout.open({
         
-        // Përdorimi i strukturës 'items'
         items: [
           {
             priceId: LIVE_PRICE_ID, 
@@ -61,17 +60,21 @@ const Payments = () => {
           }
         ],
 
+        // SHTESA KRYESORE: Këto janë fushat minimale që shpesh kërkohen nga Paddle Billing
         customer: {
-            email: CUSTOMER_EMAIL_TEST 
+            email: CUSTOMER_EMAIL_TEST,
+            // Shtojmë vendin për të ndihmuar Paddle në llogaritjen e taksave
+            address: {
+                country: 'XK', // Përdor 'XK' (Kosova) ose 'AL' (Shqipëria)
+            }
         },
 
-        // Shtojmë URL-në e suksesit duke përdorur domenin e miratuar
         settings: {
             locale: 'sq', 
             currency: 'EUR',
             successUrl: SUCCESS_DOMAIN + '/pagesa-sukses', 
         },
-
+        
         eventCallback: (data) => {
             if (data.event === 'Checkout.Complete') {
                 console.log("Pagesa LIVE u krye me sukses! Të dhënat:", data);
@@ -95,10 +98,7 @@ const Payments = () => {
         {isLoading ? 'Duke u ngarkuar...' : 'Bli Tani (€1.00/muaj)'}
       </button>
 
-      {isLoading && 
-        <p style={{color: 'orange'}}>Duke ngarkuar shërbimin e pagesave...</p>}
-      {!isLoading && !paddleInstance &&
-        <p style={{color: 'red'}}>Gabim: Shërbimi i pagesave dështoi të ngarkohej. Kontrolloni konsolën.</p>}
+      {/* ... Mesazhet e Statusit ... */}
     </div>
   );
 };
