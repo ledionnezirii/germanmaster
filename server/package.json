@@ -13,6 +13,7 @@
   "description": "",
   "dependencies": {
     "@google-cloud/text-to-speech": "^6.4.0",
+    "@paddle/paddle-node-sdk": "^3.4.0",
     "@sendgrid/mail": "^8.1.6",
     "@sendinblue/client": "^3.3.1",
     "bcryptjs": "^3.0.2",
@@ -23,7 +24,7 @@
     "express": "^5.1.0",
     "express-rate-limit": "^7.5.1",
     "express-validator": "^7.2.1",
-    "google-tts-api": "^2.0.2",
+    "google-tts-api": "^0.0.6",
     "helmet": "^8.1.0",
     "joi": "^18.0.1",
     "jsonwebtoken": "^9.0.2",

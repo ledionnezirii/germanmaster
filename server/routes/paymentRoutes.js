@@ -2,8 +2,6 @@ const express = require("express");
 const router = express.Router();
 const paymentController = require("../controllers/paymentController");
 
-// This is handled in the main server file, not here
-
 // Create checkout session
 router.post("/checkout/create", paymentController.createCheckoutSession);
 
