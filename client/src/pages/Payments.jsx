@@ -4,17 +4,20 @@ import { initializePaddle } from '@paddle/paddle-js';
 // Të dhënat tuaja të konfirmuara LIVE
 const VENDOR_ID = 257357; 
 
-// TOKEN-i juaj i ri i Front-end-it
+// TOKEN-i juaj i Front-end-it, i përdorur për inicializimin e sigurt
 const CLIENT_SIDE_TOKEN = 'live_0ef1c5946ac5d34cf6db8d711cd'; 
 
-// Përdorim ID-në e re të abonimit (më pak gjasa të ketë problem konfigurimi)
+// ID-ja e produktit të Abonimit për 1.00 EUR
 const LIVE_PRICE_ID = 'pri_01kaeqv42kdc02p39rzrb8gme3'; 
 
 // Adresa juaj e vendosur në Netlify
 const SUCCESS_DOMAIN = 'https://17061968.netlify.app'; 
 
-// Email i detyrueshëm për LIVE
+// Email-i i detyrueshëm për LIVE, siç u kërkua
 const CUSTOMER_EMAIL_TEST = 'ledion.678@gmail.com'; 
+
+// Vendi i detyrueshëm për faturim
+const CUSTOMER_COUNTRY = 'XK'; // Përdorim kodin e vendit (Kosova)
 
 const Payments = () => {
     
@@ -28,17 +31,16 @@ const Payments = () => {
       try {
         console.log("Inicializimi i Paddle LIVE me Client-Side Token...");
         
-        // NDERRIMI KRYESOR: Përdorim tokenin në vend të VENDOR_ID
+        // Inicializimi me tokenin e sigurt të klientit
         const paddle = await initializePaddle({
           environment: 'production', 
           token: CLIENT_SIDE_TOKEN, 
-          // Në Paddle Billing, 'vendor' shpesh nuk nevojitet kur përdoret 'token'
         });
 
         if (isMounted) {
           setPaddleInstance(paddle);
           setIsLoading(false);
-          console.log("Paddle u inicializua me sukses. Gati për Checkout.");
+          console.log("Paddle u inicializua me sukses.");
         }
 
       } catch (error) {
@@ -68,11 +70,11 @@ const Payments = () => {
           }
         ],
 
+        // Detyrimi i të dhënave të klientit
         customer: {
             email: CUSTOMER_EMAIL_TEST,
-            // Shtojmë vendin për të shmangur gabimet e faturimit
             address: {
-                country: 'XK', 
+                country: CUSTOMER_COUNTRY, // Detyrimi i vendit
             }
         },
 
