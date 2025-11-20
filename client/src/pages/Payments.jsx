@@ -1,123 +1,105 @@
 import React, { useEffect, useState } from 'react';
 
-// Your Paddle Classic Vendor ID (numeric)
-const VENDOR_ID = 257357;
+// Detajet e Konfigurimit të Abonimit
+const PADDLE_CLIENT_TOKEN = 'live_0ef1c5946ac5d34cf6db8d711cd'; 
+const SUBSCRIPTION_PRICE_ID = 'pri_01kaeqvvk2kdc02p39zrb8gne3'; 
+const SUCCESS_URL = 'https://17061968.netlify.app/billing'; 
 
-// Subscription product details for Paddle Classic
-const PRODUCT_ID = 123456; // Replace with your actual Paddle classic product numeric ID
+// Variabël globale për të shmangur ngarkimin e dyfishtë (i dobishëm për Strict Mode)
+let paddleScriptLoaded = false;
 
-// Your app URLs and customer info
-const SUCCESS_DOMAIN = 'https://17061968.netlify.app';
-const CUSTOMER_EMAIL = 'ledion.678@gmail.com';
-const CUSTOMER_COUNTRY = 'XK';
+const Payment = () => {
+  const [isPaddleReady, setIsPaddleReady] = useState(false);
 
-const loadPaddleScript = () =>
-  new Promise((resolve, reject) => {
-    if (window.Paddle) {
-      window.Paddle.Setup({
-        vendor: VENDOR_ID,
-      });
-      resolve(window.Paddle);
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://cdn.paddle.com/paddle/paddle.js';
-    script.onload = () => {
-      if (window.Paddle) {
-        window.Paddle.Setup({
-          vendor: VENDOR_ID,
-        });
-        resolve(window.Paddle);
-      } else {
-        reject(new Error('Paddle script loaded but Paddle object not found.'));
-      }
-    };
-    script.onerror = (e) => reject(e);
-    document.head.appendChild(script);
-  });
-
-function Payments() {
-  const [paddleInstance, setPaddleInstance] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function initialize() {
-      try {
-        const paddle = await loadPaddleScript();
-        if (isMounted) {
-          setPaddleInstance(paddle);
-          setIsLoading(false);
-        }
-      } catch (err) {
-        const errorMessage =
-          'Gabim gjatë inicializimit të Paddle. Kontrolloni Vendor ID dhe domenët e miratuar.';
-        console.error(errorMessage, err);
-        if (isMounted) {
-          setError(errorMessage);
-          setIsLoading(false);
-        }
-      }
-    }
-
-    initialize();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
+  // Funksioni për të hapur Paddle Checkout
   const handleCheckout = () => {
-    if (!paddleInstance || error) {
-      console.error('Shërbimi i pagesave nuk është gati. Gabimi:', error);
-      return;
+    if (window.Paddle && window.Paddle.Checkout) {
+      window.Paddle.Checkout.open({
+        items: [{ priceId: SUBSCRIPTION_PRICE_ID, quantity: 1 }],
+        settings: { successUrl: SUCCESS_URL },
+      });
+    } else {
+      alert('Shërbimi i Pagesës nuk është gati. Ju lutem provoni përsëri.');
     }
-
-    paddleInstance.Checkout.open({
-      product: PRODUCT_ID,
-      quantity: 1,
-      email: CUSTOMER_EMAIL,
-      successCallback: () => {
-        window.location.href = `${SUCCESS_DOMAIN}/pagesa-sukses`;
-      },
-      closeCallback: () => {
-        window.location.href = `${SUCCESS_DOMAIN}/pagesa-anuluar`;
-      },
-      locale: 'sq', // Albanian
-      currency: 'EUR',
-      country: CUSTOMER_COUNTRY,
-    });
   };
 
+  useEffect(() => {
+    // 1. Defino Funksionin e Inicializimit
+    const initializePaddle = async () => {
+      // Sigurohu që setup të jetë i disponueshëm
+      if (window.Paddle && typeof window.Paddle.setup === 'function') {
+          try {
+              await window.Paddle.setup({ token: PADDLE_CLIENT_TOKEN });
+              console.log('✅ Paddle SDK V2 u inicializua me sukses.');
+              setIsPaddleReady(true); // Aktivizo butonin
+          } catch (error) {
+              console.error('❌ Gabim gjatë inicializimit të Paddle (setup dështoi):', error);
+          }
+      } else {
+          console.error('⚠️ Paddle setup funksioni nuk u gjet pas eventit ready.');
+      }
+    };
+
+    // 2. Dëgjo Eventin paddle.ready
+    // Kjo është zgjidhja më e sigurt kundër Strict Mode dhe vonesave të ngarkimit.
+    window.addEventListener('paddle.ready', initializePaddle);
+
+    // 3. Ngarko Skriptin (Vetëm një herë)
+    if (!paddleScriptLoaded) {
+      if (!document.querySelector('script[src="https://cdn.paddle.com/paddle/v2/paddle.js"]')) {
+        const script = document.createElement('script');
+        script.src = "https://cdn.paddle.com/paddle/v2/paddle.js";
+        document.head.appendChild(script);
+        paddleScriptLoaded = true;
+      }
+    }
+
+    // 4. Pastrimi i Event Listener-it
+    return () => {
+      window.removeEventListener('paddle.ready', initializePaddle);
+    };
+  }, []); // useEffect ekzekutohet vetëm një herë pas montimit
+
+  // ... (Pjesa e renderimit)
   return (
-    <div style={{ textAlign: 'center', marginTop: '50px' }}>
-      <h2 style={{ fontFamily: 'Inter, sans-serif' }}>Abonohu në Premium (€1.00/muaj)</h2>
-      <button
-        onClick={handleCheckout}
-        disabled={isLoading || error}
+    <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'Arial, sans-serif' }}>
+      <h1>Abonimi i Ri Test LIVE</h1>
+      <p style={{ color: '#555' }}>**Qasje e plotë** në të gjitha funksionalitetet e platformës.</p>
+      
+      <div style={{ margin: '20px 0', padding: '15px', border: '1px solid #ddd', borderRadius: '8px', display: 'inline-block' }}>
+        <h3>€1.00 / Muaj</h3>
+        <p style={{ margin: '5px 0', fontSize: '14px', color: '#777' }}>
+          ID e Çmimit: `{SUBSCRIPTION_PRICE_ID}`
+        </p>
+      </div>
+      
+      <button 
+        onClick={handleCheckout} 
+        disabled={!isPaddleReady}
         style={{
-          padding: '12px 24px',
+          display: 'block',
+          margin: '20px auto',
+          padding: '12px 25px',
           fontSize: '18px',
-          fontWeight: '600',
-          backgroundColor: '#0070f3',
-          color: '#fff',
+          fontWeight: 'bold',
+          cursor: isPaddleReady ? 'pointer' : 'not-allowed',
+          backgroundColor: isPaddleReady ? '#0070f3' : '#cccccc',
+          color: 'white',
           border: 'none',
-          borderRadius: '8px',
-          cursor: isLoading || error ? 'not-allowed' : 'pointer',
-          opacity: isLoading || error ? 0.6 : 1,
-          boxShadow: '0 4px 15px rgba(0, 112, 243, 0.4)',
-          transition: 'all 0.3s ease-in-out',
+          borderRadius: '5px',
+          transition: 'background-color 0.3s'
         }}
       >
-        {isLoading ? 'Duke u ngarkuar...' : error ? 'Gabim: Shih Konsolën' : 'Bli Tani'}
+        {isPaddleReady ? 'Abonohu Tani' : 'Duke ngarkuar shërbimin e pagesës...'}
       </button>
-      {isLoading && <p style={{ color: '#555', marginTop: '10px' }}>Duke inicializuar shërbimin e pagesave...</p>}
-      {error && <p style={{ color: 'red', marginTop: '10px', fontWeight: 'bold' }}>{error}</p>}
+
+      {!isPaddleReady && (
+        <p style={{ marginTop: '15px', color: '#cc0000', fontSize: '14px' }}>
+          Duke ngarkuar shërbimin e pagesës Paddle...
+        </p>
+      )}
     </div>
   );
-}
+};
 
-export default Payments;
+export default Payment;
