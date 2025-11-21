@@ -24,6 +24,19 @@ const exerciseSchema = new mongoose.Schema({
   },
 })
 
+const ruleSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  description: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+})
+
 const grammarSchema = new mongoose.Schema(
   {
     name: {
@@ -51,6 +64,7 @@ const grammarSchema = new mongoose.Schema(
       required: [true, "Content is required"],
       trim: true,
     },
+    rules: [ruleSchema],
     exercises: [exerciseSchema],
     difficulty: {
       type: Number,

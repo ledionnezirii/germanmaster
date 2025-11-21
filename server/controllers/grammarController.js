@@ -87,17 +87,19 @@ const getTopicById = asyncHandler(async (req, res) => {
 // @route   POST /api/grammar
 // @access  Private (Admin)
 const createTopic = asyncHandler(async (req, res) => {
-  const { name, description, level, content, examples, exercises, difficulty, tags } = req.body
+  const { name, description, level, content, rules, examples, exercises, difficulty, tags, numbers } = req.body
 
   const topic = await Grammar.create({
     name,
     description,
     level,
     content,
-    examples,
-    exercises,
+    rules: rules || [],
+    examples: examples || [],
+    exercises: exercises || [],
+    numbers: numbers || [],
     difficulty,
-    tags,
+    tags: tags || [],
     createdBy: req.user.id,
   })
 
@@ -114,10 +116,36 @@ const updateTopic = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Grammar topic not found")
   }
 
-  const updatedTopic = await Grammar.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
+  // Allow updating all fields including rules
+  const allowedUpdates = [
+    'name',
+    'description', 
+    'level',
+    'content',
+    'rules',
+    'examples',
+    'exercises',
+    'numbers',
+    'difficulty',
+    'tags',
+    'isActive'
+  ]
+
+  const updates = {}
+  allowedUpdates.forEach(field => {
+    if (req.body[field] !== undefined) {
+      updates[field] = req.body[field]
+    }
   })
+
+  const updatedTopic = await Grammar.findByIdAndUpdate(
+    req.params.id, 
+    updates,
+    {
+      new: true,
+      runValidators: true,
+    }
+  )
 
   res.json(new ApiResponse(200, updatedTopic, "Grammar topic updated successfully"))
 })
@@ -139,7 +167,7 @@ const deleteTopic = asyncHandler(async (req, res) => {
 })
 
 // @desc    Mark grammar topic as finished
-// @route   PUT /api/grammar/finished/:id
+// @route   PUT /api/grammar/:id/finish
 // @access  Private
 const markTopicAsFinished = asyncHandler(async (req, res) => {
   const topicId = req.params.id
@@ -165,6 +193,10 @@ const markTopicAsFinished = asyncHandler(async (req, res) => {
 
   res.json(new ApiResponse(200, { topicId, grammarFinished: user.grammarFinished }, "Grammar topic marked as finished"))
 })
+
+// @desc    Get finished topics
+// @route   GET /api/grammar/finished
+// @access  Private
 const getFinishedTopics = asyncHandler(async (req, res) => {
   const userId = req.user.id
   
