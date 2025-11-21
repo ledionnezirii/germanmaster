@@ -435,6 +435,33 @@ const Grammar = () => {
                       )}
                     </div>
                   )}
+
+                  {selectedTopic.rules && selectedTopic.rules.length > 0 && (
+                    <div className="space-y-3 mt-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <ListCheck className="h-4 w-4 text-indigo-600" />
+                        <h3 className="text-base font-bold text-gray-900">Rregullat e Gramatikës</h3>
+                      </div>
+                      {selectedTopic.rules.map((rule, index) => (
+                        <div
+                          key={index}
+                          className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border-2 border-indigo-200 shadow-sm hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+                              {index + 1}
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="font-bold text-indigo-900 text-sm mb-2">{rule.title}</h4>
+                              <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-line">
+                                {rule.description}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -883,7 +910,6 @@ const TopicCard = React.memo(({ topic, onClick, isFinished }) => (
         : "bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 hover:border-teal-400 shadow-sm hover:shadow-teal-200/50"
     }`}
   >
-  
     <div className="relative z-10">
       <div className="flex items-center justify-between mb-3">
         {isFinished && (

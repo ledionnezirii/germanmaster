@@ -2,47 +2,56 @@
 
 import { Link } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { favoritesService } from "../services/api"
 import {
   BookOpen,
   Headphones,
   Languages,
-  MessageCircle,
   Star,
-  ArrowRight,
   Play,
   Heart,
   Flame,
   TrendingUp,
   Award,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 
 const Home = () => {
   const { isAuthenticated, user, loading } = useAuth()
-  const [favoriteWords, setFavoriteWords] = useState([])
   const [favoriteCount, setFavoriteCount] = useState(0)
-  const [loadingFavorites, setLoadingFavorites] = useState(false)
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [autoPlay, setAutoPlay] = useState(true)
+  const autoPlayIntervalRef = useRef(null)
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      fetchFavoriteWords()
+      fetchFavoriteCount()
     }
   }, [isAuthenticated, user])
 
-  const fetchFavoriteWords = async () => {
+  useEffect(() => {
+    if (autoPlay && features.length > 0) {
+      autoPlayIntervalRef.current = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % features.length)
+      }, 5000)
+    }
+    return () => {
+      if (autoPlayIntervalRef.current) {
+        clearInterval(autoPlayIntervalRef.current)
+      }
+    }
+  }, [autoPlay])
+
+  const fetchFavoriteCount = async () => {
     try {
-      setLoadingFavorites(true)
       const response = await favoritesService.getFavorites({ limit: 10 })
       const favoriteWords = Array.isArray(response.data) ? response.data : response.data.favorites || []
-      setFavoriteWords(favoriteWords)
       setFavoriteCount(favoriteWords.length)
     } catch (error) {
-      console.error("Error fetching favorite words:", error)
-      setFavoriteWords([])
+      console.error("Error fetching favorite count:", error)
       setFavoriteCount(0)
-    } finally {
-      setLoadingFavorites(false)
     }
   }
 
@@ -52,26 +61,53 @@ const Home = () => {
       title: "Praktikë Dëgjimi",
       description: "Përmirësoni aftësitë tuaja të dëgjimit në gjermanisht me ushtrime audio",
       path: "/listen",
-    },
-    {
-      icon: Languages,
-      title: "Përkthim",
-      description: "Praktikoni kuptimin e leximit me ushtrime përkthimi",
-      path: "/translate",
+      bgImage: "/src/images/listenCarousel.png",
+      bgGradient: "from-blue-50 via-blue-100 to-cyan-100",
+      accentColor: "from-blue-500 to-cyan-500",
+      borderColor: "border-blue-200",
+      iconBg: "from-blue-100 to-cyan-100",
+      iconText: "text-blue-700",
     },
     {
       icon: BookOpen,
       title: "Fjalor",
       description: "Eksploroni fjalorin gjermanisht të organizuar sipas niveleve të vështirësisë",
       path: "/dictionary",
+      bgImage: "/src/images/dictionaryCarousel.png",
+      bgGradient: "from-amber-50 via-amber-100 to-orange-100",
+      accentColor: "from-amber-500 to-orange-500",
+      borderColor: "border-amber-200",
+      iconBg: "from-amber-100 to-orange-100",
+      iconText: "text-amber-700",
     },
     {
-      icon: MessageCircle,
-      title: "Bisedë Gramatikore",
-      description: "Praktikë interaktive e gramatikës me ndihmën e AI",
-      path: "/chat",
+      icon: BookOpen,
+      title: "Renditja",
+      description: "Eksploroni fjalorin gjermanisht të organizuar sipas niveleve të vështirësisë",
+      path: "/dictionary",
+      bgImage: "/src/images/leaderboardCarousel.png",
+      bgGradient: "from-amber-50 via-amber-100 to-orange-100",
+      accentColor: "from-amber-500 to-orange-500",
+      borderColor: "border-amber-200",
+      iconBg: "from-amber-100 to-orange-100",
+      iconText: "text-amber-700",
     },
   ]
+
+  const goToPrevious = () => {
+    setCurrentSlide((prev) => (prev - 1 + features.length) % features.length)
+    setAutoPlay(false)
+  }
+
+  const goToNext = () => {
+    setCurrentSlide((prev) => (prev + 1) % features.length)
+    setAutoPlay(false)
+  }
+
+  const goToSlide = (index) => {
+    setCurrentSlide(index)
+    setAutoPlay(false)
+  }
 
   const quickStats = [
     {
@@ -118,7 +154,6 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1]">
-      {/* Hero Section */}
       <div className="bg-gradient-to-r from-white to-[#F0FDFA] border-b border-[#99F6E4] relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-64 pointer-events-none opacity-30 hidden lg:block">
           <div className="relative h-full flex items-end justify-center pb-8">
@@ -175,7 +210,6 @@ const Home = () => {
               ></div>
             </div>
 
-            {/* Floating hearts */}
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-full">
               <div
                 className="absolute bottom-16 left-4 text-2xl animate-[floatHeart_4s_ease-in-out_infinite] opacity-70 drop-shadow-lg"
@@ -250,7 +284,6 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Welcome Back Section - Only for authenticated users */}
       {isAuthenticated && user && (
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
           <div className="rounded-2xl bg-white border-2 border-[#99F6E4] p-6 shadow-xl shadow-teal-100/50">
@@ -325,283 +358,97 @@ const Home = () => {
         </div>
       )}
 
-      {/* Favorite Words Section */}
-      {isAuthenticated && user && (
-        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="rounded-2xl bg-white border-2 border-[#FBCFE8] p-6 shadow-xl shadow-pink-100/50">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#FBCFE8] to-[#F9A8D4] shadow-lg">
-                <Heart className="h-6 w-6 text-[#EC4899]" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-gray-900">Fjalët e Mësuara</h2>
-                <p className="text-sm text-gray-600">Fjalët që keni shënuar si të mësuara</p>
-              </div>
+      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+        <div className="relative">
+          <div className="relative overflow-hidden rounded-2xl bg-white shadow-2xl shadow-teal-100/50">
+            <div className="relative h-[350px] sm:h-[400px] lg:h-[500px] flex items-center justify-center">
+              {features.map((feature, index) => {
+                const isActive = index === currentSlide
+                return (
+                  <Link
+                    key={index}
+                    to={isAuthenticated ? feature.path : "/signin"}
+                    className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-500 ${
+                      isActive ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
+                    }`}
+                  >
+                    <div
+                      className="absolute inset-0 bg-center bg-no-repeat transition-transform duration-700 hover:scale-105"
+                      style={{
+                        backgroundImage: `url(${feature.bgImage})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }}
+                    ></div>
+                  </Link>
+                )
+              })}
             </div>
 
-            {loadingFavorites ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#EC4899]"></div>
-              </div>
-            ) : favoriteWords.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {favoriteWords.slice(0, 6).map((favorite, index) => {
-                  const word = favorite.wordId || favorite
-                  return (
-                    <div
-                      key={index}
-                      className="bg-gradient-to-br from-[#FBCFE8] to-[#F9A8D4] rounded-xl p-4 border-2 border-[#EC4899] border-opacity-30 hover:shadow-lg hover:border-opacity-50 transition-all shadow-md"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="text-lg font-bold text-gray-900">{word.word}</h3>
-                        <Heart className="h-5 w-5 text-[#EC4899] fill-current drop-shadow-sm" />
-                      </div>
-                      <p className="text-gray-800 mb-2 font-medium">{word.translation}</p>
-                      {word.level && (
-                        <span className="inline-block px-2 py-1 bg-white/80 text-[#14B8A6] text-xs font-medium rounded-full shadow-sm">
-                          {word.level}
-                        </span>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Heart className="h-12 w-12 text-[#EC4899] mx-auto mb-4 opacity-50" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Asnjë fjalë e mësuara</h3>
-                <p className="text-gray-600 mb-4">Filloni të shtoni fjalë në listën tuaj</p>
-                <Link
-                  to="/dictionary"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white rounded-full hover:from-[#0D9488] hover:to-[#0891B2] transition-all shadow-lg shadow-teal-500/30"
-                >
-                  <BookOpen className="h-4 w-4" />
-                  Shko te Fjalori
-                </Link>
-              </div>
-            )}
+            <div
+              className={`absolute inset-0 rounded-2xl pointer-events-none transition-colors duration-500 ${
+                features[currentSlide]?.borderColor || "border-teal-200"
+              }`}
+            ></div>
 
-            {favoriteWords.length > 6 && (
-              <div className="mt-6 text-center">
-                <Link
-                  to="/dictionary"
-                  className="inline-flex items-center gap-2 px-4 py-2 text-[#14B8A6] hover:text-[#0D9488] font-medium transition-colors"
-                >
-                  Shiko të gjitha fjalët e mësuara
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            )}
+            <button
+              onClick={goToPrevious}
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-700 shadow-lg hover:bg-gray-50 hover:shadow-xl transition-all hover:scale-110"
+              aria-label="Previous slide"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <button
+              onClick={goToNext}
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-700 shadow-lg hover:bg-gray-50 hover:shadow-xl transition-all hover:scale-110"
+              aria-label="Next slide"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
           </div>
-        </div>
-      )}
 
-      {/* Features Section */}
-      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature, index) => {
-            const Icon = feature.icon
-            return (
-              <Link
+          <div className="mt-6 flex justify-center gap-3">
+            {features.map((_, index) => (
+              <button
                 key={index}
-                to={isAuthenticated ? feature.path : "/signin"}
-                className="group block rounded-xl border-2 border-[#99F6E4] bg-white p-6 shadow-lg shadow-teal-100/50 transition-all duration-200 hover:border-[#5EEAD4] hover:shadow-xl hover:shadow-teal-200/50"
-              >
-                <div className="mb-4">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#99F6E4] to-[#5EEAD4] transition-transform group-hover:scale-110 shadow-md">
-                    <Icon className="h-6 w-6 text-[#0D9488]" />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900">{feature.title}</h3>
-                </div>
-                <div>
-                  <p className="mb-4 text-sm text-gray-700">{feature.description}</p>
-                  <div className="flex items-center text-sm font-medium text-[#14B8A6]">
-                    Fillo Mësimin
-                    <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </div>
-                </div>
-              </Link>
-            )
-          })}
+                onClick={() => goToSlide(index)}
+                className={`h-2 rounded-full transition-all ${
+                  index === currentSlide ? "w-8 bg-[#14B8A6]" : "w-2 bg-gray-300 hover:bg-gray-400"
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* CTA Section */}
-      {!isAuthenticated && (
-        <div className="bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] py-16 text-white shadow-2xl">
-          <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-            <h2 className="mb-4 text-3xl font-bold drop-shadow-lg">Gati për të Filluar Udhëtimin Tuaj Gjerman?</h2>
-            <p className="mx-auto mb-8 max-w-2xl text-lg opacity-95 drop-shadow-md">
-              Bashkohuni me mijëra nxënës që tashmë po përmirësojnë aftësitë e tyre në gjermanisht me platformën tonë.
-            </p>
-            <Link
-              to="/signup"
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-white text-[#0D9488] hover:bg-[#F0FDFA] h-12 px-8 font-medium shadow-xl hover:shadow-2xl transition-all hover:scale-105"
-            >
-              Fillo Sot
-              <ArrowRight className="h-5 w-5" />
-            </Link>
+      <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-col items-center rounded-2xl bg-white p-8 text-center shadow-xl shadow-teal-100/30 border-2 border-[#99F6E4] transition-transform hover:scale-105">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#CCFBF1] to-[#99F6E4]">
+              <Languages className="h-8 w-8 text-[#0D9488]" />
+            </div>
+            <h3 className="mb-2 text-xl font-bold text-gray-900">Mësim Interaktiv</h3>
+            <p className="text-gray-700">Angazhohuni me përmbajtje dinamike dhe ushtrime praktike</p>
+          </div>
+
+          <div className="flex flex-col items-center rounded-2xl bg-white p-8 text-center shadow-xl shadow-teal-100/30 border-2 border-[#99F6E4] transition-transform hover:scale-105">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#CCFBF1] to-[#99F6E4]">
+              <TrendingUp className="h-8 w-8 text-[#0D9488]" />
+            </div>
+            <h3 className="mb-2 text-xl font-bold text-gray-900">Gjurmoni Progresin</h3>
+            <p className="text-gray-700">Monitoroni zhvillimin tuaj me statistika të detajuara</p>
+          </div>
+
+          <div className="flex flex-col items-center rounded-2xl bg-white p-8 text-center shadow-xl shadow-teal-100/30 border-2 border-[#99F6E4] transition-transform hover:scale-105 sm:col-span-2 lg:col-span-1">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#CCFBF1] to-[#99F6E4]">
+              <Star className="h-8 w-8 text-[#0D9488]" />
+            </div>
+            <h3 className="mb-2 text-xl font-bold text-gray-900">Mësim i Personalizuar</h3>
+            <p className="text-gray-700">Përshtateni eksperiencën tuaj sipas nivelit dhe qëllimeve tuaja</p>
           </div>
         </div>
-      )}
-
-      <style>{`
-        @keyframes sway {
-          0%, 100% { transform: translateX(0) rotate(0deg); }
-          50% { transform: translateX(8px) rotate(2deg); }
-        }
-        
-        @keyframes float {
-          0%, 100% { 
-            transform: translateY(0) translateX(0);
-            opacity: 0;
-          }
-          10% {
-            opacity: 0.8;
-          }
-          50% { 
-            transform: translateY(-60px) translateX(10px);
-            opacity: 1;
-          }
-          90% {
-            opacity: 0.3;
-          }
-        }
-        
-        @keyframes floatHeart {
-          0%, 100% { 
-            transform: translateY(0) scale(1);
-            opacity: 0;
-          }
-          10% {
-            opacity: 0.7;
-          }
-          50% { 
-            transform: translateY(-80px) scale(1.2);
-            opacity: 0.9;
-          }
-          90% {
-            opacity: 0.2;
-          }
-        }
-        
-        @keyframes fireFlicker {
-          0%, 100% { 
-            transform: scale(1) translateY(0);
-            filter: brightness(1) drop-shadow(0 0 4px currentColor);
-          }
-          25% { 
-            transform: scale(1.15) translateY(-2px);
-            filter: brightness(1.4) drop-shadow(0 0 8px currentColor);
-          }
-          50% { 
-            transform: scale(0.95) translateY(1px);
-            filter: brightness(0.9) drop-shadow(0 0 2px currentColor);
-          }
-          75% { 
-            transform: scale(1.1) translateY(-1px);
-            filter: brightness(1.3) drop-shadow(0 0 6px currentColor);
-          }
-        }
-        
-        @keyframes fireGlow {
-          0%, 100% { 
-            opacity: 0.4;
-            transform: scale(1.2);
-            filter: blur(4px);
-          }
-          50% { 
-            opacity: 0.7;
-            transform: scale(1.5);
-            filter: blur(6px);
-          }
-        }
-        
-        @keyframes spark {
-          0%, 100% { 
-            opacity: 0;
-            transform: scale(0);
-          }
-          50% { 
-            opacity: 1;
-            transform: scale(2);
-          }
-        }
-        
-        @keyframes starShine {
-          0%, 100% { 
-            transform: rotate(0deg) scale(1);
-            filter: drop-shadow(0 0 2px currentColor);
-          }
-          50% { 
-            transform: rotate(180deg) scale(1.15);
-            filter: drop-shadow(0 0 6px currentColor);
-          }
-        }
-        
-        @keyframes starPulse {
-          0%, 100% { 
-            transform: scale(1.2);
-            opacity: 0.5;
-          }
-          50% { 
-            transform: scale(1.6);
-            opacity: 0;
-          }
-        }
-        
-        @keyframes awardBounce {
-          0%, 100% { 
-            transform: translateY(0) rotate(0deg);
-          }
-          25% { 
-            transform: translateY(-5px) rotate(-8deg);
-          }
-          75% { 
-            transform: translateY(-3px) rotate(8deg);
-          }
-        }
-        
-        @keyframes awardGlow {
-          0%, 100% { 
-            transform: scale(1.2);
-            opacity: 0.2;
-          }
-          50% { 
-            transform: scale(1.8);
-            opacity: 0;
-          }
-        }
-        
-        @keyframes heartBeat {
-          0%, 100% { 
-            transform: scale(1);
-          }
-          10% { 
-            transform: scale(1.25);
-          }
-          20% { 
-            transform: scale(1);
-          }
-          30% { 
-            transform: scale(1.2);
-          }
-          40% { 
-            transform: scale(1);
-          }
-        }
-        
-        @keyframes heartPulse {
-          0%, 100% { 
-            transform: scale(1.2);
-            opacity: 0.3;
-          }
-          50% { 
-            transform: scale(1.6);
-            opacity: 0;
-          }
-        }
-      `}</style>
+      </div>
     </div>
   )
 }
