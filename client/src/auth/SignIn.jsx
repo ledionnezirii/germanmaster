@@ -35,12 +35,28 @@ const SignIn = () => {
       await login(formData)
       navigate("/")
     } catch (err) {
-      const errorMessage = err.response?.data?.message || ""
+      console.log("[v0] Login error:", err)
+      console.log("[v0] Error response:", err.response)
+      console.log("[v0] Error response data:", err.response?.data)
 
+      // Check multiple possible locations for the error message
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || ""
+
+      console.log("[v0] Extracted error message:", errorMessage)
+
+      // Check for device limit error first (highest priority)
       if (
+        errorMessage.toLowerCase().includes("device") ||
+        errorMessage.includes("You already have 2 devices logged in") ||
+        err.response?.status === 403
+      ) {
+        setError("Jeni të kyçur në 2 pajisje. Ju lutemi dilni nga një pajisje për të vazhduar.")
+      } else if (errorMessage.toLowerCase().includes("verify")) {
+        setError("Ju lutemi verifikoni email-in tuaj para se të hyni.")
+      } else if (
         errorMessage.toLowerCase().includes("password") ||
         errorMessage.toLowerCase().includes("invalid") ||
-        errorMessage.toLowerCase().includes("wrong")
+        errorMessage.toLowerCase().includes("kredenciale")
       ) {
         setError("Fjalëkalimi është i pasaktë. Ju lutemi provoni përsëri.")
       } else if (
@@ -48,10 +64,9 @@ const SignIn = () => {
         errorMessage.toLowerCase().includes("user not found")
       ) {
         setError("Email-i nuk u gjet. Ju lutemi kontrolloni email-in tuaj.")
-      } else if (errorMessage.toLowerCase().includes("verify")) {
-        setError("Ju lutemi verifikoni email-in tuaj para se të hyni.")
       } else {
-        setError("Email ose fjalëkalim i pasaktë. Ju lutemi provoni përsëri.")
+        // Generic fallback
+        setError(errorMessage || "Email ose fjalëkalim i pasaktë. Ju lutemi provoni përsëri.")
       }
     } finally {
       setLoading(false)

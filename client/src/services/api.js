@@ -61,28 +61,27 @@ api.interceptors.response.use(
   },
 )
 
-
 export const authService = {
   // --- Auth ---
   login: async (credentials) => {
-    const response = await api.post("/auth/login", credentials);
+    const response = await api.post("/auth/login", credentials)
     if (response.data?.token) {
       try {
-        await api.post("/users/update-streak");
+        await api.post("/users/update-streak")
         // Fetch the updated user profile with new streak count
-        const profileResponse = await api.get("/auth/me");
+        const profileResponse = await api.get("/auth/me")
         return {
           ...response,
           data: {
             ...response.data,
-            user: profileResponse.data
-          }
-        };
+            user: profileResponse.data,
+          },
+        }
       } catch (error) {
-        console.error("[v0] Streak update failed (non-critical):", error);
+        console.error("[v0] Streak update failed (non-critical):", error)
       }
     }
-    return response;
+    return response
   },
 
   register: (userData) =>
@@ -95,8 +94,7 @@ export const authService = {
     }),
 
   forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
-  resetPassword: (token, newPassword) =>
-    api.post(`/auth/reset-password/${token}`, { newPassword }),
+  resetPassword: (token, newPassword) => api.post(`/auth/reset-password/${token}`, { newPassword }),
   verifyEmail: (token) => api.get(`/auth/verify/${token}`),
 
   // --- User Profile ---
@@ -106,19 +104,18 @@ export const authService = {
       emri: data.firstName,
       mbiemri: data.lastName,
     }),
-  updateAvatarStyle: (avatarStyle) =>
-    api.put("/users/avatar-style", { avatarStyle }),
+  updateAvatarStyle: (avatarStyle) => api.put("/users/avatar-style", { avatarStyle }),
   updateStudyHours: (hours) => api.put("/users/study-hours", { hours }),
 
   // --- XP & Streak ---
   getUserXp: () => api.get("/users/xp"),
   addXp: (xp, reason) => api.post("/users/add-xp", { xp, reason }),
   updateStreak: () => api.post("/users/update-streak"),
-};
+}
 
 // --- Dicebear Avatar URL Generator ---
 export const generateDicebearUrl = (userId, avatarStyle = "adventurer") =>
-  `https://api.dicebear.com/7.x/${avatarStyle}/svg?seed=${userId}`;
+  `https://api.dicebear.com/7.x/${avatarStyle}/svg?seed=${userId}`
 
 export const dictionaryService = {
   getAllWords: (params = {}) => api.get("/dictionary", { params }),
@@ -357,6 +354,13 @@ export const phraseService = {
 export const ttsService = {
   getAudioUrl: (text, lang = "de", speakingRate = 0.8) => api.post("/tts", { text, lang, speakingRate }),
 }
+
+export const sessionService = {
+  getSessions: () => api.get("/auth/sessions"),
+  logoutSession: (sessionId) => api.delete(`/auth/sessions/${sessionId}`),
+  logoutCurrentDevice: () => api.post("/auth/logout"),
+}
+
 export const generateAvatarOptions = () => {
   // DiceBear styles available
   const styles = [
@@ -390,19 +394,19 @@ export const generateAvatarOptions = () => {
     "shapes",
     "shapes-neutral",
     "thumbs",
-  ];
+  ]
 
   // Generate multiple variations for each style
-  const seedPrefixes = Array.from({ length: 17 }, (_, i) => i + 1);
-  
-  const avatars = [];
+  const seedPrefixes = Array.from({ length: 17 }, (_, i) => i + 1)
+
+  const avatars = []
   for (const style of styles) {
     for (const prefix of seedPrefixes) {
-      avatars.push(`${style}-${prefix}`);
+      avatars.push(`${style}-${prefix}`)
     }
   }
 
-  return avatars; // Returns ~510 unique avatar options
-};
+  return avatars // Returns ~510 unique avatar options
+}
 
 export default api
