@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "../context/AuthContext"
 import { authService, certificatesService, achievementsService, generateAvatarOptions } from "../services/api"
-import { User, Star, BookOpen, Flame, Award, Download, FileText, Pencil, X, Search } from 'lucide-react'
+import { User, Star, BookOpen, Flame, Award, Download, FileText, Pencil, X, Search } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import logo from "../../public/logo.png"
+import ActiveSessions from "../components/ActiveSessions"
 
 const Account = () => {
   const { user, logout, updateUser, loading: authLoading } = useAuth()
@@ -20,7 +21,6 @@ const Account = () => {
   const [currentPage, setCurrentPage] = useState(0)
   const [avatarStyles, setAvatarStyles] = useState([])
 
-  // ... existing certificate and achievement state ...
   const [certificates, setCertificates] = useState([])
   const [loadingCertificates, setLoadingCertificates] = useState(true)
   const [downloadingCert, setDownloadingCert] = useState(null)
@@ -33,12 +33,12 @@ const Account = () => {
 
   const [achievementCarouselIndex, setAchievementCarouselIndex] = useState(0)
 
-  const AVATARS_PER_PAGE = 20;
+  const AVATARS_PER_PAGE = 20
 
   useEffect(() => {
-    const allAvatars = generateAvatarOptions();
-    setAvatarStyles(allAvatars);
-  }, []);
+    const allAvatars = generateAvatarOptions()
+    setAvatarStyles(allAvatars)
+  }, [])
 
   useEffect(() => {
     setSelectedAvatarStyle(user?.avatarStyle || "adventurer-1")
@@ -46,21 +46,15 @@ const Account = () => {
 
   const getFilteredAvatars = () => {
     if (!searchQuery.trim()) {
-      return avatarStyles;
+      return avatarStyles
     }
-    return avatarStyles.filter(style => 
-      style.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  };
+    return avatarStyles.filter((style) => style.toLowerCase().includes(searchQuery.toLowerCase()))
+  }
 
-  const filteredAvatars = getFilteredAvatars();
-  const totalPages = Math.ceil(filteredAvatars.length / AVATARS_PER_PAGE);
-  const paginatedAvatars = filteredAvatars.slice(
-    currentPage * AVATARS_PER_PAGE,
-    (currentPage + 1) * AVATARS_PER_PAGE
-  );
+  const filteredAvatars = getFilteredAvatars()
+  const totalPages = Math.ceil(filteredAvatars.length / AVATARS_PER_PAGE)
+  const paginatedAvatars = filteredAvatars.slice(currentPage * AVATARS_PER_PAGE, (currentPage + 1) * AVATARS_PER_PAGE)
 
-  // ... existing certificate fetching code ...
   useEffect(() => {
     const fetchCertificates = async () => {
       try {
@@ -71,7 +65,7 @@ const Account = () => {
 
         if (user && user.level) {
           const hasCertificateForCurrentLevel = userCertificates.some((cert) => cert.level === user.level)
-          
+
           if (!hasCertificateForCurrentLevel && !issuingCertificate) {
             setIssuingCertificate(true)
             try {
@@ -172,7 +166,6 @@ const Account = () => {
     }
   }
 
-  // ... existing certificate download and other methods ...
   const handleDownloadCertificate = async (certificateId, level) => {
     try {
       setDownloadingCert(certificateId)
@@ -259,7 +252,7 @@ const Account = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 p-4">
-      {/* ... existing profile header section ... */}
+      {/* Profile Header */}
       <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200 p-8">
         <div className="flex flex-col md:flex-row items-center gap-8">
           <div className="relative">
@@ -273,7 +266,7 @@ const Account = () => {
               title="Kliko për të ndryshuar avatarin"
             >
               <img
-                src={`https://api.dicebear.com/7.x/${selectedAvatarStyle.split('-').slice(0, -1).join('-')}/svg?seed=${selectedAvatarStyle}`}
+                src={`https://api.dicebear.com/7.x/${selectedAvatarStyle.split("-").slice(0, -1).join("-")}/svg?seed=${selectedAvatarStyle}`}
                 alt="Avatar"
                 className="w-full h-full object-cover"
               />
@@ -316,16 +309,16 @@ const Account = () => {
                       placeholder="Kërkoni avatar (p.sh., 'adventurer', 'pixel')..."
                       value={searchQuery}
                       onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        setCurrentPage(0);
+                        setSearchQuery(e.target.value)
+                        setCurrentPage(0)
                       }}
                       className="flex-1 bg-transparent outline-none text-gray-700"
                     />
                     {searchQuery && (
                       <button
                         onClick={() => {
-                          setSearchQuery("");
-                          setCurrentPage(0);
+                          setSearchQuery("")
+                          setCurrentPage(0)
                         }}
                         className="text-gray-500 hover:text-gray-700"
                       >
@@ -342,7 +335,7 @@ const Account = () => {
 
                   <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                     {paginatedAvatars.map((style) => {
-                      const styleName = style.split('-').slice(0, -1).join('-');
+                      const styleName = style.split("-").slice(0, -1).join("-")
                       return (
                         <button
                           key={style}
@@ -361,15 +354,17 @@ const Account = () => {
                               className="w-full h-full object-cover"
                             />
                           </div>
-                          <span className="text-xs text-gray-700 text-center capitalize font-medium leading-tight">{style.replace('-', ' ')}</span>
+                          <span className="text-xs text-gray-700 text-center capitalize font-medium leading-tight">
+                            {style.replace("-", " ")}
+                          </span>
                         </button>
-                      );
+                      )
                     })}
                   </div>
 
                   <div className="mt-6 flex items-center justify-between">
                     <button
-                      onClick={() => setCurrentPage(p => Math.max(0, p - 1))}
+                      onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
                       disabled={currentPage === 0}
                       className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -379,7 +374,7 @@ const Account = () => {
                       Faqja {currentPage + 1} nga {totalPages} ({filteredAvatars.length} avatarë)
                     </span>
                     <button
-                      onClick={() => setCurrentPage(p => Math.min(totalPages - 1, p + 1))}
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
                       disabled={currentPage >= totalPages - 1}
                       className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -396,9 +391,7 @@ const Account = () => {
               <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
                 {user.firstName} {user.lastName}
               </h1>
-              <div className="bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-xs font-bold">
-                PRO
-              </div>
+              <div className="bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-xs font-bold">PRO</div>
             </div>
             <p className="text-gray-600 mt-2 flex items-center gap-2 justify-center md:justify-start">
               <User className="h-4 w-4" />
@@ -425,7 +418,7 @@ const Account = () => {
         </div>
       </div>
 
-      {/* ... existing stats grid, certificates section, and achievements ... */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-gradient-to-br from-yellow-50 via-yellow-100 to-yellow-50 rounded-2xl p-6 hover:shadow-lg transition-all duration-200 border border-yellow-200 hover:scale-105">
           <div className="flex items-center gap-4">
@@ -511,10 +504,7 @@ const Account = () => {
               >
                 <div className="flex flex-col items-center text-center gap-4">
                   <div className="bg-white p-1 rounded-full shadow-md">
-                    <img
-                      src={logo || "/placeholder.svg"}
-                      className="w-24 h-24 rounded-full"
-                    />
+                    <img src={logo || "/placeholder.svg"} className="w-24 h-24 rounded-full" />
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 text-2xl mb-2">Niveli {certificate.level}</h3>
@@ -554,10 +544,14 @@ const Account = () => {
               <FileText className="h-16 w-16 text-gray-300" />
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-3">Ende Nuk Keni Certifikata</h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">Vazhdoni të mësoni dhe përfundoni testet për të fituar certifikatën tuaj të parë!</p>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              Vazhdoni të mësoni dhe përfundoni testet për të fituar certifikatën tuaj të parë!
+            </p>
           </div>
         )}
       </div>
+
+      <ActiveSessions />
     </div>
   )
 }
