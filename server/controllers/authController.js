@@ -1,4 +1,5 @@
 const User = require("../models/User")
+const Session = require("../models/Session")
 const { generateToken } = require("../utils/generateToken")
 const { ApiError } = require("../utils/ApiError")
 const { ApiResponse } = require("../utils/ApiResponse")
@@ -6,17 +7,41 @@ const { asyncHandler } = require("../utils/asyncHandler")
 const crypto = require("crypto")
 const sendEmail = require("../utils/sendEmail")
 
-// Helper function to construct the base URL for images
-const getBaseUrl = (req) => {
-  const protocol = req.protocol || "http"
-  const host = req.get("host") || `localhost:${process.env.PORT || 5000}`
-  return `${protocol}://${host}`
+// Helper function to detect device type from user agent
+const detectDeviceType = (userAgent) => {
+  if (!userAgent) return "unknown"
+
+  const ua = userAgent.toLowerCase()
+
+  if (ua.includes("mobile") || ua.includes("android") || ua.includes("iphone")) {
+    return "mobile"
+  } else if (ua.includes("tablet") || ua.includes("ipad")) {
+    return "tablet"
+  } else {
+    return "desktop"
+  }
 }
 
-// Helper to get full profile picture URL
-const getProfilePictureUrl = (req, user) => {
-  if (!user.profilePicture) return null
-  return `${getBaseUrl(req)}${user.profilePicture}`
+// Helper function to extract device info
+const extractDeviceInfo = (req) => {
+  const userAgent = req.headers["user-agent"] || ""
+
+  return {
+    userAgent,
+    browser: userAgent.split("/")[0] || "Unknown",
+    os: userAgent.includes("Windows")
+      ? "Windows"
+      : userAgent.includes("Mac")
+        ? "MacOS"
+        : userAgent.includes("Linux")
+          ? "Linux"
+          : userAgent.includes("Android")
+            ? "Android"
+            : userAgent.includes("iOS")
+              ? "iOS"
+              : "Unknown",
+    ip: req.ip || req.connection.remoteAddress || "Unknown",
+  }
 }
 
 const normalizeGmailAddress = (email) => {
@@ -75,7 +100,7 @@ const signup = asyncHandler(async (req, res) => {
     const verificationToken = crypto.randomBytes(32).toString("hex")
     user.verificationToken = verificationToken
     user.verificationTokenExpires = Date.now() + 60 * 60 * 1000 // 1 hour
-    
+
     user.streakCount = 1
     user.lastLogin = new Date()
     await user.save({ validateBeforeSave: false })
@@ -108,6 +133,9 @@ const signup = asyncHandler(async (req, res) => {
   }
 })
 
+// @desc    Login user with device limit check
+// @route   POST /api/auth/login
+// @access  Public
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body
 
@@ -127,9 +155,15 @@ const login = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Kredenciale të pavlefshme")
   }
 
+  const activeSessionsCount = await Session.getActiveSessionsCount(user._id)
+
+  if (activeSessionsCount >= 2) {
+    throw new ApiError(403, "You already have 2 devices logged in. Please log out from one device to continue.")
+  }
+
   const now = new Date()
   const lastLogin = user.lastLogin
-  
+
   if (!lastLogin) {
     // First time login
     user.streakCount = 1
@@ -150,14 +184,28 @@ const login = asyncHandler(async (req, res) => {
     }
     // If daysDiff < 1 (same day), don't update streak
   }
-  
+
   await user.save({ validateBeforeSave: false })
 
   const token = generateToken(user._id, user.emri)
 
+  const deviceType = detectDeviceType(req.headers["user-agent"])
+  const deviceInfo = extractDeviceInfo(req)
+
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+
+  await Session.create({
+    userId: user._id,
+    token,
+    deviceType,
+    deviceInfo,
+    expiresAt,
+    isActive: true,
+  })
+
   const avatarUrl = user.avatarStyle
     ? `https://api.dicebear.com/7.x/${user.avatarStyle}/svg?seed=${user._id}`
-    : `https://api.dicebear.com/7.x/adventurer/svg?seed=${user._id}`;
+    : `https://api.dicebear.com/7.x/adventurer/svg?seed=${user._id}`
 
   const nowDate = new Date()
   const isSubscriptionActive = user.subscriptionExpiresAt && user.subscriptionExpiresAt > nowDate
@@ -192,12 +240,81 @@ const login = asyncHandler(async (req, res) => {
   )
 })
 
+// @desc    Logout user and remove session
+// @route   POST /api/auth/logout
+// @access  Private
+const logout = asyncHandler(async (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer ", "")
+
+  if (!token) {
+    throw new ApiError(400, "No token provided")
+  }
+
+  // Deactivate the session
+  const session = await Session.findOne({ token, userId: req.user.id })
+
+  if (session) {
+    session.isActive = false
+    await session.save()
+  }
+
+  res.json(new ApiResponse(200, {}, "Logged out successfully"))
+})
+
+// @desc    Get active sessions for current user
+// @route   GET /api/auth/sessions
+// @access  Private
+const getActiveSessions = asyncHandler(async (req, res) => {
+  const sessions = await Session.getActiveSessions(req.user.id)
+
+  const formattedSessions = sessions.map((session) => ({
+    id: session._id,
+    deviceType: session.deviceType,
+    deviceInfo: {
+      browser: session.deviceInfo.browser,
+      os: session.deviceInfo.os,
+    },
+    lastActivity: session.lastActivity,
+    createdAt: session.createdAt,
+    isCurrent: session.token === req.headers.authorization?.replace("Bearer ", ""),
+  }))
+
+  res.json(
+    new ApiResponse(200, {
+      sessions: formattedSessions,
+      count: formattedSessions.length,
+      limit: 2,
+    }),
+  )
+})
+
+// @desc    Logout from specific device/session
+// @route   DELETE /api/auth/sessions/:sessionId
+// @access  Private
+const logoutFromDevice = asyncHandler(async (req, res) => {
+  const { sessionId } = req.params
+
+  const session = await Session.findOne({
+    _id: sessionId,
+    userId: req.user.id,
+  })
+
+  if (!session) {
+    throw new ApiError(404, "Session not found")
+  }
+
+  session.isActive = false
+  await session.save()
+
+  res.json(new ApiResponse(200, {}, "Device logged out successfully"))
+})
+
 const getMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id)
 
   const avatarUrl = user.avatarStyle
     ? `https://api.dicebear.com/7.x/${user.avatarStyle}/svg?seed=${user._id}`
-    : `https://api.dicebear.com/7.x/adventurer/svg?seed=${user._id}`;
+    : `https://api.dicebear.com/7.x/adventurer/svg?seed=${user._id}`
 
   res.json(
     new ApiResponse(200, {
@@ -273,6 +390,8 @@ const resetPassword = asyncHandler(async (req, res) => {
   user.resetPasswordExpires = undefined
   await user.save()
 
+  await Session.updateMany({ userId: user._id }, { isActive: false })
+
   res.json(new ApiResponse(200, {}, "Fjalëkalimi u rivendos me sukses"))
 })
 
@@ -292,6 +411,9 @@ const verifyEmail = asyncHandler(async (req, res) => {
 module.exports = {
   signup,
   login,
+  logout,
+  getActiveSessions,
+  logoutFromDevice,
   getMe,
   forgotPassword,
   resetPassword,
