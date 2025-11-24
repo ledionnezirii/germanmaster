@@ -39,7 +39,7 @@ const Sidebar = () => {
     { icon: Languages, label: "Përkthe", path: "/translate", requireAuth: true },
     { icon: Headphones, label: "Dëgjo", path: "/listen", requireAuth: true },
     { icon: BookUser, label: "Fjalor", path: "/dictionary", requireAuth: true },
-    { icon: InfinityIcon, label: "Kategori", path: "/category", requireAuth: true },
+    { icon: InfinityIcon, label: "Baza Gjuhësore", path: "/category", requireAuth: true },
     { icon: UniversityIcon, label: "Gramatikë", path: "/grammar", requireAuth: true },
     { icon: BarChart, label: "Renditja", path: "/leaderboard", requireAuth: false },
     { icon: Calendar, label: "PlanProgrami", path: "/plan", requireAuth: true },

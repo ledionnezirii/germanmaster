@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Trophy, Crown, Zap, Medal } from 'lucide-react'
+import { Trophy, Crown, Zap, Medal } from "lucide-react"
 import { io } from "socket.io-client"
 import { motion } from "framer-motion"
 import api, { SOCKET_URL, generateDicebearUrl } from "../services/api"
-import { Flame } from 'lucide-react'
+import { Flame } from "lucide-react"
 
 const Leaderboard = () => {
   const [leaderboardData, setLeaderboardData] = useState([])
@@ -16,6 +16,15 @@ const Leaderboard = () => {
     setLoading(true)
     try {
       const response = await api.get(`/leaderboard/${period}`)
+      console.log("[v0] Leaderboard data received:", response.data)
+      response.data.forEach((user, index) => {
+        console.log(`[v0] User ${index + 1}:`, {
+          id: user._id,
+          name: user.name,
+          avatarStyle: user.avatarStyle,
+          avatarUrl: generateDicebearUrl(user._id, user.avatarStyle || "adventurer"),
+        })
+      })
       setLeaderboardData(response.data)
     } catch (error) {
       console.error(`Gabim gjatë marrjes së leaderboard (${period}):`, error)
@@ -36,6 +45,7 @@ const Leaderboard = () => {
 
     socket.on("leaderboardUpdate", (update) => {
       if (update.type === timeFrame) {
+        console.log("[v0] Socket leaderboard update:", update.data)
         setLeaderboardData(update.data)
       }
     })
@@ -73,28 +83,6 @@ const Leaderboard = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            {/* <button
-              onClick={() => setTimeFrame("weekly")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                timeFrame === "weekly"
-                  ? "bg-teal-500 text-white shadow-sm"
-                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-              }`}
-              style={{ fontFamily: "Inter, sans-serif" }}
-            >
-              Javore
-            </button> */}
-            {/* <button
-              onClick={() => setTimeFrame("monthly")}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                timeFrame === "monthly"
-                  ? "bg-teal-500 text-white shadow-sm"
-                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
-              }`}
-              style={{ fontFamily: "Inter, sans-serif" }}
-            >
-              Mujore
-            </button> */}
             <button
               className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all bg-teal-500 text-white shadow-sm"
               style={{ fontFamily: "Inter, sans-serif" }}
@@ -115,6 +103,7 @@ const Leaderboard = () => {
 
         {topThree.length >= 3 && (
           <div className="flex justify-center items-end gap-2 sm:gap-4 md:gap-8 mb-4">
+            {/* Second Place */}
             <motion.div
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -126,15 +115,25 @@ const Leaderboard = () => {
                 <img
                   src={generateDicebearUrl(topThree[1]?._id, topThree[1]?.avatarStyle || "adventurer")}
                   alt={topThree[1]?.name}
-                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-4 border-gray-300 object-cover"
+                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-4 border-gray-300 object-cover bg-gray-100"
+                  onError={(e) => {
+                    console.error("[v0] Avatar failed for user:", topThree[1]?._id, "Style:", topThree[1]?.avatarStyle)
+                    e.currentTarget.src = "/placeholder.svg?height=64&width=64"
+                  }}
                 />
               </div>
               <div className="bg-gray-200 w-16 sm:w-20 h-20 sm:h-24 rounded-t-xl flex items-center justify-center">
-                <span className="text-3xl sm:text-4xl font-bold text-gray-600" style={{ fontFamily: "Poppins, sans-serif" }}>
+                <span
+                  className="text-3xl sm:text-4xl font-bold text-gray-600"
+                  style={{ fontFamily: "Poppins, sans-serif" }}
+                >
                   2
                 </span>
               </div>
-              <p className="mt-2 sm:mt-3 text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2" style={{ fontFamily: "Inter, sans-serif" }}>
+              <p
+                className="mt-2 sm:mt-3 text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2"
+                style={{ fontFamily: "Inter, sans-serif" }}
+              >
                 {topThree[1]?.name}
               </p>
               <p className="text-xs text-gray-500" style={{ fontFamily: "Inter, sans-serif" }}>
@@ -142,6 +141,7 @@ const Leaderboard = () => {
               </p>
             </motion.div>
 
+            {/* First Place */}
             <motion.div
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -153,15 +153,25 @@ const Leaderboard = () => {
                 <img
                   src={generateDicebearUrl(topThree[0]?._id, topThree[0]?.avatarStyle || "adventurer")}
                   alt={topThree[0]?.name}
-                  className="w-16 h-16 sm:w-24 sm:h-24 rounded-full border-4 border-yellow-400 object-cover shadow-lg"
+                  className="w-16 h-16 sm:w-24 sm:h-24 rounded-full border-4 border-yellow-400 object-cover shadow-lg bg-gray-100"
+                  onError={(e) => {
+                    console.error("[v0] Avatar failed for user:", topThree[0]?._id, "Style:", topThree[0]?.avatarStyle)
+                    e.currentTarget.src = "/placeholder.svg?height=96&width=96"
+                  }}
                 />
               </div>
               <div className="bg-gradient-to-b from-yellow-300 to-yellow-400 w-16 sm:w-24 h-24 sm:h-32 rounded-t-xl flex items-center justify-center shadow-md">
-                <span className="text-4xl sm:text-5xl font-bold text-yellow-700" style={{ fontFamily: "Poppins, sans-serif" }}>
+                <span
+                  className="text-4xl sm:text-5xl font-bold text-yellow-700"
+                  style={{ fontFamily: "Poppins, sans-serif" }}
+                >
                   1
                 </span>
               </div>
-              <p className="mt-2 sm:mt-3 text-sm sm:text-base font-bold text-gray-900 line-clamp-2" style={{ fontFamily: "Inter, sans-serif" }}>
+              <p
+                className="mt-2 sm:mt-3 text-sm sm:text-base font-bold text-gray-900 line-clamp-2"
+                style={{ fontFamily: "Inter, sans-serif" }}
+              >
                 {topThree[0]?.name}
               </p>
               <p className="text-xs sm:text-sm text-teal-600 font-semibold" style={{ fontFamily: "Inter, sans-serif" }}>
@@ -169,6 +179,7 @@ const Leaderboard = () => {
               </p>
             </motion.div>
 
+            {/* Third Place */}
             <motion.div
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -180,15 +191,25 @@ const Leaderboard = () => {
                 <img
                   src={generateDicebearUrl(topThree[2]?._id, topThree[2]?.avatarStyle || "adventurer")}
                   alt={topThree[2]?.name}
-                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-4 border-pink-300 object-cover"
+                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-4 border-pink-300 object-cover bg-gray-100"
+                  onError={(e) => {
+                    console.error("[v0] Avatar failed for user:", topThree[2]?._id, "Style:", topThree[2]?.avatarStyle)
+                    e.currentTarget.src = "/placeholder.svg?height=64&width=64"
+                  }}
                 />
               </div>
               <div className="bg-pink-200 w-16 sm:w-20 h-16 sm:h-20 rounded-t-xl flex items-center justify-center">
-                <span className="text-3xl sm:text-4xl font-bold text-pink-600" style={{ fontFamily: "Poppins, sans-serif" }}>
+                <span
+                  className="text-3xl sm:text-4xl font-bold text-pink-600"
+                  style={{ fontFamily: "Poppins, sans-serif" }}
+                >
                   3
                 </span>
               </div>
-              <p className="mt-2 sm:mt-3 text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2" style={{ fontFamily: "Inter, sans-serif" }}>
+              <p
+                className="mt-2 sm:mt-3 text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2"
+                style={{ fontFamily: "Inter, sans-serif" }}
+              >
                 {topThree[2]?.name}
               </p>
               <p className="text-xs text-gray-500" style={{ fontFamily: "Inter, sans-serif" }}>
@@ -235,14 +256,21 @@ const Leaderboard = () => {
               <div className="flex items-center justify-between gap-2 sm:gap-0">
                 <div className="flex items-center gap-2 sm:gap-4 min-w-0">
                   <div className="w-6 sm:w-8 text-center flex-shrink-0">
-                    <span className="text-base sm:text-lg font-semibold text-gray-700" style={{ fontFamily: "Poppins, sans-serif" }}>
+                    <span
+                      className="text-base sm:text-lg font-semibold text-gray-700"
+                      style={{ fontFamily: "Poppins, sans-serif" }}
+                    >
                       {user.rank}
                     </span>
                   </div>
                   <img
                     src={generateDicebearUrl(user._id, user.avatarStyle || "adventurer")}
                     alt={user.name}
-                    className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border-2 border-gray-200 flex-shrink-0"
+                    className="h-10 w-10 sm:h-12 sm:w-12 rounded-full border-2 border-gray-200 flex-shrink-0 bg-gray-100"
+                    onError={(e) => {
+                      console.error("[v0] Avatar failed for user:", user._id, "Style:", user.avatarStyle)
+                      e.currentTarget.src = "/placeholder.svg?height=48&width=48"
+                    }}
                   />
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm sm:text-base text-gray-900 truncate">{user.name}</div>
@@ -254,7 +282,10 @@ const Leaderboard = () => {
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <Zap className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500 fill-yellow-500" />
-                  <span className="font-semibold text-xs sm:text-base text-gray-900" style={{ fontFamily: "Inter, sans-serif" }}>
+                  <span
+                    className="font-semibold text-xs sm:text-base text-gray-900"
+                    style={{ fontFamily: "Inter, sans-serif" }}
+                  >
                     {user.xp?.toLocaleString()}
                   </span>
                 </div>

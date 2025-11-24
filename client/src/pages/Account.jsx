@@ -2,11 +2,16 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "../context/AuthContext"
-import { authService, certificatesService, achievementsService, generateAvatarOptions } from "../services/api"
+import {
+  authService,
+  certificatesService,
+  achievementsService,
+  generateAvatarOptions,
+  generateDicebearUrl,
+} from "../services/api"
 import { User, Star, BookOpen, Flame, Award, Download, FileText, Pencil, X, Search } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import logo from "../../public/logo.png"
-import ActiveSessions from "../components/ActiveSessions"
 
 const Account = () => {
   const { user, logout, updateUser, loading: authLoading } = useAuth()
@@ -266,7 +271,7 @@ const Account = () => {
               title="Kliko për të ndryshuar avatarin"
             >
               <img
-                src={`https://api.dicebear.com/7.x/${selectedAvatarStyle.split("-").slice(0, -1).join("-")}/svg?seed=${selectedAvatarStyle}`}
+                src={generateDicebearUrl(user?.id, selectedAvatarStyle) || "/placeholder.svg"}
                 alt="Avatar"
                 className="w-full h-full object-cover"
               />
@@ -349,7 +354,7 @@ const Account = () => {
                         >
                           <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 shadow-sm">
                             <img
-                              src={`https://api.dicebear.com/7.x/${styleName}/svg?seed=${style}`}
+                              src={generateDicebearUrl(user?.id, style) || "/placeholder.svg"}
                               alt={style}
                               className="w-full h-full object-cover"
                             />
@@ -550,8 +555,6 @@ const Account = () => {
           </div>
         )}
       </div>
-
-      <ActiveSessions />
     </div>
   )
 }

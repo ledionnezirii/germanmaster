@@ -5,7 +5,7 @@ import { useParams } from "react-router-dom"
 import { authService } from "../services/api"
 
 const VerifyEmail = () => {
-  const [status, setStatus] = useState("loading") // loading, success, error
+  const [status, setStatus] = useState("loading")
   const [message, setMessage] = useState("")
   const { token } = useParams()
 
@@ -28,30 +28,52 @@ const VerifyEmail = () => {
 
   if (status === "loading") {
     return (
-      <div className="h-500px flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
-        <h2 className="text-xl font-semibold">Duke verifikuar email-in...</h2>
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <h2 className="text-xl font-semibold text-gray-700 font-sans">Duke verifikuar email-in...</h2>
       </div>
     )
   }
 
   return (
-    <div className="h-500px flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
-      <div className="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-lg p-12 max-w-md w-full text-center">
         {status === "success" ? (
-          <div className="text-green-600 text-3xl mb-4">✓</div>
+          <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center mx-auto mb-6">
+            <svg
+              className="w-10 h-10 text-emerald-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={3}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
         ) : (
-          <div className="text-red-600 text-3xl mb-4">✗</div>
+          <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-6">
+            <svg
+              className="w-10 h-10 text-red-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={3}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
         )}
 
-        <h1 className={`text-2xl font-bold mb-3 ${status === "success" ? "text-green-600" : "text-red-600"}`}>
-          {status === "success" ? "Email i Verifikuar!" : "Gabim në Verifikim"}
+        <h1 className={`text-3xl font-bold mb-3 font-sans ${status === "success" ? "text-gray-900" : "text-red-600"}`}>
+          {status === "success" ? "Email Verified!" : "Gabim në Verifikim"}
         </h1>
 
-        <p className="text-gray-700">{message}</p>
+        <p className="text-gray-600 text-base mb-4 font-sans">
+          {status === "success" ? "Your email has been successfully verified." : message}
+        </p>
 
         {status === "success" && (
-          <p className="mt-4 text-gray-500 text-sm">
-            Mund ta mbyllni këtë tab dhe të vazhdoni në faqen kryesore.
+          <p className="text-gray-500 text-sm font-sans leading-relaxed">
+            You can now close this tab. Thank you for confirming your email address.
           </p>
         )}
       </div>

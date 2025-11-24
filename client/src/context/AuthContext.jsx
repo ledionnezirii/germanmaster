@@ -140,7 +140,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, [])
 
-
   const updateUser = useCallback((updatedData) => {
     setUser((prev) => {
       if (!prev) {

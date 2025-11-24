@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useSidebar } from "../context/SidebarContext"
-import { Menu, User, LogOut, ChevronDown, Star, Flame } from 'lucide-react'
+import { Menu, User, LogOut, ChevronDown, Star, Flame } from "lucide-react"
 import { generateDicebearUrl } from "../services/api"
 import mainLogo from "../../public/logo.png"
 
@@ -100,9 +100,7 @@ const Navbar = () => {
     )
   }
 
-  const avatarUrl = user && user.avatarStyle
-    ? `https://api.dicebear.com/7.x/${user.avatarStyle.split('-').slice(0, -1).join('-')}/svg?seed=${user.avatarStyle}`
-    : null
+  const avatarUrl = user?.id && user?.avatarStyle ? generateDicebearUrl(user.id, user.avatarStyle) : null
 
   return (
     <nav
@@ -201,9 +199,9 @@ const Navbar = () => {
                     />
                     <span className="hidden sm:block text-slate-200 group-hover:text-white transition-colors">
                       {user?.firstName && user?.lastName
-                        ? `${user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1).toLowerCase()} ${user.lastName.charAt(0).toUpperCase() + user.lastName.slice(1).toLowerCase()}` 
-                        : user?.firstName 
-                          ? user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1).toLowerCase() 
+                        ? `${user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1).toLowerCase()} ${user.lastName.charAt(0).toUpperCase() + user.lastName.slice(1).toLowerCase()}`
+                        : user?.firstName
+                          ? user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1).toLowerCase()
                           : "Profili"}
                     </span>
                     <ChevronDown
@@ -224,8 +222,8 @@ const Navbar = () => {
                             {user?.firstName && (
                               <p className="font-bold text-white">
                                 {user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1).toLowerCase()}{" "}
-                                {user?.lastName 
-                                  ? user.lastName.charAt(0).toUpperCase() + user.lastName.slice(1).toLowerCase() 
+                                {user?.lastName
+                                  ? user.lastName.charAt(0).toUpperCase() + user.lastName.slice(1).toLowerCase()
                                   : ""}
                               </p>
                             )}

@@ -114,8 +114,29 @@ export const authService = {
 }
 
 // --- Dicebear Avatar URL Generator ---
-export const generateDicebearUrl = (userId, avatarStyle = "adventurer") =>
-  `https://api.dicebear.com/7.x/${avatarStyle}/svg?seed=${userId}`
+export const generateDicebearUrl = (userId, avatarStyle = "adventurer") => {
+  if (!userId) {
+    console.warn("[v0] generateDicebearUrl called with no userId, using placeholder")
+    return "/placeholder.svg?height=100&width=100"
+  }
+
+  const baseStyle = avatarStyle.split("-").slice(0, -1).join("-") || avatarStyle
+  const numericLastPart = avatarStyle.split("-").pop()
+  const cleanStyle = numericLastPart && /^\d+$/.test(numericLastPart) ? baseStyle : avatarStyle
+
+  const url = `https://api.dicebear.com/9.x/${cleanStyle}/svg?seed=${userId}`
+  console.log(
+    "[v0] Generated DiceBear URL:",
+    url,
+    "for user:",
+    userId,
+    "original style:",
+    avatarStyle,
+    "clean style:",
+    cleanStyle,
+  )
+  return url
+}
 
 export const dictionaryService = {
   getAllWords: (params = {}) => api.get("/dictionary", { params }),

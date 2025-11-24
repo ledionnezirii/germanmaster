@@ -3,32 +3,36 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { categoriesService } from "../services/api"
 import { useAuth } from "../context/AuthContext"
-import { FolderOpen, ArrowLeft, BookOpen, Calendar, Palette, Smile, Heart, User, Grid, Globe, Leaf, Bus, Briefcase, Hand, Coffee, Film, TreePine, Guitar, HardHat, Book, Sword, BellRing, Castle, Swords, Hammer, CheckCircle, Trophy } from 'lucide-react'
+import { FolderOpen, ArrowLeft, BookOpen, Calendar, Palette, Smile, Heart, User, Grid, Globe, Leaf, Bus, Briefcase, Hand, Coffee, Film, TreePine, Guitar, HardHat, Book, Sword, BellRing, Castle, Swords, Hammer, CheckCircle, Trophy, BookCopy, SortDesc, PaletteIcon, Handshake, Speech, Calendar1Icon, Clock, CarTaxiFront, TreePalm, Flag, HeartIcon, Workflow, CloudSnow, User2, Sparkles, GlassWater, Home, ShoppingBag, ShoppingBagIcon, Shirt, HandIcon, Plane, Sandwich, Mountain, PawPrint } from 'lucide-react'
+import { NumberedListIcon } from "@heroicons/react/24/outline"
 
 const iconMap = {
   default: FolderOpen,
-  calendar: Calendar,
-  users: User,
-  smile: Smile,
-  heart: Heart,
-  palette: Palette,
-  grid: Grid,
-  globe: Globe,
-  leaf: Leaf,
-  bus: Bus,
-  briefcase: Briefcase,
-  hand: Hand,
-  coffee: Coffee,
-  film: Film,
-  tree: TreePine,
-  guitar: Guitar,
-  clothes: HardHat,
-  book: Book,
-  sword: Sword,
-  ring: BellRing,
-  haus: Castle,
-  sport: Swords,
-  hammer: Hammer,
+
+  Book: BookCopy,
+  numbers:NumberedListIcon,
+  palette:PaletteIcon,
+  handshake:Handshake,
+  speech:Speech,
+  calendar:Calendar1Icon,
+  clock:Clock,
+  transport:CarTaxiFront,
+  tree:TreePalm,
+  flag:Flag,
+  heart:HeartIcon,
+  work:Workflow,
+  seasons:CloudSnow,
+  family:User2,
+  hobbies:Sparkles,
+  food:GlassWater,
+  home:Home,
+  clothes:Shirt,
+  shopping:ShoppingBagIcon,
+  body:HandIcon,
+  travel:Plane,
+  restaurant:Sandwich,
+  nature:Mountain,
+  animals:PawPrint
 }
 
 const Category = () => {

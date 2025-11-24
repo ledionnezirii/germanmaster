@@ -146,15 +146,15 @@ const Home = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#14B8A6]"></div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1]">
-      <div className="bg-gradient-to-r from-white to-[#F0FDFA] border-b border-[#99F6E4] relative overflow-hidden">
+    <div className="min-h-screen bg-white">
+      <div className="bg-gradient-to-r from-white to-gray-50 border-b border-gray-200 relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-64 pointer-events-none opacity-30 hidden lg:block">
           <div className="relative h-full flex items-end justify-center pb-8">
             <div
@@ -182,7 +182,7 @@ const Home = () => {
 
             <div className="absolute bottom-40 left-1/2 -translate-x-1/2 w-28 h-28">
               <div
-                className="absolute inset-0 bg-gradient-to-b from-[#34D399] to-[#10B981] rounded-full animate-[sway_3.5s_ease-in-out_infinite] shadow-lg"
+                className="absolute inset-0 bg-gradient-to-b from-[#34D399] to-[#10B981] rounded-full animate-[sway_3.5s_ease-in-out_infinite] shadow-lg shadow-orange-500/50"
                 style={{ animationDelay: "0.8s" }}
               ></div>
             </div>
@@ -239,7 +239,7 @@ const Home = () => {
           <div className="text-center">
             <h1 className="mb-4 text-5xl font-bold text-gray-900">
               Mësoni Gjermanisht
-              <span className="block bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] bg-clip-text text-transparent mt-2">
+              <span className="block bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mt-2">
                 Në Mënyrë Efektive
               </span>
             </h1>
@@ -251,14 +251,14 @@ const Home = () => {
               <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <Link
                   to="/translate"
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white hover:from-[#0D9488] hover:to-[#0891B2] h-12 px-8 font-medium shadow-lg shadow-teal-500/30 transition-all hover:shadow-xl hover:shadow-teal-500/40"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 h-12 px-8 font-medium shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40"
                 >
                   <Play className="h-5 w-5" />
                   Vazhdo Mësimin
                 </Link>
                 <Link
                   to="/account"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-[#14B8A6] bg-white hover:bg-[#F0FDFA] text-[#0D9488] h-12 px-8 font-medium transition-all shadow-md hover:shadow-lg"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-blue-600 bg-white hover:bg-gray-50 text-blue-600 h-12 px-8 font-medium transition-all shadow-md hover:shadow-lg"
                 >
                   <TrendingUp className="h-5 w-5" />
                   Shiko Progresin
@@ -268,13 +268,13 @@ const Home = () => {
               <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <Link
                   to="/signup"
-                  className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white hover:from-[#0D9488] hover:to-[#0891B2] h-12 px-8 font-medium shadow-lg shadow-teal-500/30 transition-all hover:shadow-xl hover:shadow-teal-500/40"
+                  className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700 h-12 px-8 font-medium shadow-lg shadow-blue-500/30 transition-all hover:shadow-xl hover:shadow-blue-500/40"
                 >
                   Fillo Falas
                 </Link>
                 <Link
                   to="/signin"
-                  className="inline-flex items-center justify-center rounded-full border-2 border-[#14B8A6] bg-white hover:bg-[#F0FDFA] text-[#0D9488] h-12 px-8 font-medium transition-all shadow-md hover:shadow-lg"
+                  className="inline-flex items-center justify-center rounded-full border-2 border-blue-600 bg-white hover:bg-gray-50 text-blue-600 h-12 px-8 font-medium transition-all shadow-md hover:shadow-lg"
                 >
                   Hyr
                 </Link>
@@ -286,7 +286,7 @@ const Home = () => {
 
       {isAuthenticated && user && (
         <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-          <div className="rounded-2xl bg-white border-2 border-[#99F6E4] p-6 shadow-xl shadow-teal-100/50">
+          <div className="rounded-2xl bg-white border-2 border-gray-200 p-6 shadow-xl shadow-gray-100/50">
             <div className="mb-6 flex items-center gap-3">
               <div className="text-4xl">👋</div>
               <div>
@@ -358,22 +358,22 @@ const Home = () => {
         </div>
       )}
 
-      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="relative">
-          <div className="relative overflow-hidden rounded-2xl bg-white shadow-2xl shadow-teal-100/50">
-            <div className="relative h-[350px] sm:h-[400px] lg:h-[500px] flex items-center justify-center">
+          <div className="relative overflow-hidden rounded-xl bg-white shadow-lg">
+            <div className="relative h-[200px] sm:h-[240px] md:h-[280px] lg:h-[320px] flex items-center justify-center">
               {features.map((feature, index) => {
                 const isActive = index === currentSlide
                 return (
                   <Link
                     key={index}
                     to={isAuthenticated ? feature.path : "/signin"}
-                    className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-500 ${
+                    className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-700 ease-in-out ${
                       isActive ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
                     }`}
                   >
                     <div
-                      className="absolute inset-0 bg-center bg-no-repeat transition-transform duration-700 hover:scale-105"
+                      className="absolute inset-0 bg-center bg-no-repeat transition-transform duration-700 ease-in-out hover:scale-105"
                       style={{
                         backgroundImage: `url(${feature.bgImage})`,
                         backgroundSize: "cover",
@@ -385,35 +385,29 @@ const Home = () => {
               })}
             </div>
 
-            <div
-              className={`absolute inset-0 rounded-2xl pointer-events-none transition-colors duration-500 ${
-                features[currentSlide]?.borderColor || "border-teal-200"
-              }`}
-            ></div>
-
             <button
               onClick={goToPrevious}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-700 shadow-lg hover:bg-gray-50 hover:shadow-xl transition-all hover:scale-110"
+              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-md hover:bg-white hover:shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
               aria-label="Previous slide"
             >
-              <ChevronLeft className="h-6 w-6" />
+              <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={goToNext}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white text-gray-700 shadow-lg hover:bg-gray-50 hover:shadow-xl transition-all hover:scale-110"
+              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-md hover:bg-white hover:shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
               aria-label="Next slide"
             >
-              <ChevronRight className="h-6 w-6" />
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="mt-6 flex justify-center gap-3">
+          <div className="mt-4 flex justify-center gap-2">
             {features.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
-                className={`h-2 rounded-full transition-all ${
-                  index === currentSlide ? "w-8 bg-[#14B8A6]" : "w-2 bg-gray-300 hover:bg-gray-400"
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  index === currentSlide ? "w-6 bg-blue-600" : "w-1.5 bg-gray-300 hover:bg-gray-400"
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
