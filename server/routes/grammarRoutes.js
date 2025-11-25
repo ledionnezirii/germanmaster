@@ -1,34 +1,38 @@
-const express = require("express")
+const express = require("express");
+const router = express.Router();
 const {
-  getAllTopics,
-  getTopicsByLevel,
-  getTopicById,
-  createTopic,
-  updateTopic,
-  deleteTopic,
-  markTopicAsFinished,
-  getFinishedTopics,
+  getAllPhrases,
+  getPhrasesByLevel,
+  getPhraseById,
+  createPhrase,
+  createBulkPhrases,
+  updatePhrase,
+  deletePhrase,
+  markPhraseAsFinished,
+  unmarkPhraseAsFinished,
+  getFinishedPhrases,
+  getUserPhraseProgress,
   getDailyLimitStatus,
-} = require("../controllers/grammarController")
-const auth = require("../middleware/auth")
-const isAdmin = require("../middleware/isAdmin")
-
-const router = express.Router()
+} = require("../controllers/phraseController");
+const isAdmin = require("../middleware/isAdmin");
+const protect = require("../middleware/auth");
 
 // Public routes
-router.get("/", getAllTopics)
-router.get("/level/:level", getTopicsByLevel)
+router.get("/", getAllPhrases);
+router.get("/level/:level", protect, getPhrasesByLevel);
+router.get("/user/finished", protect, getFinishedPhrases);
+router.get("/user/progress", protect, getUserPhraseProgress);
+router.get("/user/daily-limit", protect, getDailyLimitStatus); // NEW ROUTE
+router.get("/:id", protect, getPhraseById);
 
-router.get("/daily-limit-status", auth, getDailyLimitStatus)
-router.get("/finished", auth, getFinishedTopics)
+// User routes - mark/unmark phrases as finished
+router.post("/:phraseId/finish", protect, markPhraseAsFinished);
+router.delete("/:phraseId/finish", protect, unmarkPhraseAsFinished);
 
-// Dynamic routes
-router.get("/:id", auth, getTopicById)
-router.post("/:id/finish", auth, markTopicAsFinished)
+// Admin routes
+router.post("/", protect, isAdmin, createPhrase);
+router.post("/bulk", protect, isAdmin, createBulkPhrases);
+router.put("/:id", protect, isAdmin, updatePhrase);
+router.delete("/:id", protect, isAdmin, deletePhrase);
 
-// Protected admin routes
-router.post("/", auth, isAdmin, createTopic)
-router.put("/:id", auth, isAdmin, updateTopic)
-router.delete("/:id", auth, isAdmin, deleteTopic)
-
-module.exports = router
+module.exports = router;

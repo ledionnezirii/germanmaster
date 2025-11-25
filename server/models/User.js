@@ -164,6 +164,15 @@ const userSchema = new mongoose.Schema(
         ref: "Phrase",
       },
     ],
+    // NEW FIELDS FOR DAILY PHRASE LIMIT
+    dailyPhraseUnlocks: {
+      type: Number,
+      default: 0,
+    },
+    lastPhraseUnlockDate: {
+      type: Date,
+      default: null,
+    },
     practiceCompleted: [
       {
         practiceId: {

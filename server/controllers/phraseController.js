@@ -1,6 +1,27 @@
 const Phrase = require("../models/Phrase")
 const User = require("../models/User")
 
+const DAILY_PHRASE_LIMIT = 10
+
+// Helper function to check if it's a new day (resets at 00:01)
+const isNewDay = (lastDate) => {
+  if (!lastDate) return true
+  
+  const now = new Date()
+  const last = new Date(lastDate)
+  
+  // Create date objects for comparison at 00:01
+  const todayReset = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 1, 0, 0)
+  const lastReset = new Date(last.getFullYear(), last.getMonth(), last.getDate(), 0, 1, 0, 0)
+  
+  // If current time is before 00:01, use yesterday's reset time
+  if (now.getHours() === 0 && now.getMinutes() < 1) {
+    todayReset.setDate(todayReset.getDate() - 1)
+  }
+  
+  return todayReset > lastReset
+}
+
 // Get all phrases with optional filters
 exports.getAllPhrases = async (req, res) => {
   try {
@@ -195,11 +216,11 @@ exports.deletePhrase = async (req, res) => {
   }
 }
 
-// Mark phrase as finished for user
+// Mark phrase as finished for user - WITH DAILY LIMIT
 exports.markPhraseAsFinished = async (req, res) => {
   try {
     const { phraseId } = req.params
-    const userId = req.user.id // Assuming auth middleware sets req.user
+    const userId = req.user.id
 
     // Find the phrase to get XP value
     const phrase = await Phrase.findById(phraseId)
@@ -228,9 +249,40 @@ exports.markPhraseAsFinished = async (req, res) => {
       })
     }
 
+    // Check daily limit
+    const newDay = isNewDay(user.lastPhraseUnlockDate)
+    
+    if (newDay) {
+      // Reset daily counter for new day
+      user.dailyPhraseUnlocks = 0
+      user.lastPhraseUnlockDate = new Date()
+    }
+
+    // Check if user has reached daily limit
+    if (user.dailyPhraseUnlocks >= DAILY_PHRASE_LIMIT) {
+      // Calculate time until next reset (00:01)
+      const now = new Date()
+      const nextReset = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 1, 0, 0)
+      const timeUntilReset = nextReset - now
+      const hoursUntilReset = Math.floor(timeUntilReset / (1000 * 60 * 60))
+      const minutesUntilReset = Math.floor((timeUntilReset % (1000 * 60 * 60)) / (1000 * 60))
+
+      return res.status(429).json({
+        success: false,
+        message: `Keni arritur limitin ditor të ${DAILY_PHRASE_LIMIT} frazave. Provoni përsëri pas ${hoursUntilReset} orësh dhe ${minutesUntilReset} minutash.`,
+        dailyLimitReached: true,
+        remainingUnlocks: 0,
+        resetTime: nextReset.toISOString(),
+        hoursUntilReset,
+        minutesUntilReset,
+      })
+    }
+
     // Add phrase to finished list and update XP
     user.phrasesFinished.push(phraseId)
     user.xp += phrase.xp
+    user.dailyPhraseUnlocks += 1
+    user.lastPhraseUnlockDate = new Date()
     await user.save()
 
     res.status(200).json({
@@ -239,6 +291,8 @@ exports.markPhraseAsFinished = async (req, res) => {
         phraseId,
         xpGained: phrase.xp,
         totalXp: user.xp,
+        dailyUnlocksUsed: user.dailyPhraseUnlocks,
+        remainingUnlocks: DAILY_PHRASE_LIMIT - user.dailyPhraseUnlocks,
       },
       message: "Phrase marked as finished",
     })
@@ -284,7 +338,7 @@ exports.unmarkPhraseAsFinished = async (req, res) => {
     }
 
     user.phrasesFinished.splice(index, 1)
-    user.xp = Math.max(0, user.xp - phrase.xp) // Ensure XP doesn't go negative
+    user.xp = Math.max(0, user.xp - phrase.xp)
     await user.save()
 
     res.status(200).json({
@@ -333,7 +387,7 @@ exports.getFinishedPhrases = async (req, res) => {
   }
 }
 
-// Get user's phrase progress
+// Get user's phrase progress - WITH DAILY LIMIT INFO
 exports.getUserPhraseProgress = async (req, res) => {
   try {
     const userId = req.user.id
@@ -353,6 +407,21 @@ exports.getUserPhraseProgress = async (req, res) => {
     const totalPhrases = await Phrase.countDocuments(query)
     const finishedPhrases = user.phrasesFinished.length
 
+    // Calculate daily limit info
+    const newDay = isNewDay(user.lastPhraseUnlockDate)
+    const dailyUnlocksUsed = newDay ? 0 : (user.dailyPhraseUnlocks || 0)
+    const remainingUnlocks = DAILY_PHRASE_LIMIT - dailyUnlocksUsed
+
+    // Calculate time until next reset
+    const now = new Date()
+    let nextReset = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 1, 0, 0)
+    if (now >= nextReset) {
+      nextReset.setDate(nextReset.getDate() + 1)
+    }
+    const timeUntilReset = nextReset - now
+    const hoursUntilReset = Math.floor(timeUntilReset / (1000 * 60 * 60))
+    const minutesUntilReset = Math.floor((timeUntilReset % (1000 * 60 * 60)) / (1000 * 60))
+
     res.status(200).json({
       success: true,
       data: {
@@ -360,12 +429,68 @@ exports.getUserPhraseProgress = async (req, res) => {
         finishedPhrases,
         percentage: totalPhrases > 0 ? ((finishedPhrases / totalPhrases) * 100).toFixed(2) : 0,
         phrasesFinished: user.phrasesFinished,
+        // Daily limit info
+        dailyLimit: DAILY_PHRASE_LIMIT,
+        dailyUnlocksUsed,
+        remainingUnlocks,
+        dailyLimitReached: remainingUnlocks <= 0,
+        resetTime: nextReset.toISOString(),
+        hoursUntilReset,
+        minutesUntilReset,
       },
     })
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Error fetching phrase progress",
+      error: error.message,
+    })
+  }
+}
+
+// NEW: Get daily limit status
+exports.getDailyLimitStatus = async (req, res) => {
+  try {
+    const userId = req.user.id
+
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      })
+    }
+
+    const newDay = isNewDay(user.lastPhraseUnlockDate)
+    const dailyUnlocksUsed = newDay ? 0 : (user.dailyPhraseUnlocks || 0)
+    const remainingUnlocks = DAILY_PHRASE_LIMIT - dailyUnlocksUsed
+
+    // Calculate time until next reset
+    const now = new Date()
+    let nextReset = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 1, 0, 0)
+    if (now >= nextReset) {
+      nextReset.setDate(nextReset.getDate() + 1)
+    }
+    const timeUntilReset = nextReset - now
+    const hoursUntilReset = Math.floor(timeUntilReset / (1000 * 60 * 60))
+    const minutesUntilReset = Math.floor((timeUntilReset % (1000 * 60 * 60)) / (1000 * 60))
+
+    res.status(200).json({
+      success: true,
+      data: {
+        dailyLimit: DAILY_PHRASE_LIMIT,
+        dailyUnlocksUsed,
+        remainingUnlocks,
+        dailyLimitReached: remainingUnlocks <= 0,
+        resetTime: nextReset.toISOString(),
+        hoursUntilReset,
+        minutesUntilReset,
+      },
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching daily limit status",
       error: error.message,
     })
   }
