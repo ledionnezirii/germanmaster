@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+const mongoose = require("mongoose")
+const bcrypt = require("bcryptjs")
 
 const userSchema = new mongoose.Schema(
   {
@@ -59,7 +59,6 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    // </CHANGE>
     level: {
       type: String,
       enum: ["A1", "A2", "B1", "B2", "C1", "C2"],
@@ -118,9 +117,7 @@ const userSchema = new mongoose.Schema(
         ref: "Quiz",
       },
     ],
-    completedPronunciationPackages: [
-      { type: mongoose.Schema.Types.ObjectId, ref: "PronunciationPackage" },
-    ],
+    completedPronunciationPackages: [{ type: mongoose.Schema.Types.ObjectId, ref: "PronunciationPackage" }],
     completedWords: {
       type: [String],
       default: [],
@@ -137,6 +134,18 @@ const userSchema = new mongoose.Schema(
         ref: "Grammar",
       },
     ],
+    grammarDailyTopics: {
+      date: {
+        type: Date,
+        default: null,
+      },
+      topicIds: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Grammar",
+        },
+      ],
+    },
     categoryFinished: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -246,18 +255,18 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
-);
+  },
+)
 
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
-  const salt = await bcrypt.genSalt(12);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
-});
+  if (!this.isModified("password")) return next()
+  const salt = await bcrypt.genSalt(12)
+  this.password = await bcrypt.hash(this.password, salt)
+  next()
+})
 
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
+  return await bcrypt.compare(candidatePassword, this.password)
+}
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model("User", userSchema)

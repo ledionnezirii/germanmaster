@@ -3,6 +3,52 @@ const { ApiError } = require("../utils/ApiError")
 const { ApiResponse } = require("../utils/ApiResponse")
 const { asyncHandler } = require("../utils/asyncHandler")
 
+// Helper function to check if date is today (reset at 00:01)
+const isDateToday = (date) => {
+  if (!date) return false
+  const today = new Date()
+  const dateToCheck = new Date(date)
+  return (
+    today.getFullYear() === dateToCheck.getFullYear() &&
+    today.getMonth() === dateToCheck.getMonth() &&
+    today.getDate() === dateToCheck.getDate()
+  )
+}
+
+const canAccessMoreTopicsToday = (user) => {
+  if (!user.grammarDailyTopics || !user.grammarDailyTopics.date) {
+    return true
+  }
+
+  if (!isDateToday(user.grammarDailyTopics.date)) {
+    return true // New day, reset limit
+  }
+
+  const topicsAccessedToday = user.grammarDailyTopics.topicIds.length
+  return topicsAccessedToday < 2
+}
+
+const getTopicsAccessedToday = (user) => {
+  if (!user.grammarDailyTopics || !user.grammarDailyTopics.date) {
+    return 0
+  }
+
+  if (!isDateToday(user.grammarDailyTopics.date)) {
+    return 0 // New day, reset count
+  }
+
+  return user.grammarDailyTopics.topicIds.length
+}
+
+const resetDailyTopicsIfNewDay = (user) => {
+  if (!user.grammarDailyTopics || !user.grammarDailyTopics.date || !isDateToday(user.grammarDailyTopics.date)) {
+    user.grammarDailyTopics = {
+      date: new Date(),
+      topicIds: [],
+    }
+  }
+}
+
 // @desc    Get all grammar topics
 // @route   GET /api/grammar
 // @access  Public
@@ -70,14 +116,43 @@ const getTopicsByLevel = asyncHandler(async (req, res) => {
   )
 })
 
-// @desc    Get single topic by ID
+// @desc    Get single topic by ID - with daily limit check
 // @route   GET /api/grammar/:id
-// @access  Public
+// @access  Private
 const getTopicById = asyncHandler(async (req, res) => {
+  const User = require("../models/User")
+  const userId = req.user?.id
+
   const topic = await Grammar.findById(req.params.id).populate("createdBy", "emri mbiemri")
 
   if (!topic || !topic.isActive) {
     throw new ApiError(404, "Grammar topic not found")
+  }
+
+  if (userId) {
+    const user = await User.findById(userId)
+    if (!user) {
+      throw new ApiError(404, "User not found")
+    }
+
+    resetDailyTopicsIfNewDay(user)
+
+    const topicIdString = String(req.params.id)
+    const alreadyAccessedToday = user.grammarDailyTopics.topicIds.some((id) => String(id) === topicIdString)
+
+    // If not already accessed today, add it to the list
+    if (!alreadyAccessedToday) {
+      if (!canAccessMoreTopicsToday(user)) {
+        const topicsAccessedCount = getTopicsAccessedToday(user)
+        throw new ApiError(
+          429,
+          `You can only access 2 grammar topics per day. You've accessed ${topicsAccessedCount} already. Come back tomorrow at 00:01 UTC for more topics.`,
+        )
+      }
+
+      user.grammarDailyTopics.topicIds.push(req.params.id)
+      await user.save()
+    }
   }
 
   res.json(new ApiResponse(200, topic))
@@ -87,11 +162,13 @@ const getTopicById = asyncHandler(async (req, res) => {
 // @route   POST /api/grammar
 // @access  Private (Admin)
 const createTopic = asyncHandler(async (req, res) => {
-  const { name, description, level, content, rules, examples, exercises, difficulty, tags, numbers } = req.body
+  const { name, description, moreInfo, level, content, rules, examples, exercises, difficulty, tags, numbers } =
+    req.body
 
   const topic = await Grammar.create({
     name,
     description,
+    moreInfo: moreInfo || "",
     level,
     content,
     rules: rules || [],
@@ -116,36 +193,32 @@ const updateTopic = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Grammar topic not found")
   }
 
-  // Allow updating all fields including rules
   const allowedUpdates = [
-    'name',
-    'description', 
-    'level',
-    'content',
-    'rules',
-    'examples',
-    'exercises',
-    'numbers',
-    'difficulty',
-    'tags',
-    'isActive'
+    "name",
+    "description",
+    "moreInfo",
+    "level",
+    "content",
+    "rules",
+    "examples",
+    "exercises",
+    "numbers",
+    "difficulty",
+    "tags",
+    "isActive",
   ]
 
   const updates = {}
-  allowedUpdates.forEach(field => {
+  allowedUpdates.forEach((field) => {
     if (req.body[field] !== undefined) {
       updates[field] = req.body[field]
     }
   })
 
-  const updatedTopic = await Grammar.findByIdAndUpdate(
-    req.params.id, 
-    updates,
-    {
-      new: true,
-      runValidators: true,
-    }
-  )
+  const updatedTopic = await Grammar.findByIdAndUpdate(req.params.id, updates, {
+    new: true,
+    runValidators: true,
+  })
 
   res.json(new ApiResponse(200, updatedTopic, "Grammar topic updated successfully"))
 })
@@ -166,7 +239,7 @@ const deleteTopic = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, null, "Grammar topic deleted successfully"))
 })
 
-// @desc    Mark grammar topic as finished
+// @desc    Mark grammar topic as finished - with daily limit check
 // @route   PUT /api/grammar/:id/finish
 // @access  Private
 const markTopicAsFinished = asyncHandler(async (req, res) => {
@@ -184,12 +257,31 @@ const markTopicAsFinished = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found")
   }
 
-  const finishedTopicIds = user.grammarFinished.map((id) => id.toString())
+  // Reset daily topics if new day
+  resetDailyTopicsIfNewDay(user)
 
+  const topicIdString = String(topicId)
+  const alreadyAccessedToday = user.grammarDailyTopics.topicIds.some((id) => String(id) === topicIdString)
+
+  if (!alreadyAccessedToday) {
+    if (!canAccessMoreTopicsToday(user)) {
+      const topicsAccessedCount = getTopicsAccessedToday(user)
+      throw new ApiError(
+        429,
+        `You can only finish 2 grammar topics per day. You've accessed ${topicsAccessedCount} already. Come back tomorrow at 00:01 UTC.`,
+      )
+    }
+    // Add to accessed topics when finishing
+    user.grammarDailyTopics.topicIds.push(topicId)
+  }
+
+  // Add to finished list if not already there
+  const finishedTopicIds = user.grammarFinished.map((id) => id.toString())
   if (!finishedTopicIds.includes(topicId)) {
     user.grammarFinished.push(topicId)
-    await user.save()
   }
+
+  await user.save()
 
   res.json(new ApiResponse(200, { topicId, grammarFinished: user.grammarFinished }, "Grammar topic marked as finished"))
 })
@@ -199,15 +291,44 @@ const markTopicAsFinished = asyncHandler(async (req, res) => {
 // @access  Private
 const getFinishedTopics = asyncHandler(async (req, res) => {
   const userId = req.user.id
-  
+
   const User = require("../models/User")
   const user = await User.findById(userId).select("grammarFinished")
-  
+
   if (!user) {
     throw new ApiError(404, "User not found")
   }
-  
+
   res.json(new ApiResponse(200, { finishedTopics: user.grammarFinished }))
+})
+
+// @desc    Get daily limit status
+// @route   GET /api/grammar/daily-limit-status
+// @access  Private
+const getDailyLimitStatus = asyncHandler(async (req, res) => {
+  const userId = req.user.id
+
+  const User = require("../models/User")
+  const user = await User.findById(userId)
+
+  if (!user) {
+    throw new ApiError(404, "User not found")
+  }
+
+  resetDailyTopicsIfNewDay(user)
+
+  const topicsAccessedToday = getTopicsAccessedToday(user)
+  const canAccessMore = canAccessMoreTopicsToday(user)
+  const remainingTopics = 2 - topicsAccessedToday
+
+  res.json(
+    new ApiResponse(200, {
+      topicsAccessedToday,
+      canAccessMore,
+      remainingTopics,
+      limit: 2,
+    }),
+  )
 })
 
 module.exports = {
@@ -218,5 +339,6 @@ module.exports = {
   updateTopic,
   deleteTopic,
   markTopicAsFinished,
-  getFinishedTopics
+  getFinishedTopics,
+  getDailyLimitStatus,
 }

@@ -51,6 +51,11 @@ const grammarSchema = new mongoose.Schema(
       trim: true,
       maxlength: [1000, "Description cannot exceed 1000 characters"],
     },
+    moreInfo: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     level: {
       type: String,
       required: [true, "Level is required"],
@@ -93,7 +98,6 @@ const grammarSchema = new mongoose.Schema(
   },
 )
 
-// Index for better performance
 grammarSchema.index({ level: 1, isActive: 1 })
 grammarSchema.index({ name: "text", description: "text" })
 
