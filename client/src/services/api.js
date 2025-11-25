@@ -367,10 +367,12 @@ export const phraseService = {
   unmarkPhraseAsFinished: (phraseId) => api.delete(`/phrases/${phraseId}/finish`),
   getFinishedPhrases: () => api.get("/phrases/user/finished"),
   getUserPhraseProgress: (level = null) => api.get("/phrases/user/progress", { params: { level } }),
-  createPhrase: (phraseData) => api.post("/", phraseData),
-  createBulkPhrases: (phrases) => api.post("/bulk", { phrases }),
+  getDailyLimitStatus: () => api.get("/phrases/user/daily-limit"), // NEW METHOD
+  createPhrase: (phraseData) => api.post("/phrases", phraseData),
+  createBulkPhrases: (phrases) => api.post("/phrases/bulk", { phrases }),
   updatePhrase: (id, phraseData) => api.put(`/phrases/${id}`, phraseData),
   deletePhrase: (id) => api.delete(`/phrases/${id}`),
+  addQuizXp: (xp) => api.post("/phrases/quiz-xp", { xp }),
 }
 
 export const ttsService = {

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { phraseService } from "../services/api"
 import { useAuth } from "../context/AuthContext"
-import { Volume2, BookOpen, ChevronLeft, ChevronRight, LockIcon, Plus, Eye, EyeOff } from "lucide-react"
+import { Volume2, BookOpen, ChevronLeft, ChevronRight, LockIcon, Plus, Eye, EyeOff, Clock } from "lucide-react"
 
 const Phrase = () => {
   const fonts = {
@@ -33,6 +33,17 @@ const Phrase = () => {
   const [quizComplete, setQuizComplete] = useState(false)
   const [quizScore, setQuizScore] = useState(0)
   const itemsPerPage = 30
+
+  // NEW STATE FOR DAILY LIMIT
+  const [dailyLimitInfo, setDailyLimitInfo] = useState({
+    dailyLimit: 10,
+    dailyUnlocksUsed: 0,
+    remainingUnlocks: 10,
+    dailyLimitReached: false,
+    hoursUntilReset: 0,
+    minutesUntilReset: 0,
+  })
+  const [showLimitWarning, setShowLimitWarning] = useState(false)
 
   const levels = ["A1", "A2", "B1", "B2", "C1", "C2"]
 
@@ -91,7 +102,20 @@ const Phrase = () => {
   const fetchProgress = async () => {
     try {
       const response = await phraseService.getUserPhraseProgress(selectedLevel)
-      setProgress(response.data || { totalPhrases: 0, finishedPhrases: 0, percentage: 0 })
+      const data = response.data || { totalPhrases: 0, finishedPhrases: 0, percentage: 0 }
+      setProgress(data)
+      
+      // Update daily limit info from progress response
+      if (data.dailyLimit !== undefined) {
+        setDailyLimitInfo({
+          dailyLimit: data.dailyLimit,
+          dailyUnlocksUsed: data.dailyUnlocksUsed,
+          remainingUnlocks: data.remainingUnlocks,
+          dailyLimitReached: data.dailyLimitReached,
+          hoursUntilReset: data.hoursUntilReset,
+          minutesUntilReset: data.minutesUntilReset,
+        })
+      }
     } catch (error) {
       console.error("Error fetching progress:", error)
       setProgress({ totalPhrases: 0, finishedPhrases: 0, percentage: 0 })
@@ -103,6 +127,13 @@ const Phrase = () => {
       return
     }
 
+    // Check if daily limit is reached before attempting
+    if (dailyLimitInfo.dailyLimitReached) {
+      setShowLimitWarning(true)
+      setTimeout(() => setShowLimitWarning(false), 5000)
+      return
+    }
+
     const button = event.currentTarget
     const rect = button.getBoundingClientRect()
     setXpPosition({
@@ -111,8 +142,18 @@ const Phrase = () => {
     })
 
     try {
-      await phraseService.markPhraseAsFinished(phraseId)
+      const response = await phraseService.markPhraseAsFinished(phraseId)
       setFinishedPhraseIds((prev) => [...prev, phraseId])
+
+      // Update daily limit info from response
+      if (response.data) {
+        setDailyLimitInfo(prev => ({
+          ...prev,
+          dailyUnlocksUsed: response.data.dailyUnlocksUsed,
+          remainingUnlocks: response.data.remainingUnlocks,
+          dailyLimitReached: response.data.remainingUnlocks <= 0,
+        }))
+      }
 
       setAnimatedXp(xp)
       setShowXpAnimation(true)
@@ -121,7 +162,22 @@ const Phrase = () => {
       await fetchProgress()
     } catch (error) {
       console.error("Error marking phrase:", error)
-      alert("Nuk mund të përditësohet statusi i frazës. Ju lutem provoni përsëri.")
+      
+      // Handle daily limit error from backend
+      if (error.response?.status === 429 && error.response?.data?.dailyLimitReached) {
+        setDailyLimitInfo({
+          dailyLimit: 10,
+          dailyUnlocksUsed: 10,
+          remainingUnlocks: 0,
+          dailyLimitReached: true,
+          hoursUntilReset: error.response.data.hoursUntilReset,
+          minutesUntilReset: error.response.data.minutesUntilReset,
+        })
+        setShowLimitWarning(true)
+        setTimeout(() => setShowLimitWarning(false), 5000)
+      } else {
+        alert("Nuk mund të përditësohet statusi i frazës. Ju lutem provoni përsëri.")
+      }
     }
   }
 
@@ -267,6 +323,66 @@ const Phrase = () => {
       </div>
     )
   }
+
+  // Daily Limit Banner Component
+  const DailyLimitBanner = () => (
+    <div className={`mb-4 p-3 md:p-4 rounded-xl border-2 ${
+      dailyLimitInfo.dailyLimitReached 
+        ? "bg-red-50 border-red-200" 
+        : dailyLimitInfo.remainingUnlocks <= 3 
+          ? "bg-amber-50 border-amber-200"
+          : "bg-blue-50 border-blue-200"
+    }`}>
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <Clock className={`w-5 h-5 ${
+            dailyLimitInfo.dailyLimitReached 
+              ? "text-red-500" 
+              : dailyLimitInfo.remainingUnlocks <= 3 
+                ? "text-amber-500"
+                : "text-blue-500"
+          }`} />
+          <span className="text-sm md:text-base font-semibold" style={{ fontFamily: fonts.poppins }}>
+            {dailyLimitInfo.dailyLimitReached 
+              ? "Limiti ditor i arritur!" 
+              : `Fraza të mbetura sot: ${dailyLimitInfo.remainingUnlocks}/${dailyLimitInfo.dailyLimit}`
+            }
+          </span>
+        </div>
+        {dailyLimitInfo.dailyLimitReached && (
+          <span className="text-xs md:text-sm text-red-600" style={{ fontFamily: fonts.inter }}>
+            Rifreskimi pas {dailyLimitInfo.hoursUntilReset}h {dailyLimitInfo.minutesUntilReset}min
+          </span>
+        )}
+      </div>
+      {!dailyLimitInfo.dailyLimitReached && (
+        <div className="mt-2">
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className={`h-2 rounded-full transition-all ${
+                dailyLimitInfo.remainingUnlocks <= 3 ? "bg-amber-500" : "bg-blue-500"
+              }`}
+              style={{ width: `${((dailyLimitInfo.dailyLimit - dailyLimitInfo.remainingUnlocks) / dailyLimitInfo.dailyLimit) * 100}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
+  // Limit Warning Popup
+  const LimitWarningPopup = () => (
+    showLimitWarning && (
+      <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg animate-bounce">
+        <div className="flex items-center gap-2">
+          <Clock className="w-5 h-5" />
+          <span className="font-semibold" style={{ fontFamily: fonts.poppins }}>
+            Keni arritur limitin ditor! Provoni përsëri pas {dailyLimitInfo.hoursUntilReset}h {dailyLimitInfo.minutesUntilReset}min
+          </span>
+        </div>
+      </div>
+    )
+  )
 
   if (!isAuthenticated) {
     return (
@@ -553,6 +669,8 @@ const Phrase = () => {
         }
       `}</style>
 
+      <LimitWarningPopup />
+
       <div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] via-white to-[#CCFBF1] p-3 md:p-6">
         <div className="max-w-[1200px] mx-auto font-sans">
           <div className="relative mb-6 md:mb-8 overflow-hidden rounded-2xl border border-white/20 bg-white/40 p-4 md:p-8 shadow-xl backdrop-blur-md">
@@ -576,6 +694,9 @@ const Phrase = () => {
               </div>
             </div>
           </div>
+
+          {/* Daily Limit Banner */}
+          <DailyLimitBanner />
 
           {showXpAnimation && (
             <div
@@ -652,6 +773,9 @@ const Phrase = () => {
                     index === 0 ||
                     finishedPhraseIds.includes(currentPhrases[index - 1]._id || currentPhrases[index - 1].id)
                   const isLocked = !isFinished && !previousPhraseFinished
+                  
+                  // Check if daily limit is reached for unlocking new phrases
+                  const canUnlock = !isLocked && !isFinished && !dailyLimitInfo.dailyLimitReached
 
                   return (
                     <div
@@ -696,12 +820,24 @@ const Phrase = () => {
                           >
                             +{phrase.xp} XP
                           </span>
-                          {!isFinished && !isLocked && (
+                          {!isFinished && !isLocked && canUnlock && (
                             <button
                               onClick={(e) => handleMarkAsFinished(phraseId, phrase.xp, e)}
                               className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-green-500 bg-white text-green-500 text-xl md:text-2xl font-bold cursor-pointer flex items-center justify-center transition-all p-0 flex-shrink-0"
                             >
                               <Plus />
+                            </button>
+                          )}
+                          {!isFinished && !isLocked && !canUnlock && (
+                            <button
+                              onClick={() => {
+                                setShowLimitWarning(true)
+                                setTimeout(() => setShowLimitWarning(false), 5000)
+                              }}
+                              className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-red-300 bg-red-50 text-red-400 text-lg md:text-xl flex items-center justify-center cursor-pointer"
+                              title="Limiti ditor i arritur"
+                            >
+                              <Clock className="w-4 h-4" />
                             </button>
                           )}
                           {!isFinished && isLocked && (
