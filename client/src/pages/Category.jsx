@@ -8,7 +8,6 @@ import { NumberedListIcon } from "@heroicons/react/24/outline"
 
 const iconMap = {
   default: FolderOpen,
-
   Book: BookCopy,
   numbers:NumberedListIcon,
   palette:PaletteIcon,
@@ -39,8 +38,6 @@ const Category = () => {
   const [categories, setCategories] = useState([])
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState("all")
-  const [selectedLevelFilter, setSelectedLevelFilter] = useState("all")
   const [visibleCategories, setVisibleCategories] = useState(20)
   const [loadingMore, setLoadingMore] = useState(false)
   const [finishingCategory, setFinishingCategory] = useState(false)
@@ -71,25 +68,6 @@ const Category = () => {
     }
   }, [user])
 
-  const filteredCategories = useMemo(() => {
-    let filtered = categories
-
-    if (selectedCategoryFilter !== "all") {
-      filtered = filtered.filter((category) => {
-        const categoryType = category.type || "other"
-        return categoryType === selectedCategoryFilter
-      })
-    }
-
-    if (selectedLevelFilter !== "all") {
-      filtered = filtered.filter((category) => {
-        return category.level === selectedLevelFilter
-      })
-    }
-
-    return filtered
-  }, [categories, selectedCategoryFilter, selectedLevelFilter])
-
   const availableWordTypes = useMemo(() => {
     if (categories.length === 0) {
       return [{ value: "all", label: "Të gjitha" }]
@@ -106,14 +84,14 @@ const Category = () => {
   }, [categories])
 
   const loadMoreCategories = useCallback(() => {
-    if (loadingMore || visibleCategories >= filteredCategories.length) return
+    if (loadingMore || visibleCategories >= categories.length) return
 
     setLoadingMore(true)
     setTimeout(() => {
-      setVisibleCategories((prev) => Math.min(prev + 20, filteredCategories.length))
+      setVisibleCategories((prev) => Math.min(prev + 20, categories.length))
       setLoadingMore(false)
     }, 300)
-  }, [loadingMore, visibleCategories, filteredCategories.length])
+  }, [loadingMore, visibleCategories, categories.length])
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -136,10 +114,6 @@ const Category = () => {
       }
     }
   }, [loadMoreCategories, loadingMore])
-
-  useEffect(() => {
-    setVisibleCategories(20)
-  }, [selectedCategoryFilter, selectedLevelFilter])
 
   useEffect(() => {
     fetchCategories()
@@ -417,41 +391,6 @@ const Category = () => {
           </div>
         </header>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              {availableWordTypes.map((type) => (
-                <button
-                  key={type.value}
-                  onClick={() => setSelectedCategoryFilter(type.value)}
-                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                    selectedCategoryFilter === type.value
-                      ? "bg-gray-900 text-white shadow-md"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {type.label}
-                </button>
-              ))}
-            </div>
-            <div>
-              <select
-                value={selectedLevelFilter}
-                onChange={(e) => setSelectedLevelFilter(e.target.value)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 cursor-pointer"
-              >
-                <option value="all">Të gjitha nivelet</option>
-                <option value="A1">A1</option>
-                <option value="A2">A2</option>
-                <option value="B1">B1</option>
-                <option value="B2">B2</option>
-                <option value="C1">C1</option>
-                <option value="C2">C2</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
         {loading ? (
           <div className="flex items-center justify-center min-h-64">
             <div className="flex flex-col items-center gap-3">
@@ -461,9 +400,9 @@ const Category = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {Array.isArray(filteredCategories) && filteredCategories.length > 0 ? (
-                filteredCategories.slice(0, visibleCategories).map((category, index) => {
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
+              {Array.isArray(categories) && categories.length > 0 ? (
+                categories.slice(0, visibleCategories).map((category, index) => {
                   const IconComponent = iconMap[category.icon] || iconMap.default
 
                   const categoryIdStr = String(category._id?._id || category._id)
@@ -473,34 +412,33 @@ const Category = () => {
                     <div
                       key={category._id}
                       onClick={() => fetchCategoryDetails(category._id, category.category)}
-                      className={`group rounded-xl p-4 border-2 transition-all duration-200 cursor-pointer relative overflow-hidden hover:shadow-lg ${
+                      className={`group rounded-lg p-2.5 border transition-all duration-200 cursor-pointer relative overflow-hidden hover:shadow-md ${
                         isCompleted
                           ? "bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] border-[#FDE68A]"
                           : "bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] border-[#FDE68A]"
                       }`}
                     >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                      <div className="flex items-start justify-between mb-2">
+                        <div className={`w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 ${
                           isCompleted ? "bg-[#FDE68A]" : "bg-[#FDE68A]"
                         }`}>
-                          <IconComponent className="h-6 w-6 text-gray-700" />
+                          <IconComponent className="h-4 w-4 text-gray-700" />
                         </div>
 
                         {isCompleted && (
-                          <div className="flex items-center gap-1.5 bg-gradient-to-r from-teal-400 to-emerald-400 text-white px-2.5 py-1 rounded-full text-xs font-medium shadow-sm">
-                            <CheckCircle className="h-3.5 w-3.5" />
-                            <span>E përfunduar</span>
+                          <div className="flex items-center gap-1 bg-gradient-to-r from-teal-400 to-emerald-400 text-white px-1.5 py-0.5 rounded-full text-[10px] font-medium shadow-sm">
+                            <CheckCircle className="h-2.5 w-2.5" />
                           </div>
                         )}
                       </div>
 
-                      <h3 className="text-base font-semibold mb-3 line-clamp-2 text-gray-900 min-h-[3rem]">
+                      <h3 className="text-xs font-semibold mb-2 line-clamp-2 text-gray-900 min-h-[2rem]">
                         {category.category}
                       </h3>
 
                       <div className="mt-auto">
                         {category.type && (
-                          <span className={`inline-block px-3 py-1 rounded-md text-xs font-medium ${
+                          <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${
                             category.type === "Gramatikë" 
                               ? "bg-[#FCA5A5] text-[#7F1D1D]"
                               : category.type === "Të Përgjithshme"
@@ -513,8 +451,6 @@ const Category = () => {
                               ? "bg-[#C4B5FD] text-[#4C1D95]"
                               : category.type === "Kulturë"
                               ? "bg-[#D8B4FE] text-[#581C87]"
-                              : category.type === "Gramatikë"
-                              ? "bg-[#FCA5A5] text-[#7F1D1D]"
                               : "bg-gray-200 text-gray-700"
                           }`}>
                             {availableWordTypes.find((t) => t.value === category.type)?.label || category.type}
@@ -529,21 +465,17 @@ const Category = () => {
                   <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
                     <BookOpen className="h-8 w-8 text-gray-400 mx-auto mb-3" />
                     <h3 className="text-base font-medium text-gray-900 mb-2">
-                      {selectedCategoryFilter === "all"
-                        ? "Nuk ka kategori të disponueshme"
-                        : `Nuk ka kategori me fjalë të llojit "${availableWordTypes.find((t) => t.value === selectedCategoryFilter)?.label}"`}
+                      Nuk ka kategori të disponueshme
                     </h3>
                     <p className="text-sm text-gray-600">
-                      {selectedCategoryFilter === "all"
-                        ? "Kategoritë do të shfaqen këtu kur të shtohen."
-                        : "Provoni një filtër tjetër ose shtoni kategori me fjalë të këtij lloji."}
+                      Kategoritë do të shfaqen këtu kur të shtohen.
                     </p>
                   </div>
                 </div>
               )}
             </div>
 
-            {filteredCategories.length > visibleCategories && (
+            {categories.length > visibleCategories && (
               <div id="load-more-sentinel" className="mt-6 flex justify-center">
                 {loadingMore ? (
                   <div className="flex items-center gap-2 text-xs text-gray-600">
@@ -555,7 +487,7 @@ const Category = () => {
                     onClick={loadMoreCategories}
                     className="px-4 py-2 text-xs font-medium text-teal-600 bg-white border border-teal-200 rounded-lg hover:bg-teal-50 hover:border-teal-300 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
-                    Ngarko më shumë ({filteredCategories.length - visibleCategories} të tjera)
+                    Ngarko më shumë ({categories.length - visibleCategories} të tjera)
                   </button>
                 )}
               </div>

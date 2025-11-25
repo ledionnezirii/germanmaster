@@ -21,7 +21,10 @@ import {
   RotateCcw,
   Award,
   Brain,
-  ListCheck,
+  ListChecks as ListCheck,
+  Clock,
+  Lock,
+  X,
 } from "lucide-react"
 
 const getLevelColor = (level) => {
@@ -62,6 +65,48 @@ const getLevelDescription = (level) => {
   }
 }
 
+const MoreInfoModal = ({ topic, isOpen, onClose }) => {
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+          <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <Lightbulb className="h-5 w-5 text-amber-600" />
+            {topic?.name}
+          </h2>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded transition-colors" aria-label="Mbyll">
+            <X className="h-5 w-5 text-gray-600" />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          {topic?.moreInfo ? (
+            <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+              <p className="text-gray-800 leading-relaxed whitespace-pre-line text-sm">{topic.moreInfo}</p>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <AlertCircle className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-600 text-sm">Nuk ka informacion shtesë të disponueshëm për këtë temë</p>
+            </div>
+          )}
+
+          {topic?.content && (
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <h3 className="font-bold text-blue-900 mb-2 text-sm">Përmbajtja e plotë:</h3>
+              <p className="text-blue-800 leading-relaxed text-sm whitespace-pre-line">
+                {typeof topic.content === "string" ? topic.content : topic.content?.german || topic.content?.english}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const Grammar = () => {
   const [topics, setTopics] = useState([])
   const [selectedLevel, setSelectedLevel] = useState("all")
@@ -77,11 +122,31 @@ const Grammar = () => {
   const [showDetailedContent, setShowDetailedContent] = useState(false)
   const [finishedTopics, setFinishedTopics] = useState([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [dailyLimit, setDailyLimit] = useState(null)
+  const [showMoreInfo, setShowMoreInfo] = useState(false)
 
   useEffect(() => {
     fetchTopics()
     fetchFinishedTopics()
+    fetchDailyLimit()
   }, [selectedLevel])
+
+  const fetchDailyLimit = async () => {
+    try {
+      const response = await grammarService.checkDailyLimit()
+      console.log("[v0] Daily limit response:", response.data)
+      setDailyLimit(response.data)
+    } catch (error) {
+      console.error("[v0] Error fetching daily limit:", error)
+      // Set default values if request fails
+      setDailyLimit({
+        topicsAccessedToday: 0,
+        canAccessMore: true,
+        remainingTopics: 2,
+        limit: 2,
+      })
+    }
+  }
 
   const fetchFinishedTopics = async () => {
     try {
@@ -109,6 +174,8 @@ const Grammar = () => {
         return prev
       })
 
+      await fetchDailyLimit()
+
       alert("Urime! Keni përfunduar këtë temë të gramatikës!")
     } catch (error) {
       console.error("Error marking topic as finished:", error)
@@ -119,6 +186,12 @@ const Grammar = () => {
   const isTopicFinished = (topicId) => {
     const topicIdString = String(topicId)
     return finishedTopics.includes(topicIdString)
+  }
+
+  const canAccessTopic = (topic) => {
+    if (!dailyLimit) return true
+    if (isTopicFinished(topic._id)) return true
+    return dailyLimit.remaining > 0
   }
 
   const fetchTopics = async () => {
@@ -170,10 +243,17 @@ const Grammar = () => {
     return Array.isArray(topics) ? topics : []
   }, [topics])
 
-  const handleTopicClick = useCallback((topic) => {
-    fetchTopicDetails(topic._id)
-    window.scrollTo({ top: 0, behavior: "smooth" })
-  }, [])
+  const handleTopicClick = useCallback(
+    (topic) => {
+      if (!canAccessTopic(topic)) {
+        alert(`Keni arritur limitin ditor (2 tema). Proni përsëri në ${dailyLimit?.resetTime || "00:01"}.`)
+        return
+      }
+      fetchTopicDetails(topic._id)
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    },
+    [dailyLimit],
+  )
 
   const handleBackToTopics = useCallback(() => {
     setSelectedTopic(null)
@@ -267,9 +347,15 @@ const Grammar = () => {
 
   const renderTopicGrid = useMemo(() => {
     return filteredTopics.map((topic) => (
-      <TopicCard key={topic._id} topic={topic} onClick={handleTopicClick} isFinished={isTopicFinished(topic._id)} />
+      <TopicCard
+        key={topic._id}
+        topic={topic}
+        onClick={handleTopicClick}
+        isFinished={isTopicFinished(topic._id)}
+        canAccess={canAccessTopic(topic)}
+      />
     ))
-  }, [filteredTopics, handleTopicClick, finishedTopics])
+  }, [filteredTopics, handleTopicClick, finishedTopics, dailyLimit])
 
   if (selectedTopic) {
     return (
@@ -301,6 +387,15 @@ const Grammar = () => {
                   </div>
                   <p className="text-gray-600 text-sm leading-relaxed">{selectedTopic.description}</p>
                 </div>
+                {selectedTopic.moreInfo && (
+                  <button
+                    onClick={() => setShowMoreInfo(true)}
+                    className="ml-4 flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-700 border border-amber-300 rounded-lg hover:bg-amber-100 transition-colors text-sm font-medium whitespace-nowrap"
+                  >
+                    <Lightbulb className="h-4 w-4" />
+                    Më Shumë Info
+                  </button>
+                )}
               </div>
 
               {selectedTopic.tags && selectedTopic.tags.length > 0 && (
@@ -318,6 +413,8 @@ const Grammar = () => {
             </>
           )}
         </div>
+
+        <MoreInfoModal topic={selectedTopic} isOpen={showMoreInfo} onClose={() => setShowMoreInfo(false)} />
 
         {!topicLoading && (
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -816,6 +913,34 @@ const Grammar = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4">
+      {dailyLimit && (
+        <div
+          className={`rounded-lg p-4 border ${
+            dailyLimit.remaining > 0 ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            {dailyLimit.remaining > 0 ? (
+              <>
+                <Clock className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="font-semibold text-green-900">{dailyLimit.remaining} nga 2 tema të disponueshme sot</p>
+                  <p className="text-sm text-green-700">Përdorni pjesën tjetër ose proni 24 orë për temë të re</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <Lock className="h-5 w-5 text-red-600" />
+                <div>
+                  <p className="font-semibold text-red-900">Keni arritur limitin ditor</p>
+                  <p className="text-sm text-red-700">Proni në {dailyLimit.resetTime} për tema të reja</p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <h1 className="text-xl font-bold text-gray-900 mb-2 flex items-center gap-2">
           <GraduationCap className="h-5 w-5 text-teal-600" />
@@ -901,13 +1026,17 @@ const Grammar = () => {
   )
 }
 
-const TopicCard = React.memo(({ topic, onClick, isFinished }) => (
+const TopicCard = React.memo(({ topic, onClick, isFinished, canAccess }) => (
   <div
     onClick={() => onClick(topic)}
-    className={`rounded-lg p-4 hover:shadow-lg transition-all cursor-pointer relative overflow-hidden group ${
+    className={`rounded-lg p-4 hover:shadow-lg transition-all ${
+      !canAccess ? "cursor-not-allowed opacity-60" : "cursor-pointer"
+    } relative overflow-hidden group ${
       isFinished
         ? "border-1 border-orange-300 bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50 shadow-md"
-        : "bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 hover:border-teal-400 shadow-sm hover:shadow-teal-200/50"
+        : canAccess
+          ? "bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 hover:border-teal-400 shadow-sm hover:shadow-teal-200/50"
+          : "bg-gradient-to-br from-gray-100 to-gray-50 border-2 border-gray-300 shadow-sm"
     }`}
   >
     <div className="relative z-10">
@@ -918,26 +1047,45 @@ const TopicCard = React.memo(({ topic, onClick, isFinished }) => (
             Përfunduar
           </div>
         )}
+        {!canAccess && (
+          <div className="flex items-center gap-1 bg-red-500 text-white px-2.5 py-1 rounded-full text-xs font-bold shadow-md ml-auto">
+            <Lock className="h-3.5 w-3.5" />E Bllokuar
+          </div>
+        )}
         <div
-          className={`flex items-center gap-1.5 text-xs font-semibold ${isFinished ? "text-orange-600 ml-auto" : "ml-auto text-gray-600"}`}
+          className={`flex items-center gap-1.5 text-xs font-semibold ${
+            !canAccess ? "text-gray-500" : isFinished ? "text-orange-600 ml-auto" : "ml-auto text-gray-600"
+          }`}
         >
           <ListCheck className="h-4 w-4" />
-          <span className="bg-gray-200 px-2 py-0.5 rounded">{topic.exercises?.length || 0}</span>
+          <span className={`px-2 py-0.5 rounded ${!canAccess ? "bg-gray-300" : "bg-gray-200"}`}>
+            {topic.exercises?.length || 0}
+          </span>
         </div>
       </div>
 
-      <h3 className={`font-bold text-base mb-2 line-clamp-2 ${isFinished ? "text-orange-900" : "text-gray-900"}`}>
+      <h3
+        className={`font-bold text-base mb-2 line-clamp-2 ${
+          !canAccess ? "text-gray-600" : isFinished ? "text-orange-900" : "text-gray-900"
+        }`}
+      >
         {topic.name || "Temë pa titull"}
       </h3>
 
       {topic.description && (
-        <p className={`text-xs mb-3 line-clamp-2 leading-relaxed ${isFinished ? "text-orange-700" : "text-gray-600"}`}>
+        <p
+          className={`text-xs mb-3 line-clamp-2 leading-relaxed ${
+            !canAccess ? "text-gray-500" : isFinished ? "text-orange-700" : "text-gray-600"
+          }`}
+        >
           {topic.description}
         </p>
       )}
 
       <div
-        className={`flex items-center justify-between text-xs font-medium ${isFinished ? "text-orange-600" : "text-gray-600"}`}
+        className={`flex items-center justify-between text-xs font-medium ${
+          !canAccess ? "text-gray-500" : isFinished ? "text-orange-600" : "text-gray-600"
+        }`}
       >
         <div className="flex items-center gap-2">
           <Lightbulb className="h-4 w-4" />

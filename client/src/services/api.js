@@ -203,6 +203,7 @@ export const grammarService = {
   deleteTopic: (id) => api.delete(`/grammar/${id}`),
   markTopicAsFinished: (id) => api.post(`/grammar/${id}/finish`),
   getFinishedTopics: () => api.get("/grammar/finished"),
+  getDailyLimitStatus: () => api.get("/grammar/daily-limit-status"),
 }
 
 export const questionsService = {
