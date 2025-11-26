@@ -32,7 +32,7 @@ exports.getAllPhrases = async (req, res) => {
     if (category) query.category = category
 
     const phrases = await Phrase.find(query)
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
 
@@ -61,7 +61,7 @@ exports.getPhrasesByLevel = async (req, res) => {
     const { page = 1, limit = 20 } = req.query
 
     const phrases = await Phrase.find({ level, isActive: true })
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
 

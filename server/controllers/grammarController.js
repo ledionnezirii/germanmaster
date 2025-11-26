@@ -40,6 +40,18 @@ const getTopicsAccessedToday = (user) => {
   return user.grammarDailyTopics.topicIds.length
 }
 
+const getAccessedTopicIdsToday = (user) => {
+  if (!user.grammarDailyTopics || !user.grammarDailyTopics.date) {
+    return []
+  }
+
+  if (!isDateToday(user.grammarDailyTopics.date)) {
+    return [] // New day, no topics accessed yet
+  }
+
+  return user.grammarDailyTopics.topicIds.map((id) => String(id))
+}
+
 const resetDailyTopicsIfNewDay = (user) => {
   if (!user.grammarDailyTopics || !user.grammarDailyTopics.date || !isDateToday(user.grammarDailyTopics.date)) {
     user.grammarDailyTopics = {
@@ -140,13 +152,16 @@ const getTopicById = asyncHandler(async (req, res) => {
     const topicIdString = String(req.params.id)
     const alreadyAccessedToday = user.grammarDailyTopics.topicIds.some((id) => String(id) === topicIdString)
 
-    // If not already accessed today, add it to the list
-    if (!alreadyAccessedToday) {
+    // Check if topic is already finished (always allow access)
+    const isFinished = user.grammarFinished.some((id) => String(id) === topicIdString)
+
+    // If not already accessed today and not finished, check limit and add to list
+    if (!alreadyAccessedToday && !isFinished) {
       if (!canAccessMoreTopicsToday(user)) {
         const topicsAccessedCount = getTopicsAccessedToday(user)
         throw new ApiError(
           429,
-          `You can only access 2 grammar topics per day. You've accessed ${topicsAccessedCount} already. Come back tomorrow at 00:01 UTC for more topics.`,
+          `You can only access 2 grammar topics per day. You've accessed ${topicsAccessedCount} already. Come back tomorrow at 00:01.`,
         )
       }
 
@@ -240,7 +255,7 @@ const deleteTopic = asyncHandler(async (req, res) => {
 })
 
 // @desc    Mark grammar topic as finished - with daily limit check
-// @route   PUT /api/grammar/:id/finish
+// @route   POST /api/grammar/:id/finish
 // @access  Private
 const markTopicAsFinished = asyncHandler(async (req, res) => {
   const topicId = req.params.id
@@ -263,12 +278,15 @@ const markTopicAsFinished = asyncHandler(async (req, res) => {
   const topicIdString = String(topicId)
   const alreadyAccessedToday = user.grammarDailyTopics.topicIds.some((id) => String(id) === topicIdString)
 
-  if (!alreadyAccessedToday) {
+  // Check if already finished
+  const alreadyFinished = user.grammarFinished.some((id) => String(id) === topicIdString)
+
+  if (!alreadyAccessedToday && !alreadyFinished) {
     if (!canAccessMoreTopicsToday(user)) {
       const topicsAccessedCount = getTopicsAccessedToday(user)
       throw new ApiError(
         429,
-        `You can only finish 2 grammar topics per day. You've accessed ${topicsAccessedCount} already. Come back tomorrow at 00:01 UTC.`,
+        `You can only finish 2 grammar topics per day. You've accessed ${topicsAccessedCount} already. Come back tomorrow at 00:01.`,
       )
     }
     // Add to accessed topics when finishing
@@ -276,8 +294,7 @@ const markTopicAsFinished = asyncHandler(async (req, res) => {
   }
 
   // Add to finished list if not already there
-  const finishedTopicIds = user.grammarFinished.map((id) => id.toString())
-  if (!finishedTopicIds.includes(topicId)) {
+  if (!alreadyFinished) {
     user.grammarFinished.push(topicId)
   }
 
@@ -316,10 +333,12 @@ const getDailyLimitStatus = asyncHandler(async (req, res) => {
   }
 
   resetDailyTopicsIfNewDay(user)
+  await user.save() // Save in case we reset
 
   const topicsAccessedToday = getTopicsAccessedToday(user)
+  const accessedTopicIds = getAccessedTopicIdsToday(user)
   const canAccessMore = canAccessMoreTopicsToday(user)
-  const remainingTopics = 2 - topicsAccessedToday
+  const remainingTopics = Math.max(0, 2 - topicsAccessedToday)
 
   res.json(
     new ApiResponse(200, {
@@ -327,6 +346,7 @@ const getDailyLimitStatus = asyncHandler(async (req, res) => {
       canAccessMore,
       remainingTopics,
       limit: 2,
+      accessedTopicIds,
     }),
   )
 })
