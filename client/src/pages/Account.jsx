@@ -256,9 +256,9 @@ const Account = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 p-4">
+    <div className="max-w-6xl mx-auto space-y-4 p-4">
       {/* Profile Header */}
-      <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200 p-8">
+      <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200 p-6">
         <div className="flex flex-col md:flex-row items-center gap-8">
           <div className="relative">
             <button
@@ -424,8 +424,8 @@ const Account = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-yellow-50 via-yellow-100 to-yellow-50 rounded-2xl p-6 hover:shadow-lg transition-all duration-200 border border-yellow-200 hover:scale-105">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-yellow-50 via-yellow-100 to-yellow-50 rounded-2xl p-4 hover:shadow-lg transition-all duration-200 border border-yellow-200 hover:scale-105">
           <div className="flex items-center gap-4">
             <div className="bg-yellow-200 p-4 rounded-xl shadow-sm">
               <Star className="h-7 w-7 text-yellow-600" />
@@ -437,7 +437,7 @@ const Account = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-50 via-green-100 to-green-50 rounded-2xl p-6 hover:shadow-lg transition-all duration-200 border border-green-200 hover:scale-105">
+        <div className="bg-gradient-to-br from-green-50 via-green-100 to-green-50 rounded-2xl p-4 hover:shadow-lg transition-all duration-200 border border-green-200 hover:scale-105">
           <div className="flex items-center gap-4">
             <div className="bg-green-200 p-4 rounded-xl shadow-sm">
               <svg className="h-7 w-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -456,7 +456,7 @@ const Account = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-50 via-purple-100 to-purple-50 rounded-2xl p-6 hover:shadow-lg transition-all duration-200 border border-purple-200 hover:scale-105">
+        <div className="bg-gradient-to-br from-purple-50 via-purple-100 to-purple-50 rounded-2xl p-4 hover:shadow-lg transition-all duration-200 border border-purple-200 hover:scale-105">
           <div className="flex items-center gap-4">
             <div className="bg-purple-200 p-4 rounded-xl shadow-sm">
               <BookOpen className="h-7 w-7 text-purple-600" />
@@ -468,7 +468,7 @@ const Account = () => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-orange-50 via-orange-100 to-red-50 rounded-2xl p-6 hover:shadow-lg transition-all duration-200 border border-orange-200 hover:scale-105">
+        <div className="bg-gradient-to-br from-orange-50 via-orange-100 to-red-50 rounded-2xl p-4 hover:shadow-lg transition-all duration-200 border border-orange-200 hover:scale-105">
           <div className="flex items-center gap-4">
             <div className="bg-orange-200 p-4 rounded-xl shadow-sm">
               <Flame className="h-7 w-7 text-orange-600" />
@@ -482,50 +482,51 @@ const Account = () => {
       </div>
 
       {/* Certificates Section */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="bg-teal-100 p-3 rounded-xl">
-            <Award className="h-7 w-7 text-teal-600" />
+      <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="bg-teal-100 p-2 rounded-lg">
+            <Award className="h-5 w-5 text-teal-600" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Certifikatat</h2>
-          <span className="bg-teal-100 text-teal-700 px-3 py-1.5 rounded-full text-sm font-bold ml-auto">
+          <h2 className="text-xl font-bold text-gray-900">Certifikatat</h2>
+          <span className="bg-teal-100 text-teal-700 px-2 py-1 rounded-full text-xs font-bold ml-auto">
             {certificates.length}
           </span>
         </div>
 
         {loadingCertificates || issuingCertificate ? (
-          <div className="text-center py-16">
-            <div className="h-10 w-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600 font-medium">
+          <div className="text-center py-8">
+            <div className="h-8 w-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+            <p className="text-gray-600 text-sm font-medium">
               {issuingCertificate ? "Duke krijuar certifikatën tuaj..." : "Duke ngarkuar certifikatat..."}
             </p>
           </div>
         ) : certificates.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {certificates.map((certificate) => (
               <div
                 key={certificate._id}
-                className="bg-gradient-to-br from-purple-50 via-purple-100 to-pink-50 rounded-2xl p-6 border-2 border-purple-300 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-2"
+                className="bg-gradient-to-br from-purple-50 via-purple-100 to-pink-50 rounded-xl p-3 border-2 border-purple-300 shadow-md hover:shadow-lg transition-all duration-300"
               >
-                <div className="flex flex-col items-center text-center gap-4">
-                  <div className="bg-white p-1 rounded-full shadow-md">
-                    <img src={logo || "/placeholder.svg"} className="w-24 h-24 rounded-full" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900 text-2xl mb-2">Niveli {certificate.level}</h3>
-                    <p className="text-sm text-gray-600 mb-1 font-medium">
-                      Lëshuar:{" "}
-                      {new Date(certificate.issuedAt).toLocaleDateString("sq-AL", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </p>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-white p-1 rounded-full shadow-sm flex-shrink-0">
+                      <img src={logo || "/placeholder.svg"} className="w-10 h-10 rounded-full" />
+                    </div>
+                    <div className="text-center">
+                      <h3 className="font-bold text-gray-900 text-base">Niveli {certificate.level}</h3>
+                      <p className="text-xs text-gray-600 font-medium whitespace-nowrap">
+                        {new Date(certificate.issuedAt).toLocaleDateString("sq-AL", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
                   </div>
                   <button
                     onClick={() => handleDownloadCertificate(certificate._id, certificate.level)}
                     disabled={downloadingCert === certificate._id}
-                    className="w-full text-gray-700  px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer  font-bold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transform hover:scale-105"
+                    className="text-gray-700 px-3 py-2 rounded-lg transition-all duration-200 cursor-pointer font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md transform hover:scale-105 text-sm w-full bg-white/50"
                   >
                     {downloadingCert === certificate._id ? (
                       <>
@@ -534,8 +535,8 @@ const Account = () => {
                       </>
                     ) : (
                       <>
-                        <Download className="h-5 w-5" />
-                        Shkarko PDF
+                        <Download className="h-4 w-4" />
+                        Shkarko
                       </>
                     )}
                   </button>
@@ -544,12 +545,12 @@ const Account = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-full p-8 w-32 h-32 mx-auto mb-6 flex items-center justify-center shadow-inner">
-              <FileText className="h-16 w-16 text-gray-300" />
+          <div className="text-center py-12">
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-full p-6 w-24 h-24 mx-auto mb-4 flex items-center justify-center shadow-inner">
+              <FileText className="h-12 w-12 text-gray-300" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">Ende Nuk Keni Certifikata</h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Ende Nuk Keni Certifikata</h3>
+            <p className="text-gray-600 text-sm max-w-md mx-auto">
               Vazhdoni të mësoni dhe përfundoni testet për të fituar certifikatën tuaj të parë!
             </p>
           </div>

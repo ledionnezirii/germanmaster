@@ -132,21 +132,33 @@ const Grammar = () => {
   }, [selectedLevel])
 
   const fetchDailyLimit = async () => {
-    try {
-      const response = await grammarService.checkDailyLimit()
-      console.log("[v0] Daily limit response:", response.data)
-      setDailyLimit(response.data)
-    } catch (error) {
-      console.error("[v0] Error fetching daily limit:", error)
-      // Set default values if request fails
-      setDailyLimit({
-        topicsAccessedToday: 0,
-        canAccessMore: true,
-        remainingTopics: 2,
-        limit: 2,
-      })
-    }
+  try {
+    const response = await grammarService.getDailyLimitStatus()
+    console.log("[v0] Daily limit response:", response)
+    
+    // Access the data correctly - it's nested in response.data or response directly
+    const data = response.data || response
+    
+    console.log("[v0] Daily limit data:", data)
+    
+    setDailyLimit({
+      topicsAccessedToday: data.topicsAccessedToday,
+      canAccessMore: data.canAccessMore,
+      remainingTopics: data.remainingTopics,
+      limit: data.limit,
+      accessedTopicIds: data.accessedTopicIds || [],
+    })
+  } catch (error) {
+    console.error("[v0] Error fetching daily limit:", error)
+    setDailyLimit({
+      topicsAccessedToday: 0,
+      canAccessMore: true,
+      remainingTopics: 2,
+      limit: 2,
+      accessedTopicIds: [],
+    })
   }
+}
 
   const fetchFinishedTopics = async () => {
     try {
@@ -174,7 +186,9 @@ const Grammar = () => {
         return prev
       })
 
+      // Refresh both daily limit and finished topics
       await fetchDailyLimit()
+      await fetchFinishedTopics()
 
       alert("Urime! Keni përfunduar këtë temë të gramatikës!")
     } catch (error) {
@@ -190,8 +204,17 @@ const Grammar = () => {
 
   const canAccessTopic = (topic) => {
     if (!dailyLimit) return true
+    
+    // Already finished topics are always accessible
     if (isTopicFinished(topic._id)) return true
-    return dailyLimit.remaining > 0
+    
+    // Check if this topic was already accessed today
+    const topicIdString = String(topic._id)
+    const accessedToday = dailyLimit.accessedTopicIds || []
+    if (accessedToday.includes(topicIdString)) return true
+    
+    // Otherwise check if we have remaining slots
+    return dailyLimit.remainingTopics > 0
   }
 
   const fetchTopics = async () => {
@@ -231,6 +254,9 @@ const Grammar = () => {
       setActiveTab("content")
       setSelectedAnswers({})
       setShowResults({})
+      
+      // Refresh daily limit after accessing a topic
+      await fetchDailyLimit()
     } catch (error) {
       console.error("Error fetching topic details:", error)
       setError("Dështoi ngarkimi i detajeve të temës. Ju lutemi provoni përsëri.")
@@ -246,13 +272,13 @@ const Grammar = () => {
   const handleTopicClick = useCallback(
     (topic) => {
       if (!canAccessTopic(topic)) {
-        alert(`Keni arritur limitin ditor (2 tema). Proni përsëri në ${dailyLimit?.resetTime || "00:01"}.`)
+        alert(`Keni arritur limitin ditor (2 tema). Provoni përsëri nesër në 00:01.`)
         return
       }
       fetchTopicDetails(topic._id)
       window.scrollTo({ top: 0, behavior: "smooth" })
     },
-    [dailyLimit],
+    [dailyLimit, finishedTopics],
   )
 
   const handleBackToTopics = useCallback(() => {
@@ -262,6 +288,11 @@ const Grammar = () => {
     setShowResults({})
     setShowDetailedContent(false)
     setCurrentQuestionIndex(0)
+    
+    // Refresh data when going back
+    fetchDailyLimit()
+    fetchFinishedTopics()
+    
     window.scrollTo({ top: 0, behavior: "smooth" })
   }, [])
 
@@ -916,16 +947,18 @@ const Grammar = () => {
       {dailyLimit && (
         <div
           className={`rounded-lg p-4 border ${
-            dailyLimit.remaining > 0 ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
+            dailyLimit.remainingTopics > 0 ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
           }`}
         >
           <div className="flex items-center gap-3">
-            {dailyLimit.remaining > 0 ? (
+            {dailyLimit.remainingTopics > 0 ? (
               <>
                 <Clock className="h-5 w-5 text-green-600" />
                 <div>
-                  <p className="font-semibold text-green-900">{dailyLimit.remaining} nga 2 tema të disponueshme sot</p>
-                  <p className="text-sm text-green-700">Përdorni pjesën tjetër ose proni 24 orë për temë të re</p>
+                  <p className="font-semibold text-green-900">
+                    {dailyLimit.remainingTopics} nga 2 tema të disponueshme sot
+                  </p>
+                  <p className="text-sm text-green-700">Përdorni pjesën tjetër ose proni deri nesër në 00:01</p>
                 </div>
               </>
             ) : (
@@ -933,7 +966,7 @@ const Grammar = () => {
                 <Lock className="h-5 w-5 text-red-600" />
                 <div>
                   <p className="font-semibold text-red-900">Keni arritur limitin ditor</p>
-                  <p className="text-sm text-red-700">Proni në {dailyLimit.resetTime} për tema të reja</p>
+                  <p className="text-sm text-red-700">Provoni përsëri nesër në 00:01</p>
                 </div>
               </>
             )}
@@ -1047,7 +1080,7 @@ const TopicCard = React.memo(({ topic, onClick, isFinished, canAccess }) => (
             Përfunduar
           </div>
         )}
-        {!canAccess && (
+        {!canAccess && !isFinished && (
           <div className="flex items-center gap-1 bg-red-500 text-white px-2.5 py-1 rounded-full text-xs font-bold shadow-md ml-auto">
             <Lock className="h-3.5 w-3.5" />E Bllokuar
           </div>

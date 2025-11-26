@@ -159,7 +159,7 @@ export default function Quizes() {
               setError(null)
               loadQuizzes()
             }}
-            className="px-6 py-2.5 bg-[#007AFF] hover:bg-[#0051D5] text-white font-medium rounded-lg transition-colors"
+            className="px-6 py-2.5 bg-[#007AFF] hover:bg-[#0051D5] text-white font-medium rounded-lg transition-colors cursor-pointer"
           >
             Provo Përsëri
           </button>
@@ -215,15 +215,13 @@ export default function Quizes() {
 
           {!result.passed && (
             <div className="bg-[#FFF4E5] border border-[#FFE4B5] rounded-xl p-4 mb-6">
-              <p className="text-sm text-gray-700 text-center">
-                Ju e keni përfunduar më parë këtë kuiz. Nuk jepen XP.
-              </p>
+              <p className="text-sm text-gray-700 text-center">Ju e keni përfunduar më parë këtë kuiz. Nuk jepen XP.</p>
             </div>
           )}
 
           <button
             onClick={resetQuiz}
-            className={`w-full px-6 py-4 text-white font-semibold rounded-xl transition-colors ${result.passed ? "bg-[#10B981] hover:bg-[#059669]" : "bg-[#FF8A00] hover:bg-[#E67A00]"}`}
+            className={`w-full px-6 py-4 text-white font-semibold rounded-xl transition-colors cursor-pointer ${result.passed ? "bg-[#10B981] hover:bg-[#059669]" : "bg-[#FF8A00] hover:bg-[#E67A00]"}`}
           >
             Kthehu te Kuizet
           </button>
@@ -247,7 +245,7 @@ export default function Quizes() {
               <div className="flex items-center justify-between mb-4">
                 <button
                   onClick={() => setSelectedQuiz(null)}
-                  className="text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-2"
+                  className="text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-2 cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -404,7 +402,7 @@ export default function Quizes() {
                     }
                     disabled={submittedAnswer !== undefined}
                     placeholder="Shkruani përgjigjen tuaj këtu..."
-                    className={`w-full p-4 border-2 rounded-xl focus:outline-none ${
+                    className={`w-full p-4 border-2 rounded-xl focus:outline-none cursor-text ${
                       submittedAnswer?.isCorrect
                         ? "border-[#10B981] bg-[#10B981]/5"
                         : submittedAnswer && !submittedAnswer.isCorrect
@@ -415,7 +413,7 @@ export default function Quizes() {
                   {!submittedAnswer && currentAnswer && (
                     <button
                       onClick={() => handleAnswer(currentAnswer)}
-                      className="mt-3 w-full px-6 py-3 bg-[#007AFF] hover:bg-[#0051D5] text-white font-semibold rounded-xl transition-colors"
+                      className="mt-3 w-full px-6 py-3 bg-[#007AFF] hover:bg-[#0051D5] text-white font-semibold rounded-xl transition-colors cursor-pointer"
                     >
                       Kontrollo
                     </button>
@@ -429,7 +427,7 @@ export default function Quizes() {
                     value={currentAnswer || ""}
                     onChange={(e) => !submittedAnswer && handleAnswer(e.target.value)}
                     disabled={submittedAnswer !== undefined}
-                    className={`w-full p-4 border-2 rounded-xl focus:outline-none ${
+                    className={`w-full p-4 border-2 rounded-xl focus:outline-none cursor-pointer ${
                       submittedAnswer?.isCorrect
                         ? "border-[#10B981] bg-[#10B981]/5"
                         : submittedAnswer && !submittedAnswer.isCorrect
@@ -450,7 +448,7 @@ export default function Quizes() {
               {isLastQuestion && submittedAnswer && (
                 <button
                   onClick={submitQuiz}
-                  className="w-full px-6 py-4 bg-[#007AFF] hover:bg-[#0051D5] text-white font-semibold rounded-xl transition-colors"
+                  className="w-full px-6 py-4 bg-[#007AFF] hover:bg-[#0051D5] text-white font-semibold rounded-xl transition-colors cursor-pointer"
                 >
                   Dërgo Kuizin
                 </button>
@@ -469,30 +467,28 @@ export default function Quizes() {
           <div className="flex items-center justify-center gap-3 mb-3">
             <div className="w-12 h-12 bg-gradient-to-br from-[#00D9C0] to-[#00B8A3] rounded-xl flex items-center justify-center shadow-md">
               <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                />
               </svg>
             </div>
-            <h1
-              className="text-3xl md:text-4xl font-bold text-gray-900"
-              style={{ fontFamily: "Poppins, sans-serif" }}
-            >
-              Test Your Knowledge
+            <h1 className="text-3xl font-bold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
+              Kuizet
             </h1>
           </div>
-          <p className="text-gray-500 max-w-2xl mx-auto">
-            Challenge yourself with quizzes across different levels and earn XP as you progress
-          </p>
-        </div>
+          <p className="text-gray-600 text-base">Zgjidhni një kuiz për të filluar të mësoni!</p>
 
-        <div className="mb-6 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
             {["All", "A1", "A2", "B1", "B2", "C1", "C2"].map((level) => (
               <button
                 key={level}
                 onClick={() => setSelectedLevel(level)}
-                className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-all ${
+                className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-all cursor-pointer ${
                   selectedLevel === level
-                    ? "bg-[#007AFF] text-white shadow-md"
+                    ? "bg-gradient-to-r from-[#00D9C0] to-white text-gray-900 shadow-md border-2 border-[#00D9C0]"
                     : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
                 }`}
               >
@@ -528,7 +524,8 @@ export default function Quizes() {
                 return (
                   <div
                     key={quiz._id}
-                    className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all relative overflow-hidden border border-gray-100"
+                    className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all relative overflow-hidden border border-gray-100 cursor-pointer"
+                    onClick={() => startQuiz(quiz)}
                   >
                     <div className="p-5">
                       <div className="flex items-start justify-between mb-4">
@@ -554,9 +551,13 @@ export default function Quizes() {
                       <div className="flex items-center justify-between text-sm text-gray-500 mb-5">
                         <div className="flex items-center gap-1.5">
                           <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                            <path
+                              fillRule="evenodd"
+                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
+                              clipRule="evenodd"
+                            />
                           </svg>
-                          <span className="text-gray-600 font-medium">{quiz.questions?.length || 0} questions</span>
+                          <span className="text-gray-600 font-medium">{quiz.questions?.length || 0} pyetje</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                           <svg className="w-4 h-4 text-[#FF9500]" fill="currentColor" viewBox="0 0 20 20">
@@ -567,10 +568,13 @@ export default function Quizes() {
                       </div>
 
                       <button
-                        onClick={() => startQuiz(quiz)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          startQuiz(quiz)
+                        }}
                         className="w-full px-4 py-3 text-sm font-bold rounded-xl transition-all bg-gray-500/20 text-gray-900 cursor-pointer hover:bg-gray-300 border border-gray-200"
                       >
-                        Start Quiz
+                        Fillo Kuizin
                       </button>
                     </div>
                   </div>
@@ -583,12 +587,12 @@ export default function Quizes() {
                 <button
                   onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors bg-white shadow-sm"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors bg-white shadow-sm cursor-pointer"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
-                  Previous
+                  Mbrapa
                 </button>
 
                 <div className="flex items-center gap-1">
@@ -596,9 +600,9 @@ export default function Quizes() {
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`w-10 h-10 rounded-xl font-semibold text-sm transition-all ${
-                        currentPage === page 
-                          ? "bg-[#007AFF] text-white shadow-md" 
+                      className={`w-10 h-10 rounded-xl font-semibold text-sm transition-all cursor-pointer ${
+                        currentPage === page
+                          ? "bg-[#007AFF] text-white shadow-md"
                           : "text-gray-600 hover:bg-gray-100 bg-white border border-gray-200"
                       }`}
                     >
@@ -610,9 +614,9 @@ export default function Quizes() {
                 <button
                   onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors bg-white shadow-sm"
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-200 text-gray-700 font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors bg-white shadow-sm cursor-pointer"
                 >
-                  Next
+                  Para
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>

@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect, useRef } from "react"
 import { listenService } from "../services/api"
-import { Volume2, Play, Pause, Check, X, Filter, LogOut, Star, Zap, TrendingUp } from 'lucide-react'
+import { Volume2, Play, Pause, Check, X, Filter, LogOut, Star, Zap, TrendingUp } from "lucide-react"
 
 const Listen = () => {
   const [tests, setTests] = useState([])
@@ -602,7 +602,7 @@ const Listen = () => {
                     key={test._id}
                     className={`p-3 rounded-lg shadow-md border-2 transition-all cursor-pointer overflow-hidden relative group h-fit hover:shadow-xl ${
                       isCompleted
-                        ? "bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-500 hover:border-emerald-600"
+                        ? "bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] border-[#F59E0B] hover:border-[#D97706]"
                         : "bg-white border-emerald-200 hover:border-emerald-400"
                     }`}
                     onClick={() => setSelectedTest(test)}
@@ -614,24 +614,24 @@ const Listen = () => {
                     </div>
                     <Volume2
                       className={`absolute -bottom-4 -right-4 w-16 h-16 ${
-                        isCompleted ? "text-emerald-100" : "text-slate-100"
+                        isCompleted ? "text-[#FDE68A]" : "text-slate-100"
                       }`}
                     />
                     <div className="relative z-10">
                       <h3
                         className={`text-sm font-semibold mb-1 pr-12 truncate ${
                           isCompleted
-                            ? "text-emerald-700 group-hover:text-emerald-800"
+                            ? "text-[#D97706] group-hover:text-[#92400E]"
                             : "text-gray-800 group-hover:text-emerald-700"
                         }`}
                       >
                         {test.title}
                       </h3>
-                      <p className={`text-xs line-clamp-2 ${isCompleted ? "text-emerald-600" : "text-gray-600"}`}>
+                      <p className={`text-xs line-clamp-2 ${isCompleted ? "text-[#92400E]" : "text-gray-600"}`}>
                         {test.text ? test.text.substring(0, 80) + "..." : "Ushtrim Audio"}
                       </p>
                       <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center">
-                        <span className={`text-xs ${isCompleted ? "text-emerald-600" : "text-gray-500"}`}>
+                        <span className={`text-xs ${isCompleted ? "text-[#92400E]" : "text-gray-500"}`}>
                           Gjermanisht • Audio
                         </span>
                         <div className="flex items-center gap-1">
@@ -644,7 +644,7 @@ const Listen = () => {
                           <span
                             className={`text-xs px-1.5 py-0.5 rounded font-medium shadow-sm ${
                               isCompleted
-                                ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white"
+                                ? "bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white"
                                 : "bg-gradient-to-r from-emerald-500 to-teal-600 text-white"
                             }`}
                           >
