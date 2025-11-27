@@ -64,16 +64,16 @@ const VerifyEmail = () => {
         )}
 
         <h1 className={`text-3xl font-bold mb-3 font-sans ${status === "success" ? "text-gray-900" : "text-red-600"}`}>
-          {status === "success" ? "Email Verified!" : "Gabim në Verifikim"}
+          {status === "success" ? "Email-i u verifikua!" : "Gabim në Verifikim"}
         </h1>
 
         <p className="text-gray-600 text-base mb-4 font-sans">
-          {status === "success" ? "Your email has been successfully verified." : message}
+          {status === "success" ? "Email-i juaj u verifikua me sukses!" : message}
         </p>
 
         {status === "success" && (
           <p className="text-gray-500 text-sm font-sans leading-relaxed">
-            You can now close this tab. Thank you for confirming your email address.
+            Mund ta mbyllni këtë skedë. Faleminderit për konfirmimin e adresës tuaj të email-it.
           </p>
         )}
       </div>

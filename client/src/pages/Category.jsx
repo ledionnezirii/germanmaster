@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { categoriesService } from "../services/api"
 import { useAuth } from "../context/AuthContext"
-import { FolderOpen, ArrowLeft, BookOpen, Calendar, Palette, Smile, Heart, User, Grid, Globe, Leaf, Bus, Briefcase, Hand, Coffee, Film, TreePine, Guitar, HardHat, Book, Sword, BellRing, Castle, Swords, Hammer, CheckCircle, Trophy, BookCopy, SortDesc, PaletteIcon, Handshake, Speech, Calendar1Icon, Clock, CarTaxiFront, TreePalm, Flag, HeartIcon, Workflow, CloudSnow, User2, Sparkles, GlassWater, Home, ShoppingBag, ShoppingBagIcon, Shirt, HandIcon, Plane, Sandwich, Mountain, PawPrint } from 'lucide-react'
+import { FolderOpen, ArrowLeft, BookOpen, Calendar, Palette, Smile, Heart, User, Grid, Globe, Leaf, Bus, Briefcase, Hand, Coffee, Film, TreePine, Guitar, HardHat, Book, Sword, BellRing, Castle, Swords, Hammer, CheckCircle, Trophy, BookCopy, SortDesc, PaletteIcon, Handshake, Speech, Calendar1Icon, Clock, CarTaxiFront, TreePalm, Flag, HeartIcon, Workflow, CloudSnow, User2, Sparkles, GlassWater, Home, ShoppingBag, ShoppingBagIcon, Shirt, HandIcon, Plane, Sandwich, Mountain, PawPrint, XCircle } from 'lucide-react'
 import { NumberedListIcon } from "@heroicons/react/24/outline"
 
 const iconMap = {
@@ -44,8 +44,19 @@ const Category = () => {
   const [showCongrats, setShowCongrats] = useState(false)
   const [xpGained, setXpGained] = useState(0)
   const [finishedCategoryIds, setFinishedCategoryIds] = useState([])
+  const [notification, setNotification] = useState(null)
+  const [notificationVisible, setNotificationVisible] = useState(false)
 
   const { user, updateUser, refreshProfile } = useAuth()
+
+  const showNotification = (message, type = "success") => {
+    setNotification({ message, type })
+    setNotificationVisible(true)
+    setTimeout(() => {
+      setNotificationVisible(false)
+      setTimeout(() => setNotification(null), 300)
+    }, 3000)
+  }
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" })
@@ -182,6 +193,10 @@ const Category = () => {
 
       const data = response.data || response
       setXpGained(data.xpGained || 0)
+      
+      // Show success notification
+      showNotification(`Urime! Përfunduat "${selectedCategory.name}"! +${data.xpGained || 0} XP 🎉`, "success")
+      
       setShowCongrats(true)
 
       try {
@@ -204,7 +219,7 @@ const Category = () => {
         setSelectedCategory(null)
       }, 5000)
     } catch (error) {
-      alert(error.response?.data?.message || "Gabim gjatë përfundimit të kategorisë")
+      showNotification(error.response?.data?.message || "Gabim gjatë përfundimit të kategorisë", "error")
     } finally {
       setFinishingCategory(false)
     }
@@ -229,9 +244,33 @@ const Category = () => {
     }
   }
 
+  // Notification component with smooth animations and gradient
+  const NotificationElement = notification && (
+    <div
+      className={`fixed bottom-5 right-5 px-6 py-4 rounded-2xl font-semibold text-sm shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 ease-out transform ${
+        notificationVisible ? "translate-y-0 opacity-100 scale-100" : "translate-y-4 opacity-0 scale-95"
+      } ${
+        notification.type === "success" 
+          ? "bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-white" 
+          : "bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 text-white"
+      }`}
+      style={{
+        boxShadow: notification.type === "success" 
+          ? "0 10px 40px rgba(16, 185, 129, 0.4)" 
+          : "0 10px 40px rgba(239, 68, 68, 0.4)"
+      }}
+    >
+      <div className={`p-1.5 rounded-full ${notification.type === "success" ? "bg-white/20" : "bg-white/20"}`}>
+        {notification.type === "success" ? <CheckCircle size={20} /> : <XCircle size={20} />}
+      </div>
+      <span className="max-w-xs">{notification.message}</span>
+    </div>
+  )
+
   if (showCongrats) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-teal-50 via-emerald-50 to-green-50 flex items-center justify-center p-4">
+        {NotificationElement}
         <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full text-center animate-bounce-in">
           <div className="mb-6">
             <div className="mx-auto w-20 h-20 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
@@ -271,6 +310,7 @@ const Category = () => {
 
     return (
       <div className="min-h-screen bg-gray-50 p-2 sm:p-3 lg:p-4">
+        {NotificationElement}
         <div className="max-w-7xl mx-auto">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-4 mb-3 sm:mb-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
@@ -376,6 +416,7 @@ const Category = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
+      {NotificationElement}
       <div className="max-w-7xl mx-auto">
         <header className="mb-6">
           <div className="bg-white rounded-xl shadow-sm border-2 border-[#99F6E4] p-6">

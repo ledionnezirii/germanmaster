@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { quizService } from "../services/api"
+import { CheckCircle, XCircle } from "lucide-react"
 
 export default function Quizes() {
   const [quizzes, setQuizzes] = useState([])
@@ -17,7 +18,18 @@ export default function Quizes() {
   const [currentPage, setCurrentPage] = useState(1)
   const [submittedAnswers, setSubmittedAnswers] = useState({})
   const [currentStreak, setCurrentStreak] = useState(0)
+  const [notification, setNotification] = useState(null)
+  const [notificationVisible, setNotificationVisible] = useState(false)
   const itemsPerPage = 20
+
+  const showNotification = (message, type = "success") => {
+    setNotification({ message, type })
+    setNotificationVisible(true)
+    setTimeout(() => {
+      setNotificationVisible(false)
+      setTimeout(() => setNotification(null), 300)
+    }, 3000)
+  }
 
   useEffect(() => {
     loadQuizzes()
@@ -97,6 +109,15 @@ export default function Quizes() {
   }
 
   const resetQuiz = () => {
+    // Show notification based on result
+    if (result) {
+      if (result.passed) {
+        showNotification(`Urime! Kaluat kuizin me ${result.percentage}%! +${result.xpEarned || selectedQuiz?.xp || 0} XP 🎉`, "success")
+      } else {
+        showNotification(`Rezultati: ${result.percentage}%. Ju duhen 70% për të kaluar. Provoni përsëri!`, "error")
+      }
+    }
+
     setSelectedQuiz(null)
     setCurrentQuestionIndex(0)
     setAnswers({})
@@ -104,7 +125,6 @@ export default function Quizes() {
     setResult(null)
     setSubmittedAnswers({})
     setCurrentStreak(0)
-    loadQuizzes()
   }
 
   const filteredQuizzes = selectedLevel === "All" ? quizzes : quizzes.filter((quiz) => quiz.level === selectedLevel)
@@ -126,12 +146,41 @@ export default function Quizes() {
     return daysDiff <= 7
   }
 
+  // Check if quiz is completed by current user
+  const isQuizCompleted = (quizId) => {
+    return completedQuizzes.includes(quizId)
+  }
+
+  // Notification component with smooth animations and gradient
+  const NotificationElement = notification && (
+    <div
+      className={`fixed bottom-5 right-5 px-6 py-4 rounded-2xl font-semibold text-sm shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 ease-out transform ${
+        notificationVisible ? "translate-y-0 opacity-100 scale-100" : "translate-y-4 opacity-0 scale-95"
+      } ${
+        notification.type === "success" 
+          ? "bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-white" 
+          : "bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 text-white"
+      }`}
+      style={{
+        boxShadow: notification.type === "success" 
+          ? "0 10px 40px rgba(16, 185, 129, 0.4)" 
+          : "0 10px 40px rgba(239, 68, 68, 0.4)"
+      }}
+    >
+      <div className={`p-1.5 rounded-full ${notification.type === "success" ? "bg-white/20" : "bg-white/20"}`}>
+        {notification.type === "success" ? <CheckCircle size={20} /> : <XCircle size={20} />}
+      </div>
+      <span className="max-w-xs">{notification.message}</span>
+    </div>
+  )
+
   if (isLoading) {
     return (
       <div
         className="min-h-screen bg-[#F8F9FA] flex items-center justify-center"
         style={{ fontFamily: "Inter, sans-serif" }}
       >
+        {NotificationElement}
         <div className="flex flex-col items-center gap-3">
           <div className="w-12 h-12 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin"></div>
           <p className="text-gray-600 font-medium">Duke ngarkuar kuizet...</p>
@@ -146,6 +195,7 @@ export default function Quizes() {
         className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-4"
         style={{ fontFamily: "Inter, sans-serif" }}
       >
+        {NotificationElement}
         <div className="bg-white rounded-2xl shadow-sm p-8 max-w-md w-full text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -174,6 +224,7 @@ export default function Quizes() {
         className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-4"
         style={{ fontFamily: "Inter, sans-serif" }}
       >
+        {NotificationElement}
         <div className="bg-white rounded-2xl shadow-sm p-8 max-w-lg w-full">
           <div
             className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${result.passed ? "bg-[#10B981]/10" : "bg-[#FF8A00]/10"}`}
@@ -239,6 +290,7 @@ export default function Quizes() {
 
     return (
       <div className="min-h-screen bg-[#F8F9FA] py-8 px-4" style={{ fontFamily: "Inter, sans-serif" }}>
+        {NotificationElement}
         <div className="max-w-2xl mx-auto">
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             <div className="p-6">
@@ -462,6 +514,7 @@ export default function Quizes() {
 
   return (
     <div className="min-h-screen bg-[#F8F9FA] py-8 px-4" style={{ fontFamily: "Inter, sans-serif" }}>
+      {NotificationElement}
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-8 bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
           <div className="flex items-center justify-center gap-3 mb-3">
@@ -519,7 +572,7 @@ export default function Quizes() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
               {paginatedQuizzes.map((quiz) => {
-                const isCompleted = completedQuizzes.includes(quiz._id)
+                const isCompleted = isQuizCompleted(quiz._id)
                 const isNew = isNewQuiz(quiz)
                 return (
                   <div
@@ -532,13 +585,20 @@ export default function Quizes() {
                         <span className="bg-[#eb6b15] text-white text-xs font-bold px-3 py-1.5 rounded-lg">
                           {quiz.level}
                         </span>
-                        {isCompleted && (
-                          <div className="w-6 h-6 bg-[#34C759] rounded-full flex items-center justify-center">
-                            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                            </svg>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {isNew && (
+                            <span className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-2 py-1 rounded-lg">
+                              E RE
+                            </span>
+                          )}
+                          {isCompleted && (
+                            <div className="w-6 h-6 bg-[#34C759] rounded-full flex items-center justify-center">
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       <h3
@@ -572,9 +632,13 @@ export default function Quizes() {
                           e.stopPropagation()
                           startQuiz(quiz)
                         }}
-                        className="w-full px-4 py-3 text-sm font-bold rounded-xl transition-all bg-gray-500/20 text-gray-900 cursor-pointer hover:bg-gray-300 border border-gray-200"
+                        className={`w-full px-4 py-3 text-sm font-bold rounded-xl transition-all cursor-pointer border ${
+                          isCompleted 
+                            ? "bg-[#34C759]/10 text-[#34C759] border-[#34C759]/30 hover:bg-[#34C759]/20" 
+                            : "bg-gray-500/20 text-gray-900 border-gray-200 hover:bg-gray-300"
+                        }`}
                       >
-                        Fillo Kuizin
+                        {isCompleted ? "Luaj Përsëri" : "Fillo Kuizin"}
                       </button>
                     </div>
                   </div>
