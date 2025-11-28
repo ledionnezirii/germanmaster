@@ -41,7 +41,7 @@ exports.addLearnedWord = async (req, res) => {
     if (existingWord) {
       return res.status(400).json({
         success: false,
-        message: "This word is already in your learned words",
+        message: "Kjo fjale tashme eshte shtuar",
       })
     }
 

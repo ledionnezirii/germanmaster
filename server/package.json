@@ -34,6 +34,7 @@
     "nodemailer": "^7.0.4",
     "pdfkit": "^0.17.2",
     "puppeteer": "^24.26.0",
+    "resend": "^6.5.2",
     "socket.io": "^4.8.1",
     "streamifier": "^0.1.1"
   }
