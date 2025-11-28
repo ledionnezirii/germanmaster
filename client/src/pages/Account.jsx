@@ -507,10 +507,10 @@ const Account = () => {
                 key={certificate._id}
                 className="bg-gradient-to-br from-purple-50 via-purple-100 to-pink-50 rounded-xl p-3 border-2 border-purple-300 shadow-md hover:shadow-lg transition-all duration-300"
               >
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col items-center gap-2">
                   <div className="flex items-center gap-3">
                     <div className="bg-white p-1 rounded-full shadow-sm flex-shrink-0">
-                      <img src={logo || "/placeholder.svg"} className="w-10 h-10 rounded-full" />
+                      <img src={logo || "/placeholder.svg"} className="w-12 h-12 rounded-full" />
                     </div>
                     <div className="text-center">
                       <h3 className="font-bold text-gray-900 text-base">Niveli {certificate.level}</h3>

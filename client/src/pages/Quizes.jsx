@@ -112,7 +112,11 @@ export default function Quizes() {
     // Show notification based on result
     if (result) {
       if (result.passed) {
-        showNotification(`Urime! Kaluat kuizin me ${result.percentage}%! +${result.xpEarned || selectedQuiz?.xp || 0} XP 🎉`, "success")
+        if (result.xpEarned > 0) {
+          showNotification(`Urime! Kaluat kuizin me ${result.percentage}%! +${result.xpEarned} XP 🎉`, "success")
+        } else {
+          showNotification(`Urime! Kaluat kuizin me ${result.percentage}%!`, "success")
+        }
       } else {
         showNotification(`Rezultati: ${result.percentage}%. Ju duhen 70% për të kaluar. Provoni përsëri!`, "error")
       }
@@ -246,7 +250,7 @@ export default function Quizes() {
           </h2>
 
           <p className="text-center text-gray-600 mb-8">
-            Ju duhen 70% për të kaluar. {result.passed ? "Shkëlqyeshëm!" : "Provoni përsëri!"}
+           {result.passed ? "Shkëlqyeshëm!" : "Provoni përsëri!"}
           </p>
 
           <div className="grid grid-cols-2 gap-4 mb-6">
@@ -264,7 +268,12 @@ export default function Quizes() {
             </div>
           </div>
 
-          {!result.passed && (
+          {result.passed && result.xpEarned > 0 && (
+            <div className="bg-[#E8FFF3] border border-[#A3E9C8] rounded-xl p-4 mb-6">
+              <p className="text-sm text-gray-700 text-center font-semibold">+{result.xpEarned} XP të fituara! 🎉</p>
+            </div>
+          )}
+          {result.passed && result.xpEarned === 0 && (
             <div className="bg-[#FFF4E5] border border-[#FFE4B5] rounded-xl p-4 mb-6">
               <p className="text-sm text-gray-700 text-center">Ju e keni përfunduar më parë këtë kuiz. Nuk jepen XP.</p>
             </div>
@@ -297,12 +306,12 @@ export default function Quizes() {
               <div className="flex items-center justify-between mb-4">
                 <button
                   onClick={() => setSelectedQuiz(null)}
-                  className="text-gray-600 hover:text-gray-900 transition-colors flex items-center gap-2 cursor-pointer"
+                  className="text-gray-600 hover:text-gray-900 bg-gray-400/20 rounded-4xl p-2 transition-colors flex items-center gap-2 cursor-pointer"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
-                  Mbrapa
+                  Shko pas
                 </button>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1 bg-[#FF8A00] text-white px-3 py-1 rounded-full">
@@ -500,7 +509,7 @@ export default function Quizes() {
               {isLastQuestion && submittedAnswer && (
                 <button
                   onClick={submitQuiz}
-                  className="w-full px-6 py-4 bg-[#007AFF] hover:bg-[#0051D5] text-white font-semibold rounded-xl transition-colors cursor-pointer"
+                  className="w-full px-6 py-4 bg-[#00d50b] text-white font-semibold rounded-xl transition-colors cursor-pointer"
                 >
                   Dërgo Kuizin
                 </button>

@@ -16,6 +16,8 @@ import {
   Zap,
   CheckCircle,
   XCircle,
+  Infinity,
+  Calendar,
 } from "lucide-react"
 
 export default function Words() {
@@ -72,7 +74,7 @@ export default function Words() {
             key={char}
             type="button"
             onClick={() => insertUmlaut(char, inputRef, setValue)}
-            className="px-2 py-1 text-xs font-semibold bg-gradient-to-br from-[#E0F7F4] to-[#B8EDE8] hover:from-[#B8EDE8] hover:to-[#8FE3DC] border-2 border-[#8FE3DC] rounded text-[#2D9D91] transition-all"
+            className="px-2 py-1 text-xs font-semibold bg-gradient-to-br from-[#E0F7F4] to-[#B8EDE8] hover:from-[#B8EDE8] hover:to-[#8FE3DC] border-1 border-yellow-400 rounded text-[#2D9D91] transition-all"
           >
             {char}
           </button>
@@ -292,7 +294,7 @@ export default function Words() {
   if (!user) {
     return (
       <div className="max-w-full mx-auto p-4">
-        <div className="border-2 border-[#8FE3DC] rounded-lg p-8 text-center bg-white shadow-lg">
+        <div className="border-1 border-yellow-400 rounded-lg p-8 text-center bg-white shadow-lg">
           <h2 className="text-xl font-semibold mb-2 text-gray-900">Ju lutem identifikohuni</h2>
           <p className="text-gray-600 text-sm">Duhet të jeni të identifikuar për të parë fjalët tuaja të mësuara</p>
         </div>
@@ -303,7 +305,7 @@ export default function Words() {
   if (showHowToPlay) {
     return (
       <div className="max-w-full mx-auto p-4">
-        <div className="border-2 border-[#8FE3DC] rounded-xl p-6 bg-white shadow-lg max-w-2xl mx-auto">
+        <div className="border-1 border-yellow-400 rounded-xl p-6 bg-white shadow-lg max-w-2xl mx-auto">
           <div className="flex justify-between items-center mb-5">
             <div className="flex items-center gap-3">
               <HelpCircle size={28} className="text-[#3DAFA3]" />
@@ -311,7 +313,7 @@ export default function Words() {
             </div>
             <button
               onClick={() => setShowHowToPlay(false)}
-              className="p-1.5 rounded-md bg-gradient-to-br from-[#E0F7F4] to-[#B8EDE8] hover:from-[#B8EDE8] hover:to-[#8FE3DC] border-2 border-[#8FE3DC] transition-colors"
+              className="p-1.5 rounded-md bg-gradient-to-br from-[#E0F7F4] to-[#B8EDE8] hover:from-[#B8EDE8] hover:to-[#8FE3DC] border-1 border-yellow-400 transition-colors"
             >
               <X size={20} className="text-[#2D9D91]" />
             </button>
@@ -357,7 +359,7 @@ export default function Words() {
               <p>Klikoni ikonën e altoparlantit për të dëgjuar shqiptimin e saktë të fjalës gjermane.</p>
             </div>
 
-            <div className="bg-gradient-to-br from-[#E0F7F4] to-[#B8EDE8] border-2 border-[#8FE3DC] rounded-lg p-3 mt-5">
+            <div className="bg-gradient-to-br from-[#E0F7F4] to-[#B8EDE8] border-1 border-yellow-400 rounded-lg p-3 mt-5">
               <p className="text-sm text-[#2D9D91] m-0">
                 💡 <strong>Këshillë:</strong> Praktikoni rregullisht për të përmirësuar aftësitë tuaja gjuhësore!
               </p>
@@ -408,7 +410,7 @@ export default function Words() {
           </div>
         </div>
 
-        <div className="border-2 border-[#8FE3DC] rounded-xl p-4 bg-white shadow-lg">
+        <div className="border-1 border-yellow-400 rounded-xl p-4 bg-white shadow-lg">
           <div>
             <div className="text-center py-8 px-4 mb-4 bg-gradient-to-br from-[#B8EDE8] to-[#8FE3DC] rounded-xl">
               <p className="text-xs text-gray-600 mb-2 font-medium uppercase tracking-wide">PËRKTHENI KËTË FJALË:</p>
@@ -490,7 +492,7 @@ export default function Words() {
             <div className="flex justify-end">
               <button
                 onClick={endQuiz}
-                className="py-2 px-4 bg-white hover:bg-gradient-to-br hover:from-[#E0F7F4] hover:to-[#B8EDE8] text-[#2D9D91] border-2 border-[#8FE3DC] rounded-lg text-sm font-semibold transition-all"
+                className="py-2 px-4 bg-white hover:bg-gradient-to-br hover:from-[#E0F7F4] hover:to-[#B8EDE8] text-[#2D9D91] border-1 border-yellow-400 rounded-lg text-sm font-semibold transition-all"
               >
                 Mbyll Kuizin
               </button>
@@ -523,9 +525,9 @@ export default function Words() {
       )}
 
       <div className="mb-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-br from-[#E0F7F4] to-[#B8EDE8] p-5 rounded-xl border-2 border-[#8FE3DC] shadow-lg">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-br from-[#E0F7F4] to-[#B8EDE8] p-5 rounded-xl shadow-lg">
           <div className="flex items-center gap-3">
-            <div className="bg-gradient-to-br from-[#3DAFA3] via-[#2D9D91] to-[#5BC0BE] p-2.5 rounded-xl flex items-center justify-center shadow-lg shadow-teal-500/20">
+            <div className="bg-gradient-to-br from-[#1d2726] via-[#2D9D91] to-[#5BC0BE] p-2.5 rounded-xl flex items-center justify-center shadow-lg shadow-teal-500/20">
               <BookOpen size={32} className="text-white" />
             </div>
             <div>
@@ -545,7 +547,7 @@ export default function Words() {
             )}
             <button
               onClick={() => setShowHowToPlay(true)}
-              className="px-4 py-2.5 bg-white hover:bg-gradient-to-br hover:from-[#E0F7F4] hover:to-[#B8EDE8] text-[#2D9D91] border-2 border-[#8FE3DC] rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
+              className="px-4 py-2.5 bg-white hover:bg-gradient-to-br hover:from-[#E0F7F4] hover:to-[#B8EDE8] text-[#2D9D91] border-1 border-yellow-400 rounded-lg text-sm font-semibold transition-all flex items-center gap-2"
             >
               <HelpCircle size={18} />
               Si të Luani
@@ -555,15 +557,24 @@ export default function Words() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white border-2 border-[#8FE3DC] p-4 rounded-xl shadow-md">
+        <div className="bg-white  p-4 rounded-xl shadow-md">
           <div className="flex items-center gap-2 mb-1">
-            <BookOpen size={18} className="text-[#3DAFA3]" />
+            <Infinity size={20} className="text-[#3DAFA3] rounded-full" />
             <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Totali</p>
           </div>
           <p className="text-3xl font-bold text-[#2D9D91]">{stats.totalWords}</p>
           <p className="text-xs text-gray-500 mt-1">Fjalë të mësuara</p>
         </div>
-        <div className="bg-white border-2 border-[#8FE3DC] p-4 rounded-xl shadow-md">
+       
+        <div className="bg-white  p-4 rounded-xl shadow-md">
+          <div className="flex items-center gap-2 mb-1">
+            <Calendar size={18} className="text-[#3DAFA3]" />
+            <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Këtë Muaj</p>
+          </div>
+          <p className="text-3xl font-bold text-[#2D9D91]">{stats.wordsThisMonth}</p>
+          <p className="text-xs text-gray-500 mt-1">Fjalë të reja</p>
+        </div>
+         <div className="bg-white  p-4 rounded-xl shadow-md">
           <div className="flex items-center gap-2 mb-1">
             <Zap size={18} className="text-[#3DAFA3]" />
             <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Këtë Javë</p>
@@ -571,18 +582,10 @@ export default function Words() {
           <p className="text-3xl font-bold text-[#2D9D91]">{stats.wordsThisWeek}</p>
           <p className="text-xs text-gray-500 mt-1">Fjalë të reja</p>
         </div>
-        <div className="bg-white border-2 border-[#8FE3DC] p-4 rounded-xl shadow-md">
-          <div className="flex items-center gap-2 mb-1">
-            <BookOpen size={18} className="text-[#3DAFA3]" />
-            <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Këtë Muaj</p>
-          </div>
-          <p className="text-3xl font-bold text-[#2D9D91]">{stats.wordsThisMonth}</p>
-          <p className="text-xs text-gray-500 mt-1">Fjalë të reja</p>
-        </div>
       </div>
 
       <div className="mb-6">
-        <div className="bg-white border-2 border-[#8FE3DC] rounded-xl shadow-md p-4">
+        <div className="bg-white rounded-xl shadow-md p-4">
           <div className="flex items-center gap-2 mb-3">
             <Plus size={20} className="text-[#3DAFA3]" />
             <h2 className="text-lg font-bold text-gray-800">Shto një Fjalë të Re</h2>
@@ -599,7 +602,7 @@ export default function Words() {
                 value={newWord}
                 onChange={(e) => setNewWord(e.target.value)}
                 placeholder="p.sh. Haus"
-                className="w-full px-3 py-2 border-2 border-[#8FE3DC] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3DAFA3] text-sm"
+                className="w-full px-3 py-2 border-1 border-yellow-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3DAFA3] text-sm"
                 required
               />
               <UmlautButtons inputRef={newWordInputRef} setValue={setNewWord} />
@@ -614,13 +617,13 @@ export default function Words() {
                 value={translation}
                 onChange={(e) => setTranslation(e.target.value)}
                 placeholder="p.sh. Shtëpi"
-                className="w-full px-3 py-2 border-2 border-[#8FE3DC] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3DAFA3] text-sm"
+                className="w-full px-3 py-2 border-1 border-yellow-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3DAFA3] text-sm"
               />
             </div>
             <button
               type="submit"
               disabled={adding || !newWord.trim()}
-              className="w-full py-2.5 bg-gradient-to-r from-[#3DAFA3] to-[#5BC0BE] hover:from-[#2D9D91] hover:to-[#4AB0AE] disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20"
+              className="w-full py-2.5 bg-gradient-to-r from-[#4aaf3d] to-[#5BC0BE] hover:from-[#2D9D91] hover:to-[#4AB0AE] disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed text-white rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-teal-500/20"
             >
               {adding ? (
                 <>
@@ -649,12 +652,12 @@ export default function Words() {
             placeholder="Kërko fjalë..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full sm:w-64 px-3 py-2 border-2 border-[#8FE3DC] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3DAFA3] text-sm"
+            className="w-full sm:w-64 px-3 py-2 border-1 border-yellow-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#3DAFA3] text-sm"
           />
         </div>
 
         {currentWords.length === 0 ? (
-          <div className="border-2 border-[#8FE3DC] rounded-xl p-8 text-center bg-white shadow-md">
+          <div className="border-1 border-yellow-400 rounded-xl p-8 text-center bg-white shadow-md">
             <BookOpen size={48} className="mx-auto text-[#8FE3DC] mb-3" />
             <p className="text-gray-600 font-medium">
               {searchQuery.trim()
@@ -671,7 +674,7 @@ export default function Words() {
               {currentWords.map((word) => (
                 <div
                   key={word._id}
-                  className="bg-white border-2 border-[#8FE3DC] rounded-xl p-4 hover:border-[#3DAFA3] transition-all shadow-md hover:shadow-lg group"
+                  className="bg-white border-1 border-yellow-400 rounded-xl p-4 hover:border-[#3DAFA3] transition-all shadow-md hover:shadow-lg group"
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex-1">
@@ -681,7 +684,7 @@ export default function Words() {
                     <div className="flex gap-1">
                       <button
                         onClick={() => handleSpeak(word.word)}
-                        className="p-1.5 rounded-md bg-gradient-to-br from-[#E0F7F4] to-[#B8EDE8] hover:from-[#B8EDE8] hover:to-[#8FE3DC] border-2 border-[#8FE3DC] transition-colors group-hover:scale-105"
+                        className="p-1.5 rounded-md bg-gradient-to-br from-[#E0F7F4] to-[#B8EDE8] hover:from-[#B8EDE8] hover:to-[#8FE3DC] border-1 border-yellow-400 transition-colors group-hover:scale-105"
                         title="Dëgjo"
                       >
                         <Volume2 size={16} className="text-[#2D9D91]" />
@@ -705,7 +708,7 @@ export default function Words() {
                 <button
                   onClick={() => paginate(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="p-2 rounded-lg bg-white border-2 border-[#8FE3DC] hover:bg-[#E0F7F4] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="p-2 rounded-lg bg-white border-1 border-yellow-400 hover:bg-[#E0F7F4] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronLeft size={18} className="text-[#2D9D91]" />
                 </button>
@@ -724,7 +727,7 @@ export default function Words() {
                           className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-all ${
                             currentPage === pageNumber
                               ? "bg-gradient-to-r from-[#3DAFA3] to-[#5BC0BE] text-white shadow-lg shadow-teal-500/20"
-                              : "bg-white border-2 border-[#8FE3DC] text-[#2D9D91] hover:bg-[#E0F7F4]"
+                              : "bg-white border-1 border-yellow-400 text-[#2D9D91] hover:bg-[#E0F7F4]"
                           }`}
                         >
                           {pageNumber}
@@ -743,7 +746,7 @@ export default function Words() {
                 <button
                   onClick={() => paginate(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="p-2 rounded-lg bg-white border-2 border-[#8FE3DC] hover:bg-[#E0F7F4] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="p-2 rounded-lg bg-white border-1 border-yellow-400 hover:bg-[#E0F7F4] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronRight size={18} className="text-[#2D9D91]" />
                 </button>

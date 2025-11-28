@@ -1066,7 +1066,7 @@ const TopicCard = React.memo(({ topic, onClick, isFinished, canAccess }) => (
       !canAccess ? "cursor-not-allowed opacity-60" : "cursor-pointer"
     } relative overflow-hidden group ${
       isFinished
-        ? "border-1 border-orange-300 bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50 shadow-md"
+        ? "bg-gradient-to-br from-orange-50 via-yellow-50 to-amber-50 shadow-md"
         : canAccess
           ? "bg-gradient-to-br from-white to-gray-50 border-2 border-gray-200 hover:border-teal-400 shadow-sm hover:shadow-teal-200/50"
           : "bg-gradient-to-br from-gray-100 to-gray-50 border-2 border-gray-300 shadow-sm"
