@@ -27,6 +27,109 @@ import {
   X,
 } from "lucide-react"
 
+// Helper function to parse **text** and render in yellow
+const parseHighlightedText = (text) => {
+  if (!text || typeof text !== 'string') return text;
+  
+  // Split by **text** pattern
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      // Remove the ** markers and render in yellow
+      const highlightedWord = part.slice(2, -2);
+      return (
+        <span key={index} className="bg-yellow-200 text-yellow-900 px-1 rounded font-semibold">
+          {highlightedWord}
+        </span>
+      );
+    }
+    return part;
+  });
+};
+
+// Helper function to parse table content
+const parseTableContent = (text) => {
+  if (!text || typeof text !== 'string') return null;
+  
+  // Check if text contains table markers (pipe characters with multiple columns)
+  if (!text.includes('|')) return null;
+  
+  const lines = text.trim().split('\n');
+  const tableRows = [];
+  
+  for (const line of lines) {
+    if (line.includes('|')) {
+      // Skip separator lines (like |---|---|)
+      if (line.replace(/[\s\-|]/g, '').length === 0) continue;
+      
+      const cells = line.split('|').filter(cell => cell.trim() !== '');
+      if (cells.length > 1) {
+        tableRows.push(cells.map(cell => cell.trim()));
+      }
+    }
+  }
+  
+  if (tableRows.length < 2) return null; // Need at least header + 1 row
+  
+  return tableRows;
+};
+
+// Component to render tables beautifully
+const ContentWithTable = ({ content, className = "" }) => {
+  if (!content || typeof content !== 'string') return null;
+  
+  const tableData = parseTableContent(content);
+  
+  if (tableData && tableData.length > 0) {
+    const headers = tableData[0];
+    const rows = tableData.slice(1);
+    
+    return (
+      <div className={`overflow-x-auto ${className}`}>
+        <table className="min-w-full border-collapse border border-gray-300 rounded-lg overflow-hidden shadow-sm">
+          <thead className="bg-gradient-to-r from-blue-100 to-teal-100">
+            <tr>
+              {headers.map((header, idx) => (
+                <th 
+                  key={idx} 
+                  className="border border-gray-300 px-4 py-3 text-left text-sm font-bold text-gray-800"
+                >
+                  {parseHighlightedText(header)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, rowIdx) => (
+              <tr 
+                key={rowIdx} 
+                className={`${rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition-colors`}
+              >
+                {row.map((cell, cellIdx) => (
+                  <td 
+                    key={cellIdx} 
+                    className="border border-gray-300 px-4 py-2 text-sm text-gray-700"
+                  >
+                    {parseHighlightedText(cell)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+  
+  // Return regular text with highlighting if no table
+  return (
+    <p className="text-gray-800 leading-relaxed text-sm whitespace-pre-line">
+      {parseHighlightedText(content)}
+    </p>
+  );
+};
+
 const getLevelColor = (level) => {
   switch (level) {
     case "A1":
@@ -84,7 +187,7 @@ const MoreInfoModal = ({ topic, isOpen, onClose }) => {
         <div className="p-4 space-y-4">
           {topic?.moreInfo ? (
             <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-              <p className="text-gray-800 leading-relaxed whitespace-pre-line text-sm">{topic.moreInfo}</p>
+              <ContentWithTable content={topic.moreInfo} />
             </div>
           ) : (
             <div className="text-center py-8">
@@ -96,9 +199,9 @@ const MoreInfoModal = ({ topic, isOpen, onClose }) => {
           {topic?.content && (
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
               <h3 className="font-bold text-blue-900 mb-2 text-sm">Përmbajtja e plotë:</h3>
-              <p className="text-blue-800 leading-relaxed text-sm whitespace-pre-line">
-                {typeof topic.content === "string" ? topic.content : topic.content?.german || topic.content?.english}
-              </p>
+              <ContentWithTable 
+                content={typeof topic.content === "string" ? topic.content : topic.content?.german || topic.content?.english} 
+              />
             </div>
           )}
         </div>
@@ -132,33 +235,32 @@ const Grammar = () => {
   }, [selectedLevel])
 
   const fetchDailyLimit = async () => {
-  try {
-    const response = await grammarService.getDailyLimitStatus()
-    console.log("[v0] Daily limit response:", response)
-    
-    // Access the data correctly - it's nested in response.data or response directly
-    const data = response.data || response
-    
-    console.log("[v0] Daily limit data:", data)
-    
-    setDailyLimit({
-      topicsAccessedToday: data.topicsAccessedToday,
-      canAccessMore: data.canAccessMore,
-      remainingTopics: data.remainingTopics,
-      limit: data.limit,
-      accessedTopicIds: data.accessedTopicIds || [],
-    })
-  } catch (error) {
-    console.error("[v0] Error fetching daily limit:", error)
-    setDailyLimit({
-      topicsAccessedToday: 0,
-      canAccessMore: true,
-      remainingTopics: 2,
-      limit: 2,
-      accessedTopicIds: [],
-    })
+    try {
+      const response = await grammarService.getDailyLimitStatus()
+      console.log("[v0] Daily limit response:", response)
+      
+      const data = response.data || response
+      
+      console.log("[v0] Daily limit data:", data)
+      
+      setDailyLimit({
+        topicsAccessedToday: data.topicsAccessedToday,
+        canAccessMore: data.canAccessMore,
+        remainingTopics: data.remainingTopics,
+        limit: data.limit,
+        accessedTopicIds: data.accessedTopicIds || [],
+      })
+    } catch (error) {
+      console.error("[v0] Error fetching daily limit:", error)
+      setDailyLimit({
+        topicsAccessedToday: 0,
+        canAccessMore: true,
+        remainingTopics: 2,
+        limit: 2,
+        accessedTopicIds: [],
+      })
+    }
   }
-}
 
   const fetchFinishedTopics = async () => {
     try {
@@ -186,7 +288,6 @@ const Grammar = () => {
         return prev
       })
 
-      // Refresh both daily limit and finished topics
       await fetchDailyLimit()
       await fetchFinishedTopics()
 
@@ -205,15 +306,12 @@ const Grammar = () => {
   const canAccessTopic = (topic) => {
     if (!dailyLimit) return true
     
-    // Already finished topics are always accessible
     if (isTopicFinished(topic._id)) return true
     
-    // Check if this topic was already accessed today
     const topicIdString = String(topic._id)
     const accessedToday = dailyLimit.accessedTopicIds || []
     if (accessedToday.includes(topicIdString)) return true
     
-    // Otherwise check if we have remaining slots
     return dailyLimit.remainingTopics > 0
   }
 
@@ -250,12 +348,12 @@ const Grammar = () => {
     try {
       setTopicLoading(true)
       const response = await grammarService.getTopicById(topicId)
-      setSelectedTopic(response.data)
+      console.log("[v0] Topic details response:", response)
+      setSelectedTopic(response.data || response)
       setActiveTab("content")
       setSelectedAnswers({})
       setShowResults({})
       
-      // Refresh daily limit after accessing a topic
       await fetchDailyLimit()
     } catch (error) {
       console.error("Error fetching topic details:", error)
@@ -289,7 +387,6 @@ const Grammar = () => {
     setShowDetailedContent(false)
     setCurrentQuestionIndex(0)
     
-    // Refresh data when going back
     fetchDailyLimit()
     fetchFinishedTopics()
     
@@ -376,6 +473,18 @@ const Grammar = () => {
     return topic && topic.numbers && Array.isArray(topic.numbers) && topic.numbers.length > 0
   }
 
+  const hasExamples = (topic) => {
+    return topic && topic.examples && Array.isArray(topic.examples) && topic.examples.length > 0
+  }
+
+  const hasExercises = (topic) => {
+    return topic && topic.exercises && Array.isArray(topic.exercises) && topic.exercises.length > 0
+  }
+
+  const hasRules = (topic) => {
+    return topic && topic.rules && Array.isArray(topic.rules) && topic.rules.length > 0
+  }
+
   const renderTopicGrid = useMemo(() => {
     return filteredTopics.map((topic) => (
       <TopicCard
@@ -416,7 +525,9 @@ const Grammar = () => {
                     </div>
                     <h1 className="text-lg font-bold text-gray-900">{selectedTopic.name}</h1>
                   </div>
-                  <p className="text-gray-600 text-sm leading-relaxed">{selectedTopic.description}</p>
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    {parseHighlightedText(selectedTopic.description)}
+                  </p>
                 </div>
                 {selectedTopic.moreInfo && (
                   <button
@@ -514,6 +625,7 @@ const Grammar = () => {
             </div>
 
             <div className="p-4">
+              {/* PËRMBAJTJA TAB */}
               {activeTab === "content" && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 mb-3">
@@ -523,9 +635,7 @@ const Grammar = () => {
 
                   {typeof selectedTopic.content === "string" ? (
                     <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                      <p className="text-gray-800 leading-relaxed text-sm whitespace-pre-line">
-                        {selectedTopic.content}
-                      </p>
+                      <ContentWithTable content={selectedTopic.content} />
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -533,11 +643,9 @@ const Grammar = () => {
                         <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                           <div className="flex items-center gap-2 mb-2">
                             <Globe className="h-3.5 w-3.5 text-blue-600" />
-                            <h4 className="font-semibold text-blue-800 text-xs">English Explanation</h4>
+                            <h4 className="font-semibold text-blue-800 text-xs">Shqip</h4>
                           </div>
-                          <p className="text-blue-900 leading-relaxed text-sm whitespace-pre-line">
-                            {selectedTopic.content.english}
-                          </p>
+                          <ContentWithTable content={selectedTopic.content.english} />
                         </div>
                       )}
 
@@ -556,15 +664,14 @@ const Grammar = () => {
                               <Volume2 className="h-3.5 w-3.5" />
                             </button>
                           </div>
-                          <p className="text-teal-900 leading-relaxed text-sm whitespace-pre-line">
-                            {selectedTopic.content.german}
-                          </p>
+                          <ContentWithTable content={selectedTopic.content.german} />
                         </div>
                       )}
                     </div>
                   )}
 
-                  {selectedTopic.rules && selectedTopic.rules.length > 0 && (
+                  {/* RULES SECTION */}
+                  {hasRules(selectedTopic) && (
                     <div className="space-y-3 mt-6">
                       <div className="flex items-center gap-2 mb-3">
                         <ListCheck className="h-4 w-4 text-indigo-600" />
@@ -581,9 +688,15 @@ const Grammar = () => {
                             </div>
                             <div className="flex-1">
                               <h4 className="font-bold text-indigo-900 text-sm mb-2">{rule.title}</h4>
-                              <p className="text-gray-800 text-sm leading-relaxed whitespace-pre-line">
-                                {rule.description}
-                              </p>
+                              <div className="text-gray-800 text-sm leading-relaxed">
+                                <ContentWithTable content={rule.description} />
+                              </div>
+                              {rule.example && (
+                                <div className="mt-2 p-2 bg-white rounded border border-indigo-100">
+                                  <span className="text-xs font-semibold text-indigo-600">Shembull: </span>
+                                  <span className="text-sm text-gray-700">{parseHighlightedText(rule.example)}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -593,6 +706,7 @@ const Grammar = () => {
                 </div>
               )}
 
+              {/* NUMBERS TAB */}
               {activeTab === "numbers" && hasNumbers(selectedTopic) && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 mb-3">
@@ -689,6 +803,7 @@ const Grammar = () => {
                 </div>
               )}
 
+              {/* EXAMPLES TAB - FIXED */}
               {activeTab === "examples" && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 mb-3">
@@ -696,27 +811,44 @@ const Grammar = () => {
                     <h3 className="text-base font-bold text-gray-900">Shembuj Praktikë</h3>
                   </div>
 
-                  {selectedTopic.examples && selectedTopic.examples.length > 0 ? (
+                  {hasExamples(selectedTopic) ? (
                     <div className="space-y-3">
                       {selectedTopic.examples.map((example, index) => (
-                        <div key={index} className="bg-white p-3 rounded-lg border border-gray-200">
+                        <div key={index} className="bg-white p-3 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                           <div className="flex items-center gap-2 mb-3">
                             <span className="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-xs font-semibold">
-                              Shembulli {index + 1}
+                              {example.type || `Shembulli ${index + 1}`}
                             </span>
                           </div>
 
                           <div className="space-y-2">
+                            {/* Show type as category if exists */}
+                            {example.type && !example.english && (
+                              <div className="bg-blue-50 p-2 rounded border border-blue-200">
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  <Globe className="h-3 w-3 text-blue-600" />
+                                  <span className="text-xs font-semibold text-blue-700">Tipi</span>
+                                </div>
+                                <p className="text-blue-900 text-sm leading-relaxed">
+                                  {parseHighlightedText(example.type)}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Show english/albanian text */}
                             {example.english && (
                               <div className="bg-blue-50 p-2 rounded border border-blue-200">
                                 <div className="flex items-center gap-1.5 mb-1">
                                   <Globe className="h-3 w-3 text-blue-600" />
                                   <span className="text-xs font-semibold text-blue-700">Shqip</span>
                                 </div>
-                                <p className="text-blue-900 text-sm leading-relaxed">{example.english}</p>
+                                <p className="text-blue-900 text-sm leading-relaxed">
+                                  {parseHighlightedText(example.english)}
+                                </p>
                               </div>
                             )}
 
+                            {/* German text */}
                             {example.german && (
                               <div className="bg-teal-50 p-2 rounded border border-teal-200">
                                 <div className="flex items-center justify-between mb-1">
@@ -732,13 +864,22 @@ const Grammar = () => {
                                     <Volume2 className="h-3 w-3" />
                                   </button>
                                 </div>
-                                <p className="text-teal-900 font-semibold text-sm leading-relaxed">{example.german}</p>
+                                <p className="text-teal-900 font-semibold text-sm leading-relaxed">
+                                  {parseHighlightedText(example.german)}
+                                </p>
                               </div>
                             )}
 
-                            {example.explanation && (
+                            {/* Explanation or Analysis */}
+                            {(example.explanation || example.analysis) && (
                               <div className="bg-gray-50 p-2 rounded border border-gray-200">
-                                <p className="text-gray-700 text-xs leading-relaxed italic">{example.explanation}</p>
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  <Lightbulb className="h-3 w-3 text-gray-500" />
+                                  <span className="text-xs font-semibold text-gray-600">Analiza</span>
+                                </div>
+                                <p className="text-gray-700 text-xs leading-relaxed">
+                                  {parseHighlightedText(example.explanation || example.analysis)}
+                                </p>
                               </div>
                             )}
                           </div>
@@ -754,6 +895,7 @@ const Grammar = () => {
                 </div>
               )}
 
+              {/* EXERCISES TAB */}
               {activeTab === "exercises" && (
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 mb-3">
@@ -761,7 +903,7 @@ const Grammar = () => {
                     <h3 className="text-base font-bold text-gray-900">Ushtrime Praktike</h3>
                   </div>
 
-                  {selectedTopic.exercises && selectedTopic.exercises.length > 0 ? (
+                  {hasExercises(selectedTopic) ? (
                     <div className="space-y-3">
                       <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
                         <div className="flex items-center justify-between mb-2">
@@ -811,7 +953,9 @@ const Grammar = () => {
 
                             {exercise.question && (
                               <div className="mb-3 bg-gray-50 p-2.5 rounded border border-gray-200">
-                                <p className="text-gray-900 font-medium text-sm leading-relaxed">{exercise.question}</p>
+                                <p className="text-gray-900 font-medium text-sm leading-relaxed">
+                                  {parseHighlightedText(exercise.question)}
+                                </p>
                               </div>
                             )}
 
@@ -835,7 +979,7 @@ const Grammar = () => {
                                     } ${showResults[index] ? "cursor-not-allowed opacity-75" : "cursor-pointer"}`}
                                   >
                                     <div className="flex items-center justify-between">
-                                      <span>{option}</span>
+                                      <span>{parseHighlightedText(option)}</span>
                                       {showResults[index] && (
                                         <>
                                           {option === exercise.correctAnswer && (
@@ -857,7 +1001,9 @@ const Grammar = () => {
                                 {exercise.english && (
                                   <div className="bg-blue-50 p-2 rounded border border-blue-200">
                                     <span className="font-semibold text-blue-700 text-xs">Shqip:</span>
-                                    <p className="text-blue-800 text-xs mt-0.5">{exercise.english}</p>
+                                    <p className="text-blue-800 text-xs mt-0.5">
+                                      {parseHighlightedText(exercise.english)}
+                                    </p>
                                   </div>
                                 )}
                                 {exercise.german && (
@@ -871,12 +1017,16 @@ const Grammar = () => {
                                         <Volume2 className="h-3 w-3" />
                                       </button>
                                     </div>
-                                    <p className="text-teal-800 font-medium text-xs mt-0.5">{exercise.german}</p>
+                                    <p className="text-teal-800 font-medium text-xs mt-0.5">
+                                      {parseHighlightedText(exercise.german)}
+                                    </p>
                                   </div>
                                 )}
                                 {exercise.explanation && (
                                   <div className="bg-gray-100 p-2 rounded border border-gray-200">
-                                    <p className="text-gray-700 text-xs italic">{exercise.explanation}</p>
+                                    <p className="text-gray-700 text-xs italic">
+                                      {parseHighlightedText(exercise.explanation)}
+                                    </p>
                                   </div>
                                 )}
                               </div>
