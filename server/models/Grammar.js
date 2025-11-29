@@ -37,6 +37,30 @@ const ruleSchema = new mongoose.Schema({
   },
 })
 
+// ADD THIS NEW SCHEMA FOR EXAMPLES
+const exampleSchema = new mongoose.Schema({
+  type: {
+    type: String,
+    trim: true,
+  },
+  german: {
+    type: String,
+    trim: true,
+  },
+  english: {
+    type: String,
+    trim: true,
+  },
+  explanation: {
+    type: String,
+    trim: true,
+  },
+  analysis: {
+    type: String,
+    trim: true,
+  },
+})
+
 const grammarSchema = new mongoose.Schema(
   {
     name: {
@@ -70,7 +94,12 @@ const grammarSchema = new mongoose.Schema(
       trim: true,
     },
     rules: [ruleSchema],
+    examples: [exampleSchema],  
     exercises: [exerciseSchema],
+    numbers: [{ 
+      number: Number,
+      german: String,
+    }],
     difficulty: {
       type: Number,
       min: 1,

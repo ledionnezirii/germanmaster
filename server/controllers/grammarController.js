@@ -4,7 +4,7 @@ const { ApiResponse } = require("../utils/ApiResponse")
 const { asyncHandler } = require("../utils/asyncHandler")
 
 // Helper function to check if date is today (reset at 00:01)
-const isDateToday = (date) => {
+/*const isDateToday = (date) => {
   if (!date) return false
   const today = new Date()
   const dateToCheck = new Date(date)
@@ -13,6 +13,19 @@ const isDateToday = (date) => {
     today.getMonth() === dateToCheck.getMonth() &&
     today.getDate() === dateToCheck.getDate()
   )
+}*/
+const isDateToday = (date) => {
+  if (!date) return false
+  const currentDate = new Date()
+  const dateToCheck = new Date(date)
+
+  // 60,000 milliseconds = 1 minute
+  const ONE_MINUTE_IN_MS = 60000 
+
+  // Nëse diferenca e kohës (në milisekonda) është më e vogël se 1 minutë, 
+  // do të thotë që jemi brenda të njëjtës periudhë (dhe kemi përdorur limitin).
+  // Kthejmë 'true' nëse nuk ka kaluar 1 minutë.
+  return currentDate.getTime() - dateToCheck.getTime() < ONE_MINUTE_IN_MS
 }
 
 const canAccessMoreTopicsToday = (user) => {
