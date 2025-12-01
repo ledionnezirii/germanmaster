@@ -43,49 +43,49 @@ const Home = () => {
   }
 
   const features = [
-    {
-      icon: Headphones,
-      title: "Praktikë Dëgjimi",
-      path: "/listen",
-      bgImage: "/src/images/listenCarousel.png",
-    },
-    {
-      icon: PenBox,
-      title: "Fraza",
-      path: "/phrases",
-      bgImage: "/src/images/phrasesCarousel.png",
-    },
-    {
-      icon: LockIcon,
-      title: "Teste te nivelit",
-      path: "/dictionary",
-      bgImage: "/src/images/testsCarousel.png",
-    },
-    {
-      icon: BrainCircuit,
-      title: "Kuize",
-      path: "/quizes",
-      bgImage: "/src/images/quizesCarousel.png",
-    },
-    {
-      icon: Mountain,
-      title: "Plani",
-      path: "/plan",
-      bgImage: "/src/images/planCarousel.png",
-    },
-    {
-      icon: BookOpen,
-      title: "Fjalor",
-      path: "/dictionary",
-      bgImage: "/src/images/dictionaryCarousel.png",
-    },
-    {
-      icon: Trophy,
-      title: "Renditja",
-      path: "/leaderboard",
-      bgImage: "/src/images/leaderboardCarousel.png",
-    },
-  ]
+  {
+    icon: Headphones,
+    title: "Praktikë Dëgjimi",
+    path: "/listen",
+    bgImage: "/images/listenCarousel.png",
+  },
+  {
+    icon: PenBox,
+    title: "Fraza",
+    path: "/phrases",
+    bgImage: "/images/phrasesCarousel.png",
+  },
+  {
+    icon: LockIcon,
+    title: "Teste te nivelit",
+    path: "/dictionary",
+    bgImage: "/images/testsCarousel.png",
+  },
+  {
+    icon: BrainCircuit,
+    title: "Kuize",
+    path: "/quizes",
+    bgImage: "/images/quizesCarousel.png",
+  },
+  {
+    icon: Mountain,
+    title: "Plani",
+    path: "/plan",
+    bgImage: "/images/planCarousel.png",
+  },
+  {
+    icon: BookOpen,
+    title: "Fjalor",
+    path: "/dictionary",
+    bgImage: "/images/dictionaryCarousel.png",
+  },
+  {
+    icon: Trophy,
+    title: "Renditja",
+    path: "/leaderboard",
+    bgImage: "/images/leaderboardCarousel.png",
+  },
+];
 
   const quickStats = [
     {
