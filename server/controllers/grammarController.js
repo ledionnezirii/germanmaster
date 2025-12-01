@@ -78,7 +78,7 @@ const resetDailyTopicsIfNewDay = (user) => {
 // @route   GET /api/grammar
 // @access  Public
 const getAllTopics = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 20, level, difficulty } = req.query
+  const { page = 1, limit = 60, level, difficulty } = req.query
 
   const query = { isActive: true }
 
@@ -115,7 +115,7 @@ const getAllTopics = asyncHandler(async (req, res) => {
 // @access  Public
 const getTopicsByLevel = asyncHandler(async (req, res) => {
   const { level } = req.params
-  const { page = 1, limit = 20 } = req.query
+  const { page = 1, limit = 40 } = req.query
 
   if (!["A1", "A2", "B1", "B2", "C1", "C2"].includes(level)) {
     throw new ApiError(400, "Invalid level")

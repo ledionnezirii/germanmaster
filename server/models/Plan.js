@@ -11,6 +11,10 @@ const planTopicSchema = new mongoose.Schema({
     trim: true,
     default: "",
   },
+  xpReward: {  // <CHANGE> Added xpReward field that was missing
+    type: Number,
+    default: 100,
+  },
   isCompleted: {
     type: Boolean,
     default: false,
@@ -30,7 +34,6 @@ const planSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true, // Unique per user, per level (implicitly handled by findOne in controller)
     },
     level: {
       type: String,
@@ -44,5 +47,9 @@ const planSchema = new mongoose.Schema(
     timestamps: true,
   },
 )
+
+// <CHANGE> Add compound unique index on userId + level
+// This allows each user to have one plan per level
+planSchema.index({ userId: 1, level: 1 }, { unique: true })
 
 module.exports = mongoose.model("Plan", planSchema)

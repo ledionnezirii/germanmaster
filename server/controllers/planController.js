@@ -1,67 +1,47 @@
-const Plan = require("../models/Plan") // Use the original Plan model
+const Plan = require("../models/Plan")
 const User = require("../models/User")
 
-const getDefaultA1Topics = () => [
-  { title: "Alphabet and Pronunciation", description: "Learn the German alphabet and basic pronunciation rules." },
-  { title: "Numbers (0-100)", description: "Master counting from zero to one hundred." },
-  { title: "Basic Greetings and Introductions", description: "Learn how to greet people and introduce yourself." },
-  { title: "Personal Pronouns", description: "Understand 'ich', 'du', 'er', 'sie', 'es', 'wir', 'ihr', 'sie/Sie'." },
-  { title: "Verbs: 'sein' and 'haben'", description: "Conjugate and use the verbs 'to be' and 'to have'." },
-  {
-    title: "Nouns and Articles (Nominative)",
-    description: "Learn common nouns and their definite/indefinite articles in the nominative case.",
-  },
-  {
-    title: "Simple Questions (W-Fragen)",
-    description: "Formulate basic questions using 'wer', 'was', 'wo', 'wann', 'wie'.",
-  },
-  { title: "Daily Routines and Time", description: "Talk about daily activities and tell time." },
-  { title: "Food and Drinks", description: "Vocabulary for common food and beverages." },
-  { title: "Family and Friends", description: "Vocabulary for family members and friends." },
-  { title: "Colors and Adjectives", description: "Learn basic colors and simple adjectives." },
-  { title: "Prepositions (basic)", description: "Understand simple prepositions like 'in', 'auf', 'unter'." },
-  { title: "Shopping and Prices", description: "Phrases for shopping and asking about prices." },
-  { title: "Directions and Places", description: "Asking for and giving directions, common places." },
-  { title: "Hobbies and Free Time", description: "Talking about leisure activities." },
-]
-
-// Placeholder for other levels - you can expand this later
-const getDefaultTopicsForLevel = (level) => {
-  switch (level) {
-    case "A1":
-      return getDefaultA1Topics()
-    // case "A2": return getDefaultA2Topics(); // Add A2 topics here
-    // case "B1": return getDefaultB1Topics(); // Add B1 topics here
-    // ... and so on for B2, C1, C2
-    default:
-      return [] // Return empty array or throw error for unsupported levels
-  }
-}
-
-exports.createPlan = async (req, res) => {
+exports.createOrUpdatePlan = async (req, res) => {
   const { level, topics } = req.body
-  const userId = req.user._id
+  const adminId = req.user._id
 
   try {
-    let plan = await Plan.findOne({ userId, level })
+    if (!topics || !Array.isArray(topics) || topics.length === 0) {
+      return res.status(400).json({ message: "Topics array is required and cannot be empty." })
+    }
 
-    if (plan) return res.status(400).json({ message: "Plan for this user and level already exists." })
+    const validLevels = ["A1", "A2", "B1", "B2", "C1", "C2"]
+    if (!validLevels.includes(level)) {
+      return res.status(400).json({ message: "Invalid level. Must be A1, A2, B1, B2, C1, or C2." })
+    }
 
-    const planTopics = topics && topics.length > 0 ? topics : getDefaultTopicsForLevel(level)
+    // <CHANGE> Find by BOTH userId and level, not just level
+    let plan = await Plan.findOne({ userId: adminId, level })
 
-    plan = await Plan.create({
-      userId,
-      level,
-      topics: planTopics,
-    })
-
-    res.status(201).json({
-      success: true,
-      data: plan,
-      message: "Learning plan created successfully.",
-    })
+    if (plan) {
+      // Update existing plan
+      plan.topics = topics
+      await plan.save()
+      res.status(200).json({
+        success: true,
+        data: plan,
+        message: `Plan for level ${level} updated successfully.`,
+      })
+    } else {
+      // Create new plan
+      plan = await Plan.create({
+        level,
+        topics,
+        userId: adminId,
+      })
+      res.status(201).json({
+        success: true,
+        data: plan,
+        message: `Plan for level ${level} created successfully.`,
+      })
+    }
   } catch (error) {
-    console.error("Error creating plan:", error)
+    console.error("Error creating/updating plan:", error)
     res.status(500).json({ message: "Server error", error: error.message })
   }
 }
@@ -70,35 +50,57 @@ exports.getPlanByLevel = async (req, res) => {
   const { level } = req.params
   const userId = req.user._id
 
-  console.log(`getPlanByLevel controller called for user ${userId} and level ${level}`)
-
   try {
-    const plan = await Plan.findOne({ userId, level }).populate("userId", "emri mbiemri xp")
+    // <CHANGE> Find by level only (this gets the admin's plan template for this level)
+    // If you want user-specific plans, change this to: { userId, level }
+    const plan = await Plan.findOne({ level })
 
     if (!plan) {
-      console.log(
-        `No plan found for user ${userId} and level ${level}. Attempting to create default A1 plan if level is A1.`,
-      )
-      if (level === "A1") {
-        const defaultTopics = getDefaultTopicsForLevel("A1")
-        const newPlan = await Plan.create({
-          userId,
-          level: "A1",
-          topics: defaultTopics,
-        })
-        return res.status(200).json({
-          success: true,
-          data: newPlan,
-          message: "Default A1 plan created and retrieved.",
-        })
-      }
-      return res.status(404).json({ message: "Learning plan not found for this level." })
+      return res.status(404).json({ message: `No plan found for level ${level}.` })
     }
+
+    // Get user with their plan progress
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(404).json({ message: "User not found." })
+    }
+
+    // Find user's progress for this level
+    let userLevelProgress = user.planProgress.find((p) => p.level === level)
+
+    // If no progress exists for this level, initialize it
+    if (!userLevelProgress) {
+      userLevelProgress = {
+        level: level,
+        completedTopics: [],
+      }
+    }
+
+    // Map topics with completion status
+    const topicsWithProgress = plan.topics.map((topic) => {
+      const completed = userLevelProgress.completedTopics.find((ct) => ct.topicId.toString() === topic._id.toString())
+
+      return {
+        _id: topic._id,
+        title: topic.title,
+        description: topic.description,
+        xpReward: topic.xpReward || 100,
+        isCompleted: !!completed,
+        completedAt: completed ? completed.completedAt : null,
+        xpAwarded: completed ? completed.xpAwarded : 0,
+      }
+    })
 
     res.status(200).json({
       success: true,
-      data: plan,
-      message: "Learning plan retrieved successfully.",
+      data: {
+        _id: plan._id,
+        level: plan.level,
+        topics: topicsWithProgress,
+        createdAt: plan.createdAt,
+        updatedAt: plan.updatedAt,
+      },
+      message: "Plan retrieved successfully.",
     })
   } catch (error) {
     console.error("Error getting plan:", error)
@@ -106,38 +108,104 @@ exports.getPlanByLevel = async (req, res) => {
   }
 }
 
-exports.markTopicAsCompleted = async (req, res) => {
-  const { planId, topicId } = req.params // Reverted to planId
-  const userId = req.user._id
-  const XP_PER_TOPIC = 100
+// ... existing code ...
+
+exports.getAllPlans = async (req, res) => {
+  try {
+    const plans = await Plan.find().populate("userId", "emri mbiemri email").sort({ level: 1 })
+
+    res.status(200).json({
+      success: true,
+      data: plans,
+      message: "All plans retrieved successfully.",
+    })
+  } catch (error) {
+    console.error("Error getting all plans:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
+  }
+}
+
+exports.deletePlan = async (req, res) => {
+  const { level } = req.params
+  const adminId = req.user._id  // <CHANGE> Get admin ID
 
   try {
-    const plan = await Plan.findOne({ _id: planId, userId }) // Find by planId and userId
+    // <CHANGE> Delete by userId AND level
+    const plan = await Plan.findOneAndDelete({ userId: adminId, level })
 
-    if (!plan) return res.status(404).json({ message: "Learning plan not found or unauthorized." })
-
-    const topic = plan.topics.id(topicId)
-
-    if (!topic) return res.status(404).json({ message: "Topic not found in this plan." })
-
-    if (topic.isCompleted) return res.status(400).json({ message: "Topic is already completed." })
-
-    topic.isCompleted = true
-    topic.xpAwarded = XP_PER_TOPIC
-    topic.completedAt = new Date()
-
-    await plan.save()
-
-    const user = await User.findById(userId)
-    if (user) {
-      user.xp = (user.xp || 0) + XP_PER_TOPIC
-      await user.save()
+    if (!plan) {
+      return res.status(404).json({ message: `Plan for level ${level} not found.` })
     }
 
     res.status(200).json({
       success: true,
-      data: { plan, userXp: user ? user.xp : null }, // Return the updated plan and user XP
-      message: `Topic marked as completed. ${XP_PER_TOPIC} XP awarded!`,
+      message: `Plan for level ${level} deleted successfully.`,
+    })
+  } catch (error) {
+    console.error("Error deleting plan:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
+  }
+}
+
+exports.markTopicAsCompleted = async (req, res) => {
+  const { planId, topicId } = req.params
+  const userId = req.user._id
+
+  try {
+    const plan = await Plan.findById(planId)
+    if (!plan) {
+      return res.status(404).json({ message: "Plan not found." })
+    }
+
+    const topic = plan.topics.id(topicId)
+    if (!topic) {
+      return res.status(404).json({ message: "Topic not found in this plan." })
+    }
+
+    // Get user
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(404).json({ message: "User not found." })
+    }
+
+    // Find or create progress for this level
+    let levelProgressIndex = user.planProgress.findIndex((p) => p.level === plan.level)
+    if (levelProgressIndex === -1) {
+      // Create new progress for this level
+      user.planProgress.push({
+        level: plan.level,
+        completedTopics: [],
+      })
+      levelProgressIndex = user.planProgress.length - 1
+    }
+
+    // Check if already completed
+    const alreadyCompleted = user.planProgress[levelProgressIndex].completedTopics.some(
+      (ct) => ct.topicId.toString() === topicId,
+    )
+
+    if (alreadyCompleted) {
+      return res.status(400).json({ message: "Topic is already completed." })
+    }
+
+    // Add to completed topics
+    const xpReward = topic.xpReward || 100  // <CHANGE> Use topic.xpReward with fallback
+    user.planProgress[levelProgressIndex].completedTopics.push({
+      topicId: topic._id,
+      completedAt: new Date(),
+      xpAwarded: xpReward,
+    })
+
+    // Update user XP
+    user.xp = (user.xp || 0) + xpReward
+    await user.save()
+
+    res.status(200).json({
+      success: true,
+      data: {
+        userXp: user.xp,
+      },
+      message: `Topic marked as completed. ${xpReward} XP awarded!`,
     })
   } catch (error) {
     console.error("Error marking topic as completed:", error)

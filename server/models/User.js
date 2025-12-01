@@ -164,7 +164,6 @@ const userSchema = new mongoose.Schema(
         ref: "Phrase",
       },
     ],
-    // NEW FIELDS FOR DAILY PHRASE LIMIT
     dailyPhraseUnlocks: {
       type: Number,
       default: 0,
@@ -261,6 +260,29 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    planProgress: [
+      {
+        level: {
+          type: String,
+          enum: ["A1", "A2", "B1", "B2", "C1", "C2"],
+        },
+        completedTopics: [
+          {
+            topicId: {
+              type: mongoose.Schema.Types.ObjectId,
+            },
+            completedAt: {
+              type: Date,
+              default: Date.now,
+            },
+            xpAwarded: {
+              type: Number,
+              default: 0,
+            },
+          },
+        ],
+      },
+    ],
   },
   {
     timestamps: true,
