@@ -36,7 +36,7 @@ const Phrase = () => {
 
   // NEW STATE FOR DAILY LIMIT
   const [dailyLimitInfo, setDailyLimitInfo] = useState({
-    dailyLimit: 10,
+    dailyLimit: 5,
     dailyUnlocksUsed: 0,
     remainingUnlocks: 10,
     dailyLimitReached: false,
@@ -166,8 +166,8 @@ const Phrase = () => {
       // Handle daily limit error from backend
       if (error.response?.status === 429 && error.response?.data?.dailyLimitReached) {
         setDailyLimitInfo({
-          dailyLimit: 10,
-          dailyUnlocksUsed: 10,
+          dailyLimit: 5,
+          dailyUnlocksUsed: 5,
           remainingUnlocks: 0,
           dailyLimitReached: true,
           hoursUntilReset: error.response.data.hoursUntilReset,

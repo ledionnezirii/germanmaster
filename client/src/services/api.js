@@ -250,7 +250,6 @@ export const challengeService = {
 export const planService = {
   getPlanByLevel: (level) => api.get(`/plan/${level}`),
   markTopicAsCompleted: (planId, topicId) => api.put(`/plan/${planId}/topic/${topicId}/complete`),
-  createPlan: (level, topics) => api.post("/plan", { level, topics }),
 }
 
 export const testService = {
