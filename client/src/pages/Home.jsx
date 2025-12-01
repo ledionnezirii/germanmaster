@@ -14,35 +14,22 @@ import {
   Flame,
   TrendingUp,
   Award,
-  ChevronLeft,
-  ChevronRight,
+  Trophy,
+  PenBox,
+  LockIcon,
+  BrainCircuit,
+  Mountain,
 } from "lucide-react"
 
 const Home = () => {
   const { isAuthenticated, user, loading } = useAuth()
   const [favoriteCount, setFavoriteCount] = useState(0)
-  const [currentSlide, setCurrentSlide] = useState(0)
-  const [autoPlay, setAutoPlay] = useState(true)
-  const autoPlayIntervalRef = useRef(null)
 
   useEffect(() => {
     if (isAuthenticated && user) {
       fetchFavoriteCount()
     }
   }, [isAuthenticated, user])
-
-  useEffect(() => {
-    if (autoPlay && features.length > 0) {
-      autoPlayIntervalRef.current = setInterval(() => {
-        setCurrentSlide((prev) => (prev + 1) % features.length)
-      }, 5000)
-    }
-    return () => {
-      if (autoPlayIntervalRef.current) {
-        clearInterval(autoPlayIntervalRef.current)
-      }
-    }
-  }, [autoPlay])
 
   const fetchFavoriteCount = async () => {
     try {
@@ -59,55 +46,46 @@ const Home = () => {
     {
       icon: Headphones,
       title: "Praktikë Dëgjimi",
-      description: "Përmirësoni aftësitë tuaja të dëgjimit në gjermanisht me ushtrime audio",
       path: "/listen",
       bgImage: "/src/images/listenCarousel.png",
-      bgGradient: "from-blue-50 via-blue-100 to-cyan-100",
-      accentColor: "from-blue-500 to-cyan-500",
-      borderColor: "border-blue-200",
-      iconBg: "from-blue-100 to-cyan-100",
-      iconText: "text-blue-700",
+    },
+    {
+      icon: PenBox,
+      title: "Fraza",
+      path: "/phrases",
+      bgImage: "/src/images/phrasesCarousel.png",
+    },
+    {
+      icon: LockIcon,
+      title: "Teste te nivelit",
+      path: "/dictionary",
+      bgImage: "/src/images/testsCarousel.png",
+    },
+    {
+      icon: BrainCircuit,
+      title: "Kuize",
+      path: "/quizes",
+      bgImage: "/src/images/quizesCarousel.png",
+    },
+    {
+      icon: Mountain,
+      title: "Plani",
+      path: "/plan",
+      bgImage: "/src/images/planCarousel.png",
     },
     {
       icon: BookOpen,
       title: "Fjalor",
-      description: "Eksploroni fjalorin gjermanisht të organizuar sipas niveleve të vështirësisë",
       path: "/dictionary",
       bgImage: "/src/images/dictionaryCarousel.png",
-      bgGradient: "from-amber-50 via-amber-100 to-orange-100",
-      accentColor: "from-amber-500 to-orange-500",
-      borderColor: "border-amber-200",
-      iconBg: "from-amber-100 to-orange-100",
-      iconText: "text-amber-700",
     },
     {
-      icon: BookOpen,
+      icon: Trophy,
       title: "Renditja",
-      description: "Eksploroni fjalorin gjermanisht të organizuar sipas niveleve të vështirësisë",
-      path: "/dictionary",
+      path: "/leaderboard",
       bgImage: "/src/images/leaderboardCarousel.png",
-      bgGradient: "from-amber-50 via-amber-100 to-orange-100",
-      accentColor: "from-amber-500 to-orange-500",
-      borderColor: "border-amber-200",
-      iconBg: "from-amber-100 to-orange-100",
-      iconText: "text-amber-700",
     },
   ]
-
-  const goToPrevious = () => {
-    setCurrentSlide((prev) => (prev - 1 + features.length) % features.length)
-    setAutoPlay(false)
-  }
-
-  const goToNext = () => {
-    setCurrentSlide((prev) => (prev + 1) % features.length)
-    setAutoPlay(false)
-  }
-
-  const goToSlide = (index) => {
-    setCurrentSlide(index)
-    setAutoPlay(false)
-  }
 
   const quickStats = [
     {
@@ -358,61 +336,39 @@ const Home = () => {
         </div>
       )}
 
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="relative">
-          <div className="relative overflow-hidden rounded-xl bg-white shadow-lg">
-            <div className="relative h-[200px] sm:h-[240px] md:h-[280px] lg:h-[320px] flex items-center justify-center">
-              {features.map((feature, index) => {
-                const isActive = index === currentSlide
-                return (
-                  <Link
-                    key={index}
-                    to={isAuthenticated ? feature.path : "/signin"}
-                    className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-700 ease-in-out ${
-                      isActive ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
-                    }`}
-                  >
-                    <div
-                      className="absolute inset-0 bg-center bg-no-repeat transition-transform duration-700 ease-in-out hover:scale-105"
-                      style={{
-                        backgroundImage: `url(${feature.bgImage})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                      }}
-                    ></div>
-                  </Link>
-                )
-              })}
-            </div>
-
-            <button
-              onClick={goToPrevious}
-              className="absolute left-2 top-1/2 -translate-y-1/2 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-md hover:bg-white hover:shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
-              aria-label="Previous slide"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <button
-              onClick={goToNext}
-              className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-gray-700 shadow-md hover:bg-white hover:shadow-lg transition-all hover:scale-110 backdrop-blur-sm"
-              aria-label="Next slide"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div className="mt-4 flex justify-center gap-2">
-            {features.map((_, index) => (
-              <button
+      {/* Feature Boxes - Small cards with background images */}
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-3 gap-4">
+          {features.map((feature, index) => {
+            const Icon = feature.icon
+            return (
+              <Link
                 key={index}
-                onClick={() => goToSlide(index)}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  index === currentSlide ? "w-6 bg-blue-600" : "w-1.5 bg-gray-300 hover:bg-gray-400"
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div>
+                to={isAuthenticated ? feature.path : "/signin"}
+                className="group relative overflow-hidden rounded-2xl h-32 sm:h-40 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
+              >
+                {/* Background Image */}
+                <div
+                  className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
+                  style={{
+                    backgroundImage: `url(${feature.bgImage})`,
+                  }}
+                />
+                {/* Dark overlay for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+                
+                {/* Content */}
+                <div className="absolute inset-0 flex flex-col items-center justify-end p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon className="h-5 w-5 text-white drop-shadow-lg" />
+                  </div>
+                  <h3 className="text-white font-bold text-sm sm:text-base text-center drop-shadow-lg">
+                    {feature.title}
+                  </h3>
+                </div>
+              </Link>
+            )
+          })}
         </div>
       </div>
 

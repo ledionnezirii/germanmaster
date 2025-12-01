@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Link, useLocation } from "react-router-dom"
 import { useSidebar } from "../context/SidebarContext"
 import { useAuth } from "../context/AuthContext"
@@ -21,6 +22,10 @@ import {
   InfinityIcon,
   BookUser,
   UniversityIcon,
+  BookOpen,
+  ChevronDown,
+  Layers,
+  FileTerminal
 } from "lucide-react"
 import { MicrophoneIcon } from "@heroicons/react/24/outline"
 
@@ -34,23 +39,55 @@ const Sidebar = () => {
   const { isAuthenticated } = useAuth()
   const location = useLocation()
 
+  // State for expanded submenus
+  const [expandedMenus, setExpandedMenus] = useState({
+    "Mëso": true,
+    "Ushtro": true
+  })
+
+  const toggleMenu = (label) => {
+    if (isCollapsed) {
+      toggleSidebar()
+      // Allow sidebar animation to start before expanding menu
+      setTimeout(() => {
+        setExpandedMenus(prev => ({ ...prev, [label]: true }))
+      }, 50)
+    } else {
+      setExpandedMenus(prev => ({ ...prev, [label]: !prev[label] }))
+    }
+  }
+
   const menuItems = [
     { icon: Home, label: "Kryefaqja", path: "/", requireAuth: false },
-    { icon: Languages, label: "Përkthe", path: "/translate", requireAuth: true },
-    { icon: Headphones, label: "Dëgjo", path: "/listen", requireAuth: true },
-    { icon: BookUser, label: "Fjalor", path: "/dictionary", requireAuth: true },
-    { icon: InfinityIcon, label: "Baza Gjuhësore", path: "/category", requireAuth: true },
-    { icon: UniversityIcon, label: "Gramatikë", path: "/grammar", requireAuth: true },
+    { icon: BookUser, label: "Fjalor", path: "/dictionary" },
+    { icon: Languages, label: "Përkthe", path: "/translate" },
+    { icon: Headphones, label: "Dëgjo", path: "/listen" },
+
+
+    {
+      icon: FileTerminal,
+      label: "Gramatika",
+      path: "#",
+      requireAuth: true,
+      subItems: [
+        { icon: UniversityIcon, label: "Mëso Gramatiken", path: "/grammar" },
+        { icon: Dumbbell, label: "Ushtro Gramatiken", path: "/practice" },
+
+
+      ]
+    },
+    { icon: InfinityIcon, label: "Baza Gjuhësore", path: "/category" },
+    { icon: LightbulbIcon, label: "Kuizet", path: "/quizes" },
+    { icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation" },
+    { icon: NotebookPenIcon, label: "Fraza te ndryshme", path: "/phrases" },
+    { icon: Pen, label: "Fjalori Personal", path: "/words" },
+    { icon: TestTube2Icon, label: "Tests", path: "/tests" },
     { icon: BarChart, label: "Renditja", path: "/leaderboard", requireAuth: false },
     { icon: Calendar, label: "PlanProgrami", path: "/plan", requireAuth: true },
-    { icon: TestTube2Icon, label: "Tests", path: "/tests", requireAuth: true },
-    { icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation", requireAuth: true },
-    { icon: LightbulbIcon, label: "Kuizet", path: "/quizes", requireAuth: true },
-    { icon: Pen, label: "Fjalori Personal", path: "/words", requireAuth: true },
-    { icon: Dumbbell, label: "Ushtro", path: "/practice", requireAuth: true },
-    { icon: NotebookPenIcon, label: "Fraza te ndryshme", path: "/phrases", requireAuth: true },
     { icon: User, label: "Llogaria", path: "/account", requireAuth: true },
+
   ]
+
 
   const footerMenuItems = [
     {
@@ -74,20 +111,28 @@ const Sidebar = () => {
 
   const getTransitionStyle = () => {
     if (typeof window !== "undefined" && window.innerWidth < 768) {
-      // Mobile: use simple, performant easing with shorter duration
       return "transform 0.3s ease-out, width 0.3s ease-out"
     }
-    // Desktop: original smooth cubic-bezier easing
     return "transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)"
   }
+
+  // Auto-expand menus if child is active
+  useEffect(() => {
+    if (isCollapsed) return;
+
+    menuItems.forEach(item => {
+      if (item.subItems && item.subItems.some(sub => location.pathname === sub.path)) {
+        setExpandedMenus(prev => ({ ...prev, [item.label]: true }))
+      }
+    })
+  }, [location.pathname, isCollapsed])
 
   return (
     <>
       {!isCollapsed && (
         <div
-          className={`fixed inset-0 z-30 bg-black/40 lg:hidden transition-opacity duration-300 ease-out ${
-            !isCollapsed ? "opacity-100" : "opacity-0"
-          }`}
+          className={`fixed inset-0 z-30 bg-black/40 lg:hidden transition-opacity duration-300 ease-out ${!isCollapsed ? "opacity-100" : "opacity-0"
+            }`}
           style={{
             backdropFilter: window.innerWidth < 768 ? "blur(4px)" : "blur(12px)",
             touchAction: "none",
@@ -107,10 +152,8 @@ const Sidebar = () => {
           perspective: 1000,
         }}
       >
-        {/* Decorative gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5 pointer-events-none"></div>
 
-        {/* Toggle button */}
         <button
           onClick={toggleSidebar}
           className="absolute -right-3 top-6 z-10 hidden rounded-full border-2 border-white/10 bg-slate-900/95 backdrop-blur-xl p-1.5 shadow-xl transition-all duration-200 hover:shadow-2xl hover:border-emerald-500/30 hover:bg-slate-800/95 hover:scale-110 md:block group"
@@ -148,17 +191,85 @@ const Sidebar = () => {
           <ul className="space-y-1.5">
             {filteredMenuItems.map((item) => {
               const Icon = item.icon
-              const isActive = location.pathname === item.path
+              const hasSubItems = item.subItems && item.subItems.length > 0
+              const isExpanded = expandedMenus[item.label]
+
+              // Check if item or any subitem is active
+              const isChildActive = hasSubItems && item.subItems.some(sub => location.pathname === sub.path)
+              const isActive = location.pathname === item.path || isChildActive
+
+              if (hasSubItems) {
+                return (
+                  <li key={item.label}>
+                    <button
+                      onClick={() => toggleMenu(item.label)}
+                      className={`w-full relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 overflow-hidden ${isActive || isExpanded
+                        ? "text-white"
+                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                        } ${isCollapsed ? "justify-center" : "justify-between"}`}
+                      title={isCollapsed ? item.label : ""}
+                    >
+                      <div className="flex items-center">
+                        <div className={`relative flex items-center ${isCollapsed ? "" : "mr-3"}`}>
+                          <Icon
+                            className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${isActive
+                              ? "text-emerald-400"
+                              : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
+                              }`}
+                          />
+                          {isActive && <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-md"></div>}
+                        </div>
+                        {!isCollapsed && <span className="truncate relative z-10">{item.label}</span>}
+                      </div>
+
+                      {!isCollapsed && (
+                        <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+                      )}
+                    </button>
+
+                    {/* Submenu */}
+                    <div
+                      className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded && !isCollapsed ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+                        }`}
+                    >
+                      <ul className="mt-1 space-y-1 pl-4 relative">
+                        {/* Vertical line for tree structure */}
+                        <div className="absolute left-5 top-0 bottom-0 w-px bg-white/10"></div>
+
+                        {item.subItems.map(subItem => {
+                          const SubIcon = subItem.icon
+                          const isSubActive = location.pathname === subItem.path
+                          return (
+                            <li key={subItem.path}>
+                              <Link
+                                to={subItem.path}
+                                onClick={handleLinkClick}
+                                className={`relative group flex items-center rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 ${isSubActive
+                                  ? "text-emerald-400 bg-emerald-500/10"
+                                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                                  }`}
+                              >
+                                <SubIcon className={`h-4 w-4 mr-3 ${isSubActive ? "text-emerald-400" : "text-slate-500 group-hover:text-emerald-400"}`} />
+                                <span className="truncate">{subItem.label}</span>
+                              </Link>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </div>
+                  </li>
+                )
+              }
+
               return (
                 <li key={item.path}>
                   <Link
                     to={item.path}
                     onClick={handleLinkClick}
-                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 overflow-hidden ${
-                      isActive
-                        ? "bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-white shadow-lg shadow-emerald-500/10"
-                        : "text-slate-300 hover:bg-white/5 hover:text-white"
-                    } ${isCollapsed ? "justify-center" : "justify-start"}`}
+                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 overflow-hidden ${isActive
+                      ? "bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-white shadow-lg shadow-emerald-500/10"
+                      : "text-slate-300 hover:bg-white/5 hover:text-white"
+                      } ${isCollapsed ? "justify-center" : "justify-start"}`}
                     title={isCollapsed ? item.label : ""}
                     aria-current={isActive ? "page" : undefined}
                   >
@@ -167,11 +278,10 @@ const Sidebar = () => {
                     )}
                     <div className={`relative flex items-center ${isCollapsed ? "" : "mr-3"}`}>
                       <Icon
-                        className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${
-                          isActive
-                            ? "text-emerald-400"
-                            : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
-                        }`}
+                        className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${isActive
+                          ? "text-emerald-400"
+                          : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
+                          }`}
                       />
                       {isActive && <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-md"></div>}
                     </div>
@@ -186,7 +296,6 @@ const Sidebar = () => {
           </ul>
         </nav>
 
-        {/* Footer Section */}
         <div className="relative mt-auto px-3 py-4 border-t border-white/5 bg-gradient-to-b from-transparent to-slate-950/50">
           <ul className="space-y-1.5">
             {filteredFooterMenuItems.map((item) => {
@@ -197,20 +306,18 @@ const Sidebar = () => {
                   <Link
                     to={item.path}
                     onClick={item.action || handleLinkClick}
-                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-200 overflow-hidden ${
-                      isActive
-                        ? "bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-white shadow-lg shadow-amber-500/10"
-                        : "bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-300 hover:from-amber-500/20 hover:to-orange-500/20 hover:text-amber-200 border border-amber-500/20 hover:border-amber-500/30"
-                    } ${isCollapsed ? "justify-center" : "justify-start"}`}
+                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-200 overflow-hidden ${isActive
+                      ? "bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-white shadow-lg shadow-amber-500/10"
+                      : "bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-300 hover:from-amber-500/20 hover:to-orange-500/20 hover:text-amber-200 border border-amber-500/20 hover:border-amber-500/30"
+                      } ${isCollapsed ? "justify-center" : "justify-start"}`}
                     title={isCollapsed ? item.label : ""}
                     aria-current={isActive ? "page" : undefined}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-orange-500/5 to-amber-500/5"></div>
                     <div className={`relative flex items-center ${isCollapsed ? "" : "mr-3"}`}>
                       <Icon
-                        className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${
-                          isActive ? "text-amber-400" : "group-hover:scale-110"
-                        }`}
+                        className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${isActive ? "text-amber-400" : "group-hover:scale-110"
+                          }`}
                       />
                       {isActive && <div className="absolute inset-0 bg-amber-400/20 rounded-full blur-md"></div>}
                     </div>
