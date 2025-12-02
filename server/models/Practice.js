@@ -12,7 +12,7 @@ const practiceSchema = new mongoose.Schema(
       required: [true, "Category is required"],
       enum: [
         "Verben",
-        "Gramatike",
+        "Grammatik",
         "W-fragen",
         "Folje Modale",
         "Nominativ",
@@ -25,6 +25,10 @@ const practiceSchema = new mongoose.Schema(
         "Deklination",
         "Satzbau",
         "Wortschatz",
+        "Modalverben",
+        "Zahlen",
+        "Zeit",
+        "Trennbare Verben"
       ],
     },
     level: {

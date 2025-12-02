@@ -4,7 +4,7 @@ const User = require("../models/User")
 // Get all practices with filters
 exports.getAllPractices = async (req, res) => {
   try {
-    const { level, category, type, page = 1, limit = 20 } = req.query
+    const { level, category, type, page = 1, limit = 300 } = req.query
 
     const filter = { isActive: true }
     if (level) filter.level = level
@@ -12,7 +12,7 @@ exports.getAllPractices = async (req, res) => {
     if (type) filter.type = type
 
     const practices = await Practice.find(filter)
-      .sort({ createdAt: -1 })
+      .sort({ createdAt: 1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .select("-questions.correctAnswer -questions.blanks.correctAnswer")
