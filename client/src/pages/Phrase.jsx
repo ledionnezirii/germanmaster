@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useEffect } from "react"
 import { phraseService } from "../services/api"
 import { useAuth } from "../context/AuthContext"
@@ -32,9 +31,10 @@ const Phrase = () => {
   const [shuffledAlbanian, setShuffledAlbanian] = useState([])
   const [quizComplete, setQuizComplete] = useState(false)
   const [quizScore, setQuizScore] = useState(0)
+
   const itemsPerPage = 30
 
-  // NEW STATE FOR DAILY LIMIT
+  // Daily limit state
   const [dailyLimitInfo, setDailyLimitInfo] = useState({
     dailyLimit: 5,
     dailyUnlocksUsed: 0,
@@ -67,7 +67,6 @@ const Phrase = () => {
   const fetchData = async () => {
     setLoading(true)
     setError(null)
-
     try {
       await Promise.all([fetchPhrases(), fetchFinishedPhrases(), fetchProgress()])
     } catch (err) {
@@ -104,8 +103,7 @@ const Phrase = () => {
       const response = await phraseService.getUserPhraseProgress(selectedLevel)
       const data = response.data || { totalPhrases: 0, finishedPhrases: 0, percentage: 0 }
       setProgress(data)
-      
-      // Update daily limit info from progress response
+
       if (data.dailyLimit !== undefined) {
         setDailyLimitInfo({
           dailyLimit: data.dailyLimit,
@@ -127,7 +125,6 @@ const Phrase = () => {
       return
     }
 
-    // Check if daily limit is reached before attempting
     if (dailyLimitInfo.dailyLimitReached) {
       setShowLimitWarning(true)
       setTimeout(() => setShowLimitWarning(false), 5000)
@@ -136,18 +133,25 @@ const Phrase = () => {
 
     const button = event.currentTarget
     const rect = button.getBoundingClientRect()
+
+    // Position XP animation at button center
     setXpPosition({
       x: rect.left + rect.width / 2,
       y: rect.top + rect.height / 2,
     })
 
+    // Add visual feedback to button
+    button.style.transform = "scale(0.85)"
+    setTimeout(() => {
+      button.style.transform = ""
+    }, 150)
+
     try {
       const response = await phraseService.markPhraseAsFinished(phraseId)
       setFinishedPhraseIds((prev) => [...prev, phraseId])
 
-      // Update daily limit info from response
       if (response.data) {
-        setDailyLimitInfo(prev => ({
+        setDailyLimitInfo((prev) => ({
           ...prev,
           dailyUnlocksUsed: response.data.dailyUnlocksUsed,
           remainingUnlocks: response.data.remainingUnlocks,
@@ -155,6 +159,7 @@ const Phrase = () => {
         }))
       }
 
+      // Trigger XP animation
       setAnimatedXp(xp)
       setShowXpAnimation(true)
       setTimeout(() => setShowXpAnimation(false), 2000)
@@ -162,8 +167,7 @@ const Phrase = () => {
       await fetchProgress()
     } catch (error) {
       console.error("Error marking phrase:", error)
-      
-      // Handle daily limit error from backend
+
       if (error.response?.status === 429 && error.response?.data?.dailyLimitReached) {
         setDailyLimitInfo({
           dailyLimit: 5,
@@ -215,7 +219,6 @@ const Phrase = () => {
         ...prev,
         [germanId]: albanianId,
       }))
-
       if (Object.keys(matches).length + 1 === quizPhrases.length) {
         finishQuiz()
       } else {
@@ -324,29 +327,31 @@ const Phrase = () => {
     )
   }
 
-  // Daily Limit Banner Component
   const DailyLimitBanner = () => (
-    <div className={`mb-4 p-3 md:p-4 rounded-xl border-2 ${
-      dailyLimitInfo.dailyLimitReached 
-        ? "bg-red-50 border-red-200" 
-        : dailyLimitInfo.remainingUnlocks <= 3 
-          ? "bg-amber-50 border-amber-200"
-          : "bg-blue-50 border-blue-200"
-    }`}>
+    <div
+      className={`mb-4 p-3 md:p-4 rounded-xl border-2 ${
+        dailyLimitInfo.dailyLimitReached
+          ? "bg-red-50 border-red-200"
+          : dailyLimitInfo.remainingUnlocks <= 3
+            ? "bg-amber-50 border-amber-200"
+            : "bg-blue-50 border-blue-200"
+      }`}
+    >
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <Clock className={`w-5 h-5 ${
-            dailyLimitInfo.dailyLimitReached 
-              ? "text-red-500" 
-              : dailyLimitInfo.remainingUnlocks <= 3 
-                ? "text-amber-500"
-                : "text-blue-500"
-          }`} />
+          <Clock
+            className={`w-5 h-5 ${
+              dailyLimitInfo.dailyLimitReached
+                ? "text-red-500"
+                : dailyLimitInfo.remainingUnlocks <= 3
+                  ? "text-amber-500"
+                  : "text-blue-500"
+            }`}
+          />
           <span className="text-sm md:text-base font-semibold" style={{ fontFamily: fonts.poppins }}>
-            {dailyLimitInfo.dailyLimitReached 
-              ? "Limiti ditor i arritur!" 
-              : `Fraza të mbetura sot: ${dailyLimitInfo.remainingUnlocks}/${dailyLimitInfo.dailyLimit}`
-            }
+            {dailyLimitInfo.dailyLimitReached
+              ? "Limiti ditor i arritur!"
+              : `Fraza të mbetura sot: ${dailyLimitInfo.remainingUnlocks}/${dailyLimitInfo.dailyLimit}`}
           </span>
         </div>
         {dailyLimitInfo.dailyLimitReached && (
@@ -358,11 +363,13 @@ const Phrase = () => {
       {!dailyLimitInfo.dailyLimitReached && (
         <div className="mt-2">
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
+            <div
               className={`h-2 rounded-full transition-all ${
                 dailyLimitInfo.remainingUnlocks <= 3 ? "bg-amber-500" : "bg-blue-500"
               }`}
-              style={{ width: `${((dailyLimitInfo.dailyLimit - dailyLimitInfo.remainingUnlocks) / dailyLimitInfo.dailyLimit) * 100}%` }}
+              style={{
+                width: `${((dailyLimitInfo.dailyLimit - dailyLimitInfo.remainingUnlocks) / dailyLimitInfo.dailyLimit) * 100}%`,
+              }}
             ></div>
           </div>
         </div>
@@ -370,19 +377,18 @@ const Phrase = () => {
     </div>
   )
 
-  // Limit Warning Popup
-  const LimitWarningPopup = () => (
+  const LimitWarningPopup = () =>
     showLimitWarning && (
       <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-red-500 text-white px-6 py-3 rounded-xl shadow-lg animate-bounce">
         <div className="flex items-center gap-2">
           <Clock className="w-5 h-5" />
           <span className="font-semibold" style={{ fontFamily: fonts.poppins }}>
-            Keni arritur limitin ditor! Provoni përsëri pas {dailyLimitInfo.hoursUntilReset}h {dailyLimitInfo.minutesUntilReset}min
+            Keni arritur limitin ditor! Provoni përsëri pas {dailyLimitInfo.hoursUntilReset}h{" "}
+            {dailyLimitInfo.minutesUntilReset}min
           </span>
         </div>
       </div>
     )
-  )
 
   if (!isAuthenticated) {
     return (
@@ -441,32 +447,38 @@ const Phrase = () => {
           @keyframes xp-float {
             0% {
               opacity: 0;
-              transform: translateY(0) scale(0.5);
+              transform: translate(-50%, -50%) translateY(0) scale(0.5);
+              filter: blur(0px);
             }
-            20% {
-              opacity: 0.9;
-              transform: translateY(-20px) scale(1);
-            }
-            40% {
+            10% {
               opacity: 1;
-              transform: translateY(-40px) scale(1.1);
+              transform: translate(-50%, -50%) translateY(-10px) scale(1.2);
+              filter: blur(0px);
             }
-            60% {
+            50% {
               opacity: 1;
-              transform: translateY(-60px) scale(1.05);
-            }
-            80% {
-              opacity: 0.6;
-              transform: translateY(-80px) scale(1);
+              transform: translate(-50%, -50%) translateY(-60px) scale(1);
+              filter: blur(0px);
             }
             100% {
               opacity: 0;
-              transform: translateY(-100px) scale(0.9);
+              transform: translate(-50%, -50%) translateY(-120px) scale(0.8);
+              filter: blur(2px);
             }
           }
-
           .animate-xp-float {
-            animation: xp-float 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation: xp-float 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          }
+          
+          @keyframes ripple {
+            0% {
+              transform: scale(0);
+              opacity: 0.6;
+            }
+            100% {
+              transform: scale(2.5);
+              opacity: 0;
+            }
           }
         `}</style>
 
@@ -486,7 +498,6 @@ const Phrase = () => {
                 <p className="text-2xl md:text-3xl font-bold text-amber-600 mb-8" style={{ fontFamily: fonts.poppins }}>
                   +{(Object.keys(matches).length + 1) * 1} XP
                 </p>
-
                 <div className="flex gap-4 justify-center">
                   <button
                     onClick={startQuiz}
@@ -525,7 +536,6 @@ const Phrase = () => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 md:gap-6 mb-6">
-                  {/* German phrases on the left */}
                   <div>
                     <h3
                       className="text-sm font-bold text-gray-600 mb-3 uppercase"
@@ -564,7 +574,6 @@ const Phrase = () => {
                     </div>
                   </div>
 
-                  {/* Albanian phrases on the right (shuffled) */}
                   <div>
                     <h3
                       className="text-sm font-bold text-gray-600 mb-3 uppercase"
@@ -618,11 +627,12 @@ const Phrase = () => {
 
             {showXpAnimation && (
               <div
-                className="fixed text-2xl md:text-3xl font-bold text-amber-600 animate-xp-float z-[9999] [text-shadow:0_4px_20px_rgba(217,119,6,0.6)] pointer-events-none -translate-x-1/2 -translate-y-1/2"
+                className="fixed text-3xl md:text-4xl font-bold text-amber-500 animate-xp-float z-[9999] pointer-events-none"
                 style={{
                   left: `${xpPosition.x}px`,
                   top: `${xpPosition.y}px`,
                   fontFamily: fonts.poppins,
+                  textShadow: "0 0 20px rgba(245, 158, 11, 0.8), 0 0 40px rgba(245, 158, 11, 0.4)",
                 }}
               >
                 +{animatedXp} XP
@@ -640,32 +650,74 @@ const Phrase = () => {
         @keyframes xp-float {
           0% {
             opacity: 0;
-            transform: translateY(0) scale(0.5);
+            transform: translate(-50%, -50%) translateY(0) scale(0.5);
+            filter: blur(0px);
           }
-          20% {
-            opacity: 0.9;
-            transform: translateY(-20px) scale(1);
-          }
-          40% {
+          10% {
             opacity: 1;
-            transform: translateY(-40px) scale(1.1);
+            transform: translate(-50%, -50%) translateY(-10px) scale(1.2);
+            filter: blur(0px);
           }
-          60% {
+          50% {
             opacity: 1;
-            transform: translateY(-60px) scale(1.05);
-          }
-          80% {
-            opacity: 0.6;
-            transform: translateY(-80px) scale(1);
+            transform: translate(-50%, -50%) translateY(-60px) scale(1);
+            filter: blur(0px);
           }
           100% {
             opacity: 0;
-            transform: translateY(-100px) scale(0.9);
+            transform: translate(-50%, -50%) translateY(-120px) scale(0.8);
+            filter: blur(2px);
           }
         }
-
+        
         .animate-xp-float {
-          animation: xp-float 1.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          animation: xp-float 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        
+        @keyframes ripple {
+          0% {
+            transform: scale(0);
+            opacity: 0.6;
+          }
+          100% {
+            transform: scale(2.5);
+            opacity: 0;
+          }
+        }
+        
+        .plus-button {
+          position: relative;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .plus-button:hover:not(:disabled) {
+          transform: scale(1.1);
+          box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+        }
+        
+        .plus-button:active:not(:disabled) {
+          transform: scale(0.95);
+        }
+        
+        .plus-button::before {
+          content: '';
+          position: absolute;
+          inset: -8px;
+          border-radius: 50%;
+        }
+        
+        .plus-button::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 50%;
+          background: rgba(34, 197, 94, 0.3);
+          transform: scale(0);
+          opacity: 0;
+        }
+        
+        .plus-button:active:not(:disabled)::after {
+          animation: ripple 0.6s ease-out;
         }
       `}</style>
 
@@ -683,7 +735,6 @@ const Phrase = () => {
                   <BookOpen className="h-6 w-6 md:h-8 md:w-8 text-white" />
                 </div>
               </div>
-
               <div className="flex-1">
                 <h1 className="mb-1 md:mb-2 bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] bg-clip-text text-2xl md:text-4xl font-bold text-transparent">
                   Fraza Gjermane
@@ -695,16 +746,16 @@ const Phrase = () => {
             </div>
           </div>
 
-          {/* Daily Limit Banner */}
           <DailyLimitBanner />
 
           {showXpAnimation && (
             <div
-              className="fixed text-xl md:text-3xl font-bold text-amber-600 animate-xp-float z-[9999] [text-shadow:0_4px_20px_rgba(217,119,6,0.6)] pointer-events-none -translate-x-1/2 -translate-y-1/2"
+              className="fixed text-3xl md:text-4xl font-bold text-amber-500 animate-xp-float z-[9999] pointer-events-none"
               style={{
                 left: `${xpPosition.x}px`,
                 top: `${xpPosition.y}px`,
                 fontFamily: fonts.poppins,
+                textShadow: "0 0 20px rgba(245, 158, 11, 0.8), 0 0 40px rgba(245, 158, 11, 0.4)",
               }}
             >
               +{animatedXp} XP
@@ -737,7 +788,6 @@ const Phrase = () => {
               {showGerman ? <Eye size={18} /> : <EyeOff size={18} />}
               Gjermane
             </button>
-
             <button
               onClick={() => setShowAlbanian(!showAlbanian)}
               className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-purple-50 border-2 border-purple-300 rounded-lg text-sm md:text-base font-semibold text-purple-700 cursor-pointer hover:bg-purple-100 transition-all"
@@ -746,7 +796,6 @@ const Phrase = () => {
               {showAlbanian ? <Eye size={18} /> : <EyeOff size={18} />}
               Shqipe
             </button>
-
             <button
               onClick={startQuiz}
               className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-amber-50 border-2 border-amber-300 rounded-lg text-sm md:text-base font-semibold text-amber-700 cursor-pointer hover:bg-amber-100 transition-all"
@@ -768,13 +817,10 @@ const Phrase = () => {
                 {currentPhrases.map((phrase, index) => {
                   const isFinished = finishedPhraseIds.includes(phrase._id || phrase.id)
                   const phraseId = phrase._id || phrase.id
-
                   const previousPhraseFinished =
                     index === 0 ||
                     finishedPhraseIds.includes(currentPhrases[index - 1]._id || currentPhrases[index - 1].id)
                   const isLocked = !isFinished && !previousPhraseFinished
-                  
-                  // Check if daily limit is reached for unlocking new phrases
                   const canUnlock = !isLocked && !isFinished && !dailyLimitInfo.dailyLimitReached
 
                   return (
@@ -797,7 +843,11 @@ const Phrase = () => {
                               <button
                                 onClick={() => !isLocked && speakGerman(phrase.german)}
                                 disabled={isLocked}
-                                className={`w-6 h-6 md:w-7 md:h-7 rounded-full border-2 ${isLocked ? "border-gray-400 text-gray-400 cursor-not-allowed" : "border-[#14B8A6] text-[#14B8A6] hover:bg-[#F0FDFA]"} bg-white cursor-pointer flex items-center justify-center transition-all p-0 flex-shrink-0`}
+                                className={`w-6 h-6 md:w-7 md:h-7 rounded-full border-2 ${
+                                  isLocked
+                                    ? "border-gray-400 text-gray-400 cursor-not-allowed"
+                                    : "border-[#14B8A6] text-[#14B8A6] hover:bg-[#F0FDFA]"
+                                } bg-white cursor-pointer flex items-center justify-center transition-all p-0 flex-shrink-0`}
                                 title={isLocked ? "Locked" : "Dëgjo frazën gjermane"}
                               >
                                 <Volume2 className="w-3 h-3 md:w-4 md:h-4" />
@@ -813,6 +863,7 @@ const Phrase = () => {
                             </p>
                           )}
                         </div>
+
                         <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
                           <span
                             className="text-xs md:text-sm font-semibold text-amber-700 whitespace-nowrap"
@@ -820,14 +871,17 @@ const Phrase = () => {
                           >
                             +{phrase.xp} XP
                           </span>
+
                           {!isFinished && !isLocked && canUnlock && (
                             <button
                               onClick={(e) => handleMarkAsFinished(phraseId, phrase.xp, e)}
-                              className="w-8 h-8 md:w-9 md:h-9 rounded-full border-2 border-green-500 bg-white text-green-500 text-xl md:text-2xl font-bold cursor-pointer flex items-center justify-center transition-all p-0 flex-shrink-0"
+                              className="plus-button w-10 h-10 md:w-11 md:h-11 rounded-full border-2 border-green-500 bg-white text-green-500 text-xl md:text-2xl font-bold cursor-pointer flex items-center justify-center p-0 flex-shrink-0 hover:bg-green-50"
+                              title="Përfundo frazën"
                             >
-                              <Plus />
+                              <Plus className="w-5 h-5 md:w-6 md:h-6" />
                             </button>
                           )}
+
                           {!isFinished && !isLocked && !canUnlock && (
                             <button
                               onClick={() => {
@@ -840,11 +894,13 @@ const Phrase = () => {
                               <Clock className="w-4 h-4" />
                             </button>
                           )}
+
                           {!isFinished && isLocked && (
                             <span className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gray-300 text-gray-500 text-lg md:text-xl flex items-center justify-center">
                               <LockIcon />
                             </span>
                           )}
+
                           {isFinished && (
                             <span className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-green-500 text-white text-lg md:text-xl flex items-center justify-center">
                               ✓

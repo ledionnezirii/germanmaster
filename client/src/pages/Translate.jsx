@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import { translateService } from "../services/api"
-import { Check, X, Filter, ArrowLeft, Book, Play, Pause } from "lucide-react"
+import { Check, X, Filter, ArrowLeft, Book } from "lucide-react"
 
 const Translate = () => {
   const [texts, setTexts] = useState([])
@@ -17,11 +17,6 @@ const Translate = () => {
   const [userAnswers, setUserAnswers] = useState([])
   const [userProgress, setUserProgress] = useState({})
   const [quizResults, setQuizResults] = useState(null)
-
-  // Text-to-Speech states
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [isPaused, setIsPaused] = useState(false)
-  const speechRef = useRef(null)
 
   const levels = ["all", "A1", "A2", "B1", "B2", "C1", "C2"]
 
@@ -42,71 +37,6 @@ const Translate = () => {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }, [selectedText])
 
-  // Text-to-Speech functions
-  const speakText = (text) => {
-    if ("speechSynthesis" in window) {
-      // Stop any current speech
-      window.speechSynthesis.cancel()
-
-      const utterance = new SpeechSynthesisUtterance(text)
-
-      // Set language to German (since the texts are in German)
-      utterance.lang = "de-DE"
-      utterance.rate = 0.8 // Slightly slower for learning
-      utterance.pitch = 1
-      utterance.volume = 1
-
-      utterance.onstart = () => {
-        setIsPlaying(true)
-        setIsPaused(false)
-      }
-
-      utterance.onend = () => {
-        setIsPlaying(false)
-        setIsPaused(false)
-      }
-
-      utterance.onerror = () => {
-        setIsPlaying(false)
-        setIsPaused(false)
-      }
-
-      speechRef.current = utterance
-      window.speechSynthesis.speak(utterance)
-    } else {
-      alert("Shfletuesi juaj nuk mbështet leximin e tekstit. Ju lutem përdorni një shfletues më të ri.")
-    }
-  }
-
-  const pauseSpeech = () => {
-    if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-      window.speechSynthesis.pause()
-      setIsPaused(true)
-    }
-  }
-
-  const resumeSpeech = () => {
-    if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume()
-      setIsPaused(false)
-    }
-  }
-
-  const stopSpeech = () => {
-    window.speechSynthesis.cancel()
-    setIsPlaying(false)
-    setIsPaused(false)
-  }
-
-  // Clean up speech on component unmount
-  useEffect(() => {
-    return () => {
-      if (window.speechSynthesis) {
-        window.speechSynthesis.cancel()
-      }
-    }
-  }, [])
-
   const fetchTexts = async () => {
     try {
       setLoading(true)
@@ -117,11 +47,10 @@ const Translate = () => {
       const response = await translateService.getAllTexts(params)
       const textsData = response.data.texts || response.data || []
 
-      // Sort by oldest first (ascending order by creation date)
       const sortedTexts = textsData.sort((a, b) => {
         const dateA = new Date(a.createdAt || a.updatedAt || 0)
         const dateB = new Date(b.createdAt || b.updatedAt || 0)
-        return dateA - dateB // Oldest first
+        return dateA - dateB
       })
 
       setTexts(sortedTexts)
@@ -198,13 +127,6 @@ const Translate = () => {
   }
 
   const resetQuiz = () => {
-    // Stop any playing speech
-    if (window.speechSynthesis) {
-      window.speechSynthesis.cancel()
-      setIsPlaying(false)
-      setIsPaused(false)
-    }
-
     setSelectedText(null)
     setCurrentQuestion(0)
     setSelectedAnswer("")
@@ -239,107 +161,69 @@ const Translate = () => {
 
   if (selectedText) {
     return (
-      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6 px-2 sm:px-4">
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+      <div className="max-w-6xl mx-auto space-y-3 sm:space-y-4 px-2 sm:px-4">
+        <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-teal-600 to-teal-700 p-3 sm:p-6 text-white">
+          <div className="bg-gradient-to-r from-slate-700 to-slate-800 p-2 sm:p-4 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-lg sm:text-2xl font-bold mb-1 sm:mb-2">{selectedText.title}</h1>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <span
-                    className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getLevelColor(selectedText.level)} bg-white/20 text-white border-white/30`}
-                  >
+                <h1 className="text-base sm:text-xl font-bold mb-1">{selectedText.title}</h1>
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-white/20 text-white">
                     Niveli {selectedText.level}
                   </span>
-                  <span className="text-teal-100 text-xs sm:text-sm">{selectedText.questions?.length || 0} pyetje</span>
+                  <span className="text-slate-300 text-xs">{selectedText.questions?.length || 0} pyetje</span>
                 </div>
               </div>
               <button
                 onClick={resetQuiz}
-                className="flex items-center gap-1 sm:gap-2 bg-white/20 hover:bg-white/30 text-white px-2 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm"
+                className="flex items-center gap-1 sm:gap-2 bg-white/20 hover:bg-white/30 text-white px-2 sm:px-3 py-1.5 rounded-lg transition-colors text-xs"
               >
-                <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />
-                <span className="hidden sm:inline">Kthehu te Tekstet</span>
-                <span className="sm:hidden">Kthehu</span>
+                <ArrowLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span>Kthehu</span>
               </button>
             </div>
           </div>
 
-          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 sm:gap-8 p-3 sm:p-8">
-            {/* Enhanced Text Section */}
-            <div className="space-y-4 sm:space-y-6 w-full">
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl sm:rounded-2xl p-4 sm:p-8 border border-gray-200 shadow-inner">
-                <div className="flex items-center justify-between mb-4 sm:mb-6">
-                  <h2 className="text-lg sm:text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    <Book className="h-5 w-5 sm:h-6 sm:w-6 text-teal-600" />
-                    <span className="hidden sm:inline">Teksti për Lexim</span>
-                    <span className="sm:hidden">Teksti</span>
+          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-3 sm:gap-6 p-3 sm:p-6">
+            {/* Text Section */}
+            <div className="space-y-3 w-full">
+              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-3 sm:p-5 border border-gray-200 shadow-inner">
+                <div className="flex items-center mb-3">
+                  <h2 className="text-sm sm:text-base font-bold text-gray-800 flex items-center gap-2">
+                    <Book className="h-4 w-4 text-slate-600" />
+                    <span>Teksti për Lexim</span>
                   </h2>
-
-                  {/* Audio Controls - Single Play/Pause Button */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        if (!isPlaying) {
-                          speakText(selectedText.text)
-                        } else if (isPaused) {
-                          resumeSpeech()
-                        } else {
-                          pauseSpeech()
-                        }
-                      }}
-                      className="flex items-center gap-1 sm:gap-2 bg-teal-600 hover:bg-teal-700 text-white px-2 sm:px-4 py-2 rounded-lg transition-colors shadow-md text-xs sm:text-sm"
-                      title={!isPlaying ? "Dëgjo tekstin" : isPaused ? "Vazhdo" : "Ndalo përkohësisht"}
-                    >
-                      {!isPlaying || isPaused ? (
-                        <>
-                          <Play className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span className="hidden sm:inline">{!isPlaying ? "Dëgjo" : "Vazhdo"}</span>
-                        </>
-                      ) : (
-                        <>
-                          <Pause className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span className="hidden sm:inline">Ndalo</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
                 </div>
 
-                {/* Enhanced Text Display */}
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-teal-500/5 to-teal-500/5 rounded-xl"></div>
-                  <div className="relative bg-white rounded-xl p-3 sm:p-6 shadow-sm border border-gray-200 w-full">
-                    <p className="text-gray-800 leading-relaxed text-xs sm:text-sm font-medium tracking-wide break-words w-full">
-                      {selectedText.text}
-                    </p>
-                  </div>
+                {/* Text Display with Scrollbar */}
+                <div className="relative bg-white rounded-lg p-3 sm:p-4 shadow-sm border border-gray-200 w-full max-h-52 sm:max-h-72 overflow-y-auto">
+                  <p className="text-gray-800 leading-relaxed text-xs sm:text-sm font-medium tracking-wide break-words w-full">
+                    {selectedText.text}
+                  </p>
                 </div>
-
-                {/* Reading Tips Removed*/}
               </div>
             </div>
 
-            {/* Enhanced Quiz Section */}
-            <div className="space-y-4 sm:space-y-6 w-full">
-              <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl sm:rounded-2xl p-4 sm:p-8 border border-gray-200 shadow-lg">
+            {/* Quiz Section */}
+            <div className="space-y-3 w-full">
+              <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl p-3 sm:p-5 border border-gray-200 shadow-md">
                 {!quizComplete ? (
                   <>
                     {/* Progress Header */}
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-teal-50 to-teal-50 rounded-xl border border-teal-200 gap-2 sm:gap-0">
-                      <h2 className="text-base sm:text-xl font-bold text-gray-800">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 sm:mb-4 p-2 sm:p-3 bg-gradient-to-r from-slate-50 to-gray-50 rounded-lg border border-gray-200 gap-2">
+                      <h2 className="text-xs sm:text-sm font-bold text-gray-800">
                         Pyetja {currentQuestion + 1} nga {selectedText.questions.length}
                       </h2>
-                      <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                        <div className="bg-white px-2 sm:px-3 py-1 rounded-full shadow-sm">
-                          <span className="text-xs sm:text-sm font-medium text-gray-600">
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <div className="bg-white px-2 py-0.5 rounded-full shadow-sm">
+                          <span className="text-xs font-medium text-gray-600">
                             {userAnswers.length}/{selectedText.questions.length}
                           </span>
                         </div>
-                        <div className="flex-1 sm:w-16 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div className="flex-1 sm:w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-teal-500 to-teal-600 transition-all duration-300"
+                            className="h-full bg-gradient-to-r from-slate-500 to-slate-600 transition-all duration-300"
                             style={{ width: `${(userAnswers.length / selectedText.questions.length) * 100}%` }}
                           ></div>
                         </div>
@@ -347,33 +231,30 @@ const Translate = () => {
                     </div>
 
                     {/* Question */}
-                    <div className="mb-6 sm:mb-8">
-                      <div className="bg-white p-3 sm:p-6 rounded-xl shadow-sm border border-gray-200 mb-4 sm:mb-6">
-                        <p className="text-gray-900 font-semibold text-xs sm:text-base leading-relaxed break-words">
+                    <div className="mb-4 sm:mb-5">
+                      <div className="bg-white p-2 sm:p-4 rounded-lg shadow-sm border border-gray-200 mb-3">
+                        <p className="text-gray-900 font-semibold text-xs sm:text-sm leading-relaxed break-words">
                           {selectedText.questions[currentQuestion].question}
                         </p>
                       </div>
 
                       {/* Answer Options */}
-                      <div className="space-y-2 sm:space-y-4">
+                      <div className="space-y-2">
                         {selectedText.questions[currentQuestion].options.map((option, index) => (
                           <button
                             key={index}
                             onClick={() => handleAnswerSelect(option)}
                             disabled={selectedAnswer !== ""}
-                            className={`w-full p-2 sm:p-4 text-left rounded-xl border-2 transition-all duration-200 font-medium ${
+                            className={`w-full p-2 sm:p-3 text-left rounded-lg border-2 transition-all duration-200 font-medium ${
                               selectedAnswer === option
                                 ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-300 text-green-800 shadow-md transform scale-[1.02]"
-                                : "bg-white border-gray-200 hover:border-teal-300 hover:bg-teal-50 disabled:opacity-50 hover:shadow-md"
+                                : "bg-white border-gray-200 hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50 hover:shadow-md"
                             }`}
                           >
                             <div className="flex items-center justify-between">
-                              <span className="flex-1 text-xs sm:text-base break-words pr-2">{option}</span>
+                              <span className="flex-1 text-xs sm:text-sm break-words pr-2">{option}</span>
                               {selectedAnswer === option && (
-                                <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                                  <Check className="h-3 w-3 sm:h-5 sm:w-5 text-green-600" />
-                                  <span className="text-xs text-green-600 font-medium hidden sm:inline">Zgjedhur</span>
-                                </div>
+                                <Check className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 flex-shrink-0" />
                               )}
                             </div>
                           </button>
@@ -382,68 +263,96 @@ const Translate = () => {
                     </div>
                   </>
                 ) : (
-                  /* Results Section */
-                  <div className="text-center space-y-4 sm:space-y-6">
-                    <div className="bg-gradient-to-br from-teal-50 to-teal-50 p-4 sm:p-8 rounded-xl sm:rounded-2xl border border-teal-200">
-                      <h2 className="text-xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-4">
-                        Testi u përfundua me sukses!
-                      </h2>
-                      {quizResults ? (
-                        <>
-                          <div className="text-4xl sm:text-6xl mb-2 sm:mb-4">
-                            {quizResults.passed ? "🎉" : quizResults.score >= 60 ? "👍" : "📚"}
+                  /* Results Screen */
+                  <div className="text-center space-y-4">
+                    {quizResults ? (
+                      <>
+                        {/* XP Banner */}
+                        <div className="bg-gradient-to-r from-amber-400 to-orange-500 p-4 sm:p-6 rounded-xl shadow-lg">
+                          <div className="text-4xl sm:text-5xl mb-2">
+                            {quizResults.passed ? "🎉" : "📚"}
                           </div>
-
+                          <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
+                            {quizResults.passed ? "Urime!" : "Provo Përsëri!"}
+                          </h2>
                           {quizResults.xpAwarded > 0 && (
-                            <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-3 sm:p-4 rounded-lg border border-yellow-200 mb-4 sm:mb-6">
-                              <p className="text-yellow-800 font-bold text-base sm:text-lg">
-                                🏆 +{quizResults.xpAwarded} XP fituar!
-                              </p>
+                            <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full inline-block">
+                              <span className="text-white font-bold text-lg sm:text-xl">
+                                +{quizResults.xpAwarded} XP
+                              </span>
                             </div>
                           )}
+                        </div>
 
-                          {/* Detailed Results - Smaller and more compact */}
-                          <div className="bg-white rounded-xl p-3 sm:p-6 shadow-sm text-left">
-                            <h3 className="font-bold text-gray-900 mb-2 sm:mb-4 text-sm sm:text-lg">Rezultatet:</h3>
-                            <div className="space-y-1 sm:space-y-3">
-                              {quizResults.results &&
-                                quizResults.results.map((result, index) => (
-                                  <div
-                                    key={index}
-                                    className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg ${
-                                      result.isCorrect
-                                        ? "bg-green-50 border border-green-200"
-                                        : "bg-red-50 border border-red-200"
-                                    }`}
-                                  >
-                                    {result.isCorrect ? (
-                                      <Check className="h-3 w-3 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
-                                    ) : (
-                                      <X className="h-3 w-3 sm:h-5 sm:w-5 text-red-600 flex-shrink-0" />
-                                    )}
-                                    <span
-                                      className={`font-medium text-xs sm:text-base ${result.isCorrect ? "text-green-800" : "text-red-800"}`}
-                                    >
-                                      Pyetja {index + 1}: {result.isCorrect ? "E saktë" : "E gabuar"}
-                                    </span>
-                                  </div>
-                                ))}
+                        {/* Score Summary */}
+                        <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200">
+                          <div className="flex justify-center gap-6 mb-4">
+                            <div className="text-center">
+                              <div className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-green-100 rounded-full mx-auto mb-2">
+                                <Check className="h-6 w-6 sm:h-7 sm:w-7 text-green-600" />
+                              </div>
+                              <p className="text-xl sm:text-2xl font-bold text-green-600">
+                                {quizResults.correctAnswers || 0}
+                              </p>
+                              <p className="text-xs text-gray-500">Të sakta</p>
+                            </div>
+                            <div className="text-center">
+                              <div className="flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 bg-red-100 rounded-full mx-auto mb-2">
+                                <X className="h-6 w-6 sm:h-7 sm:w-7 text-red-600" />
+                              </div>
+                              <p className="text-xl sm:text-2xl font-bold text-red-600">
+                                {(quizResults.totalQuestions || selectedText.questions.length) - (quizResults.correctAnswers || 0)}
+                              </p>
+                              <p className="text-xs text-gray-500">Të gabuara</p>
                             </div>
                           </div>
-                        </>
-                      ) : (
-                        <div className="flex items-center justify-center">
-                          <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-teal-600"></div>
+                          
+                          <div className="bg-gray-100 rounded-lg p-3">
+                            <p className="text-sm font-medium text-gray-700">
+                              Rezultati: {quizResults.score || Math.round((quizResults.correctAnswers / (quizResults.totalQuestions || selectedText.questions.length)) * 100)}%
+                            </p>
+                          </div>
                         </div>
-                      )}
-                    </div>
 
-                    <button
-                      onClick={resetQuiz}
-                      className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white px-4 sm:px-8 py-3 sm:py-4 rounded-xl font-bold text-sm sm:text-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 w-full sm:w-auto"
-                    >
-                      Provo Tekst Tjetër
-                    </button>
+                        {/* Questions Review */}
+                        <div className="bg-white rounded-xl p-3 sm:p-4 shadow-md border border-gray-200 text-left max-h-40 overflow-y-auto">
+                          <h3 className="font-bold text-gray-800 mb-2 text-sm">Përmbledhje:</h3>
+                          <div className="space-y-1.5">
+                            {quizResults.results &&
+                              quizResults.results.map((result, index) => (
+                                <div
+                                  key={index}
+                                  className={`flex items-center gap-2 p-2 rounded-lg text-xs ${
+                                    result.isCorrect
+                                      ? "bg-green-50 border border-green-200"
+                                      : "bg-red-50 border border-red-200"
+                                  }`}
+                                >
+                                  {result.isCorrect ? (
+                                    <Check className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
+                                  ) : (
+                                    <X className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
+                                  )}
+                                  <span className={`font-medium ${result.isCorrect ? "text-green-700" : "text-red-700"}`}>
+                                    Pyetja {index + 1}
+                                  </span>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={resetQuiz}
+                          className="bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white px-6 py-3 rounded-xl font-bold text-sm transition-all duration-200 shadow-lg hover:shadow-xl w-full"
+                        >
+                          Vazhdo me Tekst Tjetër
+                        </button>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600"></div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
