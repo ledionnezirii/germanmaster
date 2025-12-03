@@ -2,7 +2,6 @@ const express = require("express")
 const mongoose = require("mongoose")
 const cors = require("cors")
 const helmet = require("helmet")
-// const rateLimit = require("express-rate-limit") // Temporarily commented out
 const compression = require("compression")
 const { createServer } = require("http")
 const { Server } = require("socket.io")
@@ -30,14 +29,14 @@ const favoriteRoutes = require("./routes/favoriteRoutes")
 const challengeRoutes = require("./routes/challengeRoutes")
 const leaderboardRoutes = require("./routes/leaderboardRoutes")
 const planRoutes = require("./routes/planRoutes")
-const testRoutes = require("./routes/testRoutes");
+const testRoutes = require("./routes/testRoutes")
 const pronunciationRoutes = require('./routes/pronunciationRoutes')
-const paymentRoutes = require("./routes/paymentRoutes");
-const quizRoutes = require ("./routes/quizRoutes")
-const certificateRoutes = require("./routes/certificateRoutes");
-const leagueRoutes = require('./routes/leagueRoutes');
-const achievementRoutes = require("./routes/achievementsRoutes");
-const puzzleRoutes = require("./routes/puzzleRoutes");
+const paymentRoutes = require("./routes/paymentRoutes")
+const quizRoutes = require("./routes/quizRoutes")
+const certificateRoutes = require("./routes/certificateRoutes")
+const leagueRoutes = require('./routes/leagueRoutes')
+const achievementRoutes = require("./routes/achievementsRoutes")
+const puzzleRoutes = require("./routes/puzzleRoutes")
 const practiceRoutes = require("./routes/practiceRoutes")
 const wordRoutes = require("./routes/wordRoutes")
 const ttsRoutes = require("./routes/ttsRoutes")
@@ -46,25 +45,26 @@ const phraseRoutes = require("./routes/phraseRoutes")
 const { errorHandler, notFound } = require("./middleware/errorMiddleware")
 const { requestLogger } = require("./middleware/loggerMiddleware")
 
+// Import payment controller for webhook
+const paymentController = require("./controllers/paymentController")
+
 const app = express()
 const server = createServer(app)
 
 const io = new Server(server, {
   cors: {
     origin:
-  process.env.NODE_ENV === "production"
-    ? process.env.FRONTEND_URL
-    : [
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:5173",
-        "http://192.168.1.48:3000",
-        "http://192.168.1.48:3001",
-        "http://192.168.1.48:5173",
-        "https://17061968.netlify.app"
-        
-      ],
-
+      process.env.NODE_ENV === "production"
+        ? process.env.FRONTEND_URL
+        : [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://localhost:5173",
+            "http://192.168.1.48:3000",
+            "http://192.168.1.48:3001",
+            "http://192.168.1.48:5173",
+            "https://17061968.netlify.app"
+          ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   },
@@ -142,31 +142,20 @@ app.use(
 )
 app.use(compression())
 
-// const limiter = rateLimit({ // Temporarily commented out
-//   windowMs: 15 * 60 * 1000,
-//   max: 100,
-//   message: {
-//     error: "Too many requests from this IP, please try again later.",
-//   },
-//   standardHeaders: true,
-//   legacyHeaders: false,
-// })
-// app.use("/api/", limiter) // Temporarily commented out
-
 app.use(
   cors({
     origin:
       process.env.NODE_ENV === "production"
         ? process.env.FRONTEND_URL
         : [
-          "http://localhost:3000",
-          "http://localhost:3001",
-          "http://localhost:5173",
-          "http://192.168.1.48:3000",
-          "http://192.168.1.48:3001",
-          "http://192.168.1.48:5173",
-          "https://17061968.netlify.app"
-        ],
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://localhost:5173",
+            "http://192.168.1.48:3000",
+            "http://192.168.1.48:3001",
+            "http://192.168.1.48:5173",
+            "https://17061968.netlify.app"
+          ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -175,7 +164,10 @@ app.use(
   })
 )
 
+// IMPORTANT: Webhook route with raw body parser - MUST be before express.json()
+app.post("/webhook", express.raw({ type: "application/json" }), paymentController.handleWebhook)
 
+// Regular JSON parser for all other routes
 app.use(express.json({ limit: "10mb" }))
 app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 
@@ -185,7 +177,7 @@ app.use("/uploads", (req, res, next) => {
   const allowedOrigins =
     process.env.NODE_ENV === "production"
       ? [process.env.FRONTEND_URL]
-      : ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173","https://17061968.netlify.app"]
+      : ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "https://17061968.netlify.app"]
   const origin = req.headers.origin
   if (allowedOrigins.includes(origin)) {
     res.header("Access-Control-Allow-Origin", origin)
@@ -223,18 +215,19 @@ app.use("/api/favorites", favoriteRoutes)
 app.use("/api/challenge", challengeRoutes)
 app.use("/api/leaderboard", leaderboardRoutes)
 app.use("/api/plan", planRoutes)
-app.use("/api/tests",testRoutes)
-app.use("/api/pronunciation",pronunciationRoutes)
-app.use("/api/payments",paymentRoutes)
+app.use("/api/tests", testRoutes)
+app.use("/api/pronunciation", pronunciationRoutes)
+app.use("/api/payments", paymentRoutes)
 app.use("/api/quizes", quizRoutes)
-app.use("/api/certificates", certificateRoutes);
-app.use('/api/league', leagueRoutes);
-app.use("/api", achievementRoutes);
-app.use("/api/puzzle",puzzleRoutes)
-app.use("/api/practice",practiceRoutes)
-app.use("/api/words",wordRoutes)
-app.use("/api/tts",ttsRoutes)
-app.use("/api/phrases",phraseRoutes)
+app.use("/api/certificates", certificateRoutes)
+app.use('/api/league', leagueRoutes)
+app.use("/api", achievementRoutes)
+app.use("/api/puzzle", puzzleRoutes)
+app.use("/api/practice", practiceRoutes)
+app.use("/api/words", wordRoutes)
+app.use("/api/tts", ttsRoutes)
+app.use("/api/phrases", phraseRoutes)
+
 app.use(notFound)
 app.use(errorHandler)
 
@@ -286,8 +279,10 @@ const startServer = async () => {
     console.log(`   GET /api/challenge/activeRooms - Get active challenge rooms`)
     console.log(`   GET /api/challenge/categories - Get question categories`)
     console.log(`   POST /api/challenge/practice - Get practice questions`)
+    console.log(`💳 Webhook endpoint: POST /webhook`)
   })
 }
+
 startServer().catch((error) => {
   console.error("Failed to start server:", error)
   process.exit(1)

@@ -74,34 +74,43 @@ exports.handleWebhook = async (req, res) => {
       return res.status(500).json({ success: false, message: "Server config error" });
     }
 
-    // Get raw body - handle both Buffer and parsed JSON
+    // Get raw body - req.body is a Buffer when using express.raw()
     let rawBody;
     let event;
-    
+
     if (Buffer.isBuffer(req.body)) {
-      rawBody = req.body.toString('utf8');
-      event = JSON.parse(rawBody);
-    } else if (typeof req.body === 'string') {
+      rawBody = req.body.toString("utf8");
+    } else if (typeof req.body === "string") {
       rawBody = req.body;
-      event = JSON.parse(rawBody);
     } else {
-      // Body was already parsed as JSON - reconstruct for signature
+      // Fallback - body was somehow parsed as JSON
+      console.error("[v0] Warning: req.body is not a Buffer. Webhook route may not be configured correctly.");
       rawBody = JSON.stringify(req.body);
-      event = req.body;
+    }
+
+    console.log("[v0] Raw body type:", typeof req.body);
+    console.log("[v0] Is Buffer:", Buffer.isBuffer(req.body));
+    console.log("[v0] Raw body length:", rawBody.length);
+
+    try {
+      event = JSON.parse(rawBody);
+    } catch (parseError) {
+      console.error("[v0] Failed to parse webhook body:", parseError.message);
+      return res.status(400).json({ success: false, message: "Invalid JSON body" });
     }
 
     // Parse signature: ts=xxx;h1=xxx
     const signatureParts = {};
     signature.split(";").forEach((part) => {
       const [key, ...valueParts] = part.split("=");
-      signatureParts[key] = valueParts.join("=");
+      signatureParts[key.trim()] = valueParts.join("=").trim();
     });
 
     const ts = signatureParts.ts;
     const h1 = signatureParts.h1;
 
     if (!ts || !h1) {
-      console.error("[v0] Invalid signature format");
+      console.error("[v0] Invalid signature format. Parts:", signatureParts);
       return res.status(401).json({ success: false, message: "Invalid signature format" });
     }
 
@@ -116,16 +125,23 @@ exports.handleWebhook = async (req, res) => {
     console.log("[v0] - Timestamp:", ts);
     console.log("[v0] - Received h1:", h1.substring(0, 20) + "...");
     console.log("[v0] - Expected:", expectedSignature.substring(0, 20) + "...");
+    console.log("[v0] - Full received:", h1);
+    console.log("[v0] - Full expected:", expectedSignature);
+
+    // Compare signatures
+    const receivedBuffer = Buffer.from(h1, "utf8");
+    const expectedBuffer = Buffer.from(expectedSignature, "utf8");
 
     let isValid = false;
-    try {
-      isValid = crypto.timingSafeEqual(
-        Buffer.from(h1, 'utf8'),
-        Buffer.from(expectedSignature, 'utf8')
-      );
-    } catch (compareError) {
-      console.error("[v0] Signature comparison error:", compareError.message);
-      isValid = false;
+    if (receivedBuffer.length === expectedBuffer.length) {
+      try {
+        isValid = crypto.timingSafeEqual(receivedBuffer, expectedBuffer);
+      } catch (compareError) {
+        console.error("[v0] Signature comparison error:", compareError.message);
+        isValid = false;
+      }
+    } else {
+      console.error("[v0] Signature length mismatch:", receivedBuffer.length, "vs", expectedBuffer.length);
     }
 
     if (!isValid) {
@@ -195,7 +211,7 @@ const handleTransactionCompleted = async (event) => {
   const subscriptionId = data.subscription_id || null;
   const amount = data.details?.totals?.total ? parseInt(data.details.totals.total) / 100 : 0;
   const currency = data.currency_code || "EUR";
-  
+
   const priceId = data.items?.[0]?.price_id;
   let subscriptionType = "1_month";
   let billingCycle = "monthly";
@@ -265,7 +281,7 @@ const handleSubscriptionCreated = async (event) => {
 
 const handleSubscriptionUpdated = async (event) => {
   const data = event.data;
-  
+
   const payment = await Payment.findOne({
     paddleSubscriptionId: data.id,
   });
@@ -298,7 +314,7 @@ const handleSubscriptionUpdated = async (event) => {
 
 const handleSubscriptionCancelled = async (event) => {
   const data = event.data;
-  
+
   const payment = await Payment.findOne({
     paddleSubscriptionId: data.id,
   });
@@ -329,7 +345,7 @@ const handleSubscriptionCancelled = async (event) => {
 
 const handleSubscriptionPaused = async (event) => {
   const data = event.data;
-  
+
   const payment = await Payment.findOne({
     paddleSubscriptionId: data.id,
   });
@@ -353,7 +369,7 @@ const handleSubscriptionPaused = async (event) => {
 
 const handleSubscriptionResumed = async (event) => {
   const data = event.data;
-  
+
   const payment = await Payment.findOne({
     paddleSubscriptionId: data.id,
   });
@@ -403,7 +419,7 @@ exports.getUserSubscription = async (req, res) => {
       if (user && user.subscriptionType === "free_trial") {
         const now = new Date();
         const isTrialActive = user.subscriptionExpiresAt && user.subscriptionExpiresAt > now;
-        
+
         return res.status(200).json({
           success: true,
           data: {
