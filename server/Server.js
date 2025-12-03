@@ -17,6 +17,9 @@ const {
   getActiveRoomsCount,
 } = require("./controllers/challengeController")
 
+// Import payment controller for webhook EARLY
+const paymentController = require("./controllers/paymentController")
+
 const authRoutes = require("./routes/authRoutes")
 const userRoutes = require("./routes/userRoutes")
 const dictionaryRoutes = require("./routes/dictionaryRoutes")
@@ -44,9 +47,6 @@ const phraseRoutes = require("./routes/phraseRoutes")
 
 const { errorHandler, notFound } = require("./middleware/errorMiddleware")
 const { requestLogger } = require("./middleware/loggerMiddleware")
-
-// Import payment controller for webhook
-const paymentController = require("./controllers/paymentController")
 
 const app = express()
 const server = createServer(app)
@@ -134,6 +134,12 @@ io.on("connection", (socket) => {
   })
 })
 
+// ============================================================
+// CRITICAL: Webhook route MUST be FIRST before ANY middleware
+// ============================================================
+app.post("/webhook", express.raw({ type: "*/*" }), paymentController.handleWebhook)
+
+// Now add other middleware AFTER the webhook route
 app.use(
   helmet({
     crossOriginEmbedderPolicy: false,
@@ -158,16 +164,13 @@ app.use(
           ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "paddle-signature"],
     preflightContinue: false,
     optionsSuccessStatus: 204,
   })
 )
 
-// IMPORTANT: Webhook route with raw body parser - MUST be before express.json()
-app.post("/webhook", express.raw({ type: "application/json" }), paymentController.handleWebhook)
-
-// Regular JSON parser for all other routes
+// JSON parser for all other routes - AFTER webhook
 app.use(express.json({ limit: "10mb" }))
 app.use(express.urlencoded({ extended: true, limit: "10mb" }))
 
@@ -270,16 +273,8 @@ const startServer = async () => {
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Server running on port ${PORT}`)
     console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`)
+    console.log(`💳 Webhook endpoint: POST /webhook (registered FIRST)`)
     console.log(`🎯 Challenge system enabled with German questions`)
-    console.log(`📊 Challenge API endpoints:`)
-    console.log(`   GET /api/challenge/challengeQuestions - Get random challenge questions`)
-    console.log(`   GET /api/challenge/challengeStats - Get challenge statistics`)
-    console.log(`   GET /api/challenge/challengeHistory/:username - Get user challenge history`)
-    console.log(`   GET /api/challenge/challengeLeaderboard - Get challenge leaderboard`)
-    console.log(`   GET /api/challenge/activeRooms - Get active challenge rooms`)
-    console.log(`   GET /api/challenge/categories - Get question categories`)
-    console.log(`   POST /api/challenge/practice - Get practice questions`)
-    console.log(`💳 Webhook endpoint: POST /webhook`)
   })
 }
 
