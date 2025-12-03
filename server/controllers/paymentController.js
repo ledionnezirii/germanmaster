@@ -1,19 +1,26 @@
+
 const Payment = require("../models/Payment");
 const User = require("../models/User");
 const crypto = require("crypto");
+const { Paddle, Environment } = require("@paddle/paddle-node-sdk")
 
-const PaddleSDK = require("@paddle/paddle-node-sdk");
+// Initialize Paddle client properly
+// paymentController.js
 
-// Initialize Paddle client for LIVE payments
-const { Client, Environment } = require("@paddle/paddle-node-sdk");
-console.log("[v0] Paddle Client initialized successfully for live payments");
+// Initialize Paddle client properly
+const paddleClient = new Paddle(process.env.PADDLE_API_KEY, {
+  environment: Environment.production, // KY DUHET TË JETË I DREJTI PËR ÇELËSIN LIVE
+})
 
+console.log("[v0] Paddle Client initialized successfully for live payments")
+// ...
 // Verify webhook signature from Paddle
 const verifyPaddleWebhook = (req) => {
   const signature = req.headers["paddle-signature"];
   const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
 
   if (!signature || !webhookSecret) {
+    console.error("[v0] Missing signature or webhook secret");
     return false;
   }
 
@@ -52,6 +59,12 @@ exports.createCheckoutSession = async (req, res) => {
       });
     }
 
+    // Check if trial expired
+    const now = new Date();
+    if (user.subscriptionExpiresAt && user.subscriptionExpiresAt < now) {
+      console.log(`[v0] User ${userId} trial has expired, proceeding with checkout`);
+    }
+
     console.log(`[v0] Creating checkout for user: ${userId} with priceId: ${priceId}`);
 
     const checkout = await paddleClient.checkouts.create({
@@ -64,10 +77,13 @@ exports.createCheckoutSession = async (req, res) => {
       customData: {
         userId: userId,
       },
+      customer: {
+        email: user.email,
+      },
       returnUrl: `${process.env.FRONTEND_URL}/payments?status=success`,
     });
 
-    console.log(`[v0] Checkout created:`, checkout);
+    console.log(`[v0] Checkout created:`, checkout.id);
 
     res.status(200).json({
       success: true,
@@ -86,6 +102,7 @@ exports.createCheckoutSession = async (req, res) => {
   }
 };
 
+// Handle Paddle webhooks
 exports.handleWebhook = async (req, res) => {
   try {
     // Verify webhook signature
@@ -155,19 +172,46 @@ const handleTransactionCompleted = async (event) => {
   const subscriptionId = data.subscription_id || null;
   const amount = data.details?.totals?.total ? parseInt(data.details.totals.total) / 100 : 0;
   const currency = data.currency_code || "USD";
+  
+  // Determine subscription type and duration from price
+  const priceId = data.items?.[0]?.price_id;
+  let subscriptionType = "1_month";
+  let billingCycle = "monthly";
+  let durationDays = 30;
 
+  // Map price IDs to subscription types (adjust based on your Paddle prices)
+  if (priceId?.includes("month") || priceId?.includes("monthly")) {
+    subscriptionType = "1_month";
+    billingCycle = "monthly";
+    durationDays = 30;
+  } else if (priceId?.includes("3_month") || priceId?.includes("quarterly")) {
+    subscriptionType = "3_months";
+    billingCycle = "quarterly";
+    durationDays = 90;
+  } else if (priceId?.includes("year") || priceId?.includes("annual")) {
+    subscriptionType = "1_year";
+    billingCycle = "yearly";
+    durationDays = 365;
+  }
+
+  const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+  const nextBillingDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+
+  // Create payment record
   const payment = await Payment.create({
     userId: userId,
     paddleTransactionId: data.id,
     paddleCustomerId: data.customer_id,
     paddleSubscriptionId: subscriptionId,
-    priceId: data.items?.[0]?.price_id,
+    priceId: priceId,
     productId: data.items?.[0]?.product_id,
+    subscriptionType: subscriptionType,
     status: "active",
     amount: amount,
     currency: currency,
-    expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-    nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+    billingCycle: billingCycle,
+    expiresAt: expiresAt,
+    nextBillingDate: nextBillingDate,
     webhookEvents: [
       {
         eventType: event.event_type,
@@ -177,13 +221,14 @@ const handleTransactionCompleted = async (event) => {
     ],
   });
 
+  // Update user subscription
   user.isPaid = true;
-  user.subscriptionType = "premium";
-  user.subscriptionExpiresAt = payment.expiresAt;
+  user.subscriptionType = subscriptionType;
+  user.subscriptionExpiresAt = expiresAt;
   user.isActive = true;
   await user.save();
 
-  console.log(`[v0] Payment completed for user ${userId}`);
+  console.log(`[v0] Payment completed for user ${userId} - Subscription: ${subscriptionType}`);
 };
 
 // Handle subscription.created webhook
@@ -197,13 +242,13 @@ const handleSubscriptionCreated = async (event) => {
     return;
   }
 
-  console.log(`[v0] Subscription created: ${data.id}`);
+  console.log(`[v0] Subscription created: ${data.id} for user: ${userId}`);
 };
 
 // Handle subscription.updated webhook
 const handleSubscriptionUpdated = async (event) => {
   const data = event.data;
-
+  
   const payment = await Payment.findOne({
     paddleSubscriptionId: data.id,
   });
@@ -237,7 +282,7 @@ const handleSubscriptionUpdated = async (event) => {
 // Handle subscription.cancelled webhook
 const handleSubscriptionCancelled = async (event) => {
   const data = event.data;
-
+  
   const payment = await Payment.findOne({
     paddleSubscriptionId: data.id,
   });
@@ -269,7 +314,7 @@ const handleSubscriptionCancelled = async (event) => {
 // Handle subscription.paused webhook
 const handleSubscriptionPaused = async (event) => {
   const data = event.data;
-
+  
   const payment = await Payment.findOne({
     paddleSubscriptionId: data.id,
   });
@@ -294,7 +339,7 @@ const handleSubscriptionPaused = async (event) => {
 // Handle subscription.resumed webhook
 const handleSubscriptionResumed = async (event) => {
   const data = event.data;
-
+  
   const payment = await Payment.findOne({
     paddleSubscriptionId: data.id,
   });
@@ -341,6 +386,23 @@ exports.getUserSubscription = async (req, res) => {
     }).sort({ createdAt: -1 });
 
     if (!payment) {
+      // Check if user is on free trial
+      const user = await User.findById(userId);
+      if (user && user.subscriptionType === "free_trial") {
+        const now = new Date();
+        const isTrialActive = user.subscriptionExpiresAt && user.subscriptionExpiresAt > now;
+        
+        return res.status(200).json({
+          success: true,
+          data: {
+            subscriptionType: "free_trial",
+            status: isTrialActive ? "active" : "expired",
+            expiresAt: user.subscriptionExpiresAt,
+            trialStartedAt: user.trialStartedAt,
+          },
+        });
+      }
+
       return res.status(404).json({
         success: false,
         message: "No active subscription found",
@@ -351,6 +413,7 @@ exports.getUserSubscription = async (req, res) => {
       success: true,
       data: {
         paddleSubscriptionId: payment.paddleSubscriptionId,
+        subscriptionType: payment.subscriptionType,
         status: payment.status,
         nextBillingDate: payment.nextBillingDate,
         amount: payment.amount,
@@ -368,6 +431,7 @@ exports.getUserSubscription = async (req, res) => {
   }
 };
 
+// Get all user payments
 exports.getUserPayments = async (req, res) => {
   try {
     const { userId } = req.params;
