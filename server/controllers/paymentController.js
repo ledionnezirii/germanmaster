@@ -1,19 +1,20 @@
-
 const Payment = require("../models/Payment");
 const User = require("../models/User");
 const crypto = require("crypto");
-const { Paddle, Environment } = require("@paddle/paddle-node-sdk")
 
-// Initialize Paddle client properly
-// paymentController.js
+// Note: Paddle SDK is only needed for cancellation via API
+// Checkout is handled by Paddle.js on frontend
+let paddleClient = null;
+try {
+  const { Paddle, Environment } = require("@paddle/paddle-node-sdk");
+  paddleClient = new Paddle(process.env.PADDLE_API_KEY, {
+    environment: Environment.production,
+  });
+  console.log("[v0] Paddle Client initialized for subscription management");
+} catch (err) {
+  console.log("[v0] Paddle SDK not available, cancellation via API disabled");
+}
 
-// Initialize Paddle client properly
-const paddleClient = new Paddle(process.env.PADDLE_API_KEY, {
-  environment: Environment.production, // KY DUHET TË JETË I DREJTI PËR ÇELËSIN LIVE
-})
-
-console.log("[v0] Paddle Client initialized successfully for live payments")
-// ...
 // Verify webhook signature from Paddle
 const verifyPaddleWebhook = (req) => {
   const signature = req.headers["paddle-signature"];
@@ -39,7 +40,7 @@ const verifyPaddleWebhook = (req) => {
   }
 };
 
-// Create a checkout session
+// Validate user for checkout (no backend checkout creation needed)
 exports.createCheckoutSession = async (req, res) => {
   try {
     const { userId, priceId } = req.body;
@@ -59,44 +60,22 @@ exports.createCheckoutSession = async (req, res) => {
       });
     }
 
-    // Check if trial expired
-    const now = new Date();
-    if (user.subscriptionExpiresAt && user.subscriptionExpiresAt < now) {
-      console.log(`[v0] User ${userId} trial has expired, proceeding with checkout`);
-    }
+    console.log(`[v0] Checkout validated for user: ${userId} with priceId: ${priceId}`);
 
-    console.log(`[v0] Creating checkout for user: ${userId} with priceId: ${priceId}`);
-
-    const checkout = await paddleClient.checkouts.create({
-      items: [
-        {
-          priceId: priceId,
-          quantity: 1,
-        },
-      ],
-      customData: {
-        userId: userId,
-      },
-      customer: {
-        email: user.email,
-      },
-      returnUrl: `${process.env.FRONTEND_URL}/payments?status=success`,
-    });
-
-    console.log(`[v0] Checkout created:`, checkout.id);
-
+    // Return success - Paddle.js will handle the actual checkout on frontend
     res.status(200).json({
       success: true,
+      message: "Checkout validated, proceed with Paddle.js",
       data: {
-        checkoutId: checkout.id,
-        checkoutUrl: checkout.urls?.checkout,
+        userId: userId,
+        email: user.email,
       },
     });
   } catch (error) {
-    console.error("[v0] Checkout creation error:", error);
+    console.error("[v0] Checkout validation error:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to create checkout",
+      message: "Failed to validate checkout",
       error: error.message,
     });
   }
@@ -173,13 +152,11 @@ const handleTransactionCompleted = async (event) => {
   const amount = data.details?.totals?.total ? parseInt(data.details.totals.total) / 100 : 0;
   const currency = data.currency_code || "USD";
   
-  // Determine subscription type and duration from price
   const priceId = data.items?.[0]?.price_id;
   let subscriptionType = "1_month";
   let billingCycle = "monthly";
   let durationDays = 30;
 
-  // Map price IDs to subscription types (adjust based on your Paddle prices)
   if (priceId?.includes("month") || priceId?.includes("monthly")) {
     subscriptionType = "1_month";
     billingCycle = "monthly";
@@ -197,7 +174,6 @@ const handleTransactionCompleted = async (event) => {
   const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
   const nextBillingDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
 
-  // Create payment record
   const payment = await Payment.create({
     userId: userId,
     paddleTransactionId: data.id,
@@ -221,7 +197,6 @@ const handleTransactionCompleted = async (event) => {
     ],
   });
 
-  // Update user subscription
   user.isPaid = true;
   user.subscriptionType = subscriptionType;
   user.subscriptionExpiresAt = expiresAt;
@@ -231,7 +206,6 @@ const handleTransactionCompleted = async (event) => {
   console.log(`[v0] Payment completed for user ${userId} - Subscription: ${subscriptionType}`);
 };
 
-// Handle subscription.created webhook
 const handleSubscriptionCreated = async (event) => {
   const data = event.data;
   const customData = data.custom_data || {};
@@ -245,7 +219,6 @@ const handleSubscriptionCreated = async (event) => {
   console.log(`[v0] Subscription created: ${data.id} for user: ${userId}`);
 };
 
-// Handle subscription.updated webhook
 const handleSubscriptionUpdated = async (event) => {
   const data = event.data;
   
@@ -279,7 +252,6 @@ const handleSubscriptionUpdated = async (event) => {
   console.log(`[v0] Subscription updated: ${data.id}`);
 };
 
-// Handle subscription.cancelled webhook
 const handleSubscriptionCancelled = async (event) => {
   const data = event.data;
   
@@ -311,7 +283,6 @@ const handleSubscriptionCancelled = async (event) => {
   console.log(`[v0] Subscription cancelled: ${data.id}`);
 };
 
-// Handle subscription.paused webhook
 const handleSubscriptionPaused = async (event) => {
   const data = event.data;
   
@@ -336,7 +307,6 @@ const handleSubscriptionPaused = async (event) => {
   console.log(`[v0] Subscription paused: ${data.id}`);
 };
 
-// Handle subscription.resumed webhook
 const handleSubscriptionResumed = async (event) => {
   const data = event.data;
   
@@ -368,7 +338,6 @@ const handleSubscriptionResumed = async (event) => {
   console.log(`[v0] Subscription resumed: ${data.id}`);
 };
 
-// Get user's active subscription
 exports.getUserSubscription = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -386,7 +355,6 @@ exports.getUserSubscription = async (req, res) => {
     }).sort({ createdAt: -1 });
 
     if (!payment) {
-      // Check if user is on free trial
       const user = await User.findById(userId);
       if (user && user.subscriptionType === "free_trial") {
         const now = new Date();
@@ -431,7 +399,6 @@ exports.getUserSubscription = async (req, res) => {
   }
 };
 
-// Get all user payments
 exports.getUserPayments = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -459,7 +426,6 @@ exports.getUserPayments = async (req, res) => {
   }
 };
 
-// Cancel subscription
 exports.cancelSubscription = async (req, res) => {
   try {
     const { userId } = req.body;
@@ -483,7 +449,8 @@ exports.cancelSubscription = async (req, res) => {
       });
     }
 
-    if (payment.paddleSubscriptionId) {
+    // Try to cancel via Paddle API if available
+    if (payment.paddleSubscriptionId && paddleClient) {
       try {
         await paddleClient.subscriptions.cancel(
           payment.paddleSubscriptionId,
@@ -492,11 +459,7 @@ exports.cancelSubscription = async (req, res) => {
         console.log(`[v0] Paddle subscription cancelled: ${payment.paddleSubscriptionId}`);
       } catch (paddleError) {
         console.error("[v0] Paddle API error:", paddleError);
-        return res.status(400).json({
-          success: false,
-          message: "Failed to cancel subscription in Paddle",
-          error: paddleError.message,
-        });
+        // Continue with local cancellation even if Paddle API fails
       }
     }
 
