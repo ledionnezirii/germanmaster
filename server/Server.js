@@ -225,7 +225,7 @@ app.use("/api/leaderboard", leaderboardRoutes)
 app.use("/api/plan", planRoutes)
 app.use("/api/tests",testRoutes)
 app.use("/api/pronunciation",pronunciationRoutes)
-app.use("/api/payments",paymentRoutes)
+app.use('/api/payments/webhook', express.raw({ type: 'application/json' }));
 app.use("/api/quizes", quizRoutes)
 app.use("/api/certificates", certificateRoutes);
 app.use('/api/league', leagueRoutes);

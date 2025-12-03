@@ -2,8 +2,7 @@ const Payment = require("../models/Payment");
 const User = require("../models/User");
 const crypto = require("crypto");
 
-// Note: Paddle SDK is only needed for cancellation via API
-// Checkout is handled by Paddle.js on frontend
+// Paddle SDK for subscription management
 let paddleClient = null;
 try {
   const { Paddle, Environment } = require("@paddle/paddle-node-sdk");
@@ -15,32 +14,7 @@ try {
   console.log("[v0] Paddle SDK not available, cancellation via API disabled");
 }
 
-// Verify webhook signature from Paddle
-const verifyPaddleWebhook = (req) => {
-  const signature = req.headers["paddle-signature"];
-  const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
-
-  if (!signature || !webhookSecret) {
-    console.error("[v0] Missing signature or webhook secret");
-    return false;
-  }
-
-  try {
-    const [ts, h1] = signature.split(";").map((part) => part.split("=")[1]);
-    const payload = ts + ":" + JSON.stringify(req.body);
-    const expectedSignature = crypto
-      .createHmac("sha256", webhookSecret)
-      .update(payload)
-      .digest("hex");
-
-    return crypto.timingSafeEqual(Buffer.from(h1), Buffer.from(expectedSignature));
-  } catch (error) {
-    console.error("[v0] Webhook verification error:", error);
-    return false;
-  }
-};
-
-// Validate user for checkout (no backend checkout creation needed)
+// Validate user for checkout
 exports.createCheckoutSession = async (req, res) => {
   try {
     const { userId, priceId } = req.body;
@@ -62,7 +36,6 @@ exports.createCheckoutSession = async (req, res) => {
 
     console.log(`[v0] Checkout validated for user: ${userId} with priceId: ${priceId}`);
 
-    // Return success - Paddle.js will handle the actual checkout on frontend
     res.status(200).json({
       success: true,
       message: "Checkout validated, proceed with Paddle.js",
@@ -84,16 +57,86 @@ exports.createCheckoutSession = async (req, res) => {
 // Handle Paddle webhooks
 exports.handleWebhook = async (req, res) => {
   try {
-    // Verify webhook signature
-    if (!verifyPaddleWebhook(req)) {
-      console.error("[v0] Invalid webhook signature");
+    const signature = req.headers["paddle-signature"];
+    const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
+
+    console.log("[v0] Webhook received");
+    console.log("[v0] Signature present:", !!signature);
+    console.log("[v0] Webhook secret present:", !!webhookSecret);
+
+    if (!signature) {
+      console.error("[v0] No signature header");
+      return res.status(401).json({ success: false, message: "No signature" });
+    }
+
+    if (!webhookSecret) {
+      console.error("[v0] No webhook secret configured");
+      return res.status(500).json({ success: false, message: "Server config error" });
+    }
+
+    // Get raw body - handle both Buffer and parsed JSON
+    let rawBody;
+    let event;
+    
+    if (Buffer.isBuffer(req.body)) {
+      rawBody = req.body.toString('utf8');
+      event = JSON.parse(rawBody);
+    } else if (typeof req.body === 'string') {
+      rawBody = req.body;
+      event = JSON.parse(rawBody);
+    } else {
+      // Body was already parsed as JSON - reconstruct for signature
+      rawBody = JSON.stringify(req.body);
+      event = req.body;
+    }
+
+    // Parse signature: ts=xxx;h1=xxx
+    const signatureParts = {};
+    signature.split(";").forEach((part) => {
+      const [key, ...valueParts] = part.split("=");
+      signatureParts[key] = valueParts.join("=");
+    });
+
+    const ts = signatureParts.ts;
+    const h1 = signatureParts.h1;
+
+    if (!ts || !h1) {
+      console.error("[v0] Invalid signature format");
+      return res.status(401).json({ success: false, message: "Invalid signature format" });
+    }
+
+    // Build signed payload and verify
+    const payload = ts + ":" + rawBody;
+    const expectedSignature = crypto
+      .createHmac("sha256", webhookSecret)
+      .update(payload)
+      .digest("hex");
+
+    console.log("[v0] Signature verification:");
+    console.log("[v0] - Timestamp:", ts);
+    console.log("[v0] - Received h1:", h1.substring(0, 20) + "...");
+    console.log("[v0] - Expected:", expectedSignature.substring(0, 20) + "...");
+
+    let isValid = false;
+    try {
+      isValid = crypto.timingSafeEqual(
+        Buffer.from(h1, 'utf8'),
+        Buffer.from(expectedSignature, 'utf8')
+      );
+    } catch (compareError) {
+      console.error("[v0] Signature comparison error:", compareError.message);
+      isValid = false;
+    }
+
+    if (!isValid) {
+      console.error("[v0] Signature mismatch - webhook rejected");
       return res.status(401).json({ success: false, message: "Invalid signature" });
     }
 
-    const event = req.body;
-    const eventType = event.event_type;
+    console.log("[v0] ✅ Webhook signature verified!");
 
-    console.log(`[v0] Webhook received - Event Type: ${eventType}`);
+    const eventType = event.event_type;
+    console.log(`[v0] Processing event: ${eventType}`);
 
     switch (eventType) {
       case "transaction.completed":
@@ -115,7 +158,7 @@ exports.handleWebhook = async (req, res) => {
         await handleSubscriptionResumed(event);
         break;
       default:
-        console.log(`[v0] Unhandled webhook event: ${eventType}`);
+        console.log(`[v0] Unhandled event type: ${eventType}`);
     }
 
     res.status(200).json({ success: true, received: true });
@@ -136,7 +179,8 @@ const handleTransactionCompleted = async (event) => {
   const userId = customData.userId;
 
   if (!userId) {
-    console.error("[v0] No userId in transaction data");
+    console.error("[v0] No userId in transaction custom_data");
+    console.log("[v0] Transaction data:", JSON.stringify(data, null, 2));
     return;
   }
 
@@ -150,7 +194,7 @@ const handleTransactionCompleted = async (event) => {
 
   const subscriptionId = data.subscription_id || null;
   const amount = data.details?.totals?.total ? parseInt(data.details.totals.total) / 100 : 0;
-  const currency = data.currency_code || "USD";
+  const currency = data.currency_code || "EUR";
   
   const priceId = data.items?.[0]?.price_id;
   let subscriptionType = "1_month";
@@ -203,7 +247,7 @@ const handleTransactionCompleted = async (event) => {
   user.isActive = true;
   await user.save();
 
-  console.log(`[v0] Payment completed for user ${userId} - Subscription: ${subscriptionType}`);
+  console.log(`[v0] ✅ Payment completed for user ${userId} - Subscription: ${subscriptionType}`);
 };
 
 const handleSubscriptionCreated = async (event) => {
@@ -216,7 +260,7 @@ const handleSubscriptionCreated = async (event) => {
     return;
   }
 
-  console.log(`[v0] Subscription created: ${data.id} for user: ${userId}`);
+  console.log(`[v0] ✅ Subscription created: ${data.id} for user: ${userId}`);
 };
 
 const handleSubscriptionUpdated = async (event) => {
@@ -249,7 +293,7 @@ const handleSubscriptionUpdated = async (event) => {
     await user.save();
   }
 
-  console.log(`[v0] Subscription updated: ${data.id}`);
+  console.log(`[v0] ✅ Subscription updated: ${data.id}`);
 };
 
 const handleSubscriptionCancelled = async (event) => {
@@ -280,7 +324,7 @@ const handleSubscriptionCancelled = async (event) => {
     await user.save();
   }
 
-  console.log(`[v0] Subscription cancelled: ${data.id}`);
+  console.log(`[v0] ✅ Subscription cancelled: ${data.id}`);
 };
 
 const handleSubscriptionPaused = async (event) => {
@@ -304,7 +348,7 @@ const handleSubscriptionPaused = async (event) => {
   });
   await payment.save();
 
-  console.log(`[v0] Subscription paused: ${data.id}`);
+  console.log(`[v0] ✅ Subscription paused: ${data.id}`);
 };
 
 const handleSubscriptionResumed = async (event) => {
@@ -335,7 +379,7 @@ const handleSubscriptionResumed = async (event) => {
     await user.save();
   }
 
-  console.log(`[v0] Subscription resumed: ${data.id}`);
+  console.log(`[v0] ✅ Subscription resumed: ${data.id}`);
 };
 
 exports.getUserSubscription = async (req, res) => {
@@ -449,7 +493,6 @@ exports.cancelSubscription = async (req, res) => {
       });
     }
 
-    // Try to cancel via Paddle API if available
     if (payment.paddleSubscriptionId && paddleClient) {
       try {
         await paddleClient.subscriptions.cancel(
@@ -459,7 +502,6 @@ exports.cancelSubscription = async (req, res) => {
         console.log(`[v0] Paddle subscription cancelled: ${payment.paddleSubscriptionId}`);
       } catch (paddleError) {
         console.error("[v0] Paddle API error:", paddleError);
-        // Continue with local cancellation even if Paddle API fails
       }
     }
 
