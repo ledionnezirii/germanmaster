@@ -432,4 +432,15 @@ export const generateAvatarOptions = () => {
   return avatars // Returns ~510 unique avatar options
 }
 
+
+export const paymentService = {
+  createCheckoutSession: (userId, priceId) => api.post("/payments/checkout/create", { userId, priceId }),
+
+  getUserSubscription: (userId) => api.get(`/payments/subscription/${userId}`),
+
+  getUserPayments: (userId) => api.get(`/payments/payments/${userId}`),
+
+  cancelSubscription: (userId) => api.post("/payments/subscription/cancel", { userId }),
+}
+
 export default api
