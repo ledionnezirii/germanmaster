@@ -1,72 +1,200 @@
-// ttsRoutes.js
-const express = require("express");
-const dotenv = require("dotenv");
-const path = require("path");
-const textToSpeech = require("@google-cloud/text-to-speech"); // <-- vetëm një herë
+const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 
-dotenv.config();
+const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
+const ELEVENLABS_VOICE_ID = 'onwK4e9ZLuTAKqWW03F9'; // German voice - "Daniel"
 
-// Initialize Google Cloud TTS client using JSON nga environment variable
-let client;
-try {
-  client = new textToSpeech.TextToSpeechClient({
-    credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS),
-  });
-  console.log("[TTS] Google Cloud TTS client initialized successfully");
-} catch (error) {
-  console.error("[TTS] Failed to initialize Google Cloud TTS client:", error);
-}
+// Base path for audio files
+const AUDIO_BASE_PATH = path.join(__dirname, '..', 'audios');
 
-// Controller për gjenerimin e TTS
-const generateTTS = async (req, res) => {
-  try {
-    const { text, lang = "de-DE", gender = "MALE" } = req.body;
-
-    if (!text) {
-      return res.status(400).json({ error: "Text is required" });
-    }
-
-    if (!client) {
-      return res.status(500).json({
-        error: "TTS service not available. Check server configuration.",
-      });
-    }
-
-    const request = {
-      input: { text },
-      voice: {
-        languageCode: lang,
-        ssmlGender: gender,
-        name: "de-DE-Wavenet-B",
-      },
-      audioConfig: {
-        audioEncoding: "MP3",
-        speakingRate: 0.8,
-        pitch: 0.0,
-      },
-    };
-
-    const [response] = await client.synthesizeSpeech(request);
-
-    if (!response.audioContent) {
-      return res.status(500).json({ error: "Failed to generate audio" });
-    }
-
-    // Headers për streaming audio
-    res.set({
-      "Content-Type": "audio/mpeg",
-      "Content-Length": response.audioContent.length,
-      "Cache-Control": "public, max-age=3600",
-    });
-
-    res.send(Buffer.from(response.audioContent));
-  } catch (error) {
-    console.error("[TTS] Error generating audio:", error);
-    res.status(500).json({
-      error: "Failed to generate audio",
-      message: error.message,
-    });
+// Ensure directory exists
+const ensureDirectoryExists = (dirPath) => {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
   }
 };
 
-module.exports = { generateTTS };
+// Get audio file path based on type (listenTexts, dictionary, phrases)
+const getAudioFilePath = (id, level, type = 'listenTexts') => {
+  const typeFolder = path.join(AUDIO_BASE_PATH, type, level || 'A1');
+  ensureDirectoryExists(typeFolder);
+  return path.join(typeFolder, `${id}.mp3`);
+};
+
+// Check if audio exists
+const audioExists = (id, level, type = 'listenTexts') => {
+  const filePath = getAudioFilePath(id, level, type);
+  return fs.existsSync(filePath);
+};
+
+// Generate audio with ElevenLabs
+const generateAudio = async (text, id, level, type = 'listenTexts') => {
+  try {
+    const response = await axios({
+      method: 'POST',
+      url: `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`,
+      headers: {
+        'Accept': 'audio/mpeg',
+        'Content-Type': 'application/json',
+        'xi-api-key': ELEVENLABS_API_KEY,
+      },
+      data: {
+        text: text,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.75,
+          style: 0.0,
+          use_speaker_boost: true
+        }
+      },
+      responseType: 'arraybuffer'
+    });
+
+    const filePath = getAudioFilePath(id, level, type);
+    fs.writeFileSync(filePath, response.data);
+    
+    console.log(`[TTS] Audio saved: ${filePath}`);
+    return filePath;
+  } catch (error) {
+    console.error('[TTS] ElevenLabs error:', error.response?.data || error.message);
+    throw error;
+  }
+};
+
+// Controller: Get or generate audio for listen tests
+exports.getAudio = async (req, res) => {
+  try {
+    const { testId } = req.params;
+    const { text, level } = req.body;
+
+    if (!testId) {
+      return res.status(400).json({ error: 'Test ID is required' });
+    }
+
+    const filePath = getAudioFilePath(testId, level, 'listenTexts');
+
+    // Check if audio already exists
+    if (audioExists(testId, level, 'listenTexts')) {
+      console.log(`[TTS] Serving cached audio: ${filePath}`);
+      return res.sendFile(filePath);
+    }
+
+    // Generate new audio if text is provided
+    if (!text) {
+      return res.status(404).json({ error: 'Audio not found and no text provided to generate' });
+    }
+
+    console.log(`[TTS] Generating new audio for test: ${testId}`);
+    await generateAudio(text, testId, level, 'listenTexts');
+    
+    return res.sendFile(filePath);
+  } catch (error) {
+    console.error('[TTS] Controller error:', error);
+    return res.status(500).json({ error: 'Failed to get/generate audio' });
+  }
+};
+
+// Controller: Get or generate audio for dictionary words
+exports.getDictionaryAudio = async (req, res) => {
+  try {
+    const { wordId } = req.params;
+    const { text, level } = req.body;
+
+    if (!wordId) {
+      return res.status(400).json({ error: 'Word ID is required' });
+    }
+
+    const filePath = getAudioFilePath(wordId, level, 'dictionary');
+
+    // Check if audio already exists
+    if (audioExists(wordId, level, 'dictionary')) {
+      console.log(`[TTS] Serving cached dictionary audio: ${filePath}`);
+      return res.sendFile(filePath);
+    }
+
+    // Generate new audio if text is provided
+    if (!text) {
+      return res.status(404).json({ error: 'Audio not found and no text provided to generate' });
+    }
+
+    console.log(`[TTS] Generating new dictionary audio for word: ${wordId}`);
+    await generateAudio(text, wordId, level, 'dictionary');
+    
+    return res.sendFile(filePath);
+  } catch (error) {
+    console.error('[TTS] Dictionary controller error:', error);
+    return res.status(500).json({ error: 'Failed to get/generate dictionary audio' });
+  }
+};
+
+// Controller: Get or generate audio for phrases
+exports.getPhraseAudio = async (req, res) => {
+  try {
+    const { phraseId } = req.params;
+    const { text, level } = req.body;
+
+    if (!phraseId) {
+      return res.status(400).json({ error: 'Phrase ID is required' });
+    }
+
+    const filePath = getAudioFilePath(phraseId, level, 'phrases');
+
+    // Check if audio already exists
+    if (audioExists(phraseId, level, 'phrases')) {
+      console.log(`[TTS] Serving cached phrase audio: ${filePath}`);
+      return res.sendFile(filePath);
+    }
+
+    // Generate new audio if text is provided
+    if (!text) {
+      return res.status(404).json({ error: 'Audio not found and no text provided to generate' });
+    }
+
+    console.log(`[TTS] Generating new phrase audio for: ${phraseId}`);
+    await generateAudio(text, phraseId, level, 'phrases');
+    
+    return res.sendFile(filePath);
+  } catch (error) {
+    console.error('[TTS] Phrase controller error:', error);
+    return res.status(500).json({ error: 'Failed to get/generate phrase audio' });
+  }
+};
+
+// Controller: Check if audio exists (generic)
+exports.checkAudio = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { level, type } = req.query;
+
+    const exists = audioExists(id, level || 'A1', type || 'listenTexts');
+    return res.json({ exists, id, level, type });
+  } catch (error) {
+    console.error('[TTS] Check error:', error);
+    return res.status(500).json({ error: 'Failed to check audio' });
+  }
+};
+
+// Controller: Pre-generate audio (for admin/batch use)
+exports.preGenerateAudio = async (req, res) => {
+  try {
+    const { id, text, level, type } = req.body;
+
+    if (!id || !text) {
+      return res.status(400).json({ error: 'ID and text are required' });
+    }
+
+    const audioType = type || 'listenTexts';
+
+    if (audioExists(id, level, audioType)) {
+      return res.json({ message: 'Audio already exists', id, level, type: audioType });
+    }
+
+    await generateAudio(text, id, level, audioType);
+    return res.json({ message: 'Audio generated successfully', id, level, type: audioType });
+  } catch (error) {
+    console.error('[TTS] Pre-generate error:', error);
+    return res.status(500).json({ error: 'Failed to pre-generate audio' });
+  }
+};
