@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { dictionaryService, favoritesService } from "../services/api"
+import { useState, useEffect, useRef } from "react"
+import { dictionaryService, favoritesService, ttsService } from "../services/api"
 import { BookOpen, Volume2, Heart, Filter, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const Dictionary = () => {
@@ -14,12 +14,26 @@ const Dictionary = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [totalWords, setTotalWords] = useState(0)
+  const [playingWordId, setPlayingWordId] = useState(null)
+  const audioRef = useRef(null)
   const wordsPerPage = 32
 
   useEffect(() => {
     fetchWords()
     fetchFavorites()
   }, [selectedLevel, currentPage])
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        if (audioRef.current.src && audioRef.current.src.startsWith('blob:')) {
+          URL.revokeObjectURL(audioRef.current.src)
+        }
+      }
+    }
+  }, [])
 
   const fetchWords = async () => {
     try {
@@ -72,11 +86,67 @@ const Dictionary = () => {
     }
   }
 
-  const playPronunciation = (word) => {
-    const utterance = new SpeechSynthesisUtterance(word)
-    utterance.lang = "de-DE"
-    utterance.rate = 0.8
-    window.speechSynthesis.speak(utterance)
+  const playPronunciation = async (word) => {
+    // Stop if already playing this word
+    if (playingWordId === word._id && audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      setPlayingWordId(null)
+      return
+    }
+
+    // Stop any current playback
+    if (audioRef.current) {
+      audioRef.current.pause()
+      if (audioRef.current.src && audioRef.current.src.startsWith('blob:')) {
+        URL.revokeObjectURL(audioRef.current.src)
+      }
+    }
+
+    try {
+      setPlayingWordId(word._id)
+      console.log("[TTS] Requesting dictionary audio for:", word.word)
+
+      const response = await ttsService.getDictionaryAudio(
+        word._id,
+        word.word,
+        word.level
+      )
+
+      const audioBlob = response.data
+      console.log("[TTS] Audio blob received:", audioBlob.size, "bytes")
+
+      const audioUrl = URL.createObjectURL(audioBlob)
+
+      if (!audioRef.current) {
+        audioRef.current = new Audio()
+      }
+
+      audioRef.current.src = audioUrl
+
+      audioRef.current.onended = () => {
+        console.log("[TTS] Dictionary audio ended")
+        setPlayingWordId(null)
+        URL.revokeObjectURL(audioUrl)
+      }
+
+      audioRef.current.onerror = (e) => {
+        console.error("[TTS] Audio error:", e)
+        setPlayingWordId(null)
+        URL.revokeObjectURL(audioUrl)
+      }
+
+      await audioRef.current.play()
+      console.log("[TTS] Dictionary audio playing")
+    } catch (error) {
+      console.error("[TTS] Error:", error)
+      setPlayingWordId(null)
+      // Fallback to browser TTS
+      const utterance = new SpeechSynthesisUtterance(word.word)
+      utterance.lang = "de-DE"
+      utterance.rate = 0.8
+      window.speechSynthesis.speak(utterance)
+    }
   }
 
   const filteredWords = words.filter((word) => {
@@ -248,6 +318,7 @@ const Dictionary = () => {
             {filteredWords.map((word) => {
               const isFavorite = favorites.some((fav) => fav._id === word._id)
               const firstExample = word.examples && word.examples.length > 0 ? word.examples[0] : null
+              const isPlaying = playingWordId === word._id
 
               return (
                 <div
@@ -266,11 +337,15 @@ const Dictionary = () => {
                       </div>
                       <div className="flex items-center gap-0.5 flex-shrink-0">
                         <button
-                          onClick={() => playPronunciation(word.word)}
-                          className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+                          onClick={() => playPronunciation(word)}
+                          className={`p-1.5 rounded-lg transition-all ${
+                            isPlaying 
+                              ? "text-emerald-600 bg-emerald-100" 
+                              : "text-gray-400 hover:text-emerald-600 hover:bg-emerald-50"
+                          }`}
                           title="Luaj shqiptimin"
                         >
-                          <Volume2 className="h-3.5 w-3.5" />
+                          <Volume2 className={`h-3.5 w-3.5 ${isPlaying ? 'animate-pulse' : ''}`} />
                         </button>
                         <button
                           onClick={() => toggleFavorite(word._id)}

@@ -375,8 +375,27 @@ export const phraseService = {
 }
 
 export const ttsService = {
-  getAudioUrl: (text, lang = "de", speakingRate = 0.8) => api.post("/tts", { text, lang, speakingRate }),
-}
+  // Listen tests audio
+  getAudio: (testId, text, level) =>
+    api.post(`/tts/audio/${testId}`, { text, level }, { responseType: 'blob' }),
+  
+  // Dictionary words audio
+  getDictionaryAudio: (wordId, text, level) =>
+    api.post(`/tts/dictionary/${wordId}`, { text, level }, { responseType: 'blob' }),
+  
+  // Phrases audio
+  getPhraseAudio: (phraseId, text, level) =>
+    api.post(`/tts/phrase/${phraseId}`, { text, level }, { responseType: 'blob' }),
+  
+  // Check if audio exists
+  checkAudio: (id, level, type) =>
+    api.get(`/tts/check/${id}`, { params: { level, type } }),
+  
+  // Pre-generate audio
+  preGenerate: (id, text, level, type) =>
+    api.post('/tts/pre-generate', { id, text, level, type }),
+};
+
 
 export const sessionService = {
   getSessions: () => api.get("/auth/sessions"),
@@ -431,6 +450,7 @@ export const generateAvatarOptions = () => {
 
   return avatars // Returns ~510 unique avatar options
 }
+
 
 
 export const paymentService = {

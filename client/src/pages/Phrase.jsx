@@ -1,6 +1,6 @@
 "use client"
-import { useState, useEffect } from "react"
-import { phraseService } from "../services/api"
+import { useState, useEffect, useRef } from "react"
+import { phraseService, ttsService } from "../services/api"
 import { useAuth } from "../context/AuthContext"
 import { Volume2, BookOpen, ChevronLeft, ChevronRight, LockIcon, Plus, Eye, EyeOff, Clock } from "lucide-react"
 
@@ -31,6 +31,8 @@ const Phrase = () => {
   const [shuffledAlbanian, setShuffledAlbanian] = useState([])
   const [quizComplete, setQuizComplete] = useState(false)
   const [quizScore, setQuizScore] = useState(0)
+  const [playingPhraseId, setPlayingPhraseId] = useState(null)
+  const audioRef = useRef(null)
 
   const itemsPerPage = 30
 
@@ -63,6 +65,18 @@ const Phrase = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" })
   }, [currentPage])
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause()
+        if (audioRef.current.src && audioRef.current.src.startsWith('blob:')) {
+          URL.revokeObjectURL(audioRef.current.src)
+        }
+      }
+    }
+  }, [])
 
   const fetchData = async () => {
     setLoading(true)
@@ -257,14 +271,70 @@ const Phrase = () => {
     setSelectedAlbanian(null)
   }
 
-  const speakGerman = (text) => {
-    if ("speechSynthesis" in window) {
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = "de-DE"
-      utterance.rate = 0.8
-      window.speechSynthesis.speak(utterance)
-    } else {
-      alert("Shfletuesi juaj nuk mbështet leximin e tekstit.")
+  const speakGerman = async (phrase) => {
+    const phraseId = phrase._id || phrase.id
+
+    // Stop if already playing this phrase
+    if (playingPhraseId === phraseId && audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      setPlayingPhraseId(null)
+      return
+    }
+
+    // Stop any current playback
+    if (audioRef.current) {
+      audioRef.current.pause()
+      if (audioRef.current.src && audioRef.current.src.startsWith('blob:')) {
+        URL.revokeObjectURL(audioRef.current.src)
+      }
+    }
+
+    try {
+      setPlayingPhraseId(phraseId)
+      console.log("[TTS] Requesting phrase audio for:", phrase.german)
+
+      const response = await ttsService.getPhraseAudio(
+        phraseId,
+        phrase.german,
+        selectedLevel
+      )
+
+      const audioBlob = response.data
+      console.log("[TTS] Phrase audio blob received:", audioBlob.size, "bytes")
+
+      const audioUrl = URL.createObjectURL(audioBlob)
+
+      if (!audioRef.current) {
+        audioRef.current = new Audio()
+      }
+
+      audioRef.current.src = audioUrl
+
+      audioRef.current.onended = () => {
+        console.log("[TTS] Phrase audio ended")
+        setPlayingPhraseId(null)
+        URL.revokeObjectURL(audioUrl)
+      }
+
+      audioRef.current.onerror = (e) => {
+        console.error("[TTS] Phrase audio error:", e)
+        setPlayingPhraseId(null)
+        URL.revokeObjectURL(audioUrl)
+      }
+
+      await audioRef.current.play()
+      console.log("[TTS] Phrase audio playing")
+    } catch (error) {
+      console.error("[TTS] Phrase error:", error)
+      setPlayingPhraseId(null)
+      // Fallback to browser TTS
+      if ("speechSynthesis" in window) {
+        const utterance = new SpeechSynthesisUtterance(phrase.german)
+        utterance.lang = "de-DE"
+        utterance.rate = 0.8
+        window.speechSynthesis.speak(utterance)
+      }
     }
   }
 
@@ -822,6 +892,7 @@ const Phrase = () => {
                     finishedPhraseIds.includes(currentPhrases[index - 1]._id || currentPhrases[index - 1].id)
                   const isLocked = !isFinished && !previousPhraseFinished
                   const canUnlock = !isLocked && !isFinished && !dailyLimitInfo.dailyLimitReached
+                  const isPlaying = playingPhraseId === phraseId
 
                   return (
                     <div
@@ -841,16 +912,18 @@ const Phrase = () => {
                                 {phrase.german}
                               </p>
                               <button
-                                onClick={() => !isLocked && speakGerman(phrase.german)}
+                                onClick={() => !isLocked && speakGerman(phrase)}
                                 disabled={isLocked}
                                 className={`w-6 h-6 md:w-7 md:h-7 rounded-full border-2 ${
                                   isLocked
                                     ? "border-gray-400 text-gray-400 cursor-not-allowed"
-                                    : "border-[#14B8A6] text-[#14B8A6] hover:bg-[#F0FDFA]"
+                                    : isPlaying
+                                      ? "border-[#0D9488] text-[#0D9488] bg-[#F0FDFA]"
+                                      : "border-[#14B8A6] text-[#14B8A6] hover:bg-[#F0FDFA]"
                                 } bg-white cursor-pointer flex items-center justify-center transition-all p-0 flex-shrink-0`}
                                 title={isLocked ? "Locked" : "Dëgjo frazën gjermane"}
                               >
-                                <Volume2 className="w-3 h-3 md:w-4 md:h-4" />
+                                <Volume2 className={`w-3 h-3 md:w-4 md:h-4 ${isPlaying ? 'animate-pulse' : ''}`} />
                               </button>
                             </div>
                           )}
