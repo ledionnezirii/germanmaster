@@ -44,6 +44,8 @@ const practiceRoutes = require("./routes/practiceRoutes")
 const wordRoutes = require("./routes/wordRoutes")
 const ttsRoutes = require("./routes/ttsRoutes")
 const phraseRoutes = require("./routes/phraseRoutes")
+const webhookRoutes = require("./routes/webhookRoutes")
+
 
 const { errorHandler, notFound } = require("./middleware/errorMiddleware")
 const { requestLogger } = require("./middleware/loggerMiddleware")
