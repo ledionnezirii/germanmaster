@@ -33,11 +33,11 @@ const challengeRoutes = require("./routes/challengeRoutes")
 const leaderboardRoutes = require("./routes/leaderboardRoutes")
 const planRoutes = require("./routes/planRoutes")
 const testRoutes = require("./routes/testRoutes")
-const pronunciationRoutes = require('./routes/pronunciationRoutes')
+const pronunciationRoutes = require("./routes/pronunciationRoutes")
 const paymentRoutes = require("./routes/paymentRoutes")
 const quizRoutes = require("./routes/quizRoutes")
 const certificateRoutes = require("./routes/certificateRoutes")
-const leagueRoutes = require('./routes/leagueRoutes')
+const leagueRoutes = require("./routes/leagueRoutes")
 const achievementRoutes = require("./routes/achievementsRoutes")
 const puzzleRoutes = require("./routes/puzzleRoutes")
 const practiceRoutes = require("./routes/practiceRoutes")
@@ -45,7 +45,6 @@ const wordRoutes = require("./routes/wordRoutes")
 const ttsRoutes = require("./routes/ttsRoutes")
 const phraseRoutes = require("./routes/phraseRoutes")
 const webhookRoutes = require("./routes/webhookRoutes")
-
 
 const { errorHandler, notFound } = require("./middleware/errorMiddleware")
 const { requestLogger } = require("./middleware/loggerMiddleware")
@@ -65,7 +64,7 @@ const io = new Server(server, {
             "http://192.168.1.48:3000",
             "http://192.168.1.48:3001",
             "http://192.168.1.48:5173",
-            "https://17061968.netlify.app"
+            "https://17061968.netlify.app",
           ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
@@ -139,7 +138,7 @@ io.on("connection", (socket) => {
 // ============================================================
 // CRITICAL: Webhook route MUST be FIRST before ANY middleware
 // ============================================================
-app.post("/webhook", express.raw({ type: "*/*" }), paymentController.handleWebhook)
+app.post("/webhook", express.raw({ type: "application/json" }), paymentController.handleWebhook)
 
 // Now add other middleware AFTER the webhook route
 app.use(
@@ -162,14 +161,14 @@ app.use(
             "http://192.168.1.48:3000",
             "http://192.168.1.48:3001",
             "http://192.168.1.48:5173",
-            "https://17061968.netlify.app"
+            "https://17061968.netlify.app",
           ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "paddle-signature"],
     preflightContinue: false,
     optionsSuccessStatus: 204,
-  })
+  }),
 )
 
 // JSON parser for all other routes - AFTER webhook
@@ -225,7 +224,7 @@ app.use("/api/pronunciation", pronunciationRoutes)
 app.use("/api/payments", paymentRoutes)
 app.use("/api/quizes", quizRoutes)
 app.use("/api/certificates", certificateRoutes)
-app.use('/api/league', leagueRoutes)
+app.use("/api/league", leagueRoutes)
 app.use("/api", achievementRoutes)
 app.use("/api/puzzle", puzzleRoutes)
 app.use("/api/practice", practiceRoutes)
@@ -272,7 +271,7 @@ process.on("SIGINT", () => gracefulShutdown("SIGINT"))
 const PORT = process.env.PORT || 5000
 const startServer = async () => {
   await connectDB()
-  server.listen(PORT, '0.0.0.0', () => {
+  server.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Server running on port ${PORT}`)
     console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`)
     console.log(`💳 Webhook endpoint: POST /webhook (registered FIRST)`)
