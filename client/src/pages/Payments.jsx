@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { paymentService } from "../services/api"
 
-// Configuration
 const PRICE_ID = "pri_01kaeqvvk2kdc02p39zrb8gne3"
 const PADDLE_CLIENT_TOKEN = "live_0ef1c5946ac5d34cf6db8d711cd"
 
@@ -15,7 +14,6 @@ const Payment = () => {
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    // Initialize Paddle
     const initPaddle = () => {
       if (window.Paddle) {
         window.Paddle.Initialize({
@@ -24,7 +22,7 @@ const Payment = () => {
             console.log("[v0] Paddle Event:", data.type, data)
 
             if (data.type === "checkout.completed") {
-              alert(`Payment completed! Thank you for subscribing.`)
+              alert("Payment completed! Thank you for subscribing.")
               setTimeout(() => window.location.reload(), 2000)
             }
 
@@ -47,11 +45,9 @@ const Payment = () => {
       }
     }
 
-    // Check if Paddle is already loaded
     if (window.Paddle) {
       initPaddle()
     } else {
-      // Wait for Paddle script to load
       const checkPaddle = setInterval(() => {
         if (window.Paddle) {
           clearInterval(checkPaddle)
@@ -59,7 +55,6 @@ const Payment = () => {
         }
       }, 100)
 
-      // Timeout after 10 seconds
       setTimeout(() => {
         clearInterval(checkPaddle)
         if (!window.Paddle) {
@@ -84,9 +79,9 @@ const Payment = () => {
           setUser(userData)
 
           try {
-            const subResponse = await paymentService.getUserSubscription(userData.id)
-            setSubscription(subResponse)
-            console.log("[v0] Subscription data:", subResponse)
+            const subscriptionData = await paymentService.getUserSubscription(userData.id)
+            setSubscription(subscriptionData)
+            console.log("[v0] Subscription data:", subscriptionData)
           } catch (err) {
             console.log("[v0] No active subscription found")
           }
@@ -117,7 +112,6 @@ const Payment = () => {
     setError(null)
 
     try {
-      // Open Paddle checkout directly - no backend call needed
       window.Paddle.Checkout.open({
         items: [{ priceId: PRICE_ID, quantity: 1 }],
         customer: { email: user.email },
@@ -189,12 +183,8 @@ const Payment = () => {
 
   return (
     <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
-      <h1 style={{ fontSize: "32px", fontWeight: "bold", marginBottom: "10px" }}>
-        Subscription & Billing
-      </h1>
-      <p style={{ color: "#666", marginBottom: "30px" }}>
-        Manage your subscription and payment details
-      </p>
+      <h1 style={{ fontSize: "32px", fontWeight: "bold", marginBottom: "10px" }}>Subscription & Billing</h1>
+      <p style={{ color: "#666", marginBottom: "30px" }}>Manage your subscription and payment details</p>
 
       {error && (
         <div
@@ -237,38 +227,16 @@ const Payment = () => {
           {subscriptionActive
             ? "✅ Active Subscription"
             : trialActive
-            ? "⏰ Free Trial Active"
-            : "❌ No Active Subscription"}
+              ? "⏰ Free Trial Active"
+              : "❌ No Active Subscription"}
         </h2>
         <p style={{ color: "#666", marginBottom: "15px" }}>
           {subscriptionActive
             ? "You have full access to all premium features"
             : trialActive
-            ? `Your free trial ends in ${trialDaysLeft} day${trialDaysLeft !== 1 ? "s" : ""}`
-            : "Subscribe to access all premium features"}
+              ? `Your free trial ends in ${trialDaysLeft} day${trialDaysLeft !== 1 ? "s" : ""}`
+              : "Subscribe to access all premium features"}
         </p>
-
-        {trialActive && user?.subscription?.expiresAt && (
-          <div
-            style={{
-              backgroundColor: "#fff3cd",
-              padding: "12px",
-              borderRadius: "6px",
-              border: "1px solid #ffc107",
-            }}
-          >
-            <p style={{ fontSize: "14px", margin: 0 }}>
-              ⏰ Your free trial ends on{" "}
-              {new Date(user.subscription.expiresAt).toLocaleDateString("en-US", {
-                month: "long",
-                day: "numeric",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
-          </div>
-        )}
 
         {subscriptionActive && subscription && (
           <div style={{ marginTop: "15px" }}>
@@ -277,9 +245,7 @@ const Payment = () => {
             </p>
             <p style={{ fontSize: "14px", marginBottom: "5px" }}>
               <strong>Next billing:</strong>{" "}
-              {subscription.nextBillingDate
-                ? new Date(subscription.nextBillingDate).toLocaleDateString()
-                : "N/A"}
+              {subscription.nextBillingDate ? new Date(subscription.nextBillingDate).toLocaleDateString() : "N/A"}
             </p>
             <p style={{ fontSize: "14px", marginBottom: "5px" }}>
               <strong>Amount:</strong> €{subscription.amount || "1.00"}
@@ -288,7 +254,7 @@ const Payment = () => {
         )}
       </div>
 
-      {/* Pricing Card - Show only if not subscribed */}
+      {/* Pricing Card */}
       {!subscriptionActive && (
         <div
           style={{
@@ -299,17 +265,11 @@ const Payment = () => {
             marginBottom: "20px",
           }}
         >
-          <h2 style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "10px" }}>
-            Premium Subscription
-          </h2>
-          <p style={{ color: "#666", marginBottom: "20px" }}>
-            Unlock all features and continue your learning journey
-          </p>
+          <h2 style={{ fontSize: "24px", fontWeight: "bold", marginBottom: "10px" }}>Premium Subscription</h2>
+          <p style={{ color: "#666", marginBottom: "20px" }}>Unlock all features and continue your learning journey</p>
 
           <div style={{ textAlign: "center", marginBottom: "30px" }}>
-            <div style={{ fontSize: "48px", fontWeight: "bold", color: "#dc3545" }}>
-              €1.00
-            </div>
+            <div style={{ fontSize: "48px", fontWeight: "bold", color: "#dc3545" }}>€1.00</div>
             <p style={{ fontSize: "14px", color: "#666" }}>per month</p>
           </div>
 
@@ -321,13 +281,8 @@ const Payment = () => {
               "Progress tracking & certificates",
               "Access from up to 2 devices",
             ].map((feature, index) => (
-              <li
-                key={index}
-                style={{ padding: "8px 0", display: "flex", alignItems: "center" }}
-              >
-                <span style={{ color: "#28a745", marginRight: "10px", fontSize: "20px" }}>
-                  ✓
-                </span>
+              <li key={index} style={{ padding: "8px 0", display: "flex", alignItems: "center" }}>
+                <span style={{ color: "#28a745", marginRight: "10px", fontSize: "20px" }}>✓</span>
                 <span>{feature}</span>
               </li>
             ))}
@@ -350,10 +305,10 @@ const Payment = () => {
               transition: "background-color 0.2s",
             }}
             onMouseOver={(e) => {
-              if (paddleInitialized) e.target.style.backgroundColor = "#c82333"
+              if (paddleInitialized) e.currentTarget.style.backgroundColor = "#c82333"
             }}
             onMouseOut={(e) => {
-              if (paddleInitialized) e.target.style.backgroundColor = "#dc3545"
+              if (paddleInitialized) e.currentTarget.style.backgroundColor = "#dc3545"
             }}
           >
             {paddleInitialized ? "💳 Subscribe Now" : "Loading Payment System..."}
@@ -365,7 +320,7 @@ const Payment = () => {
         </div>
       )}
 
-      {/* Cancel Subscription - Show only if subscribed */}
+      {/* Cancel Subscription */}
       {subscriptionActive && (
         <div
           style={{
@@ -375,12 +330,10 @@ const Payment = () => {
             backgroundColor: "#fff",
           }}
         >
-          <h2 style={{ fontSize: "20px", fontWeight: "600", marginBottom: "10px" }}>
-            Manage Subscription
-          </h2>
+          <h2 style={{ fontSize: "20px", fontWeight: "600", marginBottom: "10px" }}>Manage Subscription</h2>
           <p style={{ fontSize: "14px", color: "#666", marginBottom: "20px" }}>
-            Need to cancel? You can cancel your subscription anytime. You'll continue to
-            have access until the end of your billing period.
+            Need to cancel? You can cancel your subscription anytime. You'll continue to have access until the end of
+            your billing period.
           </p>
           <button
             onClick={handleCancelSubscription}
@@ -395,12 +348,12 @@ const Payment = () => {
               transition: "all 0.2s",
             }}
             onMouseOver={(e) => {
-              e.target.style.backgroundColor = "#dc3545"
-              e.target.style.color = "#fff"
+              e.currentTarget.style.backgroundColor = "#dc3545"
+              e.currentTarget.style.color = "#fff"
             }}
             onMouseOut={(e) => {
-              e.target.style.backgroundColor = "#fff"
-              e.target.style.color = "#dc3545"
+              e.currentTarget.style.backgroundColor = "#fff"
+              e.currentTarget.style.color = "#dc3545"
             }}
           >
             Cancel Subscription
