@@ -3,8 +3,10 @@ const router = express.Router()
 const paymentController = require("../controllers/paymentController")
 const protect = require("../middleware/auth")
 
+const webhookBodyParser = express.raw({ type: "application/json" })
+
 // Webhook endpoint (NO authentication - Paddle calls this)
-// This is now in the main app.js file to ensure express.raw() middleware is applied correctly
+router.post("/webhook", webhookBodyParser, paymentController.handleWebhook)
 
 // Protected routes (require authentication)
 router.post("/checkout/create", protect, paymentController.createCheckoutSession)

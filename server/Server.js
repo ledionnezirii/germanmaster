@@ -138,7 +138,7 @@ io.on("connection", (socket) => {
 // ============================================================
 // CRITICAL: Webhook route MUST be FIRST before ANY middleware
 // ============================================================
-app.post("/webhook", express.raw({ type: "application/json" }), paymentController.handleWebhook)
+// app.post("/webhook", express.raw({ type: "application/json" }), paymentController.handleWebhook)
 
 // Now add other middleware AFTER the webhook route
 app.use(
@@ -235,6 +235,8 @@ app.use("/api/phrases", phraseRoutes)
 app.use(notFound)
 app.use(errorHandler)
 
+console.log(`💳 Webhook endpoint: POST /api/payments/webhook (registered in payment routes)`)
+
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI, {
@@ -274,7 +276,7 @@ const startServer = async () => {
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Server running on port ${PORT}`)
     console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`)
-    console.log(`💳 Webhook endpoint: POST /webhook (registered FIRST)`)
+    console.log(`💳 Webhook endpoint: POST /api/payments/webhook (registered in payment routes)`)
     console.log(`🎯 Challenge system enabled with German questions`)
   })
 }
