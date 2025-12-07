@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom"
 import { SidebarProvider, useSidebar } from "./context/SidebarContext"
 import { AuthProvider } from "./context/AuthContext"
+import SubscriptionGate from "./components/SubscriptionGate"
 import Navbar from "./components/Navbar"
 import Sidebar from "./components/Sidebar"
 import Home from "./pages/Home"
@@ -33,8 +34,15 @@ const AppContent = () => {
   const { isCollapsed } = useSidebar()
   const location = useLocation()
 
-  // Rrugët ku nuk duhen Navbar/Sidebar
-  const hiddenLayoutPaths = ["/verify/", "/reset-password/"]
+  // Routes where Navbar/Sidebar should be hidden
+  const hiddenLayoutPaths = [
+    "/signin",
+    "/signup",
+    "/forgotpassword",
+    "/verify/",
+    "/reset-password/",
+    "/terms",
+  ]
   const hideLayout = hiddenLayoutPaths.some((path) => location.pathname.startsWith(path))
 
   return (
@@ -52,32 +60,46 @@ const AppContent = () => {
         >
           <div className="p-4 max-w-7xl mx-auto">
             <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/leaderboard" element={<Leaderboard />} />
-              <Route path="/listen" element={<Listen />} />
-              <Route path="/translate" element={<Translate />} />
-              <Route path="/account" element={<Account />} />
-              <Route path="/dictionary" element={<Dictionary />} />
-              <Route path="/category" element={<Category />} />
-              {/* <Route path="/chat" element={<Chat />} /> */}
-              <Route path="/grammar" element={<Grammar />} />
+              {/* Public routes - no authentication or subscription required */}
               <Route path="/signin" element={<SignIn />} />
               <Route path="/signup" element={<SignUp />} />
               <Route path="/forgotpassword" element={<ForgotPassword />} />
               <Route path="/reset-password/:token" element={<ResetPassword />} />
               <Route path="/verify/:token" element={<VerifyEmail />} />
-              {/* <Route path="/challenge" element={<Challenge />} /> */}
-              <Route path="/plan" element={<Plan />} />
-              <Route path="tests" element={<Tests />} />
-              <Route path="/pronunciation" element={<Pronunciation />} />
-              <Route path="/quizes" element={<Quizes />} />
+              <Route path="/terms" element={<Terms />} />
+
+              {/* Payment routes - authentication required but no subscription check */}
               <Route path="/payments" element={<Payments />} />
               <Route path="/billing" element={<Payments />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/puzzle" element={<Puzzle />} />
-              <Route path="/practice" element={<Practice />}/>
-              <Route path="/words" element={<Words />} />
-              <Route path="/phrases" element={<Phrase />} />
+
+              {/* Protected routes - require active subscription or trial */}
+              <Route
+                path="/*"
+                element={
+                  <SubscriptionGate>
+                    <Routes>
+                      <Route path="/" element={<Home />} />
+                      <Route path="/leaderboard" element={<Leaderboard />} />
+                      <Route path="/listen" element={<Listen />} />
+                      <Route path="/translate" element={<Translate />} />
+                      <Route path="/account" element={<Account />} />
+                      <Route path="/dictionary" element={<Dictionary />} />
+                      <Route path="/category" element={<Category />} />
+                      {/* <Route path="/chat" element={<Chat />} /> */}
+                      <Route path="/grammar" element={<Grammar />} />
+                      {/* <Route path="/challenge" element={<Challenge />} /> */}
+                      <Route path="/plan" element={<Plan />} />
+                      <Route path="/tests" element={<Tests />} />
+                      <Route path="/pronunciation" element={<Pronunciation />} />
+                      <Route path="/quizes" element={<Quizes />} />
+                      <Route path="/puzzle" element={<Puzzle />} />
+                      <Route path="/practice" element={<Practice />} />
+                      <Route path="/words" element={<Words />} />
+                      <Route path="/phrases" element={<Phrase />} />
+                    </Routes>
+                  </SubscriptionGate>
+                }
+              />
             </Routes>
           </div>
         </main>

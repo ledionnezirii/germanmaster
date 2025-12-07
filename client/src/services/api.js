@@ -486,5 +486,25 @@ export const paymentService = {
     return response.json()
   },
 }
+export const subscriptionService = {
+  checkStatus: async () => {
+    const userStr = localStorage.getItem("user")
+    if (!userStr) return { active: false, expired: true }
+
+    const user = JSON.parse(userStr)
+    if (!user.subscription) return { active: false, expired: true }
+
+    const now = new Date()
+    const expiresAt = new Date(user.subscription.expiresAt)
+
+    return {
+      active: user.subscription.active && expiresAt > now,
+      expired: expiresAt <= now,
+      daysRemaining: user.subscription.daysRemaining || 0,
+      type: user.subscription.type,
+      expiresAt: user.subscription.expiresAt,
+    }
+  },
+}
 
 export default api

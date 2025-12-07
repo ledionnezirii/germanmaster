@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { paymentService } from "../services/api"
+import { paymentService, subscriptionService } from "../services/api"
 
 const PRICE_ID = "pri_01kaeqvvk2kdc02p39zrb8gne3"
 const PADDLE_CLIENT_TOKEN = "live_0ef1c5946ac5d34cf6db8d711cd"
@@ -11,6 +11,7 @@ const Payment = () => {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
   const [subscription, setSubscription] = useState(null)
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null)
   const [error, setError] = useState(null)
 
   useEffect(() => {
@@ -21,6 +22,7 @@ const Payment = () => {
           eventCallback: (data) => {
             if (data.type === "checkout.completed") {
               alert("Payment completed! Thank you for subscribing.")
+              localStorage.removeItem("subscription_expired")
               setTimeout(() => window.location.reload(), 2000)
             }
 
@@ -74,6 +76,10 @@ const Payment = () => {
           const userData = JSON.parse(userStr)
           setUser(userData)
 
+          // Get subscription status
+          const status = await subscriptionService.checkStatus()
+          setSubscriptionStatus(status)
+
           try {
             const subscriptionData = await paymentService.getUserSubscription(userData.id)
             setSubscription(subscriptionData)
@@ -90,11 +96,15 @@ const Payment = () => {
     }
 
     fetchData()
+
+    // Clear the subscription expired flag when visiting payment page
+    localStorage.removeItem("subscription_expired")
   }, [])
 
   const isSubscriptionActive = () => {
-    if (!subscription) return false
-    return subscription.status === "active"
+    if (!subscription && !subscriptionStatus) return false
+    if (subscription) return subscription.status === "active"
+    return subscriptionStatus?.active || false
   }
 
   const openCheckout = () => {
@@ -134,7 +144,7 @@ const Payment = () => {
     }
 
     try {
-      await paymentService.cancelSubscription(subscription.id)
+      await paymentService.cancelSubscription(user.id)
       alert("Subscription cancelled successfully")
       window.location.reload()
     } catch (err) {
@@ -166,6 +176,31 @@ const Payment = () => {
               ✕
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Trial Status Banner */}
+      {subscriptionStatus?.type === "free_trial" && subscriptionStatus?.active && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <h3 className="text-blue-900 font-semibold mb-1">Free Trial Active</h3>
+          <p className="text-blue-700 text-sm">
+            You have {subscriptionStatus.daysRemaining} day(s) remaining in your free trial.
+            {subscriptionStatus.expiresAt && (
+              <span className="block mt-1">
+                Trial ends on: {new Date(subscriptionStatus.expiresAt).toLocaleDateString()}
+              </span>
+            )}
+          </p>
+        </div>
+      )}
+
+      {/* Expired Trial Banner */}
+      {subscriptionStatus?.expired && !subscriptionActive && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <h3 className="text-red-900 font-semibold mb-1">⚠️ Free Trial Expired</h3>
+          <p className="text-red-700 text-sm">
+            Your free trial has ended. Subscribe now to continue accessing all features.
+          </p>
         </div>
       )}
 
@@ -239,7 +274,7 @@ const Payment = () => {
       )}
 
       {/* Cancel Subscription */}
-      {subscriptionActive && (
+      {subscriptionActive && subscription && (
         <div className="border border-gray-200 rounded-lg p-6 bg-white">
           <h2 className="text-xl font-semibold mb-3">Manage Subscription</h2>
           <p className="text-sm text-gray-600 mb-4">
