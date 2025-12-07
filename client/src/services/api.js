@@ -49,6 +49,14 @@ api.interceptors.response.use(
     }
   },
   (error) => {
+    // Handle subscription expired errors
+    if (error.response?.status === 403 && error.response?.data?.code === "SUBSCRIPTION_EXPIRED") {
+      console.log("[v0] Subscription expired, redirecting to payment page")
+      localStorage.setItem("subscription_expired", "true")
+      window.location.href = "/payments"
+      return Promise.reject(error)
+    }
+
     if (
       error.response?.status === 401 &&
       !window.location.pathname.includes("/signin") &&
@@ -486,23 +494,56 @@ export const paymentService = {
     return response.json()
   },
 }
+
+// FIXED subscription service - now properly checks the subscription
 export const subscriptionService = {
   checkStatus: async () => {
+    console.log("[Subscription] Checking subscription status...")
+    
     const userStr = localStorage.getItem("user")
-    if (!userStr) return { active: false, expired: true }
+    console.log("[Subscription] User from localStorage:", userStr)
+    
+    if (!userStr) {
+      console.log("[Subscription] No user found in localStorage")
+      return { active: false, expired: true, daysRemaining: 0 }
+    }
 
-    const user = JSON.parse(userStr)
-    if (!user.subscription) return { active: false, expired: true }
+    try {
+      const user = JSON.parse(userStr)
+      console.log("[Subscription] Parsed user:", user)
+      
+      // Check if subscription object exists
+      if (!user.subscription) {
+        console.log("[Subscription] No subscription object found")
+        return { active: false, expired: true, daysRemaining: 0 }
+      }
 
-    const now = new Date()
-    const expiresAt = new Date(user.subscription.expiresAt)
+      const now = new Date()
+      const expiresAt = new Date(user.subscription.expiresAt)
+      
+      console.log("[Subscription] Now:", now)
+      console.log("[Subscription] Expires at:", expiresAt)
+      console.log("[Subscription] Time difference (ms):", expiresAt - now)
+      
+      const daysRemaining = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24))
+      const isExpired = expiresAt <= now
+      const isActive = user.subscription.active && !isExpired
 
-    return {
-      active: user.subscription.active && expiresAt > now,
-      expired: expiresAt <= now,
-      daysRemaining: user.subscription.daysRemaining || 0,
-      type: user.subscription.type,
-      expiresAt: user.subscription.expiresAt,
+      console.log("[Subscription] Days remaining:", daysRemaining)
+      console.log("[Subscription] Is expired:", isExpired)
+      console.log("[Subscription] Is active:", isActive)
+
+      return {
+        active: isActive,
+        expired: isExpired,
+        daysRemaining: Math.max(0, daysRemaining),
+        type: user.subscription.type,
+        expiresAt: user.subscription.expiresAt,
+        trialStartedAt: user.subscription.trialStartedAt,
+      }
+    } catch (error) {
+      console.error("[Subscription] Error parsing user data:", error)
+      return { active: false, expired: true, daysRemaining: 0 }
     }
   },
 }

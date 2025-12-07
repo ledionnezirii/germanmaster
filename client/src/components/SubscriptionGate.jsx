@@ -17,8 +17,8 @@ const SubscriptionGate = ({ children }) => {
       // If subscription expired, redirect to payment
       if (status.expired) {
         setTimeout(() => {
-          navigate("/payment")
-        }, 3000)
+          navigate("/payments")
+        }, 5000)
       }
     }
 
