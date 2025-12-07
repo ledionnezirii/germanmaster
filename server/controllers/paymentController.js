@@ -74,7 +74,7 @@ exports.handleWebhook = async (req, res) => {
       return res.status(500).json({ success: false, message: "Server config error" })
     }
 
-    // NOW req.body will be a Buffer because we used express.raw()
+    // Get raw body
     let rawBody
     let event
 
@@ -86,7 +86,6 @@ exports.handleWebhook = async (req, res) => {
       console.log("[v0] ⚠️ Raw body received as string")
     } else {
       console.error("[v0] ❌ ERROR: req.body is not Buffer or string. Type:", typeof req.body)
-      console.error("[v0] This means express.raw() is not working correctly")
       return res.status(400).json({ success: false, message: "Invalid body format" })
     }
 
@@ -141,8 +140,6 @@ exports.handleWebhook = async (req, res) => {
 
     if (!isValid) {
       console.error("[v0] ❌ Signature mismatch - webhook rejected")
-      console.error("[v0] Full received:", h1)
-      console.error("[v0] Full expected:", expectedSignature)
       return res.status(401).json({ success: false, message: "Invalid signature" })
     }
 
@@ -153,6 +150,7 @@ exports.handleWebhook = async (req, res) => {
 
     switch (eventType) {
       case "transaction.completed":
+      case "transaction.paid":
         await handleTransactionCompleted(event)
         break
       case "subscription.created":
@@ -186,80 +184,107 @@ exports.handleWebhook = async (req, res) => {
 }
 
 const handleTransactionCompleted = async (event) => {
-  const data = event.data
-  const customData = data.custom_data || {}
-  const userId = customData.userId
+  try {
+    const data = event.data
+    const customData = data.custom_data || {}
+    let userId = customData.userId
 
-  if (!userId) {
-    console.error("[v0] No userId in transaction custom_data")
     console.log("[v0] Transaction data:", JSON.stringify(data, null, 2))
-    return
+    console.log("[v0] Custom data:", JSON.stringify(customData, null, 2))
+
+    // Try to get userId from customer email if not in customData
+    if (!userId && data.customer_id) {
+      console.log("[v0] No userId in customData, trying to find user by customer email")
+      const customerEmail = data.customer?.email || data.billing_details?.email
+      
+      if (customerEmail) {
+        const user = await User.findOne({ email: customerEmail })
+        if (user) {
+          userId = user._id.toString()
+          console.log(`[v0] Found user by email: ${userId}`)
+        }
+      }
+    }
+
+    if (!userId) {
+      console.error("[v0] No userId in transaction - cannot process")
+      console.log("[v0] Full event data:", JSON.stringify(event, null, 2))
+      return
+    }
+
+    console.log(`[v0] Processing transaction for user: ${userId}`)
+
+    const user = await User.findById(userId)
+    if (!user) {
+      console.error(`[v0] User not found: ${userId}`)
+      return
+    }
+
+    const subscriptionId = data.subscription_id || null
+    const amount = data.details?.totals?.total ? parseInt(data.details.totals.total) / 100 : 0
+    const currency = data.currency_code || "EUR"
+
+    const priceId = data.items?.[0]?.price_id
+    let subscriptionType = "1_month"
+    let billingCycle = "monthly"
+    let durationDays = 30
+
+    if (priceId?.includes("month") || priceId?.includes("monthly")) {
+      subscriptionType = "1_month"
+      billingCycle = "monthly"
+      durationDays = 30
+    } else if (priceId?.includes("3_month") || priceId?.includes("quarterly")) {
+      subscriptionType = "3_months"
+      billingCycle = "quarterly"
+      durationDays = 90
+    } else if (priceId?.includes("year") || priceId?.includes("annual")) {
+      subscriptionType = "1_year"
+      billingCycle = "yearly"
+      durationDays = 365
+    }
+
+    const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
+    const nextBillingDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
+
+    // Create payment record
+    const payment = await Payment.create({
+      userId: userId,
+      paddleTransactionId: data.id,
+      paddleCustomerId: data.customer_id,
+      paddleSubscriptionId: subscriptionId,
+      priceId: priceId,
+      productId: data.items?.[0]?.product_id,
+      subscriptionType: subscriptionType,
+      status: "active",
+      amount: amount,
+      currency: currency,
+      billingCycle: billingCycle,
+      expiresAt: expiresAt,
+      nextBillingDate: nextBillingDate,
+      webhookEvents: [
+        {
+          eventType: event.event_type,
+          eventId: event.event_id,
+          data: event.data,
+        },
+      ],
+    })
+
+    console.log("[v0] Payment record created:", payment._id)
+
+    // Update user
+    user.isPaid = true
+    user.subscriptionType = subscriptionType
+    user.subscriptionExpiresAt = expiresAt
+    user.isActive = true
+    await user.save()
+
+    console.log(`[v0] ✅ User updated - isPaid: true, subscriptionType: ${subscriptionType}`)
+    console.log(`[v0] ✅ Payment completed for user ${userId} - Subscription: ${subscriptionType}`)
+  } catch (error) {
+    console.error("[v0] Error in handleTransactionCompleted:", error)
+    console.error("[v0] Error stack:", error.stack)
   }
-
-  console.log(`[v0] Processing transaction for user: ${userId}`)
-
-  const user = await User.findById(userId)
-  if (!user) {
-    console.error(`[v0] User not found: ${userId}`)
-    return
-  }
-
-  const subscriptionId = data.subscription_id || null
-  const amount = data.details?.totals?.total ? Number.parseInt(data.details.totals.total) / 100 : 0
-  const currency = data.currency_code || "EUR"
-
-  const priceId = data.items?.[0]?.price_id
-  let subscriptionType = "1_month"
-  let billingCycle = "monthly"
-  let durationDays = 30
-
-  if (priceId?.includes("month") || priceId?.includes("monthly")) {
-    subscriptionType = "1_month"
-    billingCycle = "monthly"
-    durationDays = 30
-  } else if (priceId?.includes("3_month") || priceId?.includes("quarterly")) {
-    subscriptionType = "3_months"
-    billingCycle = "quarterly"
-    durationDays = 90
-  } else if (priceId?.includes("year") || priceId?.includes("annual")) {
-    subscriptionType = "1_year"
-    billingCycle = "yearly"
-    durationDays = 365
-  }
-
-  const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
-  const nextBillingDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
-
-  const payment = await Payment.create({
-    userId: userId,
-    paddleTransactionId: data.id,
-    paddleCustomerId: data.customer_id,
-    paddleSubscriptionId: subscriptionId,
-    priceId: priceId,
-    productId: data.items?.[0]?.product_id,
-    subscriptionType: subscriptionType,
-    status: "active",
-    amount: amount,
-    currency: currency,
-    billingCycle: billingCycle,
-    expiresAt: expiresAt,
-    nextBillingDate: nextBillingDate,
-    webhookEvents: [
-      {
-        eventType: event.event_type,
-        eventId: event.event_id,
-        data: event.data,
-      },
-    ],
-  })
-
-  user.isPaid = true
-  user.subscriptionType = subscriptionType
-  user.subscriptionExpiresAt = expiresAt
-  user.isActive = true
-  await user.save()
-
-  console.log(`[v0] ✅ Payment completed for user ${userId} - Subscription: ${subscriptionType}`)
 }
 
 const handleSubscriptionCreated = async (event) => {
