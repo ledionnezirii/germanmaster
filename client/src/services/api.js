@@ -62,13 +62,11 @@ api.interceptors.response.use(
 )
 
 export const authService = {
-  // --- Auth ---
   login: async (credentials) => {
     const response = await api.post("/auth/login", credentials)
     if (response.data?.token) {
       try {
         await api.post("/users/update-streak")
-        // Fetch the updated user profile with new streak count
         const profileResponse = await api.get("/auth/me")
         return {
           ...response,
@@ -97,7 +95,6 @@ export const authService = {
   resetPassword: (token, newPassword) => api.post(`/auth/reset-password/${token}`, { newPassword }),
   verifyEmail: (token) => api.get(`/auth/verify/${token}`),
 
-  // --- User Profile ---
   getProfile: () => api.get("/auth/me"),
   updateProfile: (data) =>
     api.put("/users/profile", {
@@ -107,13 +104,11 @@ export const authService = {
   updateAvatarStyle: (avatarStyle) => api.put("/users/avatar-style", { avatarStyle }),
   updateStudyHours: (hours) => api.put("/users/study-hours", { hours }),
 
-  // --- XP & Streak ---
   getUserXp: () => api.get("/users/xp"),
   addXp: (xp, reason) => api.post("/users/add-xp", { xp, reason }),
   updateStreak: () => api.post("/users/update-streak"),
 }
 
-// --- Dicebear Avatar URL Generator ---
 export const generateDicebearUrl = (userId, avatarStyle = "adventurer") => {
   if (!userId) {
     console.warn("[v0] generateDicebearUrl called with no userId, using placeholder")
@@ -366,7 +361,7 @@ export const phraseService = {
   unmarkPhraseAsFinished: (phraseId) => api.delete(`/phrases/${phraseId}/finish`),
   getFinishedPhrases: () => api.get("/phrases/user/finished"),
   getUserPhraseProgress: (level = null) => api.get("/phrases/user/progress", { params: { level } }),
-  getDailyLimitStatus: () => api.get("/phrases/user/daily-limit"), // NEW METHOD
+  getDailyLimitStatus: () => api.get("/phrases/user/daily-limit"),
   createPhrase: (phraseData) => api.post("/phrases", phraseData),
   createBulkPhrases: (phrases) => api.post("/phrases/bulk", { phrases }),
   updatePhrase: (id, phraseData) => api.put(`/phrases/${id}`, phraseData),
@@ -375,27 +370,18 @@ export const phraseService = {
 }
 
 export const ttsService = {
-  // Listen tests audio
-  getAudio: (testId, text, level) =>
-    api.post(`/tts/audio/${testId}`, { text, level }, { responseType: 'blob' }),
-  
-  // Dictionary words audio
-  getDictionaryAudio: (wordId, text, level) =>
-    api.post(`/tts/dictionary/${wordId}`, { text, level }, { responseType: 'blob' }),
-  
-  // Phrases audio
-  getPhraseAudio: (phraseId, text, level) =>
-    api.post(`/tts/phrase/${phraseId}`, { text, level }, { responseType: 'blob' }),
-  
-  // Check if audio exists
-  checkAudio: (id, level, type) =>
-    api.get(`/tts/check/${id}`, { params: { level, type } }),
-  
-  // Pre-generate audio
-  preGenerate: (id, text, level, type) =>
-    api.post('/tts/pre-generate', { id, text, level, type }),
-};
+  getAudio: (testId, text, level) => api.post(`/tts/audio/${testId}`, { text, level }, { responseType: "blob" }),
 
+  getDictionaryAudio: (wordId, text, level) =>
+    api.post(`/tts/dictionary/${wordId}`, { text, level }, { responseType: "blob" }),
+
+  getPhraseAudio: (phraseId, text, level) =>
+    api.post(`/tts/phrase/${phraseId}`, { text, level }, { responseType: "blob" }),
+
+  checkAudio: (id, level, type) => api.get(`/tts/check/${id}`, { params: { level, type } }),
+
+  preGenerate: (id, text, level, type) => api.post("/tts/pre-generate", { id, text, level, type }),
+}
 
 export const sessionService = {
   getSessions: () => api.get("/auth/sessions"),
@@ -404,7 +390,6 @@ export const sessionService = {
 }
 
 export const generateAvatarOptions = () => {
-  // DiceBear styles available
   const styles = [
     "adventurer",
     "adventurer-neutral",
@@ -438,7 +423,6 @@ export const generateAvatarOptions = () => {
     "thumbs",
   ]
 
-  // Generate multiple variations for each style
   const seedPrefixes = Array.from({ length: 17 }, (_, i) => i + 1)
 
   const avatars = []
@@ -448,15 +432,13 @@ export const generateAvatarOptions = () => {
     }
   }
 
-  return avatars // Returns ~510 unique avatar options
+  return avatars
 }
-
-
 
 export const paymentService = {
   createCheckoutSession: async (userId, priceId) => {
     const token = localStorage.getItem("authToken")
-    const response = await fetch(`${API_BASE_URL}/api/payments/checkout/create`, {
+    const response = await fetch(`${API_BASE_URL}/payments/checkout/create`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -470,7 +452,7 @@ export const paymentService = {
 
   getUserSubscription: async (userId) => {
     const token = localStorage.getItem("authToken")
-    const response = await fetch(`${API_BASE_URL}/api/payments/subscription/${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/payments/subscription/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -481,7 +463,7 @@ export const paymentService = {
 
   getUserPayments: async (userId) => {
     const token = localStorage.getItem("authToken")
-    const response = await fetch(`${API_BASE_URL}/api/payments/payments/${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/payments/payments/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -492,7 +474,7 @@ export const paymentService = {
 
   cancelSubscription: async (userId) => {
     const token = localStorage.getItem("authToken")
-    const response = await fetch(`${API_BASE_URL}/api/payments/subscription/cancel`, {
+    const response = await fetch(`${API_BASE_URL}/payments/subscription/cancel`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

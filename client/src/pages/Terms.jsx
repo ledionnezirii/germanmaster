@@ -3,6 +3,9 @@
 import React from "react"
 
 const Terms = () => {
+  // Përdorim një datë statike për të ruajtur konsistencën e dokumentit ligjor.
+  const lastUpdatedDate = "06 Dhjetor 2025"
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
       <div className="max-w-4xl mx-auto bg-white shadow-2xl rounded-2xl p-8 md:p-12">
@@ -16,7 +19,7 @@ const Terms = () => {
         </div>
 
         <div className="space-y-8">
-          {/* Section 1 */}
+          {/* Seksioni 1: Pranimi i Kushteve - I pandryshuar */}
           <section className="bg-gray-50 p-6 rounded-xl border-l-4 border-amber-600">
             <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
               <span className="bg-amber-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
@@ -26,26 +29,28 @@ const Terms = () => {
             </h2>
             <p className="text-gray-700 leading-relaxed">
               Duke përdorur platformën tonë <strong>gjuhagjermane.com</strong>, ju pranoni dhe pajtoheni me këto kushte
-              përdorimi. Nëse nuk jeni dakord me to, ju lutemi mos përdorni shërbimin.
+              përdorimi. Këto kushte përbëjnë një marrëveshje ligjore detyruese midis jush si përdorues dhe
+              platformës. Nëse nuk jeni dakord me to, ju lutemi mos përdorni shërbimin.
             </p>
           </section>
 
-          {/* Section 2 */}
+          {/* Seksioni 2: Përdorimi i Shërbimit dhe Pronësia Intelektuale - I Zgjeruar */}
           <section className="bg-gray-50 p-6 rounded-xl border-l-4 border-blue-500">
             <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
               <span className="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
                 2
               </span>
-              Përdorimi i Shërbimit
+              Përdorimi i Shërbimit dhe Pronësia Intelektuale
             </h2>
             <ul className="list-disc list-inside space-y-3 text-gray-700">
-              <li>Përdoruesi merr akses në përmbajtje premium pas kryerjes së pagesës.</li>
-              <li>Platforma është për përdorim personal dhe jo për rishitje apo shpërndarje.</li>
-              <li>Përdoruesi është përgjegjës për sigurinë e llogarisë dhe fjalëkalimit të tij.</li>
+              <li>Përdoruesi merr akses në përmbajtje premium pas kryerjes së pagesës. Aksesi është i kufizuar dhe personal.</li>
+              <li>Platforma është për përdorim personal dhe jo për rishitje, riprodhim, apo shpërndarje. Çdo shpërndarje e materialeve (video, tekste, ushtrime) ndalohet rreptësisht dhe shkel të drejtat e autorit.</li>
+              <li>Përdoruesi është përgjegjës për sigurinë e llogarisë dhe fjalëkalimit të tij. Ndarja e të dhënave të hyrjes me palë të treta çon në pezullimin e menjëhershëm të llogarisë pa të drejtë rimbursimi.</li>
+              <li>Të gjitha përmbajtjet, dizajni, logoja dhe softueri janë pronë ekskluzive e <strong>gjuhagjermane.com</strong> dhe mbrohen nga ligjet ndërkombëtare të të drejtës së autorit.</li>
             </ul>
           </section>
 
-          {/* Section 3 */}
+          {/* Seksioni 3: Politika e Privatësisë - I Zgjeruar */}
           <section className="bg-gray-50 p-6 rounded-xl border-l-4 border-green-500">
             <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
               <span className="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
@@ -54,18 +59,22 @@ const Terms = () => {
               Politika e Privatësisë
             </h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              Ne mbledhim vetëm informacionet e nevojshme për funksionimin e shërbimit (si emri, mbiemri, emaili dhe të
-              dhënat e progresit). Këto të dhëna ruhen në mënyrë të sigurt dhe nuk ndahen me palë të treta pa pëlqimin
-              tuaj, përveç rasteve kur kërkohet me ligj.
+              Ne mbledhim vetëm informacionet e nevojshme për funksionimin e shërbimit dhe përmirësimin e eksperiencës tuaj. Këto përfshijnë emrin, mbiemrin, emailin, të dhënat e progresit në kurse dhe informacione teknike (si adresa IP dhe lloji i shfletuesit). Këto të dhëna ruhen në mënyrë të sigurt dhe nuk ndahen me palë të treta pa pëlqimin tuaj, përveç rasteve kur kërkohet me ligj.
             </p>
+
+            <h3 className="text-xl font-semibold text-gray-700 mb-2 mt-4">Përdorimi i Cookies</h3>
+            <p className="text-gray-700 leading-relaxed mb-4">
+              Platforma jonë përdor "cookies" për të ruajtur seancat e përdoruesve, për të analizuar trafikun dhe për të personalizuar përmbajtjen. Duke vazhduar përdorimin e shërbimit, ju pranoni përdorimin e cookies sipas kësaj politike. Ju mund t'i çaktivizoni cookies përmes cilësimeve të shfletuesit tuaj, por kjo mund të ndikojë në funksionalitetin e platformës.
+            </p>
+
             <div className="bg-green-50 p-4 rounded-lg">
               <p className="text-green-800 text-sm font-medium">
-                🔒 Të dhënat tuaja janë të enkriptuara dhe mbrohen me standarde të larta sigurie.
+                🔒 Të dhënat tuaja janë të enkriptuara dhe mbrohen me standarde të larta sigurie (si SSL/TLS) për të siguruar konfidencialitetin.
               </p>
             </div>
           </section>
 
-          {/* Section 4 */}
+          {/* Seksioni 4: Pagesat dhe Rimbursimet - I Zgjeruar */}
           <section className="bg-gray-50 p-6 rounded-xl border-l-4 border-purple-500">
             <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
               <span className="bg-purple-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
@@ -76,20 +85,21 @@ const Terms = () => {
             <p className="text-gray-700 leading-relaxed mb-4">
               Të gjitha pagesat përpunohen në mënyrë të sigurt nga <strong>Paddle.com Market Ltd</strong>, e cila vepron
               si shitësi zyrtar (“Merchant of Record”). Paddle është përgjegjëse për përpunimin e pagesave, faturimin dhe
-              çdo kërkesë për rimbursim.
+              çdo kërkesë për rimbursim. Asnjë informacion i kartës së kreditit nuk ruhet në serverat tanë.
             </p>
             <p className="text-gray-700 leading-relaxed">
-              Në përputhje me politikat e Paddle, ne ofrojmë një periudhë rimbursimi prej{" "}
-              <strong>14 ditësh</strong> nga data e blerjes, me kusht që përdoruesi të mos ketë filluar përdorimin e
-              materialeve dixhitale.
+              Në përputhje me politikat e Paddle dhe natyrën e produkteve tona dixhitale, ne ofrojmë një periudhë rimbursimi prej{" "}
+              <strong>14 ditësh</strong> nga data e blerjes. Rimbursimi nuk aplikohet nëse përdoruesi ka shkarkuar, parë një sasi të konsiderueshme të materialit, ose ka përfunduar modulet e para të kursit. Kërkesat e rimbursimit shqyrtohen rast pas rasti.
             </p>
+            <h3 className="text-xl font-semibold text-gray-700 mb-2 mt-4">Rastet e rimbursimit:</h3>
             <ul className="list-disc list-inside space-y-2 text-gray-700 mt-3">
-              <li>Pamundësi për të hyrë në materialet e blera për arsye teknike.</li>
+              <li>Pamundësi absolute për të hyrë në materialet e blera për arsye teknike, që nuk mund të zgjidhen nga mbështetja teknike.</li>
               <li>Gabim teknik në pagesë ose tarifim i dyfishtë.</li>
+              <li>Produkti nuk përputhet me përshkrimin bazë të dhënë në faqen e shitjes.</li>
             </ul>
             <p className="text-gray-700 leading-relaxed mt-3">
               Për çdo kërkesë rimbursimi, ju lutemi kontaktoni <strong>support@gjuhagjermane.com</strong> brenda 14
-              ditëve nga data e pagesës.
+              ditëve nga data e pagesës, duke përfshirë numrin e faturës.
             </p>
             <p className="text-gray-700 mt-3">
               Për më shumë informacion mbi politikat e Paddle, vizitoni{" "}
@@ -105,31 +115,44 @@ const Terms = () => {
             </p>
           </section>
 
-          {/* Section 5 */}
+          {/* Seksioni 5: Kufizimi i Përgjegjësisë - Seksion i RI */}
+          <section className="bg-gray-50 p-6 rounded-xl border-l-4 border-yellow-600">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <span className="bg-yellow-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
+                5
+              </span>
+              Kufizimi i Përgjegjësisë
+            </h2>
+            <p className="text-gray-700 leading-relaxed">
+              Platforma dhe përmbajtja e saj ofrohen "siç janë" pa asnjë garanci, të shprehur apo të nënkuptuar. <strong>gjuhagjermane.com</strong> nuk mban përgjegjësi për ndërprerjet e shërbimit, gabimet, dëmtimet e drejtpërdrejta, të tërthorta apo aksidentale që vijnë nga përdorimi apo pamundësia për të përdorur platformën, qoftë edhe nëse është njoftuar paraprakisht për mundësinë e këtyre dëmeve. Përgjegjësia maksimale, në çdo rast, do të jetë e kufizuar në shumën e paguar nga përdoruesi për shërbimin.
+            </p>
+          </section>
+
+          {/* Seksioni 6: Ndryshimet në Kushte dhe Politika - I zhvendosur nga 5 në 6 */}
           <section className="bg-gray-50 p-6 rounded-xl border-l-4 border-red-500">
             <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
               <span className="bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
-                5
+                6
               </span>
               Ndryshimet në Kushte dhe Politika
             </h2>
             <p className="text-gray-700 leading-relaxed">
               Ne rezervojmë të drejtën për të ndryshuar këto kushte ose politikat në çdo kohë. Ndryshimet do të
-              publikohen në këtë faqe dhe do të hyjnë në fuqi menjëherë pas publikimit.
+              publikohen në këtë faqe dhe do të hyjnë në fuqi menjëherë pas publikimit. Përdorimi i vazhdueshëm i shërbimit pas publikimit të ndryshimeve nënkupton pranimin e tyre nga ana juaj.
             </p>
           </section>
 
-          {/* Section 6 */}
+          {/* Seksioni 7: Kontakt - I zhvendosur nga 6 në 7 */}
           <section className="bg-gray-50 p-6 rounded-xl border-l-4 border-cyan-500">
             <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
               <span className="bg-cyan-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
-                6
+                7
               </span>
               Kontakt
             </h2>
             <p className="text-gray-700 leading-relaxed">
-              Për çdo pyetje ose mbështetje, ju mund të na kontaktoni në{" "}
-              <strong>support@gjuhagjermane.com</strong>.
+              Për çdo pyetje, koment, ose kërkesë për mbështetje në lidhje me këto Kushte Përdorimi ose Politikat, ju mund të na kontaktoni drejtpërdrejt në adresën e mëposhtme:{" "}
+              <strong>info@gjuhagjermane.com</strong>.
             </p>
           </section>
         </div>
@@ -140,7 +163,7 @@ const Terms = () => {
             Duke përdorur këtë faqe, ju pranoni këto kushte dhe politikat e përfshira më sipër.
           </p>
           <p className="text-center text-sm text-gray-500 mt-4">
-            Data e përditësimit të fundit: {new Date().toLocaleDateString("sq-AL")}
+            Data e përditësimit të fundit: <strong>{lastUpdatedDate}</strong>
           </p>
         </div>
       </div>

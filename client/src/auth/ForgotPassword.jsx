@@ -133,7 +133,7 @@ const ForgotPassword = () => {
 
             <div className="text-center">
               <Link to="/signin" className="text-gray-500 no-underline text-sm hover:text-gray-700">
-                ← Kthehuni te hyrja
+                 Kthehuni te hyrja
               </Link>
             </div>
           </form>
