@@ -17,7 +17,7 @@ const {
   getActiveRoomsCount,
 } = require("./controllers/challengeController")
 
-// Import payment controller for webhook EARLY
+// Import payment controller for webhook
 const paymentController = require("./controllers/paymentController")
 
 const authRoutes = require("./routes/authRoutes")
@@ -44,7 +44,6 @@ const practiceRoutes = require("./routes/practiceRoutes")
 const wordRoutes = require("./routes/wordRoutes")
 const ttsRoutes = require("./routes/ttsRoutes")
 const phraseRoutes = require("./routes/phraseRoutes")
-const webhookRoutes = require("./routes/webhookRoutes")
 
 const { errorHandler, notFound } = require("./middleware/errorMiddleware")
 const { requestLogger } = require("./middleware/loggerMiddleware")
@@ -138,7 +137,13 @@ io.on("connection", (socket) => {
 // ============================================================
 // CRITICAL: Webhook route MUST be FIRST before ANY middleware
 // ============================================================
-// app.post("/webhook", express.raw({ type: "application/json" }), paymentController.handleWebhook)
+app.post(
+  "/api/payments/webhook", 
+  express.raw({ type: "application/json" }), 
+  paymentController.handleWebhook
+)
+
+console.log("✅ Webhook route registered: POST /api/payments/webhook (with raw body parser)")
 
 // Now add other middleware AFTER the webhook route
 app.use(
@@ -235,8 +240,6 @@ app.use("/api/phrases", phraseRoutes)
 app.use(notFound)
 app.use(errorHandler)
 
-console.log(`💳 Webhook endpoint: POST /api/payments/webhook (registered in payment routes)`)
-
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI, {
@@ -276,7 +279,7 @@ const startServer = async () => {
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Server running on port ${PORT}`)
     console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`)
-    console.log(`💳 Webhook endpoint: POST /api/payments/webhook (registered in payment routes)`)
+    console.log(`💳 Webhook endpoint: POST /api/payments/webhook`)
     console.log(`🎯 Challenge system enabled with German questions`)
   })
 }

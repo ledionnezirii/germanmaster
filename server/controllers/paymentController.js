@@ -74,21 +74,22 @@ exports.handleWebhook = async (req, res) => {
       return res.status(500).json({ success: false, message: "Server config error" })
     }
 
+    // NOW req.body will be a Buffer because we used express.raw()
     let rawBody
     let event
 
     if (Buffer.isBuffer(req.body)) {
       rawBody = req.body.toString("utf8")
+      console.log("[v0] ✅ Raw body received as Buffer (correct!)")
     } else if (typeof req.body === "string") {
       rawBody = req.body
+      console.log("[v0] ⚠️ Raw body received as string")
     } else {
-      // Fallback for edge cases
-      console.error("[v0] Warning: req.body is not a Buffer or string. Type:", typeof req.body)
-      rawBody = JSON.stringify(req.body)
+      console.error("[v0] ❌ ERROR: req.body is not Buffer or string. Type:", typeof req.body)
+      console.error("[v0] This means express.raw() is not working correctly")
+      return res.status(400).json({ success: false, message: "Invalid body format" })
     }
 
-    console.log("[v0] Raw body type:", typeof req.body)
-    console.log("[v0] Is Buffer:", Buffer.isBuffer(req.body))
     console.log("[v0] Raw body length:", rawBody.length)
 
     try {
@@ -121,10 +122,8 @@ exports.handleWebhook = async (req, res) => {
     console.log("[v0] - Timestamp:", ts)
     console.log("[v0] - Received h1:", h1.substring(0, 20) + "...")
     console.log("[v0] - Expected:", expectedSignature.substring(0, 20) + "...")
-    console.log("[v0] - Full received:", h1)
-    console.log("[v0] - Full expected:", expectedSignature)
 
-    // Compare signatures
+    // Compare signatures using timing-safe comparison
     const receivedBuffer = Buffer.from(h1, "utf8")
     const expectedBuffer = Buffer.from(expectedSignature, "utf8")
 
@@ -141,7 +140,9 @@ exports.handleWebhook = async (req, res) => {
     }
 
     if (!isValid) {
-      console.error("[v0] Signature mismatch - webhook rejected")
+      console.error("[v0] ❌ Signature mismatch - webhook rejected")
+      console.error("[v0] Full received:", h1)
+      console.error("[v0] Full expected:", expectedSignature)
       return res.status(401).json({ success: false, message: "Invalid signature" })
     }
 
