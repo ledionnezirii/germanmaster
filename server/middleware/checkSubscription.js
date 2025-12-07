@@ -1,70 +1,33 @@
-const User = require("../models/User");
-const { ApiError } = require("../utils/ApiError");
-const { asyncHandler } = require("../utils/asyncHandler");
+const User = require("../models/User")
+const { ApiError } = require("../utils/ApiError")
+const { asyncHandler } = require("../utils/asyncHandler")
 
-// Middleware to check if user has active subscription
+// Middleware to check if user's subscription is active
 const checkSubscription = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id);
+  const user = await User.findById(req.user.id)
 
   if (!user) {
-    throw new ApiError(404, "User not found");
+    throw new ApiError(404, "User not found")
   }
 
-  const now = new Date();
+  const now = new Date()
 
-  // Admin users always have access
-  if (user.role === "admin") {
-    return next();
+  // Check if subscription has expired
+  if (user.subscriptionExpiresAt && user.subscriptionExpiresAt < now) {
+    return res.status(403).json({
+      success: false,
+      message: "Your free trial has expired. Please subscribe to continue.",
+      code: "SUBSCRIPTION_EXPIRED",
+      data: {
+        subscriptionType: user.subscriptionType,
+        expiresAt: user.subscriptionExpiresAt,
+        trialStartedAt: user.trialStartedAt,
+      },
+    })
   }
 
-  // Check if subscription is active
-  if (user.subscriptionExpiresAt && user.subscriptionExpiresAt > now) {
-    // Subscription is active
-    return next();
-  }
+  // User has active subscription or trial
+  next()
+})
 
-  // Subscription expired
-  throw new ApiError(403, "Your subscription has expired. Please renew to continue.");
-});
-
-// Middleware to check if free trial is active
-const checkTrialStatus = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id);
-
-  if (!user) {
-    throw new ApiError(404, "User not found");
-  }
-
-  const now = new Date();
-
-  // Admin users always have access
-  if (user.role === "admin") {
-    req.isTrialExpired = false;
-    req.isSubscriptionActive = true;
-    return next();
-  }
-
-  // Check trial expiration
-  if (user.subscriptionType === "free_trial") {
-    if (user.subscriptionExpiresAt && user.subscriptionExpiresAt < now) {
-      req.isTrialExpired = true;
-      req.isSubscriptionActive = false;
-    } else {
-      req.isTrialExpired = false;
-      req.isSubscriptionActive = true;
-    }
-  } else if (user.isPaid && user.subscriptionExpiresAt && user.subscriptionExpiresAt > now) {
-    req.isTrialExpired = false;
-    req.isSubscriptionActive = true;
-  } else {
-    req.isTrialExpired = true;
-    req.isSubscriptionActive = false;
-  }
-
-  next();
-});
-
-module.exports = {
-  checkSubscription,
-  checkTrialStatus,
-};
+module.exports = { checkSubscription }

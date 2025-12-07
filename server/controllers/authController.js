@@ -133,9 +133,6 @@ const signup = asyncHandler(async (req, res) => {
   }
 })
 
-// @desc    Login user with device limit check
-// @route   POST /api/auth/login
-// @access  Public
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body
 
@@ -165,7 +162,6 @@ const login = asyncHandler(async (req, res) => {
   const lastLogin = user.lastLogin
 
   if (!lastLogin) {
-    // First time login
     user.streakCount = 1
     user.lastLogin = now
   } else {
@@ -174,15 +170,12 @@ const login = asyncHandler(async (req, res) => {
     const daysDiff = timeDiff / (1000 * 60 * 60 * 24)
 
     if (daysDiff >= 1 && daysDiff < 2) {
-      // Logged in on consecutive day
       user.streakCount = (user.streakCount || 0) + 1
       user.lastLogin = now
     } else if (daysDiff >= 2) {
-      // Streak broken, reset to 1
       user.streakCount = 1
       user.lastLogin = now
     }
-    // If daysDiff < 1 (same day), don't update streak
   }
 
   await user.save({ validateBeforeSave: false })
@@ -192,7 +185,7 @@ const login = asyncHandler(async (req, res) => {
   const deviceType = detectDeviceType(req.headers["user-agent"])
   const deviceInfo = extractDeviceInfo(req)
 
-  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
   await Session.create({
     userId: user._id,
@@ -214,6 +207,10 @@ const login = asyncHandler(async (req, res) => {
     active: isSubscriptionActive,
     type: user.subscriptionType,
     expiresAt: user.subscriptionExpiresAt,
+    trialStartedAt: user.trialStartedAt,
+    daysRemaining: user.subscriptionExpiresAt 
+      ? Math.ceil((user.subscriptionExpiresAt - nowDate) / (1000 * 60 * 60 * 24))
+      : 0,
   }
 
   res.json(
@@ -240,9 +237,7 @@ const login = asyncHandler(async (req, res) => {
   )
 })
 
-// @desc    Logout user and remove session
-// @route   POST /api/auth/logout
-// @access  Private
+
 const logout = asyncHandler(async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer ", "")
 
@@ -316,6 +311,19 @@ const getMe = asyncHandler(async (req, res) => {
     ? `https://api.dicebear.com/7.x/${user.avatarStyle}/svg?seed=${user._id}`
     : `https://api.dicebear.com/7.x/adventurer/svg?seed=${user._id}`
 
+  const nowDate = new Date()
+  const isSubscriptionActive = user.subscriptionExpiresAt && user.subscriptionExpiresAt > nowDate
+
+  const subscriptionStatus = {
+    active: isSubscriptionActive,
+    type: user.subscriptionType,
+    expiresAt: user.subscriptionExpiresAt,
+    trialStartedAt: user.trialStartedAt,
+    daysRemaining: user.subscriptionExpiresAt 
+      ? Math.ceil((user.subscriptionExpiresAt - nowDate) / (1000 * 60 * 60 * 24))
+      : 0,
+  }
+
   res.json(
     new ApiResponse(200, {
       user: {
@@ -332,10 +340,12 @@ const getMe = asyncHandler(async (req, res) => {
         completedTests: user.completedTests,
         achievements: user.achievements,
         streakCount: user.streakCount || 0,
+        subscription: subscriptionStatus,
       },
     }),
   )
 })
+
 
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body

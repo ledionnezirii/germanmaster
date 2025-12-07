@@ -1,4 +1,5 @@
 const express = require("express")
+const router = express.Router()
 const {
   getProfile,
   getUserXp,
@@ -6,23 +7,18 @@ const {
   updateAvatarStyle,
   updateProfile,
   addXp,
-  updateStreak
+  updateStreak,
 } = require("../controllers/userController")
-const auth = require("../middleware/auth")
+const protect = require("../middleware/auth")
+const { checkSubscription } = require("../middleware/checkSubscription")
 
-const router = express.Router()
-
-// All routes are protected
-router.use(auth)
-
-router.get("/profile", getProfile)
-router.get("/xp", getUserXp)
-router.put("/study-hours", updateStudyHours)
-router.put("/avatar-style", updateAvatarStyle)
-router.put("/profile", updateProfile)
-router.post("/add-xp", addXp)
-router.post("/update-streak", updateStreak); 
-
-
+// Apply subscription check to all routes that require active subscription
+router.get("/profile", protect, checkSubscription, getProfile)
+router.get("/xp", protect, checkSubscription, getUserXp)
+router.put("/study-hours", protect, checkSubscription, updateStudyHours)
+router.put("/avatar-style", protect, updateAvatarStyle) // No subscription check for avatar
+router.put("/profile", protect, updateProfile) // No subscription check for profile update
+router.post("/add-xp", protect, checkSubscription, addXp)
+router.post("/update-streak", protect, checkSubscription, updateStreak)
 
 module.exports = router
