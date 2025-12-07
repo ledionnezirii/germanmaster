@@ -463,7 +463,7 @@ export const paymentService = {
 
   getUserPayments: async (userId) => {
     const token = localStorage.getItem("authToken")
-    const response = await fetch(`${API_BASE_URL}/payments/payments/${userId}`, {
+    const response = await fetch(`${API_BASE_URL}/payments/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
