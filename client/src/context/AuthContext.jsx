@@ -114,20 +114,21 @@ export const AuthProvider = ({ children }) => {
       }
 
       localStorage.setItem("authToken", newToken)
-      const userToStore = {
-        id: userData.id,
-        firstName: userData.emri,
-        lastName: userData.mbiemri,
-        email: userData.email,
-        profilePicture: userData.profilePicture,
-        xp: userData.xp,
-        level: userData.level,
-        studyHours: userData.studyHours,
-        completedTests: userData.completedTests,
-        achievements: userData.achievements,
-        streakCount: userData.streakCount,
-        avatarStyle: userData.avatarStyle || "adventurer", // <-- ADDED
-      }
+    const userToStore = {
+  id: userData.id,
+  firstName: userData.emri,
+  lastName: userData.mbiemri,
+  email: userData.email,
+  profilePicture: userData.profilePicture,
+  xp: userData.xp,
+  level: userData.level,
+  studyHours: userData.studyHours,
+  completedTests: userData.completedTests,
+  achievements: userData.achievements,
+  streakCount: userData.streakCount,
+  avatarStyle: userData.avatarStyle || "adventurer",
+  subscription: userData.subscription, // <-- ADD THIS LINE
+}
       console.log("AuthContext: User data to store after login:", JSON.stringify(userToStore, null, 2))
       // Store the full user data in localStorage upon login
       localStorage.setItem("user", JSON.stringify(userToStore))
