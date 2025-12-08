@@ -27,7 +27,7 @@ const paymentSchema = new mongoose.Schema(
     },
     productId: {
       type: String,
-      required: true,
+      required: false,
     },
     subscriptionType: {
       type: String,
