@@ -182,9 +182,8 @@ export default function Quizes() {
         style={{ fontFamily: "Inter, sans-serif" }}
       >
         {NotificationElement}
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 border-4 border-[#007AFF] border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-600 font-medium">Duke ngarkuar kuizet...</p>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
         </div>
       </div>
     )

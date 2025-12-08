@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { translateService } from "../services/api"
-import { Check, X, Filter, ArrowLeft, Book } from "lucide-react"
+import { Check, X, Filter, ArrowLeft, Book, Star } from "lucide-react"
 
 const Translate = () => {
   const [texts, setTexts] = useState([])
@@ -143,19 +143,38 @@ const Translate = () => {
   const getLevelColor = (level) => {
     switch (level) {
       case "A1":
-        return "bg-gradient-to-br from-[#CCFBF1] to-[#99F6E4] text-[#0D9488] border-[#5EEAD4]"
+        return "bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 border-emerald-200"
       case "A2":
-        return "bg-gradient-to-br from-[#99F6E4] to-[#5EEAD4] text-[#0D9488] border-[#2DD4BF]"
+        return "bg-gradient-to-br from-blue-50 to-cyan-50 text-blue-600 border-blue-200"
       case "B1":
-        return "bg-gradient-to-br from-[#5EEAD4] to-[#2DD4BF] text-[#0F766E] border-[#14B8A6]"
+        return "bg-gradient-to-br from-violet-50 to-purple-50 text-violet-600 border-violet-200"
       case "B2":
-        return "bg-gradient-to-br from-[#2DD4BF] to-[#14B8A6] text-white border-[#0D9488]"
+        return "bg-gradient-to-br from-amber-50 to-orange-50 text-amber-600 border-amber-200"
       case "C1":
-        return "bg-gradient-to-br from-[#14B8A6] to-[#0D9488] text-white border-[#0F766E]"
+        return "bg-gradient-to-br from-rose-50 to-pink-50 text-rose-600 border-rose-200"
       case "C2":
-        return "bg-gradient-to-br from-[#0D9488] to-[#0F766E] text-white border-[#115E59]"
+        return "bg-gradient-to-br from-indigo-50 to-blue-50 text-indigo-600 border-indigo-200"
       default:
-        return "bg-gradient-to-br from-[#F0FDFA] to-[#CCFBF1] text-[#14B8A6] border-[#99F6E4]"
+        return "bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 border-emerald-200"
+    }
+  }
+
+  const getBaseXP = (level) => {
+    switch (level) {
+      case "A1":
+        return 10
+      case "A2":
+        return 20
+      case "B1":
+        return 30
+      case "B2":
+        return 40
+      case "C1":
+        return 50
+      case "C2":
+        return 60
+      default:
+        return 10
     }
   }
 
@@ -269,9 +288,7 @@ const Translate = () => {
                       <>
                         {/* XP Banner */}
                         <div className="bg-gradient-to-r from-amber-400 to-orange-500 p-4 sm:p-6 rounded-xl shadow-lg">
-                          <div className="text-4xl sm:text-5xl mb-2">
-                            {quizResults.passed ? "🎉" : "📚"}
-                          </div>
+                          <div className="text-4xl sm:text-5xl mb-2">{quizResults.passed ? "🎉" : "📚"}</div>
                           <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
                             {quizResults.passed ? "Urime!" : "Provo Përsëri!"}
                           </h2>
@@ -301,15 +318,23 @@ const Translate = () => {
                                 <X className="h-6 w-6 sm:h-7 sm:w-7 text-red-600" />
                               </div>
                               <p className="text-xl sm:text-2xl font-bold text-red-600">
-                                {(quizResults.totalQuestions || selectedText.questions.length) - (quizResults.correctAnswers || 0)}
+                                {(quizResults.totalQuestions || selectedText.questions.length) -
+                                  (quizResults.correctAnswers || 0)}
                               </p>
                               <p className="text-xs text-gray-500">Të gabuara</p>
                             </div>
                           </div>
-                          
+
                           <div className="bg-gray-100 rounded-lg p-3">
                             <p className="text-sm font-medium text-gray-700">
-                              Rezultati: {quizResults.score || Math.round((quizResults.correctAnswers / (quizResults.totalQuestions || selectedText.questions.length)) * 100)}%
+                              Rezultati:{" "}
+                              {quizResults.score ||
+                                Math.round(
+                                  (quizResults.correctAnswers /
+                                    (quizResults.totalQuestions || selectedText.questions.length)) *
+                                    100,
+                                )}
+                              %
                             </p>
                           </div>
                         </div>
@@ -333,7 +358,9 @@ const Translate = () => {
                                   ) : (
                                     <X className="h-3.5 w-3.5 text-red-600 flex-shrink-0" />
                                   )}
-                                  <span className={`font-medium ${result.isCorrect ? "text-green-700" : "text-red-700"}`}>
+                                  <span
+                                    className={`font-medium ${result.isCorrect ? "text-green-700" : "text-red-700"}`}
+                                  >
                                     Pyetja {index + 1}
                                   </span>
                                 </div>
@@ -425,7 +452,7 @@ const Translate = () => {
                     className={`p-3 rounded-lg shadow-md border-2 transition-all cursor-pointer overflow-hidden relative group h-fit hover:shadow-xl ${
                       isCompleted
                         ? "bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] border-[#F59E0B] hover:border-[#D97706]"
-                        : "bg-white border-[#99F6E4] hover:border-[#5EEAD4]"
+                        : "bg-white border-emerald-200 hover:border-emerald-400"
                     }`}
                     onClick={() => setSelectedText(text)}
                   >
@@ -436,7 +463,7 @@ const Translate = () => {
                     </div>
                     <Book
                       className={`absolute -bottom-4 -right-4 w-16 h-16 ${
-                        isCompleted ? "text-[#FDE68A]" : "text-[#CCFBF1]"
+                        isCompleted ? "text-[#FDE68A]" : "text-slate-100"
                       }`}
                     />
                     <div className="relative z-10">
@@ -444,7 +471,7 @@ const Translate = () => {
                         className={`text-sm font-semibold mb-1 pr-12 truncate ${
                           isCompleted
                             ? "text-[#D97706] group-hover:text-[#92400E]"
-                            : "text-gray-800 group-hover:text-[#0D9488]"
+                            : "text-gray-800 group-hover:text-emerald-700"
                         }`}
                       >
                         {text.title}
@@ -456,15 +483,23 @@ const Translate = () => {
                         <span className={`text-xs ${isCompleted ? "text-[#92400E]" : "text-gray-500"}`}>
                           {text.questions?.length || 0} pyetje
                         </span>
-                        <span
-                          className={`text-xs px-1.5 py-0.5 rounded font-medium shadow-sm ${
-                            isCompleted
-                              ? "bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white"
-                              : "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white"
-                          }`}
-                        >
-                          {isCompleted ? "Përfunduar" : "Fillo"}
-                        </span>
+                        <div className="flex items-center gap-1">
+                          {!isCompleted && (
+                            <span className="text-xs bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shadow-sm border border-emerald-200">
+                              <Star className="h-3 w-3" />
+                              {text.xpReward || getBaseXP(text.level)}
+                            </span>
+                          )}
+                          <span
+                            className={`text-xs px-1.5 py-0.5 rounded font-medium shadow-sm ${
+                              isCompleted
+                                ? "bg-gradient-to-r from-[#F59E0B] to-[#D97706] text-white"
+                                : "bg-gradient-to-r from-emerald-500 to-teal-600 text-white"
+                            }`}
+                          >
+                            {isCompleted ? "Përfunduar" : "Fillo"}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
