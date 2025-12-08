@@ -10,7 +10,6 @@ const Payment = () => {
   const [paddleInitialized, setPaddleInitialized] = useState(false)
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
-  const [subscription, setSubscription] = useState(null)
   const [subscriptionStatus, setSubscriptionStatus] = useState(null)
   const [error, setError] = useState(null)
 
@@ -23,6 +22,7 @@ const Payment = () => {
             if (data.type === "checkout.completed") {
               alert("Payment completed! Thank you for subscribing.")
               localStorage.removeItem("subscription_expired")
+              // Force refresh user data after payment
               setTimeout(() => window.location.reload(), 2000)
             }
 
@@ -78,14 +78,8 @@ const Payment = () => {
 
           // Get subscription status
           const status = await subscriptionService.checkStatus()
+          console.log("[Payment] Subscription status:", status)
           setSubscriptionStatus(status)
-
-          try {
-            const subscriptionData = await paymentService.getUserSubscription(userData.id)
-            setSubscription(subscriptionData)
-          } catch (err) {
-            console.log("No active subscription found")
-          }
         }
       } catch (err) {
         setError("Failed to load data")
@@ -100,12 +94,6 @@ const Payment = () => {
     // Clear the subscription expired flag when visiting payment page
     localStorage.removeItem("subscription_expired")
   }, [])
-
-  const isSubscriptionActive = () => {
-    if (!subscription && !subscriptionStatus) return false
-    if (subscription) return subscription.status === "active"
-    return subscriptionStatus?.active || false
-  }
 
   const openCheckout = () => {
     if (!paddleInitialized) {
@@ -161,7 +149,7 @@ const Payment = () => {
     )
   }
 
-  const subscriptionActive = isSubscriptionActive()
+  const subscriptionActive = subscriptionStatus?.active || false
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -194,6 +182,21 @@ const Payment = () => {
         </div>
       )}
 
+      {/* Paid Subscription Banner */}
+      {subscriptionStatus?.type === "1_month" && subscriptionStatus?.active && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+          <h3 className="text-green-900 font-semibold mb-1">✅ Premium Subscription Active</h3>
+          <p className="text-green-700 text-sm">
+            You have {subscriptionStatus.daysRemaining} day(s) remaining in your subscription.
+            {subscriptionStatus.expiresAt && (
+              <span className="block mt-1">
+                Expires on: {new Date(subscriptionStatus.expiresAt).toLocaleDateString()}
+              </span>
+            )}
+          </p>
+        </div>
+      )}
+
       {/* Expired Trial Banner */}
       {subscriptionStatus?.expired && !subscriptionActive && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -215,17 +218,21 @@ const Payment = () => {
             : "Subscribe to access all premium features"}
         </p>
 
-        {subscriptionActive && subscription && (
+        {subscriptionActive && subscriptionStatus && (
           <div className="space-y-2 text-sm">
             <p>
-              <strong>Plan:</strong> {subscription.plan || "Premium"}
+              <strong>Plan:</strong> {subscriptionStatus.type === "1_month" ? "Premium Monthly" : subscriptionStatus.type === "free_trial" ? "Free Trial" : "Premium"}
             </p>
             <p>
-              <strong>Next billing:</strong>{" "}
-              {subscription.next_billing_date ? new Date(subscription.next_billing_date).toLocaleDateString() : "N/A"}
+              <strong>Status:</strong> {subscriptionStatus.active ? "Active" : "Inactive"}
             </p>
+            {subscriptionStatus.expiresAt && (
+              <p>
+                <strong>Expires on:</strong> {new Date(subscriptionStatus.expiresAt).toLocaleDateString()}
+              </p>
+            )}
             <p>
-              <strong>Amount:</strong> €{subscription.amount || "1.00"}/month
+              <strong>Days remaining:</strong> {subscriptionStatus.daysRemaining}
             </p>
           </div>
         )}
@@ -273,8 +280,8 @@ const Payment = () => {
         </div>
       )}
 
-      {/* Cancel Subscription */}
-      {subscriptionActive && subscription && (
+      {/* Cancel Subscription - Only show for paid subscriptions */}
+      {subscriptionActive && subscriptionStatus?.type === "1_month" && (
         <div className="border border-gray-200 rounded-lg p-6 bg-white">
           <h2 className="text-xl font-semibold mb-3">Manage Subscription</h2>
           <p className="text-sm text-gray-600 mb-4">
