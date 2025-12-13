@@ -12,6 +12,20 @@ export const useAuth = () => {
   return context
 }
 
+const buildSubscriptionObject = (userData) => {
+  const now = new Date()
+  const expiresAt = userData.subscriptionExpiresAt ? new Date(userData.subscriptionExpiresAt) : null
+  const daysRemaining = expiresAt ? Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24)) : 0
+
+  return {
+    active: userData.isPaid || (userData.subscriptionType === "free_trial" && expiresAt && expiresAt > now),
+    type: userData.subscriptionType || "free_trial",
+    expiresAt: userData.subscriptionExpiresAt,
+    trialStartedAt: userData.trialStartedAt,
+    daysRemaining: Math.max(0, daysRemaining),
+  }
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUserState] = useState(() => {
     try {
@@ -21,7 +35,7 @@ export const AuthProvider = ({ children }) => {
       return parsedUser
     } catch (error) {
       console.error("AuthContext: useState init - Failed to parse user from localStorage:", error)
-      localStorage.removeItem("user") // Clear corrupted data
+      localStorage.removeItem("user")
       return null
     }
   })
@@ -47,7 +61,6 @@ export const AuthProvider = ({ children }) => {
             response.data ? JSON.stringify(response.data, null, 2) : null,
           )
 
-          // Access the nested 'user' object from response.data
           const userDataFromResponse = response.data?.user
 
           if (!userDataFromResponse || Object.keys(userDataFromResponse).length === 0) {
@@ -56,7 +69,7 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem("user")
             setToken(null)
             setUser(null)
-            return // Exit early if no data
+            return
           }
 
           const fetchedUser = {
@@ -64,7 +77,7 @@ export const AuthProvider = ({ children }) => {
             firstName: userDataFromResponse.firstName || userDataFromResponse.emri,
             lastName: userDataFromResponse.lastName || userDataFromResponse.mbiemri,
             email: userDataFromResponse.email,
-            role: userDataFromResponse.role, 
+            role: userDataFromResponse.role,
             profilePicture: userDataFromResponse.profilePicture,
             xp: userDataFromResponse.xp,
             level: userDataFromResponse.level,
@@ -73,29 +86,20 @@ export const AuthProvider = ({ children }) => {
             achievements: userDataFromResponse.achievements,
             streakCount: userDataFromResponse.streakCount,
             avatarStyle: userDataFromResponse.avatarStyle || "adventurer",
-            subscription: userDataFromResponse.subscription || {
-              active: false,
-              type: 'free_trial',
-              expiresAt: null,
-              trialStartedAt: null,
-              daysRemaining: 0
-            }
+            subscription: buildSubscriptionObject(userDataFromResponse),
           }
           console.log("AuthContext: Fetched user data (before setting state):", JSON.stringify(fetchedUser, null, 2))
           setUser(fetchedUser)
-          // Store the fetched user data in localStorage
           localStorage.setItem("user", JSON.stringify(fetchedUser))
           setToken(savedToken)
         } catch (error) {
           console.error("AuthContext: Auth initialization error during getProfile:", error)
-          // If profile fetch fails, clear both token and user from storage
           localStorage.removeItem("authToken")
           localStorage.removeItem("user")
           setToken(null)
           setUser(null)
         }
       } else {
-        // If no token, ensure no user data is lingering in localStorage
         console.log("AuthContext: No saved token found. Clearing user from localStorage.")
         localStorage.removeItem("user")
         setUser(null)
@@ -104,12 +108,11 @@ export const AuthProvider = ({ children }) => {
       console.log("AuthContext: initAuth finished. Loading set to false.")
     }
     initAuth()
-  }, []) // Runs only once on mount
+  }, [])
 
   const login = useCallback(async (credentials) => {
     try {
       const response = await authService.login(credentials)
-      // The login response already destructures 'user' correctly, so this part is fine.
       const { token: newToken, user: userData } = response.data
       console.log(
         "AuthContext: Login successful. Response data:",
@@ -122,6 +125,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       localStorage.setItem("authToken", newToken)
+
       const userToStore = {
         id: userData.id,
         firstName: userData.emri,
@@ -136,22 +140,50 @@ export const AuthProvider = ({ children }) => {
         achievements: userData.achievements,
         streakCount: userData.streakCount,
         avatarStyle: userData.avatarStyle || "adventurer",
-        subscription: userData.subscription || {
-          active: false,
-          type: 'free_trial',
-          expiresAt: null,
-          trialStartedAt: null,
-          daysRemaining: 0
-        }
+        subscription: buildSubscriptionObject(userData),
       }
       console.log("AuthContext: User data to store after login:", JSON.stringify(userToStore, null, 2))
-      // Store the full user data in localStorage upon login
       localStorage.setItem("user", JSON.stringify(userToStore))
       setToken(newToken)
       setUser(userToStore)
       return response
     } catch (error) {
       console.error("AuthContext: Login error:", error)
+      throw error
+    }
+  }, [])
+
+  const refreshUser = useCallback(async () => {
+    try {
+      console.log("AuthContext: Refreshing user data from backend...")
+      const response = await authService.getProfile()
+      const userDataFromResponse = response.data?.user
+
+      if (userDataFromResponse) {
+        const updatedUser = {
+          id: userDataFromResponse.id,
+          firstName: userDataFromResponse.firstName || userDataFromResponse.emri,
+          lastName: userDataFromResponse.lastName || userDataFromResponse.mbiemri,
+          email: userDataFromResponse.email,
+          role: userDataFromResponse.role,
+          profilePicture: userDataFromResponse.profilePicture,
+          xp: userDataFromResponse.xp,
+          level: userDataFromResponse.level,
+          studyHours: userDataFromResponse.studyHours,
+          completedTests: userDataFromResponse.completedTests,
+          achievements: userDataFromResponse.achievements,
+          streakCount: userDataFromResponse.streakCount,
+          avatarStyle: userDataFromResponse.avatarStyle || "adventurer",
+          subscription: buildSubscriptionObject(userDataFromResponse),
+        }
+
+        setUser(updatedUser)
+        localStorage.setItem("user", JSON.stringify(updatedUser))
+        console.log("AuthContext: User data refreshed successfully")
+        return updatedUser
+      }
+    } catch (error) {
+      console.error("AuthContext: Failed to refresh user data:", error)
       throw error
     }
   }, [])
@@ -164,7 +196,6 @@ export const AuthProvider = ({ children }) => {
       }
       const newUser = { ...prev, ...updatedData }
       console.log("AuthContext: setUser called in updateUser with:", JSON.stringify(newUser, null, 2))
-      // Persist updated user data to localStorage
       localStorage.setItem("user", JSON.stringify(newUser))
       return newUser
     })
@@ -191,11 +222,12 @@ export const AuthProvider = ({ children }) => {
     logout: useCallback(() => {
       console.log("AuthContext: Logging out. Clearing localStorage.")
       localStorage.removeItem("authToken")
-      localStorage.removeItem("user") // Clear user data from localStorage on logout
+      localStorage.removeItem("user")
       setToken(null)
       setUser(null)
     }, []),
     updateUser,
+    refreshUser, // Expose refreshUser function
     isAuthenticated: !!token,
   }
 
