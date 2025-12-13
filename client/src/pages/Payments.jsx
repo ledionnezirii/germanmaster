@@ -69,6 +69,7 @@ const paymentService = {
 }
 
 const PRICE_IDS = {
+  livetest: "pri_01kaeqvvk2kdc02p39zrb8gne3",
   monthly: "pri_01kcc0xq5n2zkh5926cfcnyakr",
   quarterly: "pri_01kcc0z1n998kjm07xxn5kph81",
   yearly: "pri_01kcc103vzc3xm5th0w3e3wrfx"
@@ -82,12 +83,13 @@ export default function Payment() {
   const [user, setUser] = useState(null)
   const [subscriptionStatus, setSubscriptionStatus] = useState(null)
   const [error, setError] = useState(null)
-  const [selectedPlan, setSelectedPlan] = useState("monthly")
+  const [selectedPlan, setSelectedPlan] = useState("livetest")
 
   const plans = [
-    { id: "monthly", name: "1 Muaj", price: "€11.99", period: "muaj", description: "Pagesë mujore", priceId: PRICE_IDS.monthly },
-    { id: "quarterly", name: "3 Muaj", price: "€24.99", period: "3 muaj", description: "Kurse €2.98", savings: "20%", priceId: PRICE_IDS.quarterly },
-    { id: "yearly", name: "1 Vit", price: "€99.99", period: "vit", description: "Kurse €19.89", savings: "33%", popular: true, priceId: PRICE_IDS.yearly }
+    { id: "livetest", name: "LiveTest", price: "€1.00", period: "test", description: "Test Plan", test: true, priceId: PRICE_IDS.livetest },
+    { id: "monthly", name: "1 Muaj", price: "€4.99", period: "muaj", description: "Pagesë mujore", priceId: PRICE_IDS.monthly },
+    { id: "quarterly", name: "3 Muaj", price: "€11.99", period: "3 muaj", description: "Kurse €2.98", savings: "20%", priceId: PRICE_IDS.quarterly },
+    { id: "yearly", name: "1 Vit", price: "€39.99", period: "vit", description: "Kurse €19.89", savings: "33%", popular: true, priceId: PRICE_IDS.yearly }
   ]
 
   useEffect(() => {
@@ -99,7 +101,10 @@ export default function Payment() {
             if (data.type === "checkout.completed") {
               alert("Pagesa u krye me sukses! Faleminderit për abonimin.")
               localStorage.removeItem("subscription_expired")
-              setTimeout(() => window.location.reload(), 2000)
+              // Reload the page after 2 seconds to get fresh data
+              setTimeout(() => {
+                window.location.reload()
+              }, 2000)
             }
 
             if (data.type === "checkout.closed") {
@@ -238,13 +243,26 @@ export default function Payment() {
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">Abonimi & Faturimi</h1>
           <p className="text-lg text-slate-600">Menaxhoni abonimin dhe detajet e pagesës tuaj</p>
+          
+          {/* Refresh Button - Simple page reload */}
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            🔄 Rifresko Faqen
+          </button>
         </div>
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-2xl p-5 mb-8 shadow-sm">
             <div className="flex justify-between items-start">
-              <p className="text-red-800">{error}</p>
-              <button onClick={() => setError(null)} className="text-red-600 font-bold hover:text-red-800 text-xl">
+              <div className="flex-1">
+                <p className="text-red-800">{error}</p>
+                <p className="text-sm text-red-600 mt-2">
+                  Nëse sapo keni bërë pagesën, prisni 1-2 minuta dhe rifreskoni faqen.
+                </p>
+              </div>
+              <button onClick={() => setError(null)} className="text-red-600 font-bold hover:text-red-800 text-xl ml-4">
                 ✕
               </button>
             </div>
@@ -344,7 +362,7 @@ export default function Payment() {
               <p className="text-center text-slate-600 mb-8">Përmirësoni tani për të siguruar aksesin tuaj pas provës falas</p>
             )}
             
-            <div className="grid md:grid-cols-3 gap-6 mt-8">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
               {plans.map((plan) => (
                 <div
                   key={plan.id}
@@ -353,8 +371,16 @@ export default function Payment() {
                     selectedPlan === plan.id
                       ? 'border-2 border-red-600 shadow-lg shadow-red-100 scale-[1.02]'
                       : 'border border-slate-200 hover:border-slate-300 hover:shadow-md'
-                  } ${plan.popular ? 'ring-2 ring-red-600 ring-offset-2' : ''}`}
+                  } ${plan.popular ? 'ring-2 ring-red-600 ring-offset-2' : ''} ${plan.test ? 'border-blue-400' : ''}`}
                 >
+                  {plan.test && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                      <span className="bg-blue-600 text-white text-xs font-bold px-4 py-1 rounded-full">
+                        🧪 TEST
+                      </span>
+                    </div>
+                  )}
+                  
                   {plan.popular && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                       <span className="bg-red-600 text-white text-xs font-bold px-4 py-1 rounded-full">
