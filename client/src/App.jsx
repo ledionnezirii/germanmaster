@@ -11,11 +11,9 @@ import Translate from "./pages/Translate"
 import Account from "./pages/Account"
 import Dictionary from "./pages/Dictionary"
 import Category from "./pages/Category"
-import Chat from "./pages/Chat"
 import Grammar from "./pages/Grammar"
 import SignIn from "./auth/SignIn"
 import SignUp from "./auth/SignUp"
-import Challenge from "./pages/Challenge"
 import Plan from "./pages/Plan"
 import Tests from "./pages/Tests"
 import ForgotPassword from "./auth/ForgotPassword"
@@ -36,14 +34,7 @@ const AppContent = () => {
   const location = useLocation()
 
   // Routes where Navbar/Sidebar should be hidden
-  const hiddenLayoutPaths = [
-    "/signin",
-    "/signup",
-    "/forgotpassword",
-    "/verify/",
-    "/reset-password/",
-    "/terms",
-  ]
+  const hiddenLayoutPaths = ["/signin", "/signup", "/forgotpassword", "/verify/", "/reset-password/", "/terms"]
   const hideLayout = hiddenLayoutPaths.some((path) => location.pathname.startsWith(path))
 
   return (
@@ -61,7 +52,6 @@ const AppContent = () => {
         >
           <div className="p-4 max-w-7xl mx-auto">
             <Routes>
-              {/* Public routes - no authentication or subscription required */}
               <Route path="/signin" element={<SignIn />} />
               <Route path="/signup" element={<SignUp />} />
               <Route path="/forgotpassword" element={<ForgotPassword />} />
@@ -69,11 +59,9 @@ const AppContent = () => {
               <Route path="/verify/:token" element={<VerifyEmail />} />
               <Route path="/terms" element={<Terms />} />
 
-              {/* Payment routes - authentication required but no subscription check */}
               <Route path="/payments" element={<Payments />} />
               <Route path="/billing" element={<Payments />} />
 
-              {/* Protected routes - require active subscription or trial */}
               <Route
                 path="/*"
                 element={

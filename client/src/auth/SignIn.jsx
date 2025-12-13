@@ -39,12 +39,10 @@ const SignIn = () => {
       console.log("[v0] Error response:", err.response)
       console.log("[v0] Error response data:", err.response?.data)
 
-      // Check multiple possible locations for the error message
       const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || ""
 
       console.log("[v0] Extracted error message:", errorMessage)
 
-      // Check for device limit error first (highest priority)
       if (
         errorMessage.toLowerCase().includes("device") ||
         errorMessage.includes("You already have 2 devices logged in") ||
@@ -65,7 +63,6 @@ const SignIn = () => {
       ) {
         setError("Email-i nuk u gjet. Ju lutemi kontrolloni email-in tuaj.")
       } else {
-        // Generic fallback
         setError(errorMessage || "Email ose fjalëkalim i pasaktë. Ju lutemi provoni përsëri.")
       }
     } finally {
@@ -185,6 +182,18 @@ const SignIn = () => {
             )}
           </button>
         </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-gray-600 text-sm">
+            Nuk keni llogari?{" "}
+            <Link
+              to="/signup"
+              className="text-cyan-600 hover:text-cyan-700 font-semibold transition-colors duration-200"
+            >
+              Regjistrohuni këtu
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )
