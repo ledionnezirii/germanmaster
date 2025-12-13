@@ -44,6 +44,8 @@ const practiceRoutes = require("./routes/practiceRoutes")
 const wordRoutes = require("./routes/wordRoutes")
 const ttsRoutes = require("./routes/ttsRoutes")
 const phraseRoutes = require("./routes/phraseRoutes")
+const academyRoutes = require("./routes/academyRoutes")
+
 
 const { errorHandler, notFound } = require("./middleware/errorMiddleware")
 const { requestLogger } = require("./middleware/loggerMiddleware")
@@ -236,6 +238,7 @@ app.use("/api/practice", practiceRoutes)
 app.use("/api/words", wordRoutes)
 app.use("/api/tts", ttsRoutes)
 app.use("/api/phrases", phraseRoutes)
+app.use("/api/academies",academyRoutes)
 
 app.use(notFound)
 app.use(errorHandler)
