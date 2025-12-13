@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { paymentService, subscriptionService } from "../services/api"
 
 const PRICE_ID = "pri_01kaeqvvk2kdc02p39zrb8gne3"
-const PADDLE_CLIENT_TOKEN = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
+const PADDLE_CLIENT_TOKEN = "live_e7e364df3364c92dfaae35d7163"
 
 const Payment = () => {
   const [paddleInitialized, setPaddleInitialized] = useState(false)
