@@ -84,6 +84,7 @@ const Sidebar = () => {
     { icon: TestTube2Icon, label: "Tests", path: "/tests" },
     { icon: BarChart, label: "Renditja", path: "/leaderboard", requireAuth: false },
     { icon: Calendar, label: "PlanProgrami", path: "/plan", requireAuth: true },
+    /*{ icon: User, label: "Menaxho", path: "/academies", requireAuth: true },*/
     { icon: User, label: "Llogaria", path: "/account", requireAuth: true },
 
   ]

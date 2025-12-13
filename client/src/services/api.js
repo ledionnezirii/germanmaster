@@ -499,10 +499,10 @@ export const paymentService = {
 export const subscriptionService = {
   checkStatus: async () => {
     console.log("[Subscription] Checking subscription status...")
-    
+
     const userStr = localStorage.getItem("user")
     console.log("[Subscription] User from localStorage:", userStr)
-    
+
     if (!userStr) {
       console.log("[Subscription] No user found in localStorage")
       return { active: false, expired: true, daysRemaining: 0 }
@@ -511,7 +511,7 @@ export const subscriptionService = {
     try {
       const user = JSON.parse(userStr)
       console.log("[Subscription] Parsed user:", user)
-      
+
       // Check if subscription object exists
       if (!user.subscription) {
         console.log("[Subscription] No subscription object found")
@@ -520,11 +520,11 @@ export const subscriptionService = {
 
       const now = new Date()
       const expiresAt = new Date(user.subscription.expiresAt)
-      
+
       console.log("[Subscription] Now:", now)
       console.log("[Subscription] Expires at:", expiresAt)
       console.log("[Subscription] Time difference (ms):", expiresAt - now)
-      
+
       const daysRemaining = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24))
       const isExpired = expiresAt <= now
       const isActive = user.subscription.active && !isExpired
@@ -546,6 +546,51 @@ export const subscriptionService = {
       return { active: false, expired: true, daysRemaining: 0 }
     }
   },
+}
+
+export const academyService = {
+  // Academy operations
+  getAllAcademies: (params = {}) => api.get("/academies", { params }),
+  getAcademyById: (id) => api.get(`/academies/${id}`),
+  createAcademy: (academyData) => api.post("/academies", academyData),
+  updateAcademy: (id, academyData) => api.put(`/academies/${id}`, academyData),
+  deleteAcademy: (id) => api.delete(`/academies/${id}`),
+  getMyAcademies: () => api.get("/academies/my/list"),
+
+  // Group operations
+  createGroup: (academyId, groupData) => api.post(`/academies/${academyId}/groups`, groupData),
+  updateGroup: (academyId, groupId, groupData) => api.put(`/academies/${academyId}/groups/${groupId}`, groupData),
+  deleteGroup: (academyId, groupId) => api.delete(`/academies/${academyId}/groups/${groupId}`),
+  getGroupById: (academyId, groupId) => api.get(`/academies/${academyId}/groups/${groupId}`),
+  getMyGroups: () => api.get("/academies/groups/my"),
+  getGroupInviteInfo: (academyId, groupId) => api.get(`/academies/${academyId}/groups/${groupId}/invite-info`),
+
+  // Task operations
+  createTask: (academyId, groupId, taskData) => api.post(`/academies/${academyId}/groups/${groupId}/tasks`, taskData),
+  updateTask: (academyId, groupId, taskId, taskData) =>
+    api.put(`/academies/${academyId}/groups/${groupId}/tasks/${taskId}`, taskData),
+  deleteTask: (academyId, groupId, taskId) => api.delete(`/academies/${academyId}/groups/${groupId}/tasks/${taskId}`),
+  completeTask: (academyId, groupId, taskId) =>
+    api.post(`/academies/${academyId}/groups/${groupId}/tasks/${taskId}/complete`),
+  getMyTasks: () => api.get("/academies/tasks/my"),
+
+  // Invitation operations
+  inviteStudent: (academyId, groupId, email) => api.post(`/academies/${academyId}/groups/${groupId}/invite`, { email }),
+  getMyInvitations: () => api.get("/academies/invitations/my"),
+  acceptInvitation: (academyId, groupId) => api.post(`/academies/${academyId}/groups/${groupId}/accept`),
+  rejectInvitation: (invitationId) => api.post(`/academies/invitations/${invitationId}/reject`),
+
+  // Leaderboard
+  getGroupLeaderboard: (academyId, groupId) => api.get(`/academies/${academyId}/groups/${groupId}/leaderboard`),
+  getAcademyLeaderboard: (academyId) => api.get(`/academies/${academyId}/leaderboard`),
+
+  // Member management
+  removeMember: (academyId, groupId, userId) =>
+    api.delete(`/academies/${academyId}/groups/${groupId}/members/${userId}`),
+  addGroupAdmin: (academyId, groupId, userId) =>
+    api.post(`/academies/${academyId}/groups/${groupId}/admins`, { userId }),
+  removeGroupAdmin: (academyId, groupId, userId) =>
+    api.delete(`/academies/${academyId}/groups/${groupId}/admins/${userId}`),
 }
 
 export default api
