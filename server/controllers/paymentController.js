@@ -196,7 +196,7 @@ const handleTransactionCompleted = async (event) => {
     if (!userId && data.customer_id) {
       console.log("[v0] No userId in customData, trying to find user by customer email")
       const customerEmail = data.customer?.email || data.billing_details?.email
-
+      
       if (customerEmail) {
         const user = await User.findOne({ email: customerEmail })
         if (user) {
@@ -221,7 +221,7 @@ const handleTransactionCompleted = async (event) => {
     }
 
     const subscriptionId = data.subscription_id || null
-    const amount = data.details?.totals?.total ? Number.parseInt(data.details.totals.total) / 100 : 0
+    const amount = data.details?.totals?.total ? parseInt(data.details.totals.total) / 100 : 0
     const currency = data.currency_code || "EUR"
 
     const priceId = data.items?.[0]?.price_id
@@ -246,46 +246,41 @@ const handleTransactionCompleted = async (event) => {
     const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
     const nextBillingDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
 
-    const payment = await Payment.findOneAndUpdate(
-      { paddleTransactionId: data.id },
-      {
-        userId: userId,
-        paddleTransactionId: data.id,
-        paddleCustomerId: data.customer_id,
-        paddleSubscriptionId: subscriptionId,
-        priceId: priceId,
-        productId: data.items?.[0]?.product_id,
-        subscriptionType: subscriptionType,
-        status: "active",
-        amount: amount,
-        currency: currency,
-        billingCycle: billingCycle,
-        expiresAt: expiresAt,
-        nextBillingDate: nextBillingDate,
-        $push: {
-          webhookEvents: {
-            eventType: event.event_type,
-            eventId: event.event_id,
-            data: event.data,
-          },
+    // Create payment record
+    const payment = await Payment.create({
+      userId: userId,
+      paddleTransactionId: data.id,
+      paddleCustomerId: data.customer_id,
+      paddleSubscriptionId: subscriptionId,
+      priceId: priceId,
+      productId: data.items?.[0]?.product_id,
+      subscriptionType: subscriptionType,
+      status: "active",
+      amount: amount,
+      currency: currency,
+      billingCycle: billingCycle,
+      expiresAt: expiresAt,
+      nextBillingDate: nextBillingDate,
+      webhookEvents: [
+        {
+          eventType: event.event_type,
+          eventId: event.event_id,
+          data: event.data,
         },
-      },
-      { upsert: true, new: true },
-    )
+      ],
+    })
 
-    console.log("[v0] Payment record created/updated:", payment._id)
+    console.log("[v0] Payment record created:", payment._id)
 
+    // Update user
     user.isPaid = true
     user.subscriptionType = subscriptionType
     user.subscriptionExpiresAt = expiresAt
     user.isActive = true
-    // Clear trial fields when upgrading to paid
-    user.trialStartedAt = null
     await user.save()
 
     console.log(`[v0] ✅ User updated - isPaid: true, subscriptionType: ${subscriptionType}`)
     console.log(`[v0] ✅ Payment completed for user ${userId} - Subscription: ${subscriptionType}`)
-    console.log(`[v0] ✅ User subscription expires at: ${expiresAt}`)
   } catch (error) {
     console.error("[v0] Error in handleTransactionCompleted:", error)
     console.error("[v0] Error stack:", error.stack)
