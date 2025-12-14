@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose = require("mongoose")
 
 const paymentSchema = new mongoose.Schema(
   {
@@ -9,7 +9,6 @@ const paymentSchema = new mongoose.Schema(
     },
     paddleSubscriptionId: {
       type: String,
-      unique: true,
       sparse: true,
     },
     paddleTransactionId: {
@@ -86,12 +85,12 @@ const paymentSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
-);
+  },
+)
 
-// Index for efficient queries
-paymentSchema.index({ userId: 1, status: 1 });
-paymentSchema.index({ paddleSubscriptionId: 1 });
-paymentSchema.index({ expiresAt: 1 });
+paymentSchema.index({ userId: 1, status: 1 })
+paymentSchema.index({ paddleSubscriptionId: 1 })
+paymentSchema.index({ paddleTransactionId: 1 })
+paymentSchema.index({ expiresAt: 1 })
 
-module.exports = mongoose.model("Payment", paymentSchema);
+module.exports = mongoose.model("Payment", paymentSchema)

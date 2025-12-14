@@ -196,7 +196,7 @@ const handleTransactionCompleted = async (event) => {
     if (!userId && data.customer_id) {
       console.log("[v0] No userId in customData, trying to find user by customer email")
       const customerEmail = data.customer?.email || data.billing_details?.email
-      
+
       if (customerEmail) {
         const user = await User.findOne({ email: customerEmail })
         if (user) {
@@ -221,7 +221,7 @@ const handleTransactionCompleted = async (event) => {
     }
 
     const subscriptionId = data.subscription_id || null
-    const amount = data.details?.totals?.total ? parseInt(data.details.totals.total) / 100 : 0
+    const amount = data.details?.totals?.total ? Number.parseInt(data.details.totals.total) / 100 : 0
     const currency = data.currency_code || "EUR"
 
     const priceId = data.items?.[0]?.price_id
@@ -246,44 +246,74 @@ const handleTransactionCompleted = async (event) => {
     const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
     const nextBillingDate = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
 
-    // Create payment record
-    const payment = await Payment.create({
-      userId: userId,
+    const existingPayment = await Payment.findOne({
       paddleTransactionId: data.id,
-      paddleCustomerId: data.customer_id,
-      paddleSubscriptionId: subscriptionId,
-      priceId: priceId,
-      productId: data.items?.[0]?.product_id,
-      subscriptionType: subscriptionType,
-      status: "active",
-      amount: amount,
-      currency: currency,
-      billingCycle: billingCycle,
-      expiresAt: expiresAt,
-      nextBillingDate: nextBillingDate,
-      webhookEvents: [
-        {
-          eventType: event.event_type,
-          eventId: event.event_id,
-          data: event.data,
-        },
-      ],
     })
 
-    console.log("[v0] Payment record created:", payment._id)
+    if (existingPayment) {
+      console.log("[v0] Payment already processed for transaction:", data.id)
+      // Still update user status in case it wasn't updated before
+      if (!user.isPaid) {
+        user.isPaid = true
+        user.subscriptionType = subscriptionType
+        user.subscriptionExpiresAt = expiresAt
+        user.isActive = true
+        await user.save()
+        console.log(`[v0] ✅ User access granted - isPaid: true`)
+      }
+      return
+    }
 
-    // Update user
-    user.isPaid = true
-    user.subscriptionType = subscriptionType
-    user.subscriptionExpiresAt = expiresAt
-    user.isActive = true
-    await user.save()
+    let payment
+    try {
+      payment = await Payment.create({
+        userId: userId,
+        paddleTransactionId: data.id,
+        paddleCustomerId: data.customer_id,
+        paddleSubscriptionId: subscriptionId, // Can be null for one-time payments
+        priceId: priceId,
+        productId: data.items?.[0]?.product_id,
+        subscriptionType: subscriptionType,
+        status: "active",
+        amount: amount,
+        currency: currency,
+        billingCycle: billingCycle,
+        expiresAt: expiresAt,
+        nextBillingDate: nextBillingDate,
+        webhookEvents: [
+          {
+            eventType: event.event_type,
+            eventId: event.event_id,
+            data: event.data,
+          },
+        ],
+      })
 
-    console.log(`[v0] ✅ User updated - isPaid: true, subscriptionType: ${subscriptionType}`)
-    console.log(`[v0] ✅ Payment completed for user ${userId} - Subscription: ${subscriptionType}`)
+      console.log("[v0] ✅ Payment record created:", payment._id)
+    } catch (paymentError) {
+      console.error("[v0] Error creating payment record:", paymentError)
+      throw new Error(`Failed to create payment record: ${paymentError.message}`)
+    }
+
+    try {
+      user.isPaid = true
+      user.subscriptionType = subscriptionType
+      user.subscriptionExpiresAt = expiresAt
+      user.isActive = true
+      await user.save()
+
+      console.log(`[v0] ✅ User updated successfully - isPaid: true, subscriptionType: ${subscriptionType}`)
+      console.log(`[v0] ✅ Payment completed for user ${userId} - Subscription: ${subscriptionType}`)
+    } catch (userError) {
+      console.error("[v0] Error updating user:", userError)
+      await Payment.deleteOne({ _id: payment._id })
+      console.error("[v0] ❌ Payment record deleted due to user update failure")
+      throw new Error(`Failed to grant user access: ${userError.message}`)
+    }
   } catch (error) {
     console.error("[v0] Error in handleTransactionCompleted:", error)
     console.error("[v0] Error stack:", error.stack)
+    throw error
   }
 }
 
