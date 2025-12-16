@@ -89,7 +89,10 @@ const paymentSchema = new mongoose.Schema(
 )
 
 paymentSchema.index({ userId: 1, status: 1 })
-paymentSchema.index({ paddleSubscriptionId: 1 })
+paymentSchema.index(
+  { paddleSubscriptionId: 1 },
+  { unique: true, sparse: true }
+)
 paymentSchema.index({ paddleTransactionId: 1 })
 paymentSchema.index({ expiresAt: 1 })
 
