@@ -14,6 +14,7 @@ const Payment = () => {
   // 1. Merrni TOKEN dhe PRICE ID nga .env
   const PADDLE_CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN
   const PRICE_MONTHLY = import.meta.env.VITE_PADDLE_PRICE_MONTHLY // NDERROHET per te reflektuar VITE_PADDLE_PRICE_MONTHLY
+console.log("Token:", PADDLE_CLIENT_TOKEN, "Price ID:", PRICE_MONTHLY)
 
   // Initialize Paddle
   useEffect(() => {
