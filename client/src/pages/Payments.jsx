@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { paymentService, subscriptionService } from "../services/api"
+// Supozojmë se këto shërbime janë të sakta
+import { paymentService, subscriptionService } from "../services/api" 
 
 const Payment = () => {
   const [paddleInitialized, setPaddleInitialized] = useState(false)
@@ -10,12 +11,19 @@ const Payment = () => {
   const [subscriptionStatus, setSubscriptionStatus] = useState(null)
   const [error, setError] = useState(null)
 
+  // 1. Merrni TOKEN dhe PRICE ID nga .env
   const PADDLE_CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN
-  const PRODUCT_MONTHLY = import.meta.env.VITE_PADDLE_PRODUCT_MONTHLY
+  const PRICE_MONTHLY = import.meta.env.VITE_PADDLE_PRICE_MONTHLY // NDERROHET per te reflektuar VITE_PADDLE_PRICE_MONTHLY
 
   // Initialize Paddle
   useEffect(() => {
     const initPaddle = () => {
+      // Kujdes: Sigurohuni qe PADDLE_CLIENT_TOKEN eshte i vendosur
+      if (!PADDLE_CLIENT_TOKEN) {
+         setError("Paddle Client Token (VITE_PADDLE_CLIENT_TOKEN) mungon ne skedarin .env.")
+         return
+      }
+      
       if (!window.Paddle) {
         setError("Paddle not loaded")
         return
@@ -27,7 +35,8 @@ const Payment = () => {
           if (data.type === "checkout.completed") {
             alert("Payment completed! Thank you for subscribing.")
             localStorage.removeItem("subscription_expired")
-            setTimeout(() => window.location.reload(), 2000)
+            // Rishkarkoni faqen per te rifreskuar statusin e abonimit
+            setTimeout(() => window.location.reload(), 2000) 
           }
           if (data.type === "checkout.closed") console.log("Checkout closed by user")
           if (data.type === "checkout.error") {
@@ -55,7 +64,7 @@ const Payment = () => {
         if (!window.Paddle) setError("Payment system failed to load")
       }, 10000)
     }
-  }, [])
+  }, [PADDLE_CLIENT_TOKEN]) // Shto PADDLE_CLIENT_TOKEN si dependency
 
   // Fetch user and subscription data
   useEffect(() => {
@@ -92,11 +101,18 @@ const Payment = () => {
     if (!paddleInitialized) return alert("Payment system not ready. Please wait...")
     if (!user) return (window.location.href = "/signin")
 
+    if (!PRICE_MONTHLY) {
+        return setError("Price ID (VITE_PADDLE_PRICE_MONTHLY) mungon.")
+    }
+
     try {
+      // 2. Përdor formatin e saktë të Paddle 2: items, customer, customData
       window.Paddle.Checkout.open({
-        product: PRODUCT_MONTHLY,
-        email: user.email,
-        passthrough: JSON.stringify({ userId: user.id }),
+        items: [{ priceId: PRICE_MONTHLY, quantity: 1 }], // ZGJIDHJA per gabimin 400
+        customer: {
+            email: user.email,
+        },
+        customData: { userId: user.id }, // Ne vend te 'passthrough'
         successCallback: () => {
           alert("Payment successful!")
           setTimeout(() => window.location.reload(), 2000)
