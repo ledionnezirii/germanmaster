@@ -9,7 +9,6 @@ const paymentSchema = new mongoose.Schema(
     },
     paddleSubscriptionId: {
       type: String,
-      sparse: true,
     },
     paddleTransactionId: {
       type: String,
@@ -26,7 +25,6 @@ const paymentSchema = new mongoose.Schema(
     },
     productId: {
       type: String,
-      required: false,
     },
     subscriptionType: {
       type: String,
@@ -44,7 +42,6 @@ const paymentSchema = new mongoose.Schema(
     },
     currency: {
       type: String,
-      required: true,
       default: "EUR",
     },
     billingCycle: {
@@ -52,18 +49,10 @@ const paymentSchema = new mongoose.Schema(
       enum: ["monthly", "quarterly", "yearly"],
       required: true,
     },
-    nextBillingDate: {
-      type: Date,
-    },
-    cancelledAt: {
-      type: Date,
-    },
-    pausedAt: {
-      type: Date,
-    },
-    resumedAt: {
-      type: Date,
-    },
+    nextBillingDate: Date,
+    cancelledAt: Date,
+    pausedAt: Date,
+    resumedAt: Date,
     expiresAt: {
       type: Date,
       required: true,
@@ -79,13 +68,9 @@ const paymentSchema = new mongoose.Schema(
         data: mongoose.Schema.Types.Mixed,
       },
     ],
-    metadata: {
-      type: mongoose.Schema.Types.Mixed,
-    },
+    metadata: mongoose.Schema.Types.Mixed,
   },
-  {
-    timestamps: true,
-  },
+  { timestamps: true }
 )
 
 paymentSchema.index({ userId: 1, status: 1 })
@@ -93,7 +78,6 @@ paymentSchema.index(
   { paddleSubscriptionId: 1 },
   { unique: true, sparse: true }
 )
-paymentSchema.index({ paddleTransactionId: 1 })
 paymentSchema.index({ expiresAt: 1 })
 
 module.exports = mongoose.model("Payment", paymentSchema)
