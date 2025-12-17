@@ -230,6 +230,18 @@ const SignUp = () => {
               "Krijoni llogarinë"
             )}
           </button>
+
+          <div className="mt-6 text-center">
+            <p className="text-gray-600 text-sm sm:text-base">
+              Keni tashmë një llogari?{" "}
+              <button
+                onClick={() => navigate("/signin")}
+                className="bg-none border-none text-teal-500 hover:text-teal-600 underline cursor-pointer text-sm sm:text-base font-medium"
+              >
+                Hyni këtu
+              </button>
+            </p>
+          </div>
         </form>
       </div>
     </div>

@@ -1,24 +1,31 @@
+"use client"
+
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { useAuth } from "../context/AuthContext"
 import { subscriptionService } from "../services/api"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, Crown, Sparkles, Zap } from "lucide-react"
 
 const SubscriptionGate = ({ children }) => {
+  const { user, isAuthenticated, loading: authLoading } = useAuth()
   const [subscriptionStatus, setSubscriptionStatus] = useState(null)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
   useEffect(() => {
-    const checkSubscription = async () => {
-      const status = await subscriptionService.checkStatus()
-      setSubscriptionStatus(status)
+    if (!isAuthenticated || authLoading) {
       setLoading(false)
+      return
+    }
 
-      // If subscription expired, redirect to payment
-      if (status.expired) {
-        setTimeout(() => {
-          navigate("/payments")
-        }, 5000)
+    const checkSubscription = async () => {
+      try {
+        const status = await subscriptionService.checkStatus()
+        setSubscriptionStatus(status)
+      } catch (error) {
+        console.error("Failed to check subscription status:", error)
+      } finally {
+        setLoading(false)
       }
     }
 
@@ -28,37 +35,44 @@ const SubscriptionGate = ({ children }) => {
     const interval = setInterval(checkSubscription, 60000)
 
     return () => clearInterval(interval)
-  }, [navigate])
+  }, [isAuthenticated, authLoading])
 
-  if (loading) {
+  if (loading && isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-3 text-sm text-gray-600">Duke ngarkuar...</p>
         </div>
       </div>
     )
   }
 
-  // Show expiry warning if less than 1 day remaining
-  if (subscriptionStatus?.active && subscriptionStatus?.daysRemaining <= 1) {
+  if (!isAuthenticated) {
+    return children
+  }
+
+  if (subscriptionStatus?.active && subscriptionStatus?.daysRemaining <= 3) {
     return (
       <div>
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-          <div className="flex">
-            <AlertCircle className="h-5 w-5 text-yellow-400" />
-            <div className="ml-3">
-              <p className="text-sm text-yellow-700">
-                Your free trial expires in {subscriptionStatus.daysRemaining} day(s).{" "}
-                <button
-                  onClick={() => navigate("/payment")}
-                  className="font-medium underline text-yellow-700 hover:text-yellow-600"
-                >
-                  Subscribe now
-                </button>{" "}
-                to continue using all features.
+        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 p-3 mb-3 shadow-sm">
+          <div className="flex items-start gap-2">
+            <div className="flex-shrink-0">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-xs font-semibold text-amber-900 mb-1">Periudha provuese po mbaron</h4>
+              <p className="text-xs text-amber-800">
+                Periudha juaj falas skadon në <span className="font-bold">{subscriptionStatus.daysRemaining} ditë</span>
+                . Abonohuni tani për të vazhduar pa ndërprerje.
               </p>
+              <button
+                onClick={() => navigate("/payments")}
+                className="mt-2 inline-flex items-center gap-1.5 bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-amber-700 transition-colors shadow-sm"
+              >
+                <Crown className="h-3 w-3" />
+                Shiko planet
+              </button>
             </div>
           </div>
         </div>
@@ -67,26 +81,72 @@ const SubscriptionGate = ({ children }) => {
     )
   }
 
-  // Show expired message
   if (subscriptionStatus?.expired) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="max-w-md w-full mx-4">
-          <div className="bg-white rounded-lg shadow-lg p-8 text-center">
-            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-              <AlertCircle className="h-6 w-6 text-red-600" />
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+            {/* Icon Header */}
+            <div className="flex justify-center mb-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-lg opacity-20 animate-pulse"></div>
+                <div className="relative bg-gradient-to-r from-blue-500 to-purple-500 p-3 rounded-full">
+                  <Crown className="h-5 w-5 text-white" />
+                </div>
+              </div>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Free Trial Expired</h3>
-            <p className="text-sm text-gray-500 mb-6">
-              Your 2-day free trial has ended. Subscribe now to continue learning German!
+
+            {/* Content */}
+            <div className="text-center mb-5">
+              <h2 className="text-lg font-bold text-gray-900 mb-2">Periudha juaj falas ka përfunduar</h2>
+              <p className="text-sm text-gray-600 leading-relaxed">
+                Faleminderit që provuat platformën tonë! Periudha juaj falas 2-ditore ka mbaruar. Abonohuni tani për të
+                vazhduar mësimin e gjermanishtes me qasje të pakufizuar në të gjitha funksionet.
+              </p>
+            </div>
+
+            {/* Features List */}
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-4 mb-4">
+              <h3 className="text-xs font-semibold text-gray-900 mb-3 flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 text-purple-600" />
+                Çfarë do të fitoni me abonimin:
+              </h3>
+              <ul className="space-y-2">
+                {[
+                  "Qasje e pakufizuar në të gjitha mësimet",
+                  "Ushtrime të avancuara gramatikore",
+                  "Kuize dhe teste interaktive",
+                  "Ndjekje e progresit dhe analizë",
+                ].map((feature, index) => (
+                  <li key={index} className="flex items-start gap-2 text-xs text-gray-700">
+                    <Zap className="h-3.5 w-3.5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* CTA Buttons */}
+            <div className="space-y-2">
+              <button
+                onClick={() => navigate("/payments")}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2.5 px-4 rounded-lg text-sm font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              >
+                Shiko planet e abonimit
+              </button>
+
+              <button
+                onClick={() => navigate("/")}
+                className="w-full bg-white text-gray-700 py-2.5 px-4 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors border border-gray-200"
+              >
+                Kthehu në faqen kryesore
+              </button>
+            </div>
+
+            {/* Footer Note */}
+            <p className="text-center text-xs text-gray-500 mt-4">
+              Pyetje? Kontaktoni ekipin tonë të mbështetjes për ndihmë.
             </p>
-            <button
-              onClick={() => navigate("/payment")}
-              className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
-            >
-              View Subscription Plans
-            </button>
-            <p className="text-xs text-gray-400 mt-4">Redirecting to payment page in 3 seconds...</p>
           </div>
         </div>
       </div>

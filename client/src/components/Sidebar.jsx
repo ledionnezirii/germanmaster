@@ -22,10 +22,8 @@ import {
   InfinityIcon,
   BookUser,
   UniversityIcon,
-  BookOpen,
   ChevronDown,
-  Layers,
-  FileTerminal
+  FileTerminal,
 } from "lucide-react"
 import { MicrophoneIcon } from "@heroicons/react/24/outline"
 
@@ -41,8 +39,8 @@ const Sidebar = () => {
 
   // State for expanded submenus
   const [expandedMenus, setExpandedMenus] = useState({
-    "Mëso": true,
-    "Ushtro": true
+    Mëso: true,
+    Ushtro: true,
   })
 
   const toggleMenu = (label) => {
@@ -50,10 +48,10 @@ const Sidebar = () => {
       toggleSidebar()
       // Allow sidebar animation to start before expanding menu
       setTimeout(() => {
-        setExpandedMenus(prev => ({ ...prev, [label]: true }))
+        setExpandedMenus((prev) => ({ ...prev, [label]: true }))
       }, 50)
     } else {
-      setExpandedMenus(prev => ({ ...prev, [label]: !prev[label] }))
+      setExpandedMenus((prev) => ({ ...prev, [label]: !prev[label] }))
     }
   }
 
@@ -63,7 +61,6 @@ const Sidebar = () => {
     { icon: Languages, label: "Përkthe", path: "/translate" },
     { icon: Headphones, label: "Dëgjo", path: "/listen" },
 
-
     {
       icon: FileTerminal,
       label: "Gramatika",
@@ -72,9 +69,7 @@ const Sidebar = () => {
       subItems: [
         { icon: UniversityIcon, label: "Mëso Gramatiken", path: "/grammar" },
         { icon: Dumbbell, label: "Ushtro Gramatiken", path: "/practice" },
-
-
-      ]
+      ],
     },
     { icon: InfinityIcon, label: "Baza Gjuhësore", path: "/category" },
     { icon: LightbulbIcon, label: "Kuizet", path: "/quizes" },
@@ -86,9 +81,7 @@ const Sidebar = () => {
     { icon: Calendar, label: "PlanProgrami", path: "/plan", requireAuth: true },
     /*{ icon: User, label: "Menaxho", path: "/academies", requireAuth: true },*/
     { icon: User, label: "Llogaria", path: "/account", requireAuth: true },
-
   ]
-
 
   const footerMenuItems = [
     {
@@ -119,21 +112,26 @@ const Sidebar = () => {
 
   // Auto-expand menus if child is active
   useEffect(() => {
-    if (isCollapsed) return;
+    if (isCollapsed) return
 
-    menuItems.forEach(item => {
-      if (item.subItems && item.subItems.some(sub => location.pathname === sub.path)) {
-        setExpandedMenus(prev => ({ ...prev, [item.label]: true }))
+    menuItems.forEach((item) => {
+      if (item.subItems && item.subItems.some((sub) => location.pathname === sub.path)) {
+        setExpandedMenus((prev) => ({ ...prev, [item.label]: true }))
       }
     })
   }, [location.pathname, isCollapsed])
+
+  if (!isAuthenticated) {
+    return null
+  }
 
   return (
     <>
       {!isCollapsed && (
         <div
-          className={`fixed inset-0 z-30 bg-black/40 lg:hidden transition-opacity duration-300 ease-out ${!isCollapsed ? "opacity-100" : "opacity-0"
-            }`}
+          className={`fixed inset-0 z-30 bg-black/40 lg:hidden transition-opacity duration-300 ease-out ${
+            !isCollapsed ? "opacity-100" : "opacity-0"
+          }`}
           style={{
             backdropFilter: window.innerWidth < 768 ? "blur(4px)" : "blur(12px)",
             touchAction: "none",
@@ -196,7 +194,7 @@ const Sidebar = () => {
               const isExpanded = expandedMenus[item.label]
 
               // Check if item or any subitem is active
-              const isChildActive = hasSubItems && item.subItems.some(sub => location.pathname === sub.path)
+              const isChildActive = hasSubItems && item.subItems.some((sub) => location.pathname === sub.path)
               const isActive = location.pathname === item.path || isChildActive
 
               if (hasSubItems) {
@@ -204,19 +202,19 @@ const Sidebar = () => {
                   <li key={item.label}>
                     <button
                       onClick={() => toggleMenu(item.label)}
-                      className={`w-full relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 overflow-hidden ${isActive || isExpanded
-                        ? "text-white"
-                        : "text-slate-300 hover:bg-white/5 hover:text-white"
-                        } ${isCollapsed ? "justify-center" : "justify-between"}`}
+                      className={`w-full relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 overflow-hidden ${
+                        isActive || isExpanded ? "text-white" : "text-slate-300 hover:bg-white/5 hover:text-white"
+                      } ${isCollapsed ? "justify-center" : "justify-between"}`}
                       title={isCollapsed ? item.label : ""}
                     >
                       <div className="flex items-center">
                         <div className={`relative flex items-center ${isCollapsed ? "" : "mr-3"}`}>
                           <Icon
-                            className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${isActive
-                              ? "text-emerald-400"
-                              : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
-                              }`}
+                            className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${
+                              isActive
+                                ? "text-emerald-400"
+                                : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
+                            }`}
                           />
                           {isActive && <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-md"></div>}
                         </div>
@@ -224,20 +222,23 @@ const Sidebar = () => {
                       </div>
 
                       {!isCollapsed && (
-                        <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+                        <ChevronDown
+                          className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                        />
                       )}
                     </button>
 
                     {/* Submenu */}
                     <div
-                      className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded && !isCollapsed ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-                        }`}
+                      className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                        isExpanded && !isCollapsed ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+                      }`}
                     >
                       <ul className="mt-1 space-y-1 pl-4 relative">
                         {/* Vertical line for tree structure */}
                         <div className="absolute left-5 top-0 bottom-0 w-px bg-white/10"></div>
 
-                        {item.subItems.map(subItem => {
+                        {item.subItems.map((subItem) => {
                           const SubIcon = subItem.icon
                           const isSubActive = location.pathname === subItem.path
                           return (
@@ -245,12 +246,15 @@ const Sidebar = () => {
                               <Link
                                 to={subItem.path}
                                 onClick={handleLinkClick}
-                                className={`relative group flex items-center rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 ${isSubActive
-                                  ? "text-emerald-400 bg-emerald-500/10"
-                                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-                                  }`}
+                                className={`relative group flex items-center rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 ${
+                                  isSubActive
+                                    ? "text-emerald-400 bg-emerald-500/10"
+                                    : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                                }`}
                               >
-                                <SubIcon className={`h-4 w-4 mr-3 ${isSubActive ? "text-emerald-400" : "text-slate-500 group-hover:text-emerald-400"}`} />
+                                <SubIcon
+                                  className={`h-4 w-4 mr-3 ${isSubActive ? "text-emerald-400" : "text-slate-500 group-hover:text-emerald-400"}`}
+                                />
                                 <span className="truncate">{subItem.label}</span>
                               </Link>
                             </li>
@@ -267,10 +271,11 @@ const Sidebar = () => {
                   <Link
                     to={item.path}
                     onClick={handleLinkClick}
-                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 overflow-hidden ${isActive
-                      ? "bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-white shadow-lg shadow-emerald-500/10"
-                      : "text-slate-300 hover:bg-white/5 hover:text-white"
-                      } ${isCollapsed ? "justify-center" : "justify-start"}`}
+                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 overflow-hidden ${
+                      isActive
+                        ? "bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-white shadow-lg shadow-emerald-500/10"
+                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                    } ${isCollapsed ? "justify-center" : "justify-start"}`}
                     title={isCollapsed ? item.label : ""}
                     aria-current={isActive ? "page" : undefined}
                   >
@@ -279,10 +284,11 @@ const Sidebar = () => {
                     )}
                     <div className={`relative flex items-center ${isCollapsed ? "" : "mr-3"}`}>
                       <Icon
-                        className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${isActive
-                          ? "text-emerald-400"
-                          : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
-                          }`}
+                        className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${
+                          isActive
+                            ? "text-emerald-400"
+                            : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
+                        }`}
                       />
                       {isActive && <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-md"></div>}
                     </div>
@@ -307,18 +313,20 @@ const Sidebar = () => {
                   <Link
                     to={item.path}
                     onClick={item.action || handleLinkClick}
-                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-200 overflow-hidden ${isActive
-                      ? "bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-white shadow-lg shadow-amber-500/10"
-                      : "bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-300 hover:from-amber-500/20 hover:to-orange-500/20 hover:text-amber-200 border border-amber-500/20 hover:border-amber-500/30"
-                      } ${isCollapsed ? "justify-center" : "justify-start"}`}
+                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-200 overflow-hidden ${
+                      isActive
+                        ? "bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-white shadow-lg shadow-amber-500/10"
+                        : "bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-300 hover:from-amber-500/20 hover:to-orange-500/20 hover:text-amber-200 border border-amber-500/20 hover:border-amber-500/30"
+                    } ${isCollapsed ? "justify-center" : "justify-start"}`}
                     title={isCollapsed ? item.label : ""}
                     aria-current={isActive ? "page" : undefined}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-orange-500/5 to-amber-500/5"></div>
                     <div className={`relative flex items-center ${isCollapsed ? "" : "mr-3"}`}>
                       <Icon
-                        className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${isActive ? "text-amber-400" : "group-hover:scale-110"
-                          }`}
+                        className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${
+                          isActive ? "text-amber-400" : "group-hover:scale-110"
+                        }`}
                       />
                       {isActive && <div className="absolute inset-0 bg-amber-400/20 rounded-full blur-md"></div>}
                     </div>

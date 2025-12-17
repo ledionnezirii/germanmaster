@@ -111,10 +111,12 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Left side - Logo and menu toggle */}
           <div className="flex items-center space-x-2 md:space-x-4">
-            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="md:hidden">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">Toggle sidebar</span>
-            </Button>
+            {isAuthenticated && (
+              <Button variant="ghost" size="icon" onClick={toggleSidebar} className="md:hidden">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">Toggle sidebar</span>
+              </Button>
+            )}
             <Link to="/" className="flex items-center space-x-2.5 group">
               <div className="relative flex items-center justify-center group-hover:scale-110 transition-all duration-300">
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/30 to-teal-500/30 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300"></div>
