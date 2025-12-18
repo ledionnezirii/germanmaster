@@ -1,6 +1,4 @@
-"use client"
-
-import { useState, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import {
   ArrowLeft,
   Check,
@@ -15,58 +13,7 @@ import {
   Target,
   Play,
 } from "lucide-react"
-// API services
-const API_BASE_URL = "/api"
-
-const api = {
-  get: async (url) => {
-    const token = localStorage.getItem("authToken")
-    const response = await fetch(`${API_BASE_URL}${url}`, {
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json"
-      }
-    })
-    const data = await response.json()
-    return data.data || data
-  },
-  post: async (url, body) => {
-    const token = localStorage.getItem("authToken")
-    const response = await fetch(`${API_BASE_URL}${url}`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
-    })
-    const data = await response.json()
-    return data.data || data
-  },
-  put: async (url, body) => {
-    const token = localStorage.getItem("authToken")
-    const response = await fetch(`${API_BASE_URL}${url}`, {
-      method: "PUT",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
-    })
-    const data = await response.json()
-    return data.data || data
-  }
-}
-
-const authService = {
-  getProfile: () => api.get("/auth/me")
-}
-
-const planService = {
-  getPlanByLevel: (level) => api.get(`/plan/${level}`),
-  startWeek: (level, weekNumber) => api.post(`/plan/${level}/week/${weekNumber}/start`),
-  markTopicAsCompleted: (planId, topicId) => api.put(`/plan/${planId}/topic/${topicId}/complete`)
-}
+import { authService, planService } from "../services/api"
 
 function ConfirmationDialog({ isOpen, onClose, onConfirm, weekNumber, loading }) {
   if (!isOpen) return null
@@ -150,6 +97,23 @@ function useCountdown(targetDate) {
   return timeLeft
 }
 
+function CountdownTimer({ lockedUntil }) {
+  const timeLeft = useCountdown(lockedUntil)
+
+  if (timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0) {
+    return <span className="text-xs text-amber-800 font-medium">Duke u zhbllokuar...</span>
+  }
+
+  return (
+    <div className="flex items-center gap-2 text-xs font-mono font-bold text-amber-900">
+      {timeLeft.days > 0 && <span className="bg-amber-100 px-2 py-1 rounded">{timeLeft.days}d</span>}
+      <span className="bg-amber-100 px-2 py-1 rounded">{timeLeft.hours}h</span>
+      <span className="bg-amber-100 px-2 py-1 rounded">{timeLeft.minutes}m</span>
+      <span className="bg-amber-100 px-2 py-1 rounded">{timeLeft.seconds}s</span>
+    </div>
+  )
+}
+
 export default function PlanPage() {
   const [selectedLevel, setSelectedLevel] = useState(null)
   const [selectedWeek, setSelectedWeek] = useState(null)
@@ -177,15 +141,14 @@ export default function PlanPage() {
 
         const xpResponse = await authService.getProfile()
         console.log("[PlanPage] XP Response:", xpResponse)
-        // Handle both nested and flat response structures
-        const xpValue = xpResponse.xp || xpResponse.user?.xp || 0
+        const xpValue = xpResponse.data?.xp || xpResponse.xp || xpResponse.user?.xp || 0
         setUserXp(xpValue)
 
         const planResponse = await planService.getPlanByLevel(selectedLevel)
         console.log("[PlanPage] Plan Response:", planResponse)
-        // Response is already unwrapped by interceptor
-        setPlan(planResponse)
-        setLockStatus(planResponse.lockStatus)
+        const planData = planResponse.data || planResponse
+        setPlan(planData)
+        setLockStatus(planData.lockStatus)
       } catch (err) {
         console.error(`Failed to fetch plan or XP for level ${selectedLevel}:`, err)
         setError(
@@ -209,16 +172,13 @@ export default function PlanPage() {
   }
 
   const handleWeekButtonClick = (weekNumber, isLocked, isActiveWeek) => {
-    // Block if locked (another week is active)
     if (isLocked) return
 
-    // If it's already the active week, go directly to content
     if (isActiveWeek) {
       setSelectedWeek(weekNumber)
       return
     }
 
-    // Show confirmation dialog for new weeks
     setConfirmDialog({ isOpen: true, weekNumber })
   }
 
@@ -233,19 +193,19 @@ export default function PlanPage() {
       const response = await planService.startWeek(selectedLevel, weekNumber)
       console.log("[PlanPage] Start week API response:", response)
 
-      // Check if we got a successful response (has weekNumber and message)
-      if (response && response.weekNumber) {
+      const responseData = response.data || response
+      if (responseData && responseData.weekNumber) {
         console.log("[PlanPage] Week started successfully, fetching updated plan...")
         
         const planResponse = await planService.getPlanByLevel(selectedLevel)
         console.log("[PlanPage] Updated plan response:", planResponse)
 
-        setPlan(planResponse)
-        setLockStatus(planResponse.lockStatus)
+        const planData = planResponse.data || planResponse
+        setPlan(planData)
+        setLockStatus(planData.lockStatus)
 
         setConfirmDialog({ isOpen: false, weekNumber: null })
 
-        // Navigate to the week
         setTimeout(() => {
           console.log("[PlanPage] Navigating to week:", weekNumber)
           setSelectedWeek(weekNumber)
@@ -275,7 +235,6 @@ export default function PlanPage() {
 
     setSubmittingTopicId(topicId)
 
-    // Optimistically update UI
     setPlan((prevPlan) => {
       if (!prevPlan?.weeks) return null
 
@@ -297,21 +256,20 @@ export default function PlanPage() {
       const response = await planService.markTopicAsCompleted(plan._id, topicId)
       console.log("[PlanPage] Mark topic completed response:", response)
       
-      // Response is unwrapped by interceptor
-      if (response && (response.success || response.data)) {
-        const newXp = response.data?.userXp || response.userXp
+      const responseData = response.data || response
+      if (responseData && (responseData.success || responseData.data)) {
+        const newXp = responseData.data?.userXp || responseData.userXp
         if (newXp) {
           setUserXp(newXp)
         }
         
-        // Refresh the plan to get accurate data
         const planResponse = await planService.getPlanByLevel(selectedLevel)
-        setPlan(planResponse)
+        const planData = planResponse.data || planResponse
+        setPlan(planData)
       }
     } catch (err) {
       console.error("Failed to mark topic as finished:", err)
       
-      // Revert optimistic update on error
       setPlan((prevPlan) => {
         if (!prevPlan?.weeks) return null
         const revertedWeeks = prevPlan.weeks.map((week) => {
@@ -654,23 +612,6 @@ export default function PlanPage() {
     )
   }
 
-  function CountdownTimer({ lockedUntil }) {
-    const timeLeft = useCountdown(lockedUntil)
-
-    if (timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0) {
-      return <span className="text-xs text-amber-800 font-medium">Duke u zhbllokuar...</span>
-    }
-
-    return (
-      <div className="flex items-center gap-2 text-xs font-mono font-bold text-amber-900">
-        {timeLeft.days > 0 && <span className="bg-amber-100 px-2 py-1 rounded">{timeLeft.days}d</span>}
-        <span className="bg-amber-100 px-2 py-1 rounded">{timeLeft.hours}h</span>
-        <span className="bg-amber-100 px-2 py-1 rounded">{timeLeft.minutes}m</span>
-        <span className="bg-amber-100 px-2 py-1 rounded">{timeLeft.seconds}s</span>
-      </div>
-    )
-  }
-
   // Weeks Selection View
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 py-6 sm:py-10 lg:py-12 px-4 sm:px-6 lg:px-12">
@@ -732,12 +673,11 @@ export default function PlanPage() {
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {plan.weeks.map((week, index) => {
+          {plan.weeks.map((week) => {
             const completedTopics = week.topics.filter((t) => t.isCompleted).length
             const totalTopics = week.topics.length
             const weekProgress = totalTopics > 0 ? (completedTopics / totalTopics) * 100 : 0
             const isActiveWeek = lockStatus?.activeWeekNumber === week.weekNumber
-            // Lock all weeks EXCEPT the active one when lockStatus.isLocked is true
             const isLocked = lockStatus?.isLocked && !isActiveWeek
             const isCompleted = weekProgress === 100
 
