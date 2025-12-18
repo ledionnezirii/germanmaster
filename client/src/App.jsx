@@ -1,7 +1,10 @@
+"use client"
+
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom"
 import { SidebarProvider, useSidebar } from "./context/SidebarContext"
-import { AuthProvider } from "./context/AuthContext"
+import { AuthProvider, useAuth } from "./context/AuthContext"
 import SubscriptionGate from "./components/SubscriptionGate"
+import NoAuth from "./components/NoAuth"
 import Navbar from "./components/Navbar"
 import Sidebar from "./components/Sidebar"
 import Home from "./pages/Home"
@@ -31,22 +34,32 @@ import Academy from "./pages/Academy"
 
 const AppContent = () => {
   const { isCollapsed } = useSidebar()
+  const { isAuthenticated, loading } = useAuth()
   const location = useLocation()
 
   // Routes where Navbar/Sidebar should be hidden
-  const hiddenLayoutPaths = ["/signin", "/signup", "/forgotpassword", "/verify/", "/reset-password/", "/terms"]
+  const hiddenLayoutPaths = ["/signin", "/signup", "/forgotpassword", "/verify/", "/reset-password/"]
   const hideLayout = hiddenLayoutPaths.some((path) => location.pathname.startsWith(path))
+
+  // Show loading state while checking auth
+  if (loading && location.pathname === "/") {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {!hideLayout && <Navbar />}
       <div className="flex flex-1 relative">
-        {!hideLayout && <Sidebar />}
+        {!hideLayout && isAuthenticated && <Sidebar />}
         {/* Main content with proper margin */}
         <main
           className={`
             flex-1 transition-all duration-300 ease-in-out
-            ${!hideLayout ? (isCollapsed ? "lg:ml-16" : "lg:ml-64") : ""}
+            ${!hideLayout && isAuthenticated ? (isCollapsed ? "lg:ml-16" : "lg:ml-64") : ""}
             min-h-[calc(100vh-4rem)] overflow-y-auto
           `}
         >
@@ -67,7 +80,7 @@ const AppContent = () => {
                 element={
                   <SubscriptionGate>
                     <Routes>
-                      <Route path="/" element={<Home />} />
+                      <Route path="/" element={isAuthenticated ? <Home /> : <NoAuth />} />
                       <Route path="/leaderboard" element={<Leaderboard />} />
                       <Route path="/listen" element={<Listen />} />
                       <Route path="/translate" element={<Translate />} />
@@ -111,4 +124,3 @@ const App = () => {
 }
 
 export default App
-

@@ -146,20 +146,23 @@ const Payment = () => {
   const subscriptionActive = subscriptionStatus?.active && subscriptionStatus?.type === "1_month"
   const isFreeTrial = subscriptionStatus?.type === "free_trial" && subscriptionStatus?.active
   const hasSubscription = subscriptionStatus && subscriptionStatus?.type
+  const isCancelled = subscriptionStatus?.cancelled && subscriptionStatus?.daysRemaining > 0
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-gray-900 mb-3">Abonimi & Faturat</h1>
-          <p className="text-gray-600 text-lg">Menaxho planin tënd të abonimit</p>
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50">
+      <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white py-8 px-4 shadow-lg rounded-3xl">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-4xl font-bold mb-2">Abonimi & Faturat</h1>
+          <p className="text-red-100">Menaxho planin tënd të abonimit dhe shiko detajet e pagesave</p>
         </div>
+      </div>
 
+      <div className="max-w-4xl mx-auto py-8 px-4">
         {error && (
-          <div className="bg-red-100 border-l-4 border-red-600 rounded-lg p-5 mb-8 shadow-md">
+          <div className="bg-red-100 border-l-4 border-red-600 rounded-lg p-4 mb-6 shadow-md">
             <div className="flex justify-between items-start">
               <div className="flex items-start gap-3">
-                <span className="text-2xl">⚠️</span>
+                <span className="text-xl">⚠️</span>
                 <p className="text-red-900 font-medium">{error}</p>
               </div>
               <button
@@ -172,23 +175,51 @@ const Payment = () => {
           </div>
         )}
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {isFreeTrial && (
-            <div className="md:col-span-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-2xl p-6 shadow-xl text-white">
-              <div className="flex items-start gap-4">
-                <div className="bg-white/20 rounded-full p-3">
-                  <span className="text-3xl">🎉</span>
+        <div className="grid md:grid-cols-2 gap-6">
+          {isCancelled && (
+            <div className="md:col-span-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-5 shadow-lg text-white">
+              <div className="flex items-start gap-3">
+                <div className="bg-white/20 rounded-full p-2">
+                  <span className="text-2xl">⏰</span>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-2">Periudha Falas Aktive</h3>
-                  <p className="text-blue-100 text-base mb-3">
+                  <h3 className="text-lg font-bold mb-1">Abonimi i Anuluar</h3>
+                  <p className="text-orange-100 text-sm mb-2">
+                    Abonimi yt është anuluar, por ke akoma{" "}
+                    <span className="font-bold text-white text-lg">{subscriptionStatus.daysRemaining}</span> ditë qasje
+                    të mbetur.
+                  </p>
+                  {subscriptionStatus.expiresAt && (
+                    <div className="bg-white/10 rounded-lg px-3 py-1.5 inline-block">
+                      <p className="text-xs">
+                        📅 Qasja përfundon më:{" "}
+                        <span className="font-semibold">
+                          {new Date(subscriptionStatus.expiresAt).toLocaleDateString("sq-AL")}
+                        </span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {isFreeTrial && !isCancelled && (
+            <div className="md:col-span-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-5 shadow-lg text-white">
+              <div className="flex items-start gap-3">
+                <div className="bg-white/20 rounded-full p-2">
+                  <span className="text-2xl">🎉</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold mb-1">Periudha Falas Aktive</h3>
+                  <p className="text-blue-100 text-sm mb-2">
                     Të kanë mbetur{" "}
-                    <span className="font-bold text-white text-xl">{subscriptionStatus.daysRemaining}</span> ditë në
+                    <span className="font-bold text-white text-lg">{subscriptionStatus.daysRemaining}</span> ditë në
                     periudhën tënde falas.
                   </p>
                   {subscriptionStatus.expiresAt && (
-                    <div className="bg-white/10 rounded-lg px-4 py-2 inline-block">
-                      <p className="text-sm">
+                    <div className="bg-white/10 rounded-lg px-3 py-1.5 inline-block">
+                      <p className="text-xs">
                         📅 Përfundon më:{" "}
                         <span className="font-semibold">
                           {new Date(subscriptionStatus.expiresAt).toLocaleDateString("sq-AL")}
@@ -201,22 +232,22 @@ const Payment = () => {
             </div>
           )}
 
-          {subscriptionActive && (
-            <div className="md:col-span-2 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-6 shadow-xl text-white">
-              <div className="flex items-start gap-4">
-                <div className="bg-white/20 rounded-full p-3">
-                  <span className="text-3xl">👑</span>
+          {subscriptionActive && !isCancelled && (
+            <div className="md:col-span-2 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-5 shadow-lg text-white">
+              <div className="flex items-start gap-3">
+                <div className="bg-white/20 rounded-full p-2">
+                  <span className="text-2xl">👑</span>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-2">Abonimi Premium Aktiv</h3>
-                  <p className="text-green-100 text-base mb-3">
+                  <h3 className="text-lg font-bold mb-1">Abonimi Premium Aktiv</h3>
+                  <p className="text-green-100 text-sm mb-2">
                     Të kanë mbetur{" "}
-                    <span className="font-bold text-white text-xl">{subscriptionStatus.daysRemaining || 30}</span> ditë
+                    <span className="font-bold text-white text-lg">{subscriptionStatus.daysRemaining || 30}</span> ditë
                     deri në rinovim.
                   </p>
                   {subscriptionStatus.expiresAt && (
-                    <div className="bg-white/10 rounded-lg px-4 py-2 inline-block">
-                      <p className="text-sm">
+                    <div className="bg-white/10 rounded-lg px-3 py-1.5 inline-block">
+                      <p className="text-xs">
                         📅 Rinovohet më:{" "}
                         <span className="font-semibold">
                           {new Date(subscriptionStatus.expiresAt).toLocaleDateString("sq-AL")}
@@ -229,27 +260,25 @@ const Payment = () => {
             </div>
           )}
 
-          {(!hasSubscription || !subscriptionActive) && (
-            <div className="md:col-span-2 bg-white rounded-2xl shadow-2xl overflow-hidden">
-              <div className="bg-gradient-to-r from-red-600 to-red-700 p-8 text-white text-center">
-                <div className="inline-block bg-white/20 rounded-full p-4 mb-4">
-                  <span className="text-5xl">⭐</span>
+          {(!hasSubscription || !subscriptionActive || isCancelled) && (
+            <div className="md:col-span-2 bg-white rounded-xl shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-red-600 to-red-700 p-6 text-white text-center">
+                <div className="inline-block bg-white/20 rounded-full p-3 mb-3">
+                  <span className="text-3xl">⭐</span>
                 </div>
-                <h2 className="text-3xl font-bold mb-2">Abonimi Premium</h2>
-                <p className="text-red-100 text-lg">
-                  Zhblloko të gjitha veçoritë dhe vazhdo udhëtimin tënd të të mësuarit
-                </p>
+                <h2 className="text-2xl font-bold mb-1">Abonimi Premium</h2>
+                <p className="text-red-100">Zhblloko të gjitha veçoritë dhe vazhdo udhëtimin tënd të të mësuarit</p>
               </div>
 
-              <div className="p-8">
-                <div className="text-center mb-8">
-                  <div className="flex items-center justify-center gap-2 mb-2">
-                    <span className="text-6xl font-bold text-red-600">€1.00</span>
+              <div className="p-6">
+                <div className="text-center mb-6">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <span className="text-5xl font-bold text-red-600">€1.00</span>
                   </div>
-                  <p className="text-gray-500 text-lg">për muaj</p>
-                  <div className="mt-6 bg-red-50 rounded-xl p-4">
-                    <h4 className="font-semibold text-gray-900 mb-3">Përfitimet e Premium:</h4>
-                    <ul className="space-y-2 text-left text-gray-700">
+                  <p className="text-gray-500 mb-4">për muaj</p>
+                  <div className="bg-red-50 rounded-lg p-3">
+                    <h4 className="font-semibold text-gray-900 mb-2 text-sm">Përfitimet e Premium:</h4>
+                    <ul className="space-y-1.5 text-left text-gray-700 text-sm">
                       <li className="flex items-center gap-2">
                         <span className="text-green-500">✓</span>
                         <span>Qasje të pakufizuar në të gjitha leksionet</span>
@@ -273,7 +302,7 @@ const Payment = () => {
                 <button
                   onClick={openCheckout}
                   disabled={!paddleInitialized}
-                  className={`w-full py-4 px-8 text-xl font-bold rounded-xl transition-all transform hover:scale-105 shadow-lg ${
+                  className={`w-full py-3 px-6 text-lg font-bold rounded-xl transition-all transform hover:scale-105 shadow-lg ${
                     paddleInitialized
                       ? "bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800"
                       : "bg-gray-300 text-gray-600 cursor-not-allowed"
@@ -281,22 +310,22 @@ const Payment = () => {
                 >
                   {paddleInitialized ? "💳 Abonohu Tani" : "Duke ngarkuar sistemin e pagesave..."}
                 </button>
-                <p className="text-center text-sm text-gray-500 mt-4">
+                <p className="text-center text-xs text-gray-500 mt-3">
                   🔒 Pagesë e sigurt me Paddle. Anulo në çdo kohë.
                 </p>
               </div>
             </div>
           )}
 
-          {subscriptionActive && (
-            <div className="md:col-span-2 bg-white rounded-2xl shadow-lg p-8 border-2 border-gray-100">
-              <div className="flex items-start gap-4 mb-6">
-                <div className="bg-red-100 rounded-full p-3">
-                  <span className="text-2xl">⚙️</span>
+          {subscriptionActive && !isCancelled && (
+            <div className="md:col-span-2 bg-white rounded-xl shadow-lg p-5 border-2 border-gray-100">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="bg-red-100 rounded-full p-2">
+                  <span className="text-xl">⚙️</span>
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Menaxho Abonimin</h2>
-                  <p className="text-gray-600">
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">Menaxho Abonimin</h2>
+                  <p className="text-gray-600 text-sm">
                     Dëshiron të anulosh? Mund ta anulosh abonimin tënd në çdo kohë. Do të vazhdosh të kesh qasje deri në
                     fund të periudhës së faturimit.
                   </p>
@@ -304,7 +333,7 @@ const Payment = () => {
               </div>
               <button
                 onClick={handleCancelSubscription}
-                className="px-6 py-3 text-red-600 font-semibold border-2 border-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all"
+                className="px-5 py-2.5 text-red-600 font-semibold border-2 border-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all"
               >
                 Anulo Abonimin
               </button>

@@ -35,6 +35,32 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem("authToken"))
 
   useEffect(() => {
+    const checkSessionValidity = async () => {
+      const savedToken = localStorage.getItem("authToken")
+      if (savedToken && user) {
+        try {
+          await authService.getProfile()
+        } catch (error) {
+          // If session is invalid (401), log out the user
+          if (error.response?.status === 401) {
+            console.log("AuthContext: Session invalidated by server. Logging out.")
+            localStorage.removeItem("authToken")
+            localStorage.removeItem("user")
+            setToken(null)
+            setUser(null)
+          }
+        }
+      }
+    }
+
+    // Check session validity every 30 seconds
+    const interval = setInterval(checkSessionValidity, 30000)
+
+    return () => clearInterval(interval)
+  }, [user, setUser])
+  // </CHANGE>
+
+  useEffect(() => {
     const initAuth = async () => {
       const savedToken = localStorage.getItem("authToken")
       console.log("AuthContext: initAuth called. Saved token:", savedToken ? "Exists" : "Does not exist")
@@ -74,11 +100,11 @@ export const AuthProvider = ({ children }) => {
             avatarStyle: userDataFromResponse.avatarStyle || "adventurer",
             subscription: userDataFromResponse.subscription || {
               active: false,
-              type: 'free_trial',
+              type: "free_trial",
               expiresAt: null,
               trialStartedAt: null,
-              daysRemaining: 0
-            }
+              daysRemaining: 0,
+            },
           }
           console.log("AuthContext: Fetched user data (before setting state):", JSON.stringify(fetchedUser, null, 2))
           setUser(fetchedUser)
@@ -136,11 +162,11 @@ export const AuthProvider = ({ children }) => {
         avatarStyle: userData.avatarStyle || "adventurer",
         subscription: userData.subscription || {
           active: false,
-          type: 'free_trial',
+          type: "free_trial",
           expiresAt: null,
           trialStartedAt: null,
-          daysRemaining: 0
-        }
+          daysRemaining: 0,
+        },
       }
       console.log("AuthContext: User data to store after login:", JSON.stringify(userToStore, null, 2))
       // Store the full user data in localStorage upon login

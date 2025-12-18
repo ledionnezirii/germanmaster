@@ -252,8 +252,14 @@ export const challengeService = {
 
 export const planService = {
   getPlanByLevel: (level) => api.get(`/plan/${level}`),
+  getAllPlans: () => api.get("/plan/admin/all"),
+  createOrUpdatePlan: (level, planData) => api.put(`/plan/admin/${level}`, planData),
+  deletePlan: (level) => api.delete(`/plan/admin/${level}`),
   markTopicAsCompleted: (planId, topicId) => api.put(`/plan/${planId}/topic/${topicId}/complete`),
+  getWeekByLevel: (level, weekNumber) => api.get(`/plan/${level}/week/${weekNumber}`),
+  startWeek: (level, weekNumber) => api.post(`/plan/${level}/week/${weekNumber}/start`),
 }
+
 
 export const testService = {
   getAllTests: (params = {}) => api.get("/tests", { params }),
