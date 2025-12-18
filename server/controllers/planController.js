@@ -2,12 +2,12 @@ const Plan = require("../models/Plan")
 const User = require("../models/User")
 
 exports.createOrUpdatePlan = async (req, res) => {
-  const { level, topics } = req.body
+  const { level, weeks } = req.body
   const adminId = req.user._id
 
   try {
-    if (!topics || !Array.isArray(topics) || topics.length === 0) {
-      return res.status(400).json({ message: "Topics array is required and cannot be empty." })
+    if (!weeks || !Array.isArray(weeks) || weeks.length === 0) {
+      return res.status(400).json({ message: "Weeks array is required and cannot be empty." })
     }
 
     const validLevels = ["A1", "A2", "B1", "B2", "C1", "C2"]
@@ -15,12 +15,19 @@ exports.createOrUpdatePlan = async (req, res) => {
       return res.status(400).json({ message: "Invalid level. Must be A1, A2, B1, B2, C1, or C2." })
     }
 
-    // <CHANGE> Find by BOTH userId and level, not just level
+    // Validate weeks structure
+    for (const week of weeks) {
+      if (!week.weekNumber || !week.title || !week.topics || !Array.isArray(week.topics)) {
+        return res.status(400).json({
+          message: "Each week must have weekNumber, title, and topics array.",
+        })
+      }
+    }
+
     let plan = await Plan.findOne({ userId: adminId, level })
 
     if (plan) {
-      // Update existing plan
-      plan.topics = topics
+      plan.weeks = weeks
       await plan.save()
       res.status(200).json({
         success: true,
@@ -28,10 +35,9 @@ exports.createOrUpdatePlan = async (req, res) => {
         message: `Plan for level ${level} updated successfully.`,
       })
     } else {
-      // Create new plan
       plan = await Plan.create({
         level,
-        topics,
+        weeks,
         userId: adminId,
       })
       res.status(201).json({
@@ -46,29 +52,233 @@ exports.createOrUpdatePlan = async (req, res) => {
   }
 }
 
+const areOtherWeeksLocked = (userLevelProgress) => {
+  if (!userLevelProgress || !userLevelProgress.activeWeek) {
+    return null
+  }
+
+  const lockedUntil = userLevelProgress.activeWeek.lockedUntil
+  if (!lockedUntil) {
+    return null
+  }
+
+  const now = new Date()
+  if (now < new Date(lockedUntil)) {
+    return {
+      isLocked: true,
+      lockedUntil: lockedUntil,
+      activeWeekNumber: userLevelProgress.activeWeek.weekNumber,
+    }
+  }
+
+  return null
+}
+
 exports.getPlanByLevel = async (req, res) => {
   const { level } = req.params
   const userId = req.user._id
 
   try {
-    // <CHANGE> Find by level only (this gets the admin's plan template for this level)
-    // If you want user-specific plans, change this to: { userId, level }
     const plan = await Plan.findOne({ level })
 
     if (!plan) {
       return res.status(404).json({ message: `No plan found for level ${level}.` })
     }
 
-    // Get user with their plan progress
     const user = await User.findById(userId)
     if (!user) {
       return res.status(404).json({ message: "User not found." })
     }
 
-    // Find user's progress for this level
     let userLevelProgress = user.planProgress.find((p) => p.level === level)
 
-    // If no progress exists for this level, initialize it
+    if (!userLevelProgress) {
+      userLevelProgress = {
+        level: level,
+        completedTopics: [],
+        completedWeeks: [],
+      }
+    }
+
+    const lockStatus = areOtherWeeksLocked(userLevelProgress)
+
+    const weeksWithProgress = plan.weeks.map((week, weekIndex) => {
+      const topicsWithProgress = week.topics.map((topic) => {
+        const completed = userLevelProgress.completedTopics.find((ct) => ct.topicId.toString() === topic._id.toString())
+
+        return {
+          _id: topic._id,
+          title: topic.title,
+          description: topic.description,
+          xpReward: topic.xpReward || 100,
+          isCompleted: !!completed,
+          completedAt: completed ? completed.completedAt : null,
+          xpAwarded: completed ? completed.xpAwarded : 0,
+        }
+      })
+
+      const completedTopicsCount = topicsWithProgress.filter((t) => t.isCompleted).length
+      const totalTopicsCount = topicsWithProgress.length
+      const isWeekCompleted = completedTopicsCount === totalTopicsCount && totalTopicsCount > 0
+
+      let isLocked = false
+      let isUnlocked = false
+
+      if (lockStatus && lockStatus.isLocked) {
+        // If there's an active week, only that week is unlocked
+        if (week.weekNumber === lockStatus.activeWeekNumber) {
+          isUnlocked = true
+          isLocked = false
+        } else {
+          isLocked = true
+          isUnlocked = false
+        }
+      } else {
+        // Normal progression logic: week is locked if previous weeks aren't completed
+        isLocked =
+          weekIndex > 0 &&
+          !plan.weeks.slice(0, weekIndex).every((prevWeek) => {
+            const prevWeekTopics = prevWeek.topics.map((topic) => {
+              const completed = userLevelProgress.completedTopics.find(
+                (ct) => ct.topicId.toString() === topic._id.toString(),
+              )
+              return !!completed
+            })
+            return prevWeekTopics.every((completed) => completed) && prevWeekTopics.length > 0
+          })
+        isUnlocked = !isLocked
+      }
+
+      return {
+        _id: week._id,
+        weekNumber: week.weekNumber,
+        title: week.title,
+        description: week.description,
+        topics: topicsWithProgress,
+        isCompleted: isWeekCompleted,
+        isLocked: isLocked,
+        isUnlocked: isUnlocked,
+        progress: {
+          completed: completedTopicsCount,
+          total: totalTopicsCount,
+          percentage: totalTopicsCount > 0 ? Math.round((completedTopicsCount / totalTopicsCount) * 100) : 0,
+        },
+      }
+    })
+
+    res.status(200).json({
+      success: true,
+      data: {
+        _id: plan._id,
+        level: plan.level,
+        weeks: weeksWithProgress,
+        createdAt: plan.createdAt,
+        updatedAt: plan.updatedAt,
+        lockStatus: lockStatus,
+      },
+      message: "Plan retrieved successfully.",
+    })
+  } catch (error) {
+    console.error("Error getting plan:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
+  }
+}
+
+exports.startWeek = async (req, res) => {
+  const { level, weekNumber } = req.params
+  const userId = req.user._id
+
+  try {
+    const plan = await Plan.findOne({ level })
+
+    if (!plan) {
+      return res.status(404).json({ message: `No plan found for level ${level}.` })
+    }
+
+    const week = plan.weeks.find((w) => w.weekNumber === Number.parseInt(weekNumber))
+
+    if (!week) {
+      return res.status(404).json({ message: `Week ${weekNumber} not found in this plan.` })
+    }
+
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(404).json({ message: "User not found." })
+    }
+
+    let userLevelProgress = user.planProgress.find((p) => p.level === level)
+
+    if (!userLevelProgress) {
+      userLevelProgress = {
+        level: level,
+        completedTopics: [],
+        completedWeeks: [],
+        activeWeek: null,
+      }
+      user.planProgress.push(userLevelProgress)
+    } else {
+      // Check if there's already an active week
+      const lockStatus = areOtherWeeksLocked(userLevelProgress)
+      if (lockStatus && lockStatus.isLocked && lockStatus.activeWeekNumber !== Number.parseInt(weekNumber)) {
+        return res.status(400).json({
+          message: `You already have an active week (Week ${lockStatus.activeWeekNumber}). Please complete it before starting another week. It will unlock on ${new Date(lockStatus.lockedUntil).toLocaleDateString()}.`,
+          lockStatus: lockStatus,
+        })
+      }
+    }
+
+    // Set this week as active and lock others for 7 days
+    const lockedUntil = new Date()
+    lockedUntil.setDate(lockedUntil.getDate() + 7)
+
+    const levelProgressIndex = user.planProgress.findIndex((p) => p.level === level)
+    user.planProgress[levelProgressIndex].activeWeek = {
+      weekNumber: Number.parseInt(weekNumber),
+      startedAt: new Date(),
+      lockedUntil: lockedUntil,
+    }
+
+    await user.save()
+
+    res.status(200).json({
+      success: true,
+      data: {
+        weekNumber: Number.parseInt(weekNumber),
+        lockedUntil: lockedUntil,
+        message: `Week ${weekNumber} started! Other weeks are now locked for 7 days.`,
+      },
+      message: `Week ${weekNumber} started successfully.`,
+    })
+  } catch (error) {
+    console.error("Error starting week:", error)
+    res.status(500).json({ message: "Server error", error: error.message })
+  }
+}
+
+exports.getWeekByNumber = async (req, res) => {
+  const { level, weekNumber } = req.params
+  const userId = req.user._id
+
+  try {
+    const plan = await Plan.findOne({ level })
+
+    if (!plan) {
+      return res.status(404).json({ message: `No plan found for level ${level}.` })
+    }
+
+    const week = plan.weeks.find((w) => w.weekNumber === Number.parseInt(weekNumber))
+
+    if (!week) {
+      return res.status(404).json({ message: `Week ${weekNumber} not found in this plan.` })
+    }
+
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(404).json({ message: "User not found." })
+    }
+
+    let userLevelProgress = user.planProgress.find((p) => p.level === level)
+
     if (!userLevelProgress) {
       userLevelProgress = {
         level: level,
@@ -76,8 +286,7 @@ exports.getPlanByLevel = async (req, res) => {
       }
     }
 
-    // Map topics with completion status
-    const topicsWithProgress = plan.topics.map((topic) => {
+    const topicsWithProgress = week.topics.map((topic) => {
       const completed = userLevelProgress.completedTopics.find((ct) => ct.topicId.toString() === topic._id.toString())
 
       return {
@@ -94,21 +303,19 @@ exports.getPlanByLevel = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
-        _id: plan._id,
-        level: plan.level,
+        _id: week._id,
+        weekNumber: week.weekNumber,
+        title: week.title,
+        description: week.description,
         topics: topicsWithProgress,
-        createdAt: plan.createdAt,
-        updatedAt: plan.updatedAt,
       },
-      message: "Plan retrieved successfully.",
+      message: "Week retrieved successfully.",
     })
   } catch (error) {
-    console.error("Error getting plan:", error)
+    console.error("Error getting week:", error)
     res.status(500).json({ message: "Server error", error: error.message })
   }
 }
-
-// ... existing code ...
 
 exports.getAllPlans = async (req, res) => {
   try {
@@ -127,10 +334,9 @@ exports.getAllPlans = async (req, res) => {
 
 exports.deletePlan = async (req, res) => {
   const { level } = req.params
-  const adminId = req.user._id  // <CHANGE> Get admin ID
+  const adminId = req.user._id
 
   try {
-    // <CHANGE> Delete by userId AND level
     const plan = await Plan.findOneAndDelete({ userId: adminId, level })
 
     if (!plan) {
@@ -157,29 +363,36 @@ exports.markTopicAsCompleted = async (req, res) => {
       return res.status(404).json({ message: "Plan not found." })
     }
 
-    const topic = plan.topics.id(topicId)
-    if (!topic) {
+    let foundTopic = null
+    let foundWeek = null
+    for (const week of plan.weeks) {
+      const topic = week.topics.id(topicId)
+      if (topic) {
+        foundTopic = topic
+        foundWeek = week
+        break
+      }
+    }
+
+    if (!foundTopic || !foundWeek) {
       return res.status(404).json({ message: "Topic not found in this plan." })
     }
 
-    // Get user
     const user = await User.findById(userId)
     if (!user) {
       return res.status(404).json({ message: "User not found." })
     }
 
-    // Find or create progress for this level
     let levelProgressIndex = user.planProgress.findIndex((p) => p.level === plan.level)
     if (levelProgressIndex === -1) {
-      // Create new progress for this level
       user.planProgress.push({
         level: plan.level,
         completedTopics: [],
+        completedWeeks: [],
       })
       levelProgressIndex = user.planProgress.length - 1
     }
 
-    // Check if already completed
     const alreadyCompleted = user.planProgress[levelProgressIndex].completedTopics.some(
       (ct) => ct.topicId.toString() === topicId,
     )
@@ -188,24 +401,60 @@ exports.markTopicAsCompleted = async (req, res) => {
       return res.status(400).json({ message: "Topic is already completed." })
     }
 
-    // Add to completed topics
-    const xpReward = topic.xpReward || 100  // <CHANGE> Use topic.xpReward with fallback
+    const xpReward = foundTopic.xpReward || 100
     user.planProgress[levelProgressIndex].completedTopics.push({
-      topicId: topic._id,
+      topicId: foundTopic._id,
       completedAt: new Date(),
       xpAwarded: xpReward,
     })
 
-    // Update user XP
     user.xp = (user.xp || 0) + xpReward
+
+    // ✅ CHECK IF ALL TOPICS IN THIS WEEK ARE NOW COMPLETED
+    const allTopicsInWeek = foundWeek.topics
+    const completedTopicsInWeek = user.planProgress[levelProgressIndex].completedTopics.filter((ct) =>
+      allTopicsInWeek.some((topic) => topic._id.toString() === ct.topicId.toString()),
+    )
+
+    const isWeekFullyCompleted = completedTopicsInWeek.length === allTopicsInWeek.length
+
+    let weekFinishedMessage = ""
+
+    if (isWeekFullyCompleted) {
+      // Check if week is already marked as completed
+      const weekAlreadyCompleted = user.planProgress[levelProgressIndex].completedWeeks.some(
+        (cw) => cw.weekNumber === foundWeek.weekNumber,
+      )
+
+      if (!weekAlreadyCompleted) {
+        // Mark week as completed
+        user.planProgress[levelProgressIndex].completedWeeks.push({
+          weekNumber: foundWeek.weekNumber,
+          completedAt: new Date(),
+        })
+
+        // Clear active week lock if this was the active week
+        if (
+          user.planProgress[levelProgressIndex].activeWeek &&
+          user.planProgress[levelProgressIndex].activeWeek.weekNumber === foundWeek.weekNumber
+        ) {
+          user.planProgress[levelProgressIndex].activeWeek = null
+        }
+
+        weekFinishedMessage = ` 🎉 Java ${foundWeek.weekNumber} u përfundua me sukses!`
+      }
+    }
+
     await user.save()
 
     res.status(200).json({
       success: true,
       data: {
         userXp: user.xp,
+        weekCompleted: isWeekFullyCompleted,
+        weekNumber: foundWeek.weekNumber,
       },
-      message: `Topic marked as completed. ${xpReward} XP awarded!`,
+      message: `Tema u shënua si e përfunduar. ${xpReward} XP u shtuan!${weekFinishedMessage}`,
     })
   } catch (error) {
     console.error("Error marking topic as completed:", error)

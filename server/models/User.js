@@ -281,6 +281,28 @@ const userSchema = new mongoose.Schema(
             },
           },
         ],
+        completedWeeks: [
+          {
+            weekNumber: {
+              type: Number,
+            },
+            completedAt: {
+              type: Date,
+              default: Date.now,
+            },
+          },
+        ],
+        activeWeek: {
+          weekNumber: {
+            type: Number,
+          },
+          startedAt: {
+            type: Date,
+          },
+          lockedUntil: {
+            type: Date,
+          },
+        },
       },
     ],
   },

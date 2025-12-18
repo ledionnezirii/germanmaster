@@ -69,6 +69,20 @@ sessionSchema.statics.getActiveSessions = async function (userId) {
   }).sort({ lastActivity: -1 })
 }
 
+// Static method to invalidate all active sessions for a user
+sessionSchema.statics.invalidateAllSessions = async function (userId) {
+  return await this.updateMany(
+    {
+      userId,
+      isActive: true,
+    },
+    {
+      $set: { isActive: false },
+    },
+  )
+}
+// </CHANGE>
+
 // Static method to clean up expired sessions
 sessionSchema.statics.cleanupExpiredSessions = async function () {
   return await this.deleteMany({

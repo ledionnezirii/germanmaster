@@ -152,10 +152,13 @@ const login = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Kredenciale të pavlefshme")
   }
 
+  // Check active sessions count
   const activeSessionsCount = await Session.getActiveSessionsCount(user._id)
 
+  // If user has 2 or more active sessions, invalidate ALL sessions
   if (activeSessionsCount >= 2) {
-    throw new ApiError(403, "You already have 2 devices logged in. Please log out from one device to continue.")
+    console.log(`[AUTH] User ${user.email} has ${activeSessionsCount} active sessions. Invalidating all sessions.`)
+    await Session.invalidateAllSessions(user._id)
   }
 
   const now = new Date()
@@ -187,6 +190,7 @@ const login = asyncHandler(async (req, res) => {
 
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
+  // Create new session for this device
   await Session.create({
     userId: user._id,
     token,
@@ -208,7 +212,7 @@ const login = asyncHandler(async (req, res) => {
     type: user.subscriptionType,
     expiresAt: user.subscriptionExpiresAt,
     trialStartedAt: user.trialStartedAt,
-    daysRemaining: user.subscriptionExpiresAt 
+    daysRemaining: user.subscriptionExpiresAt
       ? Math.ceil((user.subscriptionExpiresAt - nowDate) / (1000 * 60 * 60 * 24))
       : 0,
   }
@@ -236,7 +240,7 @@ const login = asyncHandler(async (req, res) => {
     ),
   )
 })
-
+// </CHANGE>
 
 const logout = asyncHandler(async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer ", "")
@@ -319,7 +323,7 @@ const getMe = asyncHandler(async (req, res) => {
     type: user.subscriptionType,
     expiresAt: user.subscriptionExpiresAt,
     trialStartedAt: user.trialStartedAt,
-    daysRemaining: user.subscriptionExpiresAt 
+    daysRemaining: user.subscriptionExpiresAt
       ? Math.ceil((user.subscriptionExpiresAt - nowDate) / (1000 * 60 * 60 * 24))
       : 0,
   }
@@ -345,7 +349,6 @@ const getMe = asyncHandler(async (req, res) => {
     }),
   )
 })
-
 
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body

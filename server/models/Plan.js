@@ -1,31 +1,33 @@
 const mongoose = require("mongoose")
 
-const planTopicSchema = new mongoose.Schema({
+const topicSchema = new mongoose.Schema({
   title: {
     type: String,
     required: true,
-    trim: true,
   },
   description: {
     type: String,
-    trim: true,
-    default: "",
+    required: true,
   },
-  xpReward: {  // <CHANGE> Added xpReward field that was missing
+  xpReward: {
     type: Number,
     default: 100,
   },
-  isCompleted: {
-    type: Boolean,
-    default: false,
-  },
-  xpAwarded: {
+})
+
+const weekSchema = new mongoose.Schema({
+  weekNumber: {
     type: Number,
-    default: 0,
+    required: true,
   },
-  completedAt: {
-    type: Date,
+  title: {
+    type: String,
+    required: true,
   },
+  description: {
+    type: String,
+  },
+  topics: [topicSchema],
 })
 
 const planSchema = new mongoose.Schema(
@@ -38,18 +40,15 @@ const planSchema = new mongoose.Schema(
     level: {
       type: String,
       enum: ["A1", "A2", "B1", "B2", "C1", "C2"],
-      default: "A1",
       required: true,
     },
-    topics: [planTopicSchema],
+    weeks: [weekSchema],
   },
   {
     timestamps: true,
   },
 )
 
-// <CHANGE> Add compound unique index on userId + level
-// This allows each user to have one plan per level
-planSchema.index({ userId: 1, level: 1 }, { unique: true })
+planSchema.index({ userId: 1, level: 1 })
 
 module.exports = mongoose.model("Plan", planSchema)
