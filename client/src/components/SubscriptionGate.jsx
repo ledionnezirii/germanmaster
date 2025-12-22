@@ -21,6 +21,7 @@ const SubscriptionGate = ({ children }) => {
     const checkSubscription = async () => {
       try {
         const status = await subscriptionService.checkStatus()
+        console.log("[SubscriptionGate] Status:", status)
         setSubscriptionStatus(status)
       } catch (error) {
         console.error("Failed to check subscription status:", error)
@@ -52,7 +53,8 @@ const SubscriptionGate = ({ children }) => {
     return children
   }
 
-  if (subscriptionStatus?.active && subscriptionStatus?.daysRemaining <= 3) {
+  // Show warning if subscription is expiring soon (within 3 days)
+  if (subscriptionStatus?.active && subscriptionStatus?.daysRemaining <= 3 && subscriptionStatus?.daysRemaining > 0) {
     return (
       <div>
         <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 p-3 mb-3 shadow-sm">
@@ -61,10 +63,14 @@ const SubscriptionGate = ({ children }) => {
               <AlertCircle className="h-4 w-4 text-amber-600" />
             </div>
             <div className="flex-1">
-              <h4 className="text-xs font-semibold text-amber-900 mb-1">Periudha provuese po mbaron</h4>
+              <h4 className="text-xs font-semibold text-amber-900 mb-1">
+                {subscriptionStatus.type === "free_trial" ? "Periudha provuese po mbaron" : "Abonimi po skadon"}
+              </h4>
               <p className="text-xs text-amber-800">
-                Periudha juaj falas skadon në <span className="font-bold">{subscriptionStatus.daysRemaining} ditë</span>
-                . Abonohuni tani për të vazhduar pa ndërprerje.
+                {subscriptionStatus.type === "free_trial" 
+                  ? `Periudha juaj falas skadon në ${subscriptionStatus.daysRemaining} ditë. Abonohuni tani për të vazhduar pa ndërprerje.`
+                  : `Abonimi juaj skadon në ${subscriptionStatus.daysRemaining} ditë. Rinovoni për të vazhduar pa ndërprerje.`
+                }
               </p>
               <button
                 onClick={() => navigate("/payments")}
@@ -81,7 +87,8 @@ const SubscriptionGate = ({ children }) => {
     )
   }
 
-  if (subscriptionStatus?.expired) {
+  // Block access if subscription expired
+  if (subscriptionStatus?.expired || (subscriptionStatus?.active === false)) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 p-4">
         <div className="max-w-md w-full">
@@ -98,10 +105,17 @@ const SubscriptionGate = ({ children }) => {
 
             {/* Content */}
             <div className="text-center mb-5">
-              <h2 className="text-lg font-bold text-gray-900 mb-2">Periudha juaj falas ka përfunduar</h2>
+              <h2 className="text-lg font-bold text-gray-900 mb-2">
+                {subscriptionStatus?.type === "free_trial" 
+                  ? "Periudha juaj falas ka përfunduar"
+                  : "Abonimi juaj ka përfunduar"
+                }
+              </h2>
               <p className="text-sm text-gray-600 leading-relaxed">
-                Faleminderit që provuat platformën tonë! Periudha juaj falas 2-ditore ka mbaruar. Abonohuni tani për të
-                vazhduar mësimin e gjermanishtes me qasje të pakufizuar në të gjitha funksionet.
+                {subscriptionStatus?.type === "free_trial"
+                  ? "Faleminderit që provuat platformën tonë! Periudha juaj falas ka mbaruar. Abonohuni tani për të vazhduar mësimin e gjermanishtes me qasje të pakufizuar në të gjitha funksionet."
+                  : "Abonimi juaj ka skaduar. Rinovoni tani për të vazhduar mësimin e gjermanishtes me qasje të pakufizuar në të gjitha funksionet."
+                }
               </p>
             </div>
 

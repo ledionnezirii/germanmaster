@@ -1,12 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { paymentService, subscriptionService } from "../services/api"
+import { paymentService, subscriptionService, authService } from "../services/api"
+import { useAuth } from "../context/AuthContext"
 
 const Payment = () => {
+  const { user, updateUser } = useAuth()
   const [paddleInitialized, setPaddleInitialized] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState(null)
   const [subscriptionStatus, setSubscriptionStatus] = useState(null)
   const [error, setError] = useState(null)
 
@@ -28,26 +29,34 @@ const Payment = () => {
 
       window.Paddle.Initialize({
         token: PADDLE_CLIENT_TOKEN,
-        eventCallback: (data) => {
+        eventCallback: async (data) => {
           if (data.type === "checkout.completed") {
-            // Refresh user data from server BEFORE showing success
-            authService.getProfile()
-              .then(response => {
-                const userData = response.data?.user
-                if (userData) {
-                  localStorage.setItem("user", JSON.stringify(userData))
-                  alert("Pagesa u krye me sukses! Faleminderit për abonimin.")
-                  localStorage.removeItem("subscription_expired")
-                  setTimeout(() => window.location.reload(), 1500)
-                }
-              })
-              .catch(err => {
-                console.error("Failed to refresh user data:", err)
-                // Still show success even if refresh fails
+            console.log("[Payment] Checkout completed, refreshing user data...")
+            
+            try {
+              // Refresh user data from server
+              const response = await authService.getProfile()
+              const userData = response.data?.user || response.data
+              
+              if (userData) {
+                // Update auth context with new subscription data
+                updateUser({
+                  isPaid: userData.isPaid,
+                  subscriptionType: userData.subscriptionType,
+                  subscriptionExpiresAt: userData.subscriptionExpiresAt,
+                  subscriptionCancelled: false,
+                })
+                
                 alert("Pagesa u krye me sukses! Faleminderit për abonimin.")
                 localStorage.removeItem("subscription_expired")
-                setTimeout(() => window.location.reload(), 2000)
-              })
+                setTimeout(() => window.location.reload(), 1500)
+              }
+            } catch (err) {
+              console.error("Failed to refresh user data:", err)
+              alert("Pagesa u krye me sukses! Faleminderit për abonimin.")
+              localStorage.removeItem("subscription_expired")
+              setTimeout(() => window.location.reload(), 2000)
+            }
           }
         }
       })
@@ -55,8 +64,9 @@ const Payment = () => {
       setPaddleInitialized(true)
     }
 
-    if (window.Paddle) initPaddle()
-    else {
+    if (window.Paddle) {
+      initPaddle()
+    } else {
       const check = setInterval(() => {
         if (window.Paddle) {
           clearInterval(check)
@@ -69,9 +79,9 @@ const Payment = () => {
         if (!window.Paddle) setError("Sistemi i pagesave dështoi të ngarkohet")
       }, 10000)
     }
-  }, [PADDLE_CLIENT_TOKEN])
+  }, [PADDLE_CLIENT_TOKEN, updateUser])
 
-  // Fetch user and subscription data
+  // Fetch subscription status
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -81,12 +91,9 @@ const Payment = () => {
           return
         }
 
-        const userStr = localStorage.getItem("user")
-        if (userStr) {
-          const userData = JSON.parse(userStr)
-          setUser(userData)
-
+        if (user) {
           const status = await subscriptionService.checkStatus()
+          console.log("[Payment] Subscription status:", status)
           setSubscriptionStatus(status)
         }
       } catch (err) {
@@ -99,7 +106,7 @@ const Payment = () => {
 
     fetchData()
     localStorage.removeItem("subscription_expired")
-  }, [])
+  }, [user])
 
   // Open Paddle Checkout
   const openCheckout = () => {
@@ -117,10 +124,6 @@ const Payment = () => {
           email: user.email,
         },
         customData: { userId: user.id },
-        successCallback: () => {
-          alert("Pagesa u krye me sukses!")
-          setTimeout(() => window.location.reload(), 2000)
-        },
       })
     } catch (err) {
       console.error("Checkout dështoi:", err)
@@ -134,7 +137,13 @@ const Payment = () => {
 
     try {
       await paymentService.cancelSubscription(user.id)
-      alert("Abonimi u anulua me sukses")
+      
+      // Update local user data
+      updateUser({
+        subscriptionCancelled: true,
+      })
+      
+      alert("Abonimi u anulua me sukses. Do të keni akses deri në fund të periudhës së faturimit.")
       window.location.reload()
     } catch (err) {
       console.error("Gabim në anulimin e abonimit:", err)
@@ -142,7 +151,7 @@ const Payment = () => {
     }
   }
 
-  if (loading)
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-50 to-orange-50">
         <div className="text-center">
@@ -151,8 +160,9 @@ const Payment = () => {
         </div>
       </div>
     )
+  }
 
-  const subscriptionActive = subscriptionStatus?.active && subscriptionStatus?.type === "1_month"
+  const subscriptionActive = subscriptionStatus?.active && subscriptionStatus?.type !== "free_trial"
   const isFreeTrial = subscriptionStatus?.type === "free_trial" && subscriptionStatus?.active
   const hasSubscription = subscriptionStatus && subscriptionStatus?.type
   const isCancelled = subscriptionStatus?.cancelled && subscriptionStatus?.daysRemaining > 0
@@ -311,10 +321,11 @@ const Payment = () => {
                 <button
                   onClick={openCheckout}
                   disabled={!paddleInitialized}
-                  className={`w-full py-3 px-6 text-lg font-bold rounded-xl transition-all transform hover:scale-105 shadow-lg ${paddleInitialized
+                  className={`w-full py-3 px-6 text-lg font-bold rounded-xl transition-all transform hover:scale-105 shadow-lg ${
+                    paddleInitialized
                       ? "bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800"
                       : "bg-gray-300 text-gray-600 cursor-not-allowed"
-                    }`}
+                  }`}
                 >
                   {paddleInitialized ? "💳 Abonohu Tani" : "Duke ngarkuar sistemin e pagesave..."}
                 </button>
