@@ -403,12 +403,7 @@ const Account = () => {
               {user.email}
             </p>
             <div className="mt-4 flex items-center justify-center md:justify-start gap-3 flex-wrap">
-              <span className="bg-gradient-to-r from-teal-500 to-teal-600 text-white px-4 py-2 rounded-full text-sm font-bold shadow-md">
-                Niveli {user.level}
-              </span>
-              <span className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 px-4 py-2 rounded-full text-sm font-bold shadow-md">
-                {user.xp} XP
-              </span>
+            
             </div>
           </div>
           <button

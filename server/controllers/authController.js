@@ -7,6 +7,31 @@ const { asyncHandler } = require("../utils/asyncHandler")
 const crypto = require("crypto")
 const sendEmail = require("../utils/sendEmail")
 
+
+// Helper function to calculate subscription status (ADD THIS AT TOP OF FILE)
+const calculateSubscriptionStatus = (user) => {
+  const nowDate = new Date()
+  const isSubscriptionActive = user.subscriptionExpiresAt && user.subscriptionExpiresAt > nowDate
+  
+  // Calculate days remaining (always from NOW, never negative display)
+  let daysRemaining = 0
+  if (user.subscriptionExpiresAt) {
+    const diffMs = user.subscriptionExpiresAt - nowDate
+    daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+    // If subscription is expired, show 0 instead of negative
+    if (daysRemaining < 0) daysRemaining = 0
+  }
+
+  return {
+    active: isSubscriptionActive,
+    type: user.subscriptionType || "free_trial",
+    expiresAt: user.subscriptionExpiresAt,
+    trialStartedAt: user.trialStartedAt,
+    daysRemaining: daysRemaining,
+    cancelled: user.subscriptionCancelled || false,
+  }
+}
+
 // Helper function to detect device type from user agent
 const detectDeviceType = (userAgent) => {
   if (!userAgent) return "unknown"
@@ -204,18 +229,7 @@ const login = asyncHandler(async (req, res) => {
     ? `https://api.dicebear.com/7.x/${user.avatarStyle}/svg?seed=${user._id}`
     : `https://api.dicebear.com/7.x/adventurer/svg?seed=${user._id}`
 
-  const nowDate = new Date()
-  const isSubscriptionActive = user.subscriptionExpiresAt && user.subscriptionExpiresAt > nowDate
-
-  const subscriptionStatus = {
-    active: isSubscriptionActive,
-    type: user.subscriptionType,
-    expiresAt: user.subscriptionExpiresAt,
-    trialStartedAt: user.trialStartedAt,
-    daysRemaining: user.subscriptionExpiresAt
-      ? Math.ceil((user.subscriptionExpiresAt - nowDate) / (1000 * 60 * 60 * 24))
-      : 0,
-  }
+ const subscriptionStatus = calculateSubscriptionStatus(user)
 
   res.json(
     new ApiResponse(
@@ -315,18 +329,7 @@ const getMe = asyncHandler(async (req, res) => {
     ? `https://api.dicebear.com/7.x/${user.avatarStyle}/svg?seed=${user._id}`
     : `https://api.dicebear.com/7.x/adventurer/svg?seed=${user._id}`
 
-  const nowDate = new Date()
-  const isSubscriptionActive = user.subscriptionExpiresAt && user.subscriptionExpiresAt > nowDate
-
-  const subscriptionStatus = {
-    active: isSubscriptionActive,
-    type: user.subscriptionType,
-    expiresAt: user.subscriptionExpiresAt,
-    trialStartedAt: user.trialStartedAt,
-    daysRemaining: user.subscriptionExpiresAt
-      ? Math.ceil((user.subscriptionExpiresAt - nowDate) / (1000 * 60 * 60 * 24))
-      : 0,
-  }
+ const subscriptionStatus = calculateSubscriptionStatus(user)
 
   res.json(
     new ApiResponse(200, {

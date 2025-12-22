@@ -30,17 +30,26 @@ const Payment = () => {
         token: PADDLE_CLIENT_TOKEN,
         eventCallback: (data) => {
           if (data.type === "checkout.completed") {
-            alert("Pagesa u krye me sukses! Faleminderit për abonimin.")
-            localStorage.removeItem("subscription_expired")
-            setTimeout(() => window.location.reload(), 2000)
+            // Refresh user data from server BEFORE showing success
+            authService.getProfile()
+              .then(response => {
+                const userData = response.data?.user
+                if (userData) {
+                  localStorage.setItem("user", JSON.stringify(userData))
+                  alert("Pagesa u krye me sukses! Faleminderit për abonimin.")
+                  localStorage.removeItem("subscription_expired")
+                  setTimeout(() => window.location.reload(), 1500)
+                }
+              })
+              .catch(err => {
+                console.error("Failed to refresh user data:", err)
+                // Still show success even if refresh fails
+                alert("Pagesa u krye me sukses! Faleminderit për abonimin.")
+                localStorage.removeItem("subscription_expired")
+                setTimeout(() => window.location.reload(), 2000)
+              })
           }
-          if (data.type === "checkout.closed") console.log("Checkout u mbyll nga përdoruesi")
-          if (data.type === "checkout.error") {
-            const errorMessage = data.data?.error || "Gabim i panjohur në checkout"
-            console.error("Gabim në Checkout:", errorMessage)
-            setError(`Gabim në pagesë: ${errorMessage}`)
-          }
-        },
+        }
       })
 
       setPaddleInitialized(true)
@@ -302,11 +311,10 @@ const Payment = () => {
                 <button
                   onClick={openCheckout}
                   disabled={!paddleInitialized}
-                  className={`w-full py-3 px-6 text-lg font-bold rounded-xl transition-all transform hover:scale-105 shadow-lg ${
-                    paddleInitialized
+                  className={`w-full py-3 px-6 text-lg font-bold rounded-xl transition-all transform hover:scale-105 shadow-lg ${paddleInitialized
                       ? "bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800"
                       : "bg-gray-300 text-gray-600 cursor-not-allowed"
-                  }`}
+                    }`}
                 >
                   {paddleInitialized ? "💳 Abonohu Tani" : "Duke ngarkuar sistemin e pagesave..."}
                 </button>
