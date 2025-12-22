@@ -217,9 +217,7 @@ const handleTransactionCompleted = async (event) => {
 
     // Try to get userId from customer email if not in customData
     if (!userId && data.customer_id) {
-      console.log(
-        "[v0] No userId in customData, trying to find user by customer email"
-      );
+      console.log("[v0] No userId in customData, trying to find user by customer email");
       const customerEmail = data.customer?.email || data.billing_details?.email;
 
       if (customerEmail) {
@@ -270,10 +268,12 @@ const handleTransactionCompleted = async (event) => {
       durationDays = 365;
     }
 
-const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
-    const nextBillingDate = new Date(
-      Date.now() + durationDays * 24 * 60 * 60 * 1000
-    );
+    // FIXED: Calculate expiry from NOW, not from old date
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+    const nextBillingDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+    console.log(`[v0] Subscription will expire at: ${expiresAt.toISOString()}`);
 
     const existingPayment = await Payment.findOne({
       paddleTransactionId: data.id,
@@ -282,14 +282,14 @@ const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
     if (existingPayment) {
       console.log("[v0] Payment already processed for transaction:", data.id);
       // Still update user status in case it wasn't updated before
-      if (!user.isPaid) {
+      if (!user.isPaid || user.subscriptionExpiresAt < expiresAt) {
         user.isPaid = true;
         user.subscriptionType = subscriptionType;
-        user.subscriptionExpiresAt = expiresAt; // This should be 30 days from NOW
-        user.subscriptionCancelled = false; // Reset cancelled flag
+        user.subscriptionExpiresAt = expiresAt;
+        user.subscriptionCancelled = false;
         user.isActive = true;
         await user.save();
-        console.log(`[v0] ✅ User access granted - isPaid: true`);
+        console.log(`[v0] ✅ User access updated - isPaid: true, expires: ${expiresAt.toISOString()}`);
       }
       return;
     }
@@ -300,7 +300,7 @@ const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
         userId: userId,
         paddleTransactionId: data.id,
         paddleCustomerId: data.customer_id,
-        paddleSubscriptionId: subscriptionId, // Can be null for one-time payments
+        paddleSubscriptionId: subscriptionId,
         priceId: priceId,
         productId: data.items?.[0]?.product_id,
         subscriptionType: subscriptionType,
@@ -322,30 +322,24 @@ const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
       console.log("[v0] ✅ Payment record created:", payment._id);
     } catch (paymentError) {
       console.error("[v0] Error creating payment record:", paymentError);
-      throw new Error(
-        `Failed to create payment record: ${paymentError.message}`
-      );
+      throw new Error(`Failed to create payment record: ${paymentError.message}`);
     }
 
     try {
       user.isPaid = true;
       user.subscriptionType = subscriptionType;
       user.subscriptionExpiresAt = expiresAt;
+      user.subscriptionCancelled = false;
       user.isActive = true;
       await user.save();
 
-      console.log(
-        `[v0] ✅ User updated successfully - isPaid: true, subscriptionType: ${subscriptionType}`
-      );
-      console.log(
-        `[v0] ✅ Payment completed for user ${userId} - Subscription: ${subscriptionType}`
-      );
+      console.log(`[v0] ✅ User updated successfully - isPaid: true, subscriptionType: ${subscriptionType}`);
+      console.log(`[v0] ✅ Subscription expires at: ${expiresAt.toISOString()}`);
+      console.log(`[v0] ✅ Payment completed for user ${userId} - Subscription: ${subscriptionType}`);
     } catch (userError) {
       console.error("[v0] Error updating user:", userError);
       await Payment.deleteOne({ _id: payment._id });
-      console.error(
-        "[v0] ❌ Payment record deleted due to user update failure"
-      );
+      console.error("[v0] ❌ Payment record deleted due to user update failure");
       throw new Error(`Failed to grant user access: ${userError.message}`);
     }
   } catch (error) {
@@ -354,7 +348,6 @@ const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000)
     throw error;
   }
 };
-
 const handleSubscriptionCreated = async (event) => {
   const data = event.data;
   const customData = data.custom_data || {};
