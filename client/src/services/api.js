@@ -511,35 +511,21 @@ export const subscriptionService = {
 
     if (!userStr) {
       console.log("[Subscription] No user found in localStorage")
-      return { active: false, expired: true, daysRemaining: 0, type: null }
+      return { active: false, expired: true, daysRemaining: 0 }
     }
 
     try {
       const user = JSON.parse(userStr)
       console.log("[Subscription] Parsed user:", user)
 
-      // Check if subscription object exists (new format)
-      if (user.subscription) {
-        console.log("[Subscription] Using subscription object from user data")
-        return {
-          active: user.subscription.active || false,
-          expired: !user.subscription.active,
-          daysRemaining: user.subscription.daysRemaining || 0,
-          type: user.subscription.type || null,
-          expiresAt: user.subscription.expiresAt,
-          trialStartedAt: user.subscription.trialStartedAt,
-          cancelled: user.subscription.cancelled || false,
-        }
+      // Check if subscription object exists
+      if (!user.subscription) {
+        console.log("[Subscription] No subscription object found")
+        return { active: false, expired: true, daysRemaining: 0 }
       }
 
-      // Fallback: Check flat structure (old format)
       const now = new Date()
-      const expiresAt = user.subscriptionExpiresAt ? new Date(user.subscriptionExpiresAt) : null
-
-      if (!expiresAt) {
-        console.log("[Subscription] No expiration date found")
-        return { active: false, expired: true, daysRemaining: 0, type: null }
-      }
+      const expiresAt = new Date(user.subscription.expiresAt)
 
       console.log("[Subscription] Now:", now)
       console.log("[Subscription] Expires at:", expiresAt)
@@ -547,7 +533,7 @@ export const subscriptionService = {
 
       const daysRemaining = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24))
       const isExpired = expiresAt <= now
-      const isActive = user.isPaid && !isExpired
+      const isActive = user.subscription.active && !isExpired
 
       console.log("[Subscription] Days remaining:", daysRemaining)
       console.log("[Subscription] Is expired:", isExpired)
@@ -557,14 +543,13 @@ export const subscriptionService = {
         active: isActive,
         expired: isExpired,
         daysRemaining: Math.max(0, daysRemaining),
-        type: user.subscriptionType || "free_trial",
-        expiresAt: user.subscriptionExpiresAt,
-        trialStartedAt: user.trialStartedAt,
-        cancelled: user.subscriptionCancelled || false,
+        type: user.subscription.type,
+        expiresAt: user.subscription.expiresAt,
+        trialStartedAt: user.subscription.trialStartedAt,
       }
     } catch (error) {
       console.error("[Subscription] Error parsing user data:", error)
-      return { active: false, expired: true, daysRemaining: 0, type: null }
+      return { active: false, expired: true, daysRemaining: 0 }
     }
   },
 }
