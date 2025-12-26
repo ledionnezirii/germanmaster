@@ -17,6 +17,8 @@ const {
   getActiveRoomsCount,
 } = require("./controllers/challengeController")
 
+const { initRaceSocket } = require("./socket/raceSocket")
+
 // Import payment controller for webhook
 const paymentController = require("./controllers/paymentController")
 
@@ -45,7 +47,7 @@ const wordRoutes = require("./routes/wordRoutes")
 const ttsRoutes = require("./routes/ttsRoutes")
 const phraseRoutes = require("./routes/phraseRoutes")
 const academyRoutes = require("./routes/academyRoutes")
-
+const raceRoutes = require("./routes/raceRoutes")
 
 const { errorHandler, notFound } = require("./middleware/errorMiddleware")
 const { requestLogger } = require("./middleware/loggerMiddleware")
@@ -91,6 +93,8 @@ io.use(async (socket, next) => {
   }
 })
 
+initRaceSocket(io)
+
 io.on("connection", (socket) => {
   console.log(`🔌 User connected: ${socket.id} (${socket.username})`)
   socket.emit("connected", {
@@ -98,6 +102,44 @@ io.on("connection", (socket) => {
     userId: socket.userId,
     username: socket.username,
   })
+
+  socket.on("joinRace", (data) => {
+    console.log("[Race] Join race event received:", data)
+    const raceData = {
+      roomId: data.roomId,
+      userId: socket.userId,
+      username: socket.username,
+    }
+    // Event will be handled by initRaceSocket
+    socket.emit("race:join", raceData)
+  })
+
+  socket.on("playerReady", (data) => {
+    console.log("[Race] Player ready event received:", data)
+    socket.emit("race:ready", {
+      roomId: data.roomId,
+      userId: socket.userId,
+    })
+  })
+
+  socket.on("submitAnswer", (data) => {
+    console.log("[Race] Submit answer event received:", data)
+    socket.emit("race:submitAnswer", {
+      ...data,
+      userId: socket.userId,
+      questionIndex: data.questionIndex || 0,
+    })
+  })
+
+  socket.on("leaveRace", (data) => {
+    console.log("[Race] Leave race event received:", data)
+    socket.emit("race:leave", {
+      roomId: data.roomId,
+      userId: socket.userId,
+    })
+  })
+
+  // Challenge events
   socket.on("joinChallenge", (data) => {
     console.log("Join challenge event received:", data)
     const challengeData = {
@@ -109,14 +151,17 @@ io.on("connection", (socket) => {
     }
     handleJoinChallenge(socket, io, challengeData)
   })
+
   socket.on("submitAnswer", (data) => {
     console.log("Submit answer event received:", data)
     handleSubmitAnswer(socket, io, data)
   })
+
   socket.on("leaveChallenge", () => {
     console.log("Leave challenge event received")
     handleLeaveChallenge(socket, io)
   })
+
   socket.on("submitScore", (data) => {
     console.log("Submit score event received (legacy):", data)
     handleSubmitAnswer(socket, io, {
@@ -127,10 +172,12 @@ io.on("connection", (socket) => {
       gameType: "quiz",
     })
   })
+
   socket.on("disconnect", (reason) => {
     console.log(`🔌 User disconnected: ${socket.id} (${socket.username}), reason: ${reason}`)
     handleDisconnect(socket, io)
   })
+
   socket.on("connect_error", (error) => {
     console.error("Socket connection error:", error)
   })
@@ -139,11 +186,7 @@ io.on("connection", (socket) => {
 // ============================================================
 // CRITICAL: Webhook route MUST be FIRST before ANY middleware
 // ============================================================
-app.post(
-  "/api/payments/webhook", 
-  express.raw({ type: "application/json" }), 
-  paymentController.handleWebhook
-)
+app.post("/api/payments/webhook", express.raw({ type: "application/json" }), paymentController.handleWebhook)
 
 console.log("✅ Webhook route registered: POST /api/payments/webhook (with raw body parser)")
 
@@ -238,7 +281,8 @@ app.use("/api/practice", practiceRoutes)
 app.use("/api/words", wordRoutes)
 app.use("/api/tts", ttsRoutes)
 app.use("/api/phrases", phraseRoutes)
-app.use("/api/academies",academyRoutes)
+app.use("/api/academies", academyRoutes)
+app.use("/api/race", raceRoutes)
 
 app.use(notFound)
 app.use(errorHandler)
@@ -284,6 +328,7 @@ const startServer = async () => {
     console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`)
     console.log(`💳 Webhook endpoint: POST /api/payments/webhook`)
     console.log(`🎯 Challenge system enabled with German questions`)
+    console.log(`🏁 Race system enabled - Live quiz competition`)
   })
 }
 
