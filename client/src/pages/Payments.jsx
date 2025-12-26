@@ -10,8 +10,8 @@ const Payment = () => {
   const [subscriptionStatus, setSubscriptionStatus] = useState(null)
   const [error, setError] = useState(null)
 
-  const PADDLE_CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN
-  const PRICE_MONTHLY = import.meta.env.VITE_PADDLE_PRICE_MONTHLY
+  const PADDLE_CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN_TEST
+  const PRICE_MONTHLY = import.meta.env.VITE_PADDLE_PRICE_MONTHLY_TEST
 
   // Initialize Paddle
   useEffect(() => {
