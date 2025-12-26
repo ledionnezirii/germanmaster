@@ -6,7 +6,7 @@ const crypto = require("crypto");
 let paddleClient = null;
 try {
   const { Paddle, Environment } = require("@paddle/paddle-node-sdk");
-  paddleClient = new Paddle(process.env.PADDLE_API_KEY, {
+  paddleClient = new Paddle(process.env.PADDLE_API_KEY_TEST, {
     environment: Environment.sandbox,
   });
   console.log("[v0] Paddle Client initialized for subscription management");
@@ -60,7 +60,7 @@ exports.createCheckoutSession = async (req, res) => {
 exports.handleWebhook = async (req, res) => {
   try {
     const signature = req.headers["paddle-signature"];
-    const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET;
+    const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET_TEST;
 
     console.log("[v0] Webhook received");
     console.log("[v0] Signature present:", !!signature);
