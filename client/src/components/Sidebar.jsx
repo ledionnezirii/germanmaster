@@ -24,6 +24,7 @@ import {
   UniversityIcon,
   ChevronDown,
   FileTerminal,
+  Sword,
 } from "lucide-react"
 import { MicrophoneIcon } from "@heroicons/react/24/outline"
 
@@ -80,6 +81,8 @@ const Sidebar = () => {
     { icon: BarChart, label: "Renditja", path: "/leaderboard", requireAuth: false },
     { icon: Calendar, label: "PlanProgrami", path: "/plan", requireAuth: true },
     /*{ icon: User, label: "Menaxho", path: "/academies", requireAuth: true },*/
+        { icon: Sword, label: "Garo", path: "/race", requireAuth: true },
+
     { icon: User, label: "Llogaria", path: "/account", requireAuth: true },
   ]
 

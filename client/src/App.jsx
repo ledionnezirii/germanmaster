@@ -31,6 +31,7 @@ import Practice from "./pages/Practice"
 import Words from "./pages/Words"
 import Phrase from "./pages/Phrase"
 import Academy from "./pages/Academy"
+import Race from "./pages/Race"
 
 const AppContent = () => {
   const { isCollapsed } = useSidebar()
@@ -98,6 +99,7 @@ const AppContent = () => {
                       <Route path="/practice" element={<Practice />} />
                       <Route path="/words" element={<Words />} />
                       <Route path="/phrases" element={<Phrase />} />
+                      <Route path="/race" element={<Race />} />
                       <Route path="/academies" element={<Academy />} />
                     </Routes>
                   </SubscriptionGate>

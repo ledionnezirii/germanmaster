@@ -599,4 +599,19 @@ export const academyService = {
     api.delete(`/academies/${academyId}/groups/${groupId}/admins/${userId}`),
 }
 
+
+
+
+export const raceService = {
+  getAvailableRooms: (params = {}) => api.get("/race/rooms", { params }),
+  getRoomById: (roomId) => api.get(`/race/rooms/${roomId}`),
+  getRoomByCode: (roomCode) => api.get(`/race/rooms/code/${roomCode}`),
+  createRoom: (roomData) => api.post("/race/create", roomData),
+  joinRoom: (roomId) => api.post(`/race/rooms/${roomId}/join`),
+  leaveRoom: (roomId) => api.post(`/race/rooms/${roomId}/leave`),
+  deleteRoom: (roomId) => api.delete(`/race/rooms/${roomId}`),
+  getUserRaceStats: () => api.get("/race/stats"),
+}
+
+
 export default api
