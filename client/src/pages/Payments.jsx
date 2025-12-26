@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { paymentService, subscriptionService } from "../services/api"
+import { paymentService, subscriptionService, authService } from "../services/api"
 
 const Payment = () => {
   const [paddleInitialized, setPaddleInitialized] = useState(false)
@@ -15,50 +15,69 @@ const Payment = () => {
 
   // Initialize Paddle
   useEffect(() => {
+    console.log("🔍 Paddle Token:", PADDLE_CLIENT_TOKEN ? "EXISTS" : "MISSING")
+    console.log("🔍 Token value:", PADDLE_CLIENT_TOKEN)
+    console.log("🔍 Price ID:", PRICE_MONTHLY ? "EXISTS" : "MISSING")
+    console.log("🔍 Price value:", PRICE_MONTHLY)
+    console.log("🔍 window.Paddle:", window.Paddle ? "EXISTS" : "MISSING")
+    
     const initPaddle = () => {
       if (!PADDLE_CLIENT_TOKEN) {
-        setError("Token i Paddle (VITE_PADDLE_CLIENT_TOKEN) mungon në skedarin .env.")
+        console.error("❌ PADDLE_CLIENT_TOKEN is missing")
+        setError("Token i Paddle (VITE_PADDLE_CLIENT_TOKEN_TEST) mungon në skedarin .env.")
         return
       }
 
       if (!window.Paddle) {
+        console.error("❌ window.Paddle is missing")
         setError("Paddle nuk u ngarkua")
         return
       }
 
-      window.Paddle.Initialize({
-        token: PADDLE_CLIENT_TOKEN,
-        eventCallback: (data) => {
-          if (data.type === "checkout.completed") {
-            // Refresh user data from server BEFORE showing success
-            authService.getProfile()
-              .then(response => {
-                const userData = response.data?.user
-                if (userData) {
-                  localStorage.setItem("user", JSON.stringify(userData))
+      console.log("✅ Initializing Paddle with token:", PADDLE_CLIENT_TOKEN)
+      
+      try {
+        window.Paddle.Initialize({
+          token: PADDLE_CLIENT_TOKEN,
+          eventCallback: (data) => {
+            console.log("📢 Paddle event:", data)
+            if (data.type === "checkout.completed") {
+              authService.getProfile()
+                .then(response => {
+                  const userData = response.data?.user
+                  if (userData) {
+                    localStorage.setItem("user", JSON.stringify(userData))
+                    alert("Pagesa u krye me sukses! Faleminderit për abonimin.")
+                    localStorage.removeItem("subscription_expired")
+                    setTimeout(() => window.location.reload(), 1500)
+                  }
+                })
+                .catch(err => {
+                  console.error("Failed to refresh user data:", err)
                   alert("Pagesa u krye me sukses! Faleminderit për abonimin.")
                   localStorage.removeItem("subscription_expired")
-                  setTimeout(() => window.location.reload(), 1500)
-                }
-              })
-              .catch(err => {
-                console.error("Failed to refresh user data:", err)
-                // Still show success even if refresh fails
-                alert("Pagesa u krye me sukses! Faleminderit për abonimin.")
-                localStorage.removeItem("subscription_expired")
-                setTimeout(() => window.location.reload(), 2000)
-              })
+                  setTimeout(() => window.location.reload(), 2000)
+                })
+            }
           }
-        }
-      })
-
-      setPaddleInitialized(true)
+        })
+        
+        console.log("✅ Paddle initialized successfully!")
+        setPaddleInitialized(true)
+      } catch (err) {
+        console.error("❌ Paddle initialization error:", err)
+        setError("Paddle initialization failed: " + err.message)
+      }
     }
 
-    if (window.Paddle) initPaddle()
-    else {
+    if (window.Paddle) {
+      console.log("✅ Paddle already loaded, initializing...")
+      initPaddle()
+    } else {
+      console.log("⏳ Waiting for Paddle to load...")
       const check = setInterval(() => {
         if (window.Paddle) {
+          console.log("✅ Paddle loaded after waiting, initializing...")
           clearInterval(check)
           initPaddle()
         }
@@ -66,7 +85,10 @@ const Payment = () => {
 
       setTimeout(() => {
         clearInterval(check)
-        if (!window.Paddle) setError("Sistemi i pagesave dështoi të ngarkohet")
+        if (!window.Paddle) {
+          console.error("❌ Paddle failed to load after 10 seconds")
+          setError("Sistemi i pagesave dështoi të ngarkohet")
+        }
       }, 10000)
     }
   }, [PADDLE_CLIENT_TOKEN])
@@ -103,11 +125,16 @@ const Payment = () => {
 
   // Open Paddle Checkout
   const openCheckout = () => {
+    console.log("🛒 Opening checkout...")
+    console.log("🛒 Paddle initialized:", paddleInitialized)
+    console.log("🛒 User:", user)
+    console.log("🛒 Price ID:", PRICE_MONTHLY)
+    
     if (!paddleInitialized) return alert("Sistemi i pagesave nuk është gati. Ju lutem prisni...")
     if (!user) return (window.location.href = "/signin")
 
     if (!PRICE_MONTHLY) {
-      return setError("ID e çmimit (VITE_PADDLE_PRICE_MONTHLY) mungon.")
+      return setError("ID e çmimit (VITE_PADDLE_PRICE_MONTHLY_TEST) mungon.")
     }
 
     try {
