@@ -61,6 +61,8 @@ const Payment = () => {
             }
           }
         })
+
+        window.Paddle.Environment.set('sandbox')
         
         console.log("✅ Paddle initialized successfully!")
         setPaddleInitialized(true)
