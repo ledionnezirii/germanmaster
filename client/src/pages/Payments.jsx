@@ -64,7 +64,7 @@ const Payment = () => {
 
         window.Paddle.Environment.set('sandbox')
         
-        console.log("✅ Paddle initialized successfully!")
+        console.log("✅ Paddle initialized successfully with sandbox environment!")
         setPaddleInitialized(true)
       } catch (err) {
         console.error("❌ Paddle initialization error:", err)
@@ -99,25 +99,43 @@ const Payment = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log("💾 Fetching user data from localStorage...")
         const token = localStorage.getItem("authToken")
+        console.log("💾 Auth token exists:", !!token)
+        
         if (!token) {
+          console.log("❌ No auth token found, redirecting to signin")
           window.location.href = "/signin"
           return
         }
 
         const userStr = localStorage.getItem("user")
+        console.log("💾 User string from localStorage:", userStr)
+        
         if (userStr) {
           const userData = JSON.parse(userStr)
+          console.log("💾 Parsed user data:", JSON.stringify(userData, null, 2))
+          console.log("💾 User ID:", userData.id)
+          console.log("💾 User email:", userData.email)
+          console.log("💾 User subscription:", JSON.stringify(userData.subscription, null, 2))
+          
           setUser(userData)
 
+          console.log("🔍 Checking subscription status...")
           const status = await subscriptionService.checkStatus()
+          console.log("🔍 Subscription status:", JSON.stringify(status, null, 2))
           setSubscriptionStatus(status)
+        } else {
+          console.log("⚠️ No user data in localStorage")
         }
       } catch (err) {
+        console.error("❌ Error fetching data:", err)
+        console.error("❌ Error message:", err.message)
+        console.error("❌ Error stack:", err.stack)
         setError("Dështoi ngarkimi i të dhënave")
-        console.error(err)
       } finally {
         setLoading(false)
+        console.log("✅ Data fetch completed, loading = false")
       }
     }
 
@@ -127,32 +145,76 @@ const Payment = () => {
 
   // Open Paddle Checkout
   const openCheckout = () => {
-    console.log("🛒 Opening checkout...")
+    console.log("\n==================== OPENING CHECKOUT ====================")
     console.log("🛒 Paddle initialized:", paddleInitialized)
-    console.log("🛒 User:", user)
+    console.log("🛒 User state:", user ? "EXISTS" : "NULL")
+    console.log("🛒 User data:", user ? JSON.stringify(user, null, 2) : "NO USER")
     console.log("🛒 Price ID:", PRICE_MONTHLY)
+    console.log("🛒 Price ID type:", typeof PRICE_MONTHLY)
+    console.log("🛒 Price ID length:", PRICE_MONTHLY ? PRICE_MONTHLY.length : 0)
     
-    if (!paddleInitialized) return alert("Sistemi i pagesave nuk është gati. Ju lutem prisni...")
-    if (!user) return (window.location.href = "/signin")
+    // Validation checks with detailed logging
+    if (!paddleInitialized) {
+      console.error("❌ Paddle not initialized yet")
+      return alert("Sistemi i pagesave nuk është gati. Ju lutem prisni...")
+    }
+    
+    if (!user) {
+      console.error("❌ No user found, redirecting to signin")
+      return (window.location.href = "/signin")
+    }
 
     if (!PRICE_MONTHLY) {
+      console.error("❌ No price ID configured")
       return setError("ID e çmimit (VITE_PADDLE_PRICE_MONTHLY_TEST) mungon.")
     }
 
+    // Validate user email
+    if (!user.email) {
+      console.error("❌ User has no email:", user)
+      return setError("Email i përdoruesit mungon. Ju lutem rifreskoni faqen.")
+    }
+
+    // Validate user ID
+    if (!user.id) {
+      console.error("❌ User has no ID:", user)
+      return setError("ID e përdoruesit mungon. Ju lutem rifreskoni faqen.")
+    }
+
+    // Build checkout config
+    const checkoutConfig = {
+      items: [{ 
+        priceId: PRICE_MONTHLY, 
+        quantity: 1 
+      }],
+      customer: {
+        email: user.email,
+      },
+      customData: { 
+        userId: user.id 
+      },
+      successCallback: () => {
+        console.log("✅ Checkout success callback triggered")
+        alert("Pagesa u krye me sukses!")
+        setTimeout(() => window.location.reload(), 2000)
+      },
+    }
+
+    console.log("📦 Checkout config to send to Paddle:")
+    console.log(JSON.stringify(checkoutConfig, null, 2))
+    console.log("📦 Items:", JSON.stringify(checkoutConfig.items, null, 2))
+    console.log("📦 Customer:", JSON.stringify(checkoutConfig.customer, null, 2))
+    console.log("📦 CustomData:", JSON.stringify(checkoutConfig.customData, null, 2))
+
     try {
-      window.Paddle.Checkout.open({
-        items: [{ priceId: PRICE_MONTHLY, quantity: 1 }],
-        customer: {
-          email: user.email,
-        },
-        customData: { userId: user.id },
-        successCallback: () => {
-          alert("Pagesa u krye me sukses!")
-          setTimeout(() => window.location.reload(), 2000)
-        },
-      })
+      console.log("🚀 Calling window.Paddle.Checkout.open...")
+      window.Paddle.Checkout.open(checkoutConfig)
+      console.log("✅ Paddle.Checkout.open called successfully")
     } catch (err) {
-      console.error("Checkout dështoi:", err)
+      console.error("❌❌❌ Checkout failed:", err)
+      console.error("❌ Error name:", err.name)
+      console.error("❌ Error message:", err.message)
+      console.error("❌ Error stack:", err.stack)
       setError("Dështoi hapja e checkout. Ju lutem provoni përsëri.")
     }
   }
