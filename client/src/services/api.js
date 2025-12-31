@@ -260,7 +260,6 @@ export const planService = {
   startWeek: (level, weekNumber) => api.post(`/plan/${level}/week/${weekNumber}/start`),
 }
 
-
 export const testService = {
   getAllTests: (params = {}) => api.get("/tests", { params }),
   getTestById: (id) => api.get(`/tests/${id}`),
@@ -538,6 +537,7 @@ export const subscriptionService = {
       console.log("[Subscription] Days remaining:", daysRemaining)
       console.log("[Subscription] Is expired:", isExpired)
       console.log("[Subscription] Is active:", isActive)
+      console.log("[Subscription] Is cancelled:", user.subscription.cancelled)
 
       return {
         active: isActive,
@@ -546,6 +546,7 @@ export const subscriptionService = {
         type: user.subscription.type,
         expiresAt: user.subscription.expiresAt,
         trialStartedAt: user.subscription.trialStartedAt,
+        cancelled: user.subscription.cancelled || false, // Include cancelled status
       }
     } catch (error) {
       console.error("[Subscription] Error parsing user data:", error)
@@ -599,9 +600,6 @@ export const academyService = {
     api.delete(`/academies/${academyId}/groups/${groupId}/admins/${userId}`),
 }
 
-
-
-
 export const raceService = {
   getAvailableRooms: (params = {}) => api.get("/race/rooms", { params }),
   getRoomById: (roomId) => api.get(`/race/rooms/${roomId}`),
@@ -612,6 +610,5 @@ export const raceService = {
   deleteRoom: (roomId) => api.delete(`/race/rooms/${roomId}`),
   getUserRaceStats: () => api.get("/race/stats"),
 }
-
 
 export default api

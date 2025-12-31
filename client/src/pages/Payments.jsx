@@ -9,18 +9,65 @@ const Payment = () => {
   const [user, setUser] = useState(null)
   const [subscriptionStatus, setSubscriptionStatus] = useState(null)
   const [error, setError] = useState(null)
+  const [selectedPlan, setSelectedPlan] = useState("monthly")
 
   const PADDLE_CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN_TEST
-  const PRICE_MONTHLY = import.meta.env.VITE_PADDLE_PRICE_MONTHLY_TEST
+  
+  // All 4 price IDs
+  const PRICES = {
+    daily: import.meta.env.VITE_PADDLE_PRICE_DAILY_TEST,
+    monthly: import.meta.env.VITE_PADDLE_PRICE_MONTHLY_TEST,
+    quarterly: import.meta.env.VITE_PADDLE_PRICE_QUARTERLY_TEST,
+    yearly: import.meta.env.VITE_PADDLE_PRICE_YEARLY_TEST,
+  }
+
+  const PLANS = [
+    {
+      id: "daily",
+      name: "Ditor",
+      price: "€1.00",
+      period: "për ditë",
+      description: "Ideal për të provuar",
+      priceId: PRICES.daily,
+      popular: false,
+    },
+    {
+      id: "monthly",
+      name: "Mujor",
+      price: "€12.00",
+      period: "për muaj",
+      description: "Më i popullarizuari",
+      priceId: PRICES.monthly,
+      popular: true,
+    },
+    {
+      id: "quarterly",
+      name: "3-Mujor",
+      price: "€25.00",
+      period: "për 3 muaj",
+      originalPrice: "€36.00",
+      savings: "Kurse 30%",
+      description: "Vlera më e mirë",
+      priceId: PRICES.quarterly,
+      popular: false,
+    },
+    {
+      id: "yearly",
+      name: "Vjetor",
+      price: "€100.00",
+      period: "për vit",
+      originalPrice: "€144.00",
+      savings: "Kurse 31%",
+      description: "Kursimi maksimal",
+      priceId: PRICES.yearly,
+      popular: false,
+    },
+  ]
 
   // Initialize Paddle
   useEffect(() => {
     console.log("🔍 Paddle Token:", PADDLE_CLIENT_TOKEN ? "EXISTS" : "MISSING")
-    console.log("🔍 Token value:", PADDLE_CLIENT_TOKEN)
-    console.log("🔍 Price ID:", PRICE_MONTHLY ? "EXISTS" : "MISSING")
-    console.log("🔍 Price value:", PRICE_MONTHLY)
-    console.log("🔍 window.Paddle:", window.Paddle ? "EXISTS" : "MISSING")
-    
+
     const initPaddle = () => {
       if (!PADDLE_CLIENT_TOKEN) {
         console.error("❌ PADDLE_CLIENT_TOKEN is missing")
@@ -35,36 +82,44 @@ const Payment = () => {
       }
 
       console.log("✅ Initializing Paddle with token:", PADDLE_CLIENT_TOKEN)
-      
+
       try {
         window.Paddle.Initialize({
           token: PADDLE_CLIENT_TOKEN,
           eventCallback: (data) => {
             console.log("📢 Paddle event:", data)
             if (data.type === "checkout.completed") {
-              authService.getProfile()
-                .then(response => {
+              console.log("✅ Payment completed! Granting immediate access...")
+              authService
+                .getProfile()
+                .then((response) => {
                   const userData = response.data?.user
                   if (userData) {
                     localStorage.setItem("user", JSON.stringify(userData))
-                    alert("Pagesa u krye me sukses! Faleminderit për abonimin.")
+                    alert("✅ Pagesa u krye me sukses! Abonimi juaj është aktiv MENJËHERË. Mirë se vini në Premium!")
                     localStorage.removeItem("subscription_expired")
                     setTimeout(() => window.location.reload(), 1500)
                   }
                 })
-                .catch(err => {
+                .catch((err) => {
                   console.error("Failed to refresh user data:", err)
-                  alert("Pagesa u krye me sukses! Faleminderit për abonimin.")
+                  alert("✅ Pagesa u krye me sukses! Abonimi juaj është aktiv MENJËHERË.")
                   localStorage.removeItem("subscription_expired")
                   setTimeout(() => window.location.reload(), 2000)
                 })
             }
-          }
+            if (data.type === "checkout.error") {
+              console.error("❌ Payment error:", data)
+              setError(
+                "❌ Pagesa dështoi. Ju lutem provoni përsëri. NUK është tërhequr asnjë pagesë nga llogaria juaj.",
+              )
+            }
+          },
         })
 
-        window.Paddle.Environment.set('sandbox')
-        
-        console.log("✅ Paddle initialized successfully with sandbox environment!")
+        window.Paddle.Environment.set("sandbox")
+
+        console.log("✅ Paddle initialized successfully!")
         setPaddleInitialized(true)
       } catch (err) {
         console.error("❌ Paddle initialization error:", err)
@@ -73,13 +128,10 @@ const Payment = () => {
     }
 
     if (window.Paddle) {
-      console.log("✅ Paddle already loaded, initializing...")
       initPaddle()
     } else {
-      console.log("⏳ Waiting for Paddle to load...")
       const check = setInterval(() => {
         if (window.Paddle) {
-          console.log("✅ Paddle loaded after waiting, initializing...")
           clearInterval(check)
           initPaddle()
         }
@@ -99,43 +151,28 @@ const Payment = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log("💾 Fetching user data from localStorage...")
         const token = localStorage.getItem("authToken")
-        console.log("💾 Auth token exists:", !!token)
-        
+
         if (!token) {
-          console.log("❌ No auth token found, redirecting to signin")
           window.location.href = "/signin"
           return
         }
 
         const userStr = localStorage.getItem("user")
-        console.log("💾 User string from localStorage:", userStr)
-        
+
         if (userStr) {
           const userData = JSON.parse(userStr)
-          console.log("💾 Parsed user data:", JSON.stringify(userData, null, 2))
-          console.log("💾 User ID:", userData.id)
-          console.log("💾 User email:", userData.email)
-          console.log("💾 User subscription:", JSON.stringify(userData.subscription, null, 2))
-          
           setUser(userData)
 
-          console.log("🔍 Checking subscription status...")
           const status = await subscriptionService.checkStatus()
-          console.log("🔍 Subscription status:", JSON.stringify(status, null, 2))
+          console.log("🔍 Subscription status:", status)
           setSubscriptionStatus(status)
-        } else {
-          console.log("⚠️ No user data in localStorage")
         }
       } catch (err) {
         console.error("❌ Error fetching data:", err)
-        console.error("❌ Error message:", err.message)
-        console.error("❌ Error stack:", err.stack)
         setError("Dështoi ngarkimi i të dhënave")
       } finally {
         setLoading(false)
-        console.log("✅ Data fetch completed, loading = false")
       }
     }
 
@@ -143,89 +180,94 @@ const Payment = () => {
     localStorage.removeItem("subscription_expired")
   }, [])
 
-  // Open Paddle Checkout
-  const openCheckout = () => {
+  const openCheckout = async (priceId) => {
     console.log("\n==================== OPENING CHECKOUT ====================")
-    console.log("🛒 Paddle initialized:", paddleInitialized)
-    console.log("🛒 User state:", user ? "EXISTS" : "NULL")
-    console.log("🛒 User data:", user ? JSON.stringify(user, null, 2) : "NO USER")
-    console.log("🛒 Price ID:", PRICE_MONTHLY)
-    console.log("🛒 Price ID type:", typeof PRICE_MONTHLY)
-    console.log("🛒 Price ID length:", PRICE_MONTHLY ? PRICE_MONTHLY.length : 0)
-    
-    // Validation checks with detailed logging
+    console.log("Selected price ID:", priceId)
+
     if (!paddleInitialized) {
-      console.error("❌ Paddle not initialized yet")
       return alert("Sistemi i pagesave nuk është gati. Ju lutem prisni...")
     }
-    
+
     if (!user) {
-      console.error("❌ No user found, redirecting to signin")
       return (window.location.href = "/signin")
     }
 
-    if (!PRICE_MONTHLY) {
-      console.error("❌ No price ID configured")
-      return setError("ID e çmimit (VITE_PADDLE_PRICE_MONTHLY_TEST) mungon.")
+    if (!priceId) {
+      return setError("ID e çmimit mungon.")
     }
 
-    // Validate user email
-    if (!user.email) {
-      console.error("❌ User has no email:", user)
-      return setError("Email i përdoruesit mungon. Ju lutem rifreskoni faqen.")
+    if (!user.email || !user.id) {
+      return setError("Të dhënat e përdoruesit janë të pakompletuara. Ju lutem rifreskoni faqen.")
     }
 
-    // Validate user ID
-    if (!user.id) {
-      console.error("❌ User has no ID:", user)
-      return setError("ID e përdoruesit mungon. Ju lutem rifreskoni faqen.")
+    try {
+      console.log("🔍 Checking for existing active subscription before checkout...")
+      const checkResponse = await paymentService.createCheckoutSession(user.id, priceId)
+
+      if (!checkResponse.success && checkResponse.code === "ALREADY_SUBSCRIBED") {
+        console.log("⚠️ User already has active subscription")
+        const data = checkResponse.data
+        alert(
+          `✅ Ju tashmë keni një abonim aktiv (${data.subscriptionType})!\n\n` +
+            `📅 Përfundon më: ${new Date(data.expiresAt).toLocaleDateString("sq-AL")}\n` +
+            `⏰ Ditë të mbetura: ${data.daysRemaining}\n\n` +
+            `Ju keni qasje të plotë në të gjitha veçoritë Premium.`,
+        )
+        return
+      }
+    } catch (err) {
+      if (err.response?.status === 409) {
+        const data = err.response.data.data
+        alert(
+          `✅ Ju tashmë keni një abonim aktiv!\n\n` +
+            `📅 Përfundon më: ${new Date(data.expiresAt).toLocaleDateString("sq-AL")}\n` +
+            `⏰ Ditë të mbetura: ${data.daysRemaining}\n\n` +
+            `Ju keni qasje të plotë në të gjitha veçoritë Premium.`,
+        )
+        return
+      }
+      console.error("❌ Error checking subscription:", err)
     }
 
-    // Build checkout config
     const checkoutConfig = {
-      items: [{ 
-        priceId: PRICE_MONTHLY, 
-        quantity: 1 
-      }],
+      items: [
+        {
+          priceId: priceId,
+          quantity: 1,
+        },
+      ],
       customer: {
         email: user.email,
       },
-      customData: { 
-        userId: user.id 
-      },
-      successCallback: () => {
-        console.log("✅ Checkout success callback triggered")
-        alert("Pagesa u krye me sukses!")
-        setTimeout(() => window.location.reload(), 2000)
+      customData: {
+        userId: user.id,
       },
     }
 
-    console.log("📦 Checkout config to send to Paddle:")
-    console.log(JSON.stringify(checkoutConfig, null, 2))
-    console.log("📦 Items:", JSON.stringify(checkoutConfig.items, null, 2))
-    console.log("📦 Customer:", JSON.stringify(checkoutConfig.customer, null, 2))
-    console.log("📦 CustomData:", JSON.stringify(checkoutConfig.customData, null, 2))
-
     try {
-      console.log("🚀 Calling window.Paddle.Checkout.open...")
+      console.log("🚀 Opening Paddle checkout...")
       window.Paddle.Checkout.open(checkoutConfig)
-      console.log("✅ Paddle.Checkout.open called successfully")
     } catch (err) {
-      console.error("❌❌❌ Checkout failed:", err)
-      console.error("❌ Error name:", err.name)
-      console.error("❌ Error message:", err.message)
-      console.error("❌ Error stack:", err.stack)
-      setError("Dështoi hapja e checkout. Ju lutem provoni përsëri.")
+      console.error("❌ Checkout failed:", err)
+      setError("❌ Dështoi hapja e checkout. NUK është tërhequr asnjë pagesë. Ju lutem provoni përsëri.")
     }
   }
 
-  // Cancel subscription
   const handleCancelSubscription = async () => {
-    if (!window.confirm("Jeni të sigurt që dëshironi të anuloni abonimin tuaj?")) return
+    if (
+      !window.confirm(
+        "Jeni të sigurt që dëshironi të anuloni abonimin tuaj? Do të vazhdoni të keni qasje të plotë deri në fund të periudhës së faturimit.",
+      )
+    )
+      return
 
     try {
-      await paymentService.cancelSubscription(user.id)
-      alert("Abonimi u anulua me sukses")
+      const response = await paymentService.cancelSubscription(user.id)
+      console.log("✅ Cancellation response:", response)
+      alert(
+        response.message ||
+          "Abonimi u anulua me sukses. Do të keni qasje të plotë deri në fund të periudhës së faturimit.",
+      )
       window.location.reload()
     } catch (err) {
       console.error("Gabim në anulimin e abonimit:", err)
@@ -243,10 +285,13 @@ const Payment = () => {
       </div>
     )
 
-  const subscriptionActive = subscriptionStatus?.active && subscriptionStatus?.type === "1_month"
+  const subscriptionActive = subscriptionStatus?.active && subscriptionStatus?.type !== "free_trial"
   const isFreeTrial = subscriptionStatus?.type === "free_trial" && subscriptionStatus?.active
-  const hasSubscription = subscriptionStatus && subscriptionStatus?.type
   const isCancelled = subscriptionStatus?.cancelled && subscriptionStatus?.daysRemaining > 0
+  const isExpired = !subscriptionStatus?.active
+
+  const shouldShowBuyButton = isExpired || isFreeTrial
+  const shouldShowCancelButton = subscriptionActive && !isCancelled
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50">
@@ -257,7 +302,7 @@ const Payment = () => {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto py-8 px-4">
+      <div className="max-w-6xl mx-auto py-8 px-4">
         {error && (
           <div className="bg-red-100 border-l-4 border-red-600 rounded-lg p-4 mb-6 shadow-md">
             <div className="flex justify-between items-start">
@@ -275,170 +320,224 @@ const Payment = () => {
           </div>
         )}
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {isCancelled && (
-            <div className="md:col-span-2 bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-5 shadow-lg text-white">
-              <div className="flex items-start gap-3">
-                <div className="bg-white/20 rounded-full p-2">
-                  <span className="text-2xl">⏰</span>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold mb-1">Abonimi i Anuluar</h3>
-                  <p className="text-orange-100 text-sm mb-2">
-                    Abonimi yt është anuluar, por ke akoma{" "}
-                    <span className="font-bold text-white text-lg">{subscriptionStatus.daysRemaining}</span> ditë qasje
-                    të mbetur.
-                  </p>
-                  {subscriptionStatus.expiresAt && (
-                    <div className="bg-white/10 rounded-lg px-3 py-1.5 inline-block">
-                      <p className="text-xs">
-                        📅 Qasja përfundon më:{" "}
-                        <span className="font-semibold">
-                          {new Date(subscriptionStatus.expiresAt).toLocaleDateString("sq-AL")}
-                        </span>
-                      </p>
-                    </div>
-                  )}
-                </div>
+        {/* Status Banners */}
+        {isCancelled && (
+          <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-5 shadow-lg text-white mb-6">
+            <div className="flex items-start gap-3">
+              <div className="bg-white/20 rounded-full p-2">
+                <span className="text-2xl">⏰</span>
               </div>
-            </div>
-          )}
-
-          {isFreeTrial && !isCancelled && (
-            <div className="md:col-span-2 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-5 shadow-lg text-white">
-              <div className="flex items-start gap-3">
-                <div className="bg-white/20 rounded-full p-2">
-                  <span className="text-2xl">🎉</span>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold mb-1">Periudha Falas Aktive</h3>
-                  <p className="text-blue-100 text-sm mb-2">
-                    Të kanë mbetur{" "}
-                    <span className="font-bold text-white text-lg">{subscriptionStatus.daysRemaining}</span> ditë në
-                    periudhën tënde falas.
-                  </p>
-                  {subscriptionStatus.expiresAt && (
-                    <div className="bg-white/10 rounded-lg px-3 py-1.5 inline-block">
-                      <p className="text-xs">
-                        📅 Përfundon më:{" "}
-                        <span className="font-semibold">
-                          {new Date(subscriptionStatus.expiresAt).toLocaleDateString("sq-AL")}
-                        </span>
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {subscriptionActive && !isCancelled && (
-            <div className="md:col-span-2 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-5 shadow-lg text-white">
-              <div className="flex items-start gap-3">
-                <div className="bg-white/20 rounded-full p-2">
-                  <span className="text-2xl">👑</span>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-bold mb-1">Abonimi Premium Aktiv</h3>
-                  <p className="text-green-100 text-sm mb-2">
-                    Të kanë mbetur{" "}
-                    <span className="font-bold text-white text-lg">{subscriptionStatus.daysRemaining || 30}</span> ditë
-                    deri në rinovim.
-                  </p>
-                  {subscriptionStatus.expiresAt && (
-                    <div className="bg-white/10 rounded-lg px-3 py-1.5 inline-block">
-                      <p className="text-xs">
-                        📅 Rinovohet më:{" "}
-                        <span className="font-semibold">
-                          {new Date(subscriptionStatus.expiresAt).toLocaleDateString("sq-AL")}
-                        </span>
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {(!hasSubscription || !subscriptionActive || isCancelled) && (
-            <div className="md:col-span-2 bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="bg-gradient-to-r from-red-600 to-red-700 p-6 text-white text-center">
-                <div className="inline-block bg-white/20 rounded-full p-3 mb-3">
-                  <span className="text-3xl">⭐</span>
-                </div>
-                <h2 className="text-2xl font-bold mb-1">Abonimi Premium</h2>
-                <p className="text-red-100">Zhblloko të gjitha veçoritë dhe vazhdo udhëtimin tënd të të mësuarit</p>
-              </div>
-
-              <div className="p-6">
-                <div className="text-center mb-6">
-                  <div className="flex items-center justify-center gap-2 mb-1">
-                    <span className="text-5xl font-bold text-red-600">€1.00</span>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold mb-1">Abonimi i Anuluar</h3>
+                <p className="text-orange-100 text-sm mb-2">
+                  Abonimi yt është anuluar, por ke akoma{" "}
+                  <span className="font-bold text-white text-lg">{subscriptionStatus.daysRemaining}</span> ditë qasje
+                  të mbetur. <strong>Nuk do të faturohesh përsëri.</strong>
+                </p>
+                {subscriptionStatus.expiresAt && (
+                  <div className="bg-white/10 rounded-lg px-3 py-1.5 inline-block">
+                    <p className="text-xs">
+                      📅 Qasja përfundon më:{" "}
+                      <span className="font-semibold">
+                        {new Date(subscriptionStatus.expiresAt).toLocaleDateString("sq-AL")}
+                      </span>
+                    </p>
                   </div>
-                  <p className="text-gray-500 mb-4">për muaj</p>
-                  <div className="bg-red-50 rounded-lg p-3">
-                    <h4 className="font-semibold text-gray-900 mb-2 text-sm">Përfitimet e Premium:</h4>
-                    <ul className="space-y-1.5 text-left text-gray-700 text-sm">
-                      <li className="flex items-center gap-2">
-                        <span className="text-green-500">✓</span>
-                        <span>Qasje të pakufizuar në të gjitha leksionet</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="text-green-500">✓</span>
-                        <span>Përmbajtje ekskluzive premium</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="text-green-500">✓</span>
-                        <span>Mbështetje prioritare</span>
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <span className="text-green-500">✓</span>
-                        <span>Pa reklama</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
-                <button
-                  onClick={openCheckout}
-                  disabled={!paddleInitialized}
-                  className={`w-full py-3 px-6 text-lg font-bold rounded-xl transition-all transform hover:scale-105 shadow-lg ${paddleInitialized
-                      ? "bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800"
-                      : "bg-gray-300 text-gray-600 cursor-not-allowed"
-                    }`}
-                >
-                  {paddleInitialized ? "💳 Abonohu Tani" : "Duke ngarkuar sistemin e pagesave..."}
-                </button>
-                <p className="text-center text-xs text-gray-500 mt-3">
-                  🔒 Pagesë e sigurt me Paddle. Anulo në çdo kohë.
+        {subscriptionActive && !isCancelled && (
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-5 shadow-lg text-white mb-6">
+            <div className="flex items-start gap-3">
+              <div className="bg-white/20 rounded-full p-2">
+                <span className="text-2xl">✅</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold mb-1">✅ Abonimi Aktiv - Qasje e Plotë!</h3>
+                <p className="text-green-100 text-sm mb-2">
+                  Abonimi yt <span className="font-bold text-white">Premium</span> është aktiv.
+                </p>
+                {subscriptionStatus.expiresAt && (
+                  <div className="bg-white/10 rounded-lg px-3 py-1.5 inline-block">
+                    <p className="text-xs">
+                      📅 Rinovohet më:{" "}
+                      <span className="font-semibold">
+                        {new Date(subscriptionStatus.expiresAt).toLocaleDateString("sq-AL")}
+                      </span>
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isFreeTrial && !isCancelled && (
+          <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-5 shadow-lg text-white mb-6">
+            <div className="flex items-start gap-3">
+              <div className="bg-white/20 rounded-full p-2">
+                <span className="text-2xl">🎉</span>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold mb-1">Periudha Falas Aktive</h3>
+                <p className="text-blue-100 text-sm mb-2">
+                  Të kanë mbetur{" "}
+                  <span className="font-bold text-white text-lg">{subscriptionStatus.daysRemaining}</span> ditë në
+                  periudhën tënde falas.
                 </p>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {subscriptionActive && !isCancelled && (
-            <div className="md:col-span-2 bg-white rounded-xl shadow-lg p-5 border-2 border-gray-100">
-              <div className="flex items-start gap-3 mb-4">
-                <div className="bg-red-100 rounded-full p-2">
-                  <span className="text-xl">⚙️</span>
+        {/* Pricing Plans */}
+        {shouldShowBuyButton && (
+          <div className="mb-8">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Zgjidh Planin Tënd</h2>
+              <p className="text-gray-600">Zhblloko të gjitha veçoritë dhe vazhdo udhëtimin tënd</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {PLANS.map((plan) => (
+                <div
+                  key={plan.id}
+                  onClick={() => setSelectedPlan(plan.id)}
+                  className={`relative bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer transition-all duration-300 transform hover:scale-105 ${
+                    selectedPlan === plan.id
+                      ? "ring-4 ring-red-500 shadow-2xl"
+                      : "hover:shadow-xl"
+                  }`}
+                >
+                  {plan.popular && (
+                    <div className="absolute top-0 right-0 bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+                      MË I POPULLARIZUARI
+                    </div>
+                  )}
+                  {plan.savings && (
+                    <div className="absolute top-0 left-0 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-br-lg">
+                      {plan.savings}
+                    </div>
+                  )}
+
+                  <div className={`p-6 ${plan.popular ? "pt-10" : ""}`}>
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">{plan.name}</h3>
+                    <p className="text-sm text-gray-500 mb-4">{plan.description}</p>
+
+                    <div className="mb-4">
+                      {plan.originalPrice && (
+                        <span className="text-gray-400 line-through text-lg mr-2">{plan.originalPrice}</span>
+                      )}
+                      <span className="text-4xl font-bold text-red-600">{plan.price}</span>
+                      <span className="text-gray-500 text-sm ml-1 block mt-1">{plan.period}</span>
+                    </div>
+
+                    <div
+                      className={`w-6 h-6 rounded-full border-2 mx-auto ${
+                        selectedPlan === plan.id
+                          ? "bg-red-500 border-red-500"
+                          : "border-gray-300"
+                      } flex items-center justify-center`}
+                    >
+                      {selectedPlan === plan.id && (
+                        <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">Menaxho Abonimin</h2>
-                  <p className="text-gray-600 text-sm">
-                    Dëshiron të anulosh? Mund ta anulosh abonimin tënd në çdo kohë. Do të vazhdosh të kesh qasje deri në
-                    fund të periudhës së faturimit.
-                  </p>
+              ))}
+            </div>
+
+            {/* Benefits */}
+            <div className="bg-white rounded-xl shadow-lg p-6 mt-6">
+              <h4 className="font-semibold text-gray-900 mb-4 text-lg">✅ Përfitimet e Premium:</h4>
+              <div className="grid md:grid-cols-2 gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500 text-xl">✓</span>
+                  <span>Qasje MENJËHERË pas pagesës</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500 text-xl">✓</span>
+                  <span>Qasje të pakufizuar në të gjitha leksionet</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500 text-xl">✓</span>
+                  <span>Përmbajtje ekskluzive premium</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500 text-xl">✓</span>
+                  <span>Mbështetje prioritare</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500 text-xl">✓</span>
+                  <span>Pa reklama</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-green-500 text-xl">✓</span>
+                  <span>Anulo në çdo kohë</span>
                 </div>
               </div>
-              <button
-                onClick={handleCancelSubscription}
-                className="px-5 py-2.5 text-red-600 font-semibold border-2 border-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all"
-              >
-                Anulo Abonimin
-              </button>
             </div>
-          )}
-        </div>
+
+            {/* Subscribe Button */}
+            <div className="mt-6 text-center">
+              <button
+                onClick={() => {
+                  const plan = PLANS.find((p) => p.id === selectedPlan)
+                  if (plan) openCheckout(plan.priceId)
+                }}
+                disabled={!paddleInitialized}
+                className={`px-12 py-4 text-xl font-bold rounded-xl transition-all transform hover:scale-105 shadow-lg ${
+                  paddleInitialized
+                    ? "bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800"
+                    : "bg-gray-300 text-gray-600 cursor-not-allowed"
+                }`}
+              >
+                {paddleInitialized
+                  ? `💳 Abonohu me Planin ${PLANS.find((p) => p.id === selectedPlan)?.name}`
+                  : "Duke ngarkuar sistemin e pagesave..."}
+              </button>
+              <p className="text-center text-xs text-gray-500 mt-3">
+                🔒 Pagesë e sigurt me Paddle. Anulo në çdo kohë.
+                <br />⚡ <strong>Nuk paguani nëse transakti dështon.</strong>
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Cancel Subscription Section */}
+        {shouldShowCancelButton && (
+          <div className="bg-white rounded-xl shadow-lg p-5 border-2 border-gray-100">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="bg-red-100 rounded-full p-2">
+                <span className="text-xl">⚙️</span>
+              </div>
+              <div className="flex-1">
+                <h2 className="text-xl font-bold text-gray-900 mb-1">Menaxho Abonimin</h2>
+                <p className="text-gray-600 text-sm">
+                  Dëshiron të anulosh? Mund ta anulosh abonimin tënd në çdo kohë.{" "}
+                  <strong>Do të vazhdosh të kesh qasje të plotë deri në fund të periudhës së faturimit</strong> dhe
+                  nuk do të faturohesh përsëri.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleCancelSubscription}
+              className="px-5 py-2.5 text-red-600 font-semibold border-2 border-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all"
+            >
+              Anulo Abonimin
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
