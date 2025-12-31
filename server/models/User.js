@@ -214,16 +214,20 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
     subscriptionType: {
-      type: String,
-      enum: ["free_trial", "1_month", "3_months", "1_year", null],
-      default: "free_trial",
-    },
+  type: String,
+  enum: ["free_trial", "1_day", "1_month", "3_months", "1_year", null],  // Added 1_day
+  default: "free_trial",
+},
     subscriptionExpiresAt: {
       type: Date,
     },
     trialStartedAt: {
       type: Date,
       default: Date.now,
+    },
+    subscriptionCancelled: {
+      type: Boolean,
+      default: false,
     },
     isActive: {
       type: Boolean,

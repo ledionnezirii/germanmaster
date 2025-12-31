@@ -26,11 +26,11 @@ const paymentSchema = new mongoose.Schema(
     productId: {
       type: String,
     },
-    subscriptionType: {
-      type: String,
-      enum: ["1_month", "3_months", "1_year"],
-      required: true,
-    },
+   subscriptionType: {
+  type: String,
+  enum: ["1_day", "1_month", "3_months", "1_year"],  // Added 1_day
+  required: true,
+},
     status: {
       type: String,
       enum: ["active", "past_due", "paused", "cancelled", "trialing", "completed"],
@@ -46,7 +46,7 @@ const paymentSchema = new mongoose.Schema(
     },
     billingCycle: {
       type: String,
-      enum: ["monthly", "quarterly", "yearly"],
+      enum: ["monthly", "quarterly", "yearly","daily"],
       required: true,
     },
     nextBillingDate: Date,
