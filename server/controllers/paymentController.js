@@ -669,34 +669,48 @@ const handleSubscriptionCreated = async (event) => {
       console.log("[v0] ⚠️ Unknown billing cycle, defaulting to monthly")
     }
 
-  // Use Paddle's billing period instead of manual calculation
-const currentBillingPeriod = data.current_billing_period
-let expiresAt
-let nextBillingDate
+    // Use Paddle's billing period instead of manual calculation
+    const currentBillingPeriod = data.current_billing_period
+    let expiresAt
+    let nextBillingDate
 
-if (currentBillingPeriod?.ends_at) {
-  expiresAt = new Date(currentBillingPeriod.ends_at)
-  nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
-  console.log("[v0] ✅ Using Paddle billing period end date:", expiresAt.toISOString())
-} else {
-  // Fallback to manual calculation
-  const now = new Date()
-  expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
-  nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
-  console.log("[v0] ⚠️ Fallback: calculated expiresAt:", expiresAt.toISOString())
-}
+    if (currentBillingPeriod?.ends_at) {
+      expiresAt = new Date(currentBillingPeriod.ends_at)
+      nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
+      console.log("[v0] ✅ Using Paddle billing period end date:", expiresAt.toISOString())
+    } else {
+      // Fallback to manual calculation
+      const now = new Date()
+      expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
+      nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
+      console.log("[v0] ⚠️ Fallback: calculated expiresAt:", expiresAt.toISOString())
+    }
 
-console.log("[v0] ⏰ Subscription expires at:", expiresAt.toISOString())
-console.log("[v0] ⏰ Next billing date:", nextBillingDate.toISOString())
-console.log("[v0] 📅 Duration:", durationDays, "days")
-    // Check if payment record already exists
+    console.log("[v0] ⏰ Subscription expires at:", expiresAt.toISOString())
+    console.log("[v0] ⏰ Next billing date:", nextBillingDate.toISOString())
+    console.log("[v0] 📅 Duration:", durationDays, "days")
+
+    // Get first transaction ID if available
+    const transactionId = data.transaction_id || null
+
+    // Check if payment record already exists (by subscription ID OR transaction ID)
     console.log("[v0] 🔍 Checking for existing payment record...")
     const existingPayment = await Payment.findOne({
-      paddleSubscriptionId: data.id,
+      $or: [
+        { paddleSubscriptionId: data.id },
+        ...(transactionId ? [{ paddleTransactionId: transactionId }] : [])
+      ]
     })
 
     if (existingPayment) {
-      console.log("[v0] ⚠️ Payment already exists for subscription:", data.id)
+      console.log("[v0] ⚠️ Payment already exists for subscription/transaction:", existingPayment._id)
+      
+      // Update with subscription ID if missing
+      if (!existingPayment.paddleSubscriptionId && data.id) {
+        existingPayment.paddleSubscriptionId = data.id
+        await existingPayment.save()
+        console.log("[v0] ✅ Updated existing payment with subscription ID")
+      }
 
       // Still update user if not paid
       if (!user.isPaid) {
@@ -710,9 +724,6 @@ console.log("[v0] 📅 Duration:", durationDays, "days")
       }
       return
     }
-
-    // Get first transaction ID if available
-    const transactionId = data.transaction_id || null
 
     // Get amount from items
     const amount = data.items?.[0]?.price?.unit_price?.amount
@@ -735,7 +746,7 @@ console.log("[v0] 📅 Duration:", durationDays, "days")
     const payment = await Payment.create({
       userId: userId,
       paddleSubscriptionId: data.id,
-      paddleTransactionId: transactionId || `sub_${data.id}`,
+      paddleTransactionId: transactionId || `sub_created_${data.id}_${Date.now()}`,
       paddleCustomerId: data.customer_id,
       priceId: priceId,
       productId: productId,
