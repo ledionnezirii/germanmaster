@@ -1,8 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { quizService } from "../services/api"
-import { CheckCircle, XCircle } from "lucide-react"
+import { CheckCircle, XCircle, BookOpen, Star, Flame, ArrowLeft, Trophy, Target, Sparkles, ChevronLeft, ChevronRight } from "lucide-react"
 
 export default function Quizes() {
   const [quizzes, setQuizzes] = useState([])
@@ -21,7 +22,7 @@ export default function Quizes() {
   const [notification, setNotification] = useState(null)
   const [notificationVisible, setNotificationVisible] = useState(false)
 
-  const itemsPerPage = 20
+  const itemsPerPage = 12
 
   const showNotification = (message, type = "success") => {
     setNotification({ message, type })
@@ -133,8 +134,7 @@ export default function Quizes() {
   const filteredQuizzes = selectedLevel === "All" ? quizzes : quizzes.filter((quiz) => quiz.level === selectedLevel)
   const totalPages = Math.ceil(filteredQuizzes.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedQuizzes = filteredQuizzes.slice(startIndex, endIndex)
+  const paginatedQuizzes = filteredQuizzes.slice(startIndex, startIndex + itemsPerPage)
 
   useEffect(() => {
     setCurrentPage(1)
@@ -142,9 +142,7 @@ export default function Quizes() {
 
   const isNewQuiz = (quiz) => {
     if (!quiz.createdAt) return false
-    const quizDate = new Date(quiz.createdAt)
-    const now = new Date()
-    const daysDiff = (now - quizDate) / (1000 * 60 * 60 * 24)
+    const daysDiff = (new Date() - new Date(quiz.createdAt)) / (1000 * 60 * 60 * 24)
     return daysDiff <= 7
   }
 
@@ -152,133 +150,183 @@ export default function Quizes() {
     return completedQuizzes.includes(quizId)
   }
 
+  // Notification component
   const NotificationElement = notification && (
-    <div
-      className={`fixed bottom-5 right-5 px-6 py-4 rounded-2xl font-semibold text-sm shadow-2xl z-50 flex items-center gap-3 transition-all duration-300 ease-out transform ${
-        notificationVisible ? "translate-y-0 opacity-100 scale-100" : "translate-y-4 opacity-0 scale-95"
-      } ${
-        notification.type === "success"
-          ? "bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 text-white"
-          : "bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 text-white"
-      }`}
-      style={{
-        boxShadow:
-          notification.type === "success"
-            ? "0 10px 40px rgba(16, 185, 129, 0.4)"
-            : "0 10px 40px rgba(239, 68, 68, 0.4)",
-      }}
-    >
-      <div className={`p-1.5 rounded-full ${notification.type === "success" ? "bg-white/20" : "bg-white/20"}`}>
-        {notification.type === "success" ? <CheckCircle size={20} /> : <XCircle size={20} />}
-      </div>
-      <span className="max-w-xs">{notification.message}</span>
-    </div>
+    <AnimatePresence>
+      {notificationVisible && (
+        <motion.div
+          initial={{ opacity: 0, y: 50, scale: 0.9 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 50, scale: 0.9 }}
+          className={`fixed bottom-6 right-6 px-6 py-4 rounded-2xl font-medium text-sm shadow-2xl z-50 flex items-center gap-3 ${
+            notification.type === "success"
+              ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
+              : "bg-gradient-to-r from-red-500 to-rose-500 text-white"
+          }`}
+        >
+          {notification.type === "success" ? <CheckCircle className="w-5 h-5" /> : <XCircle className="w-5 h-5" />}
+          <span>{notification.message}</span>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 
+  // Loading state
   if (isLoading) {
     return (
-      <div
-        className="min-h-screen bg-[#F8F9FA] flex items-center justify-center"
-        style={{ fontFamily: "Inter, sans-serif" }}
-      >
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-cyan-50/30 flex items-center justify-center">
         {NotificationElement}
-        <div className="flex items-center justify-center min-h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-500"></div>
-        </div>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="flex flex-col items-center gap-4"
+        >
+          <div className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-600 font-medium">Duke ngarkuar kuizet...</p>
+        </motion.div>
       </div>
     )
   }
 
+  // Error state
   if (error) {
     return (
-      <div
-        className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-4"
-        style={{ fontFamily: "Inter, sans-serif" }}
-      >
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-cyan-50/30 flex items-center justify-center p-4">
         {NotificationElement}
-        <div className="bg-white rounded-2xl shadow-sm p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full text-center"
+        >
+          <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <XCircle className="w-8 h-8 text-red-500" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Gabim</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Gabim</h2>
+          <p className="text-slate-500 mb-6">{error}</p>
           <button
             onClick={() => {
               setError(null)
               loadQuizzes()
             }}
-            className="px-6 py-2.5 bg-[#007AFF] hover:bg-[#0051D5] text-white font-medium rounded-lg transition-colors cursor-pointer text-sm"
+            className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-semibold rounded-xl transition-all"
           >
             Provo Përsëri
           </button>
-        </div>
+        </motion.div>
       </div>
     )
   }
 
+  // Result screen
   if (showResult) {
     return (
-      <div
-        className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-4"
-        style={{ fontFamily: "Inter, sans-serif" }}
-      >
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-cyan-50/30 flex items-center justify-center py-8 px-4">
         {NotificationElement}
-        <div className="bg-white rounded-2xl shadow-sm p-8 max-w-lg w-full">
-          <div
-            className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6 ${result.passed ? "bg-[#10B981]/10" : "bg-[#FF8A00]/10"}`}
-          >
-            {result.passed ? (
-              <svg className="w-12 h-12 text-[#10B981]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-              </svg>
-            ) : (
-              <span className="text-5xl text-[#FF8A00] font-bold">!</span>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-md"
+        >
+          <div className="bg-white rounded-3xl shadow-xl p-8 text-center">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", delay: 0.2 }}
+              className={`w-24 h-24 rounded-3xl mx-auto mb-6 flex items-center justify-center ${
+                result.passed
+                  ? "bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-500/30"
+                  : "bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-amber-500/30"
+              }`}
+            >
+              {result.passed ? (
+                <Trophy className="w-12 h-12 text-white" />
+              ) : (
+                <Target className="w-12 h-12 text-white" />
+              )}
+            </motion.div>
+
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="text-3xl font-bold text-slate-800 mb-2"
+            >
+              {result.passed ? "Urime!" : "Vazhdo të Praktikosh!"}
+            </motion.h2>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="text-slate-500 mb-8"
+            >
+              {result.passed ? "Shkëlqyeshëm, e kaluat kuizin!" : "Provoni përsëri për rezultat më të mirë"}
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="grid grid-cols-2 gap-4 mb-6"
+            >
+              <div className="bg-slate-50 rounded-2xl p-5">
+                <div className={`text-4xl font-bold mb-1 ${result.passed ? "text-emerald-500" : "text-amber-500"}`}>
+                  {result.percentage}%
+                </div>
+                <div className="text-sm text-slate-500 font-medium">Rezultati</div>
+              </div>
+              <div className="bg-slate-50 rounded-2xl p-5">
+                <div className={`text-4xl font-bold mb-1 ${result.passed ? "text-emerald-500" : "text-amber-500"}`}>
+                  {result.correctAnswers}/{result.totalQuestions}
+                </div>
+                <div className="text-sm text-slate-500 font-medium">Sakta</div>
+              </div>
+            </motion.div>
+
+            {result.passed && result.xpEarned > 0 && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6 }}
+                className="flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-2xl mb-6"
+              >
+                <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
+                <span className="font-bold text-amber-700">+{result.xpEarned} XP të fituara!</span>
+                <span className="text-xl">🎉</span>
+              </motion.div>
             )}
+
+            {result.passed && result.xpEarned === 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6 }}
+                className="px-4 py-3 bg-slate-50 rounded-xl mb-6 text-sm text-slate-600"
+              >
+                E keni përfunduar më parë këtë kuiz. Nuk jepen XP.
+              </motion.div>
+            )}
+
+            <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+              onClick={resetQuiz}
+              className={`w-full py-4 rounded-2xl font-semibold text-lg ${
+                result.passed
+                  ? "bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/25"
+                  : "bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 shadow-lg shadow-amber-500/25"
+              } text-white transition-all`}
+            >
+              Kthehu te Kuizet
+            </motion.button>
           </div>
-          <h2
-            className="text-3xl font-bold text-center mb-3 text-gray-900"
-            style={{ fontFamily: "Poppins, sans-serif" }}
-          >
-            {result.passed ? "Urime!" : "Vazhdo të Praktikosh!"}
-          </h2>
-          <p className="text-center text-gray-600 mb-8">{result.passed ? "Shkëlqyeshëm!" : "Provoni përsëri!"}</p>
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-gray-50 rounded-xl p-6 text-center">
-              <div className={`text-4xl font-bold mb-1 ${result.passed ? "text-[#10B981]" : "text-[#FF8A00]"}`}>
-                {result.percentage}%
-              </div>
-              <div className="text-sm text-gray-600">Rezultati</div>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-6 text-center">
-              <div className={`text-4xl font-bold mb-1 ${result.passed ? "text-[#10B981]" : "text-[#FF8A00]"}`}>
-                {result.correctAnswers}/{result.totalQuestions}
-              </div>
-              <div className="text-sm text-gray-600">Përgjigje të Sakta</div>
-            </div>
-          </div>
-          {result.passed && result.xpEarned > 0 && (
-            <div className="bg-[#E8FFF3] border border-[#A3E9C8] rounded-xl p-4 mb-6">
-              <p className="text-sm text-gray-700 text-center font-semibold">+{result.xpEarned} XP të fituara! 🎉</p>
-            </div>
-          )}
-          {result.passed && result.xpEarned === 0 && (
-            <div className="bg-[#FFF4E5] border border-[#FFE4B5] rounded-xl p-4 mb-6">
-              <p className="text-sm text-gray-700 text-center">Ju e keni përfunduar më parë këtë kuiz. Nuk jepen XP.</p>
-            </div>
-          )}
-          <button
-            onClick={resetQuiz}
-            className={`w-full px-6 py-4 text-white font-semibold rounded-xl transition-colors cursor-pointer ${result.passed ? "bg-[#10B981] hover:bg-[#059669]" : "bg-[#FF8A00] hover:bg-[#E67A00]"}`}
-          >
-            Kthehu te Kuizet
-          </button>
-        </div>
+        </motion.div>
       </div>
     )
   }
 
+  // Quiz question screen
   if (selectedQuiz) {
     const currentQuestion = selectedQuiz.questions[currentQuestionIndex]
     const progress = ((currentQuestionIndex + 1) / selectedQuiz.questions.length) * 100
@@ -286,182 +334,130 @@ export default function Quizes() {
     const currentAnswer = answers[currentQuestionIndex]
     const submittedAnswer = submittedAnswers[currentQuestionIndex]
 
-    const getFireSize = () => {
-      if (currentStreak === 0) return "w-3.5 h-3.5"
-      if (currentStreak <= 2) return "w-4 h-4"
-      if (currentStreak <= 5) return "w-5 h-5"
-      if (currentStreak <= 10) return "w-6 h-6"
-      return "w-7 h-7"
-    }
-
     return (
-      <div
-        className="min-h-screen bg-[#F8F9FA] flex items-center justify-center py-6 px-4"
-        style={{ fontFamily: "Inter, sans-serif" }}
-      >
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-cyan-50/30 py-8 px-4">
         {NotificationElement}
-        <div className="max-w-3xl w-full mx-auto">
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <button
-                  onClick={() => setSelectedQuiz(null)}
-                  className="text-gray-600 hover:text-gray-900 bg-gray-100 rounded-lg px-3 py-2 transition-all duration-200 flex items-center gap-2 cursor-pointer text-sm font-medium"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  Mbrapa
-                </button>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5 bg-gradient-to-r from-[#FF8A00] to-[#FF6B00] text-white px-3 py-1.5 rounded-lg shadow-md">
-                    <svg
-                      className={`${getFireSize()} transition-all duration-300 ease-out ${currentStreak > 0 ? "animate-pulse" : ""}`}
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
-                    <span className="text-sm font-bold">{currentStreak}</span>
-                  </div>
-                  <span className="bg-gray-100 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg">
-                    {selectedQuiz.level}
-                  </span>
-                </div>
-              </div>
-              <div className="mb-5">
-                <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-                  <span className="font-medium">
-                    Pyetja {currentQuestionIndex + 1} / {selectedQuiz.questions.length}
-                  </span>
-                  <span className="font-semibold">{Math.round(progress)}%</span>
-                </div>
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[#10B981] transition-all duration-500 ease-out"
-                    style={{ width: `${progress}%` }}
-                  ></div>
-                </div>
-              </div>
-              <h2
-                className="text-lg font-semibold text-gray-900 mb-5 leading-relaxed"
-                style={{ fontFamily: "Poppins, sans-serif" }}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-2xl mx-auto"
+        >
+          <div className="flex items-center justify-between mb-8">
+            <button
+              onClick={() => setSelectedQuiz(null)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-all shadow-sm border border-slate-200"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="font-medium">Mbrapa</span>
+            </button>
+
+            <div className="flex items-center gap-3">
+              <motion.div
+                animate={{ scale: currentStreak > 0 ? [1, 1.1, 1] : 1 }}
+                transition={{ duration: 0.3 }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/25"
               >
-                {currentQuestion.questionText}
-              </h2>
+                <Flame className={`w-5 h-5 ${currentStreak > 0 ? "animate-pulse" : ""}`} />
+                <span className="font-bold">{currentStreak}</span>
+              </motion.div>
+
+              <span className="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-sm font-semibold">
+                {selectedQuiz.level}
+              </span>
+            </div>
+          </div>
+
+          <motion.div layout className="bg-white rounded-3xl shadow-xl overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center justify-between text-sm mb-3">
+                <span className="text-slate-500 font-medium">
+                  Pyetja {currentQuestionIndex + 1} nga {selectedQuiz.questions.length}
+                </span>
+                <span className="text-cyan-600 font-bold">{Math.round(progress)}%</span>
+              </div>
+              <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-6">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  className="h-full bg-gradient-to-r from-cyan-500 to-teal-500 rounded-full"
+                />
+              </div>
+
+              <AnimatePresence mode="wait">
+                <motion.h2
+                  key={currentQuestionIndex}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="text-xl font-semibold text-slate-800 mb-8 leading-relaxed"
+                >
+                  {currentQuestion.questionText}
+                </motion.h2>
+              </AnimatePresence>
+
               {currentQuestion.type === "multiple-choice" && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5">
+                <div className="grid gap-3 mb-6">
                   {currentQuestion.options.map((option, index) => {
                     const isSelected = currentAnswer === option
                     const isSubmitted = submittedAnswer !== undefined
-                    const isCorrect = submittedAnswer && submittedAnswer.answer === option && submittedAnswer.isCorrect
-                    const isWrong = submittedAnswer && submittedAnswer.answer === option && !submittedAnswer.isCorrect
+                    const isCorrect = submittedAnswer?.answer === option && submittedAnswer?.isCorrect
+                    const isWrong = submittedAnswer?.answer === option && !submittedAnswer?.isCorrect
 
                     return (
-                      <button
+                      <motion.button
                         key={index}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        whileHover={!isSubmitted ? { scale: 1.01 } : {}}
+                        whileTap={!isSubmitted ? { scale: 0.99 } : {}}
                         onClick={() => !isSubmitted && handleAnswer(option)}
                         disabled={isSubmitted}
-                        className={`w-full p-4 rounded-lg border-2 text-left transition-all duration-300 ease-out ${
+                        className={`w-full p-4 rounded-2xl text-left transition-all duration-300 flex items-center justify-between ${
                           isCorrect
-                            ? "border-[#10B981] bg-[#10B981]/5 scale-[1.02]"
+                            ? "bg-emerald-50 border-2 border-emerald-500 shadow-lg shadow-emerald-500/10"
                             : isWrong
-                              ? "border-red-500 bg-red-50"
-                              : isSelected && !isSubmitted
-                                ? "border-[#007AFF] bg-[#007AFF]/5"
-                                : "border-gray-200 hover:border-gray-300 hover:bg-gray-50 bg-white"
-                        } ${isSubmitted ? "cursor-not-allowed" : "cursor-pointer"}`}
+                            ? "bg-red-50 border-2 border-red-400"
+                            : isSelected && !isSubmitted
+                            ? "bg-cyan-50 border-2 border-cyan-500 shadow-lg shadow-cyan-500/10"
+                            : "bg-slate-50 border-2 border-transparent hover:bg-slate-100 hover:border-slate-200"
+                        } ${isSubmitted ? "cursor-default" : "cursor-pointer"}`}
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2.5">
-                            <div
-                              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
-                                isCorrect
-                                  ? "border-[#10B981] bg-[#10B981]"
-                                  : isWrong
-                                    ? "border-red-500 bg-red-500"
-                                    : isSelected && !isSubmitted
-                                      ? "border-[#007AFF]"
-                                      : "border-gray-300"
-                              }`}
-                            >
-                              {isSelected && !isSubmitted && (
-                                <div className="w-2.5 h-2.5 rounded-full bg-[#007AFF]"></div>
-                              )}
-                              {isCorrect && (
-                                <svg
-                                  className="w-3 h-3 text-white"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={3}
-                                    d="M5 13l4 4L19 7"
-                                  />
-                                </svg>
-                              )}
-                              {isWrong && (
-                                <svg
-                                  className="w-3 h-3 text-white"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M6 18L18 6M6 6l12 12"
-                                  />
-                                </svg>
-                              )}
-                            </div>
-                            <span
-                              className={`font-medium text-sm ${isCorrect ? "text-[#10B981]" : isWrong ? "text-red-600" : "text-gray-700"}`}
-                            >
-                              {option}
-                            </span>
+                        <div className="flex items-center gap-4">
+                          <div
+                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                              isCorrect
+                                ? "border-emerald-500 bg-emerald-500"
+                                : isWrong
+                                ? "border-red-400 bg-red-400"
+                                : isSelected && !isSubmitted
+                                ? "border-cyan-500 bg-cyan-500"
+                                : "border-slate-300"
+                            }`}
+                          >
+                            {isCorrect && <CheckCircle className="w-4 h-4 text-white" />}
+                            {isWrong && <XCircle className="w-4 h-4 text-white" />}
+                            {isSelected && !isSubmitted && (
+                              <div className="w-2.5 h-2.5 rounded-full bg-white" />
+                            )}
                           </div>
-                          {isCorrect && (
-                            <svg
-                              className="w-5 h-5 text-[#10B981] flex-shrink-0"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                          {isWrong && (
-                            <svg
-                              className="w-5 h-5 text-red-500 flex-shrink-0"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M6 18L18 6M6 6l12 12"
-                              />
-                            </svg>
-                          )}
+                          <span
+                            className={`font-medium ${
+                              isCorrect ? "text-emerald-700" : isWrong ? "text-red-600" : "text-slate-700"
+                            }`}
+                          >
+                            {option}
+                          </span>
                         </div>
-                      </button>
+                      </motion.button>
                     )
                   })}
                 </div>
               )}
+
               {currentQuestion.type === "fill-in" && (
-                <div className="mb-5">
+                <div className="space-y-4 mb-6">
                   <input
                     type="text"
                     value={currentAnswer || ""}
@@ -469,37 +465,38 @@ export default function Quizes() {
                       !submittedAnswer && setAnswers({ ...answers, [currentQuestionIndex]: e.target.value })
                     }
                     disabled={submittedAnswer !== undefined}
-                    placeholder="Shkruani përgjigjen tuaj këtu..."
-                    className={`w-full p-4 border-2 rounded-lg focus:outline-none cursor-text transition-all duration-200 ${
+                    placeholder="Shkruani përgjigjen tuaj..."
+                    className={`w-full px-4 py-4 text-lg rounded-2xl border-2 transition-all focus:outline-none ${
                       submittedAnswer?.isCorrect
-                        ? "border-[#10B981] bg-[#10B981]/5"
+                        ? "border-emerald-500 bg-emerald-50"
                         : submittedAnswer && !submittedAnswer.isCorrect
-                          ? "border-red-500 bg-red-50"
-                          : "border-gray-200 focus:border-[#007AFF]"
+                        ? "border-red-400 bg-red-50"
+                        : "border-slate-200 focus:border-cyan-500"
                     }`}
                   />
                   {!submittedAnswer && currentAnswer && (
                     <button
                       onClick={() => handleAnswer(currentAnswer)}
-                      className="mt-3 w-full px-6 py-3 bg-[#007AFF] hover:bg-[#0051D5] text-white font-semibold rounded-lg transition-all duration-200 cursor-pointer"
+                      className="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white font-semibold transition-all"
                     >
                       Kontrollo
                     </button>
                   )}
                 </div>
               )}
+
               {currentQuestion.type === "drop-down" && (
-                <div className="mb-5">
+                <div className="mb-6">
                   <select
                     value={currentAnswer || ""}
                     onChange={(e) => !submittedAnswer && handleAnswer(e.target.value)}
                     disabled={submittedAnswer !== undefined}
-                    className={`w-full p-4 border-2 rounded-lg focus:outline-none cursor-pointer transition-all duration-200 ${
+                    className={`w-full px-4 py-4 text-lg rounded-2xl border-2 transition-all focus:outline-none ${
                       submittedAnswer?.isCorrect
-                        ? "border-[#10B981] bg-[#10B981]/5"
+                        ? "border-emerald-500 bg-emerald-50"
                         : submittedAnswer && !submittedAnswer.isCorrect
-                          ? "border-red-500 bg-red-50"
-                          : "border-gray-200 focus:border-[#007AFF]"
+                        ? "border-red-400 bg-red-50"
+                        : "border-slate-200 focus:border-cyan-500"
                     }`}
                   >
                     <option value="">Zgjidhni një përgjigje...</option>
@@ -511,177 +508,193 @@ export default function Quizes() {
                   </select>
                 </div>
               )}
+
               {isLastQuestion && submittedAnswer && (
-                <button
+                <motion.button
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
                   onClick={submitQuiz}
-                  className="w-full px-6 py-4 bg-gradient-to-r from-[#10B981] to-[#059669] hover:from-[#059669] hover:to-[#047857] text-white font-semibold rounded-lg transition-all duration-200 cursor-pointer shadow-md"
+                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold text-lg shadow-lg shadow-emerald-500/25 transition-all"
                 >
                   Dërgo Kuizin
-                </button>
+                </motion.button>
               )}
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
     )
   }
 
+  // Main quiz list
   return (
-    <div className="min-h-screen bg-[#F8F9FA] py-6 px-4" style={{ fontFamily: "Inter, sans-serif" }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-cyan-50/30 py-8 px-4">
       {NotificationElement}
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-6 bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="w-9 h-9 bg-gradient-to-br from-[#00D9C0]/80 to-[#00B8A3]/80 rounded-lg flex items-center justify-center shadow-sm">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                />
-              </svg>
+
+      <div className="max-w-6xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-10"
+        >
+          <div className="inline-flex items-center justify-center gap-3 mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg shadow-cyan-500/25">
+              <BookOpen className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "Poppins, sans-serif" }}>
-              Kuizet
-            </h1>
+            <h1 className="text-3xl font-bold text-slate-800">Kuizet</h1>
           </div>
-          <p className="text-gray-600 text-sm mb-4">Zgjidhni një kuiz për të filluar të mësoni!</p>
+          <p className="text-slate-500 mb-8">Zgjidhni një kuiz për të filluar të mësoni</p>
+
           <div className="flex flex-wrap items-center justify-center gap-2">
             {["All", "A1", "A2", "B1", "B2", "C1", "C2"].map((level) => (
-              <button
+              <motion.button
                 key={level}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setSelectedLevel(level)}
-                className={`px-4 py-1.5 rounded-lg font-medium text-xs transition-all cursor-pointer ${
-                  selectedLevel === level
-                    ? "bg-gradient-to-r from-[#00D9C0]/20 to-[#00B8A3]/20 text-gray-900 border-2 border-[#00D9C0]/50"
-                    : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
+                className={`relative px-5 py-2 rounded-full text-sm font-semibold transition-all duration-300 ${
+                  selectedLevel === level ? "text-white" : "text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm"
                 }`}
               >
-                {level}
-              </button>
+                {selectedLevel === level && (
+                  <motion.div
+                    layoutId="activeFilter"
+                    className="absolute inset-0 bg-gradient-to-r from-slate-800 to-slate-700 rounded-full shadow-lg"
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <span className="relative z-10">{level === "All" ? "Të gjitha" : level}</span>
+              </motion.button>
             ))}
           </div>
-        </div>
+        </motion.div>
 
         {paginatedQuizzes.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-20 bg-white rounded-3xl shadow-sm"
+          >
+            <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
+              <BookOpen className="w-10 h-10 text-slate-400" />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900 mb-1" style={{ fontFamily: "Poppins, sans-serif" }}>
-              Nuk ka Kuize të Disponueshme
-            </h2>
-            <p className="text-gray-500 text-sm">Kontrolloni më vonë për kuize të reja!</p>
-          </div>
+            <h2 className="text-xl font-semibold text-slate-800 mb-2">Nuk ka Kuize</h2>
+            <p className="text-slate-500">Kontrolloni më vonë për kuize të reja!</p>
+          </motion.div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-              {paginatedQuizzes.map((quiz) => {
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+            >
+              {paginatedQuizzes.map((quiz, index) => {
                 const isCompleted = isQuizCompleted(quiz._id)
                 const isNew = isNewQuiz(quiz)
 
                 return (
-                  <div
+                  <motion.div
                     key={quiz._id}
-                    className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all relative overflow-hidden border border-gray-100 cursor-pointer"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    whileHover={{ y: -4, scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => startQuiz(quiz)}
+                    className="group relative bg-white rounded-2xl p-5 cursor-pointer overflow-hidden shadow-sm hover:shadow-lg transition-all border border-slate-100"
                   >
-                    <div className="p-3.5">
-                      <div className="flex items-start justify-between mb-3">
-                        <span className="bg-[#eb6b15]/90 text-white text-xs font-semibold px-2 py-1 rounded">
-                          {quiz.level}
-                        </span>
-                        <div className="flex items-center gap-1.5">
-                          {isNew && (
-                            <span className="bg-gradient-to-r from-purple-400/80 to-pink-400/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                              E RE
-                            </span>
-                          )}
-                          {isCompleted && (
-                            <div className="w-5 h-5 bg-[#34C759]/90 rounded-full flex items-center justify-center">
-                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      <h3
-                        className="text-sm font-semibold text-gray-900 mb-3 leading-snug line-clamp-2"
-                        style={{ fontFamily: "Poppins, sans-serif" }}
-                      >
-                        {quiz.title}
-                      </h3>
-                      <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-                        <div className="flex items-center gap-1">
-                          <svg className="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                              fillRule="evenodd"
-                              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                          <span className="text-gray-600 font-medium">{quiz.questions?.length || 0} pyetje</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <svg className="w-3.5 h-3.5 text-[#FF9500]" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                          <span className="text-[#FF9500] font-bold">{quiz.xp} XP</span>
-                        </div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyan-50/0 to-teal-50/0 group-hover:from-cyan-50/50 group-hover:to-teal-50/30 transition-all duration-500" />
+
+                    <div className="relative flex items-center justify-between mb-4">
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-slate-800 to-slate-700 text-white">
+                        {quiz.level}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {isNew && (
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-gradient-to-r from-violet-500 to-purple-500 text-white"
+                          >
+                            <Sparkles className="w-3 h-3" />
+                            E RE
+                          </motion.span>
+                        )}
+                        {isCompleted && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="w-7 h-7 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/30"
+                          >
+                            <CheckCircle className="w-4 h-4 text-white" />
+                          </motion.div>
+                        )}
                       </div>
                     </div>
-                  </div>
+
+                    <h3 className="relative text-base font-semibold text-slate-800 mb-4 leading-snug line-clamp-2 group-hover:text-slate-900 transition-colors">
+                      {quiz.title}
+                    </h3>
+
+                    <div className="relative flex items-center justify-between pt-4 border-t border-slate-100">
+                      <div className="flex items-center gap-1.5 text-slate-500">
+                        <BookOpen className="w-4 h-4" />
+                        <span className="text-sm font-medium">{quiz.questions?.length || 0} pyetje</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                        <span className="text-sm font-bold text-amber-500">{quiz.xp} XP</span>
+                      </div>
+                    </div>
+
+                    <motion.div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  </motion.div>
                 )
               })}
-            </div>
+            </motion.div>
 
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-6">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="flex items-center justify-center gap-3 mt-10"
+              >
                 <button
                   onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-200 text-gray-700 font-medium text-xs disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors bg-white shadow-sm cursor-pointer"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
+                  <ChevronLeft className="w-4 h-4" />
                   Mbrapa
                 </button>
-                <div className="flex items-center gap-1">
+
+                <div className="flex items-center gap-2">
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`w-8 h-8 rounded-lg font-semibold text-xs transition-all cursor-pointer ${
+                      className={`w-10 h-10 rounded-xl font-semibold text-sm transition-all ${
                         currentPage === page
-                          ? "bg-[#007AFF] text-white shadow-sm"
-                          : "text-gray-600 hover:bg-gray-100 bg-white border border-gray-200"
+                          ? "bg-gradient-to-r from-slate-800 to-slate-700 text-white shadow-lg"
+                          : "text-slate-600 hover:bg-slate-100 bg-white border border-slate-200"
                       }`}
                     >
                       {page}
                     </button>
                   ))}
                 </div>
+
                 <button
                   onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-gray-200 text-gray-700 font-medium text-xs disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors bg-white shadow-sm cursor-pointer"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 font-medium disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
                 >
                   Para
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  <ChevronRight className="w-4 h-4" />
                 </button>
-              </div>
+              </motion.div>
             )}
           </>
         )}
