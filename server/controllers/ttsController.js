@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-const ELEVENLABS_VOICE_ID = 't6LrOJGOwJlvBxDA0qqG'; // German voice - "Daniel"
+const ELEVENLABS_VOICE_ID = 'Jvf6TAXwMUVTSR20U0f9';
 
 // Base path for audio files
 const AUDIO_BASE_PATH = path.join(__dirname, '..', 'audios');

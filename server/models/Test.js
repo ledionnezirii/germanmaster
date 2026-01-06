@@ -21,7 +21,7 @@ const questionSchema = new mongoose.Schema(
       {
         label: {
           type: String,
-          required: true, // a, b, c, d
+          required: true,
         },
         text: {
           type: String,
@@ -31,11 +31,11 @@ const questionSchema = new mongoose.Schema(
     ],
     correctAnswer: {
       type: String,
-      required: true, // The correct option label (a, b, c, d) or correct text for fill-in-blank
+      required: true,
     },
     timeLimit: {
       type: Number,
-      default: 60, // Time in seconds for this question
+      default: 60,
     },
     points: {
       type: Number,
@@ -74,7 +74,7 @@ const testSchema = new mongoose.Schema(
     },
     totalTime: {
       type: Number,
-      required: true, // Total time for the entire test in minutes
+      required: true,
     },
     questions: [questionSchema],
     category: {
@@ -102,17 +102,14 @@ const testSchema = new mongoose.Schema(
   },
 )
 
-// Virtual for total questions count
 testSchema.virtual("totalQuestions").get(function () {
   return this.questions.length
 })
 
-// Virtual for total points
 testSchema.virtual("totalPoints").get(function () {
   return this.questions.reduce((total, question) => total + question.points, 0)
 })
 
-// Ensure virtuals are included in JSON output
 testSchema.set("toJSON", { virtuals: true })
 testSchema.set("toObject", { virtuals: true })
 
@@ -176,8 +173,22 @@ const userTestHistorySchema = new mongoose.Schema(
       default: 0,
     },
     timeSpent: {
-      type: Number, // in seconds
+      type: Number,
       default: 0,
+    },
+    // NEW FIELDS FOR SECURITY
+    isViolation: {
+      type: Boolean,
+      default: false,
+    },
+    violationType: {
+      type: String,
+      enum: ["tab_switch", "window_blur", "test_abandoned", "test_cancelled", null],
+      default: null,
+    },
+    nextAvailableAt: {
+      type: Date,
+      default: null,
     },
     completedAt: {
       type: Date,
@@ -189,9 +200,9 @@ const userTestHistorySchema = new mongoose.Schema(
   },
 )
 
-// Index for efficient queries
 userTestHistorySchema.index({ userId: 1, testId: 1 })
 userTestHistorySchema.index({ userId: 1, completedAt: -1 })
+userTestHistorySchema.index({ userId: 1, level: 1, completedAt: -1 })
 
 const UserTestHistory = mongoose.model("UserTestHistory", userTestHistorySchema)
 

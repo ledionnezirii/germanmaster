@@ -33,6 +33,10 @@ const testSchema = Joi.object({
   difficulty: Joi.number().min(1).max(10).default(5),
 })
 
+// Constants
+const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000 // 2 weeks in milliseconds
+const PASSING_PERCENTAGE = 85
+
 class TestController {
   // Create a new test
   async createTest(req, res) {
@@ -67,7 +71,6 @@ class TestController {
   async getAllTests(req, res) {
     try {
       console.log("[v0] getAllTests called with query:", req.query)
-      console.log("[v0] Test model available:", !!Test)
 
       const { page = 1, limit = 10, level, category, isActive } = req.query
 
@@ -76,22 +79,14 @@ class TestController {
       if (category) filter.category = category
       if (isActive !== undefined) filter.isActive = isActive === "true"
 
-      console.log("[v0] Filter applied:", filter)
-      console.log("[v0] About to query database...")
-
       const tests = await Test.find(filter)
-        .select("-questions") // Exclude questions for list view
+        .select("-questions")
         .limit(limit * 1)
         .skip((page - 1) * limit)
         .sort({ createdAt: -1 })
-        .lean() // Convert to plain objects to avoid JSON serialization issues
-
-      console.log("[v0] Tests found:", tests.length)
-      console.log("[v0] Sample test:", tests[0] ? tests[0].title : "No tests")
+        .lean()
 
       const total = await Test.countDocuments(filter)
-
-      console.log("[v0] Total count:", total)
 
       res.json({
         success: true,
@@ -106,7 +101,6 @@ class TestController {
       })
     } catch (error) {
       console.log("[v0] Error in getAllTests:", error.message)
-      console.log("[v0] Error stack:", error.stack)
       res.status(500).json({
         success: false,
         message: "Error fetching tests",
@@ -227,15 +221,92 @@ class TestController {
     }
   }
 
+  // Submit test with security violation (forced failure)
+  submitTestViolation = async (req, res) => {
+    try {
+      console.log("[Security] Test violation submission received")
+      const { answers, userId, violationType, forceFailure } = req.body
+
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: "User ID is required",
+        })
+      }
+
+      const test = await Test.findById(req.params.id)
+      if (!test) {
+        return res.status(404).json({
+          success: false,
+          message: "Test not found",
+        })
+      }
+
+      // Calculate next available date (2 weeks from now)
+      const nextAvailableAt = new Date(Date.now() + TWO_WEEKS_MS)
+
+      // Create failed test history record with violation
+      const testHistory = new UserTestHistory({
+        userId,
+        testId: test._id,
+        level: test.level,
+        answers: (answers || []).map((a) => ({
+          questionId: a.questionId,
+          selectedAnswer: a.answer || "",
+          isCorrect: false,
+          points: 0,
+        })),
+        score: 0,
+        totalPoints: test.questions.reduce((sum, q) => sum + q.points, 0),
+        percentage: 0,
+        passed: false,
+        xpEarned: 0,
+        violationType: violationType || "unknown",
+        isViolation: true,
+        nextAvailableAt: nextAvailableAt,
+      })
+
+      await testHistory.save()
+
+      console.log("[Security] Violation recorded:", {
+        userId,
+        level: test.level,
+        violationType,
+        nextAvailableAt,
+      })
+
+      res.json({
+        success: true,
+        data: {
+          testId: test._id,
+          level: test.level,
+          passed: false,
+          percentage: 0,
+          xpEarned: 0,
+          violationType,
+          message: `Test failed due to security violation: ${violationType}. You are locked out for 2 weeks.`,
+          nextAvailableAt,
+        },
+      })
+    } catch (error) {
+      console.error("[Security] Error processing violation:", error)
+      res.status(500).json({
+        success: false,
+        message: "Error processing test violation",
+        error: error.message,
+      })
+    }
+  }
+
   // Submit test answers and get results
   submitTest = async (req, res) => {
-    let responseSent = false // Track if response has been sent to prevent multiple responses
+    let responseSent = false
 
     try {
       console.log("[v0] submitTest called with body:", req.body)
       console.log("[v0] Test ID from params:", req.params.id)
 
-      const { answers, userId } = req.body // Array of { questionId, answer } and userId
+      const { answers, userId } = req.body
 
       if (!answers || !Array.isArray(answers)) {
         console.log("[v0] Invalid answers array:", answers)
@@ -252,8 +323,6 @@ class TestController {
           message: "User ID is required",
         })
       }
-
-      console.log("[v0] Looking for test with ID:", req.params.id)
 
       let test
       try {
@@ -276,22 +345,16 @@ class TestController {
       }
 
       console.log("[v0] Test found:", test.title)
-      console.log("[v0] Test has", test.questions.length, "questions")
 
+      // Check for existing attempts and cooldowns
       let lastAttempt
       try {
-        console.log("[v0] Checking user test history for userId:", userId, "level:", test.level)
-        console.log("[v0] UserTestHistory model available:", !!UserTestHistory)
-
         lastAttempt = await UserTestHistory.findOne({
           userId,
           level: test.level,
         }).sort({ completedAt: -1 })
-
-        console.log("[v0] Last attempt query completed successfully")
       } catch (dbError) {
         console.log("[v0] Database error checking user history:", dbError.message)
-        console.log("[v0] UserTestHistory error stack:", dbError.stack)
         return res.status(500).json({
           success: false,
           message: "Database error checking user history",
@@ -299,9 +362,8 @@ class TestController {
         })
       }
 
-      console.log("[v0] Last attempt:", lastAttempt)
-
       if (lastAttempt) {
+        // Check if already passed
         if (lastAttempt.passed) {
           return res.status(403).json({
             success: false,
@@ -309,107 +371,73 @@ class TestController {
           })
         }
 
-        // Check cooldown for failed attempts
-        const oneMinuteAgo = new Date()
-        oneMinuteAgo.setMinutes(oneMinuteAgo.getMinutes() - 1)
+        // Check for 2-week cooldown (for both failures and violations)
+        const twoWeeksAgo = new Date(Date.now() - TWO_WEEKS_MS)
 
-        if (lastAttempt.completedAt > oneMinuteAgo) {
-          const nextAvailable = new Date(lastAttempt.completedAt)
-          nextAvailable.setMinutes(nextAvailable.getMinutes() + 1)
+        if (lastAttempt.completedAt > twoWeeksAgo) {
+          const nextAvailable = lastAttempt.nextAvailableAt || new Date(lastAttempt.completedAt.getTime() + TWO_WEEKS_MS)
 
-          return res.status(403).json({
-            success: false,
-            message: "You must wait before retaking this test",
-            nextAvailableAt: nextAvailable,
-          })
+          if (new Date() < nextAvailable) {
+            return res.status(403).json({
+              success: false,
+              message: lastAttempt.isViolation 
+                ? "You are locked out due to a security violation. Please wait 2 weeks."
+                : "You must wait 2 weeks before retaking this test.",
+              nextAvailableAt: nextAvailable,
+              reason: lastAttempt.isViolation ? "violation_cooldown" : "cooldown",
+            })
+          }
         }
       }
 
+      // Calculate score
       let score = 0
       let totalPoints = 0
       const results = []
 
-      console.log("[v0] Processing answers...")
-      console.log("[v0] Received answers:", answers)
-
-      try {
-        test.questions.forEach((question, index) => {
-          console.log(`[v0] Processing question ${index + 1}:`, {
-            questionId: question._id.toString(),
-            questionNumber: question.questionNumber,
-          })
-
-          const userAnswer = answers.find((a) => {
-            // Convert both IDs to strings for comparison
-            const answerQuestionId = String(a.questionId)
-            const testQuestionId = String(question._id)
-
-            console.log(`[v0] Comparing IDs: ${answerQuestionId} === ${testQuestionId}`)
-
-            return answerQuestionId === testQuestionId
-          })
-
-          console.log(`[v0] User answer for question ${index + 1}:`, userAnswer)
-
-          let isCorrect = false
-          let userAnswerValue = null
-
-          if (userAnswer) {
-            userAnswerValue = userAnswer.selectedAnswer || userAnswer.answer
-
-            const userAnswerStr = String(userAnswerValue || "").trim()
-            const correctAnswerStr = String(question.correctAnswer || "").trim()
-
-            isCorrect = userAnswerStr === correctAnswerStr
-
-            console.log(`[v0] Answer comparison:`, {
-              userAnswerStr,
-              correctAnswerStr,
-              isCorrect,
-            })
-          }
-
-          console.log(`[v0] Question ${index + 1} final result:`, {
-            userAnswerValue: userAnswerValue,
-            correctAnswer: question.correctAnswer,
-            isCorrect: isCorrect,
-          })
-
-          totalPoints += question.points
-          if (isCorrect) {
-            score += question.points
-          }
-
-          results.push({
-            questionId: question._id,
-            questionNumber: question.questionNumber,
-            userAnswer: userAnswerValue,
-            correctAnswer: question.correctAnswer,
-            isCorrect,
-            points: isCorrect ? question.points : 0,
-            explanation: question.explanation,
-          })
+      test.questions.forEach((question, index) => {
+        const userAnswer = answers.find((a) => {
+          const answerQuestionId = String(a.questionId)
+          const testQuestionId = String(question._id)
+          return answerQuestionId === testQuestionId
         })
-      } catch (processingError) {
-        console.log("[v0] Error processing answers:", processingError.message)
-        return res.status(500).json({
-          success: false,
-          message: "Error processing answers",
-          error: processingError.message,
-        })
-      }
 
-      console.log("[v0] Final score:", score, "out of", totalPoints)
+        let isCorrect = false
+        let userAnswerValue = null
+
+        if (userAnswer) {
+          userAnswerValue = userAnswer.selectedAnswer || userAnswer.answer
+          const userAnswerStr = String(userAnswerValue || "").trim()
+          const correctAnswerStr = String(question.correctAnswer || "").trim()
+          isCorrect = userAnswerStr === correctAnswerStr
+        }
+
+        totalPoints += question.points
+        if (isCorrect) {
+          score += question.points
+        }
+
+        results.push({
+          questionId: question._id,
+          questionNumber: question.questionNumber,
+          userAnswer: userAnswerValue,
+          correctAnswer: question.correctAnswer,
+          isCorrect,
+          points: isCorrect ? question.points : 0,
+          explanation: question.explanation,
+        })
+      })
 
       const percentage = Math.round((score / totalPoints) * 100)
-      const passed = percentage >= 85 // 85% passing grade required
-      const xpEarned = passed ? test.xp : 0 // No XP if failed
+      const passed = percentage >= PASSING_PERCENTAGE
+      const xpEarned = passed ? test.xp : 0
 
-      console.log("[v0] Percentage:", percentage, "Passed:", passed)
+      // Calculate next available date for failed attempts
+      const nextAvailableAt = passed ? null : new Date(Date.now() + TWO_WEEKS_MS)
 
+      // Save test history
       let testHistory
       try {
-        console.log("[v0] Saving test history...")
         testHistory = new UserTestHistory({
           userId,
           testId: test._id,
@@ -425,12 +453,13 @@ class TestController {
           percentage,
           passed,
           xpEarned,
+          isViolation: false,
+          nextAvailableAt: nextAvailableAt,
         })
         await testHistory.save()
         console.log("[v0] Test history saved successfully")
       } catch (saveError) {
         console.log("[v0] Error saving test history:", saveError.message)
-        console.log("[v0] Save error stack:", saveError.stack)
         return res.status(500).json({
           success: false,
           message: "Error saving test history",
@@ -451,67 +480,36 @@ class TestController {
           xpEarned,
           results,
           nextLevel: passed ? this.getNextLevel(test.level) : null,
+          nextAvailableAt: nextAvailableAt,
           message: passed
-            ? `Congratulations! You earned ${test.xp} XP and advanced to ${test.level} level! You can now take ${this.getNextLevel(test.level) || "advanced"} tests.`
-            : `You need 85% to pass. You scored ${percentage}%. Try again in one minute.`,
-          userUpdateSuccess: false, // Will be updated if user update succeeds
+            ? `Congratulations! You earned ${test.xp} XP and advanced to ${test.level} level!`
+            : `You need ${PASSING_PERCENTAGE}% to pass. You scored ${percentage}%. Try again in 2 weeks.`,
+          userUpdateSuccess: false,
         },
       }
 
+      // Update user if passed
       if (passed) {
         try {
-          console.log("[v0] User passed! Updating XP and level...")
-          console.log("[v0] User model available:", !!User)
-          console.log("[v0] Looking for user with ID:", userId)
-
           const user = await User.findById(userId)
-          console.log("[v0] User found:", !!user)
-
           if (user) {
-            const oldXp = user.xp || 0
-            const oldLevel = user.level || "undefined"
-
-            console.log("[v0] Current user data:", { xp: oldXp, level: oldLevel })
-
-            // Add XP to user's total
             user.xp = (user.xp || 0) + xpEarned
-
-            // Update user's level to the test level they just passed
             user.level = test.level
-
-            // Increment completed tests counter
             user.completedTests = (user.completedTests || 0) + 1
-
-            console.log("[v0] About to save user with new data:", {
-              xp: user.xp,
-              level: user.level,
-              completedTests: user.completedTests,
-            })
-
             await user.save()
-            responseData.data.userUpdateSuccess = true // Update success flag
-
-            console.log("[v0] User updated successfully:")
-            console.log("[v0] XP:", oldXp, "->", user.xp)
-            console.log("[v0] Level:", oldLevel, "->", user.level)
-            console.log("[v0] Completed tests:", user.completedTests)
-          } else {
-            console.log("[v0] Warning: User not found for XP/level update")
+            responseData.data.userUpdateSuccess = true
+            console.log("[v0] User updated successfully")
           }
         } catch (userUpdateError) {
-          console.log("[v0] Error updating user XP/level:", userUpdateError.message)
-          console.log("[v0] User update error stack:", userUpdateError.stack)
+          console.log("[v0] Error updating user:", userUpdateError.message)
           responseData.data.userUpdateSuccess = false
         }
       }
 
-      console.log("[v0] Sending final response:", responseData.success)
       responseSent = true
       res.json(responseData)
     } catch (error) {
       console.log("[v0] Error in submitTest:", error.message)
-      console.log("[v0] Error stack:", error.stack)
-
       if (!responseSent) {
         res.status(500).json({
           success: false,
@@ -590,45 +588,48 @@ class TestController {
         }
       })
 
+      // Find highest passed level
       let highestPassedLevel = -1
       for (let i = 0; i < levels.length; i++) {
         const level = levels[i]
         const attempt = latestAttempts[level]
-
         if (attempt && attempt.passed) {
           highestPassedLevel = i
         } else {
-          break // Stop at first non-passed level
-        }
-      }
-
-      let levelInCooldown = null
-      const oneMinuteAgo = new Date()
-      oneMinuteAgo.setMinutes(oneMinuteAgo.getMinutes() - 1)
-
-      for (const level of levels) {
-        const attempt = latestAttempts[level]
-        if (attempt && !attempt.passed && attempt.completedAt > oneMinuteAgo) {
-          levelInCooldown = level
           break
         }
       }
 
+      // Check for any level in cooldown (2 weeks)
+      let levelInCooldown = null
+      const now = new Date()
+
+      for (const level of levels) {
+        const attempt = latestAttempts[level]
+        if (attempt && !attempt.passed) {
+          const nextAvailable = attempt.nextAvailableAt || new Date(attempt.completedAt.getTime() + TWO_WEEKS_MS)
+          if (now < nextAvailable) {
+            levelInCooldown = level
+            break
+          }
+        }
+      }
+
+      // Build availability for each level
       for (let i = 0; i < levels.length; i++) {
         const level = levels[i]
         const attempt = latestAttempts[level]
 
         if (!attempt) {
-          // Never taken this test
+          // Never taken
           if (i === 0) {
-            // A1 is always available if never taken
             availability[level] = {
-              available: true,
-              reason: "not_taken",
-              locked: false,
+              available: !levelInCooldown,
+              reason: levelInCooldown ? "blocked_by_cooldown" : "not_taken",
+              locked: !!levelInCooldown,
+              blockedBy: levelInCooldown,
             }
           } else if (i === highestPassedLevel + 1) {
-            // Next level after highest passed - available if no cooldown
             availability[level] = {
               available: !levelInCooldown,
               reason: levelInCooldown ? "blocked_by_cooldown" : "not_taken",
@@ -636,7 +637,6 @@ class TestController {
               blockedBy: levelInCooldown,
             }
           } else {
-            // Higher level - locked until progression
             availability[level] = {
               available: false,
               reason: "progression_locked",
@@ -645,48 +645,46 @@ class TestController {
             }
           }
         } else if (attempt.passed) {
-          // Passed - can't retake
           availability[level] = {
             available: false,
             reason: "passed",
             locked: false,
             lastScore: attempt.percentage,
-            completedAt: attempt.completedAt,
+            lastAttemptDate: attempt.completedAt,
           }
         } else {
-          // Failed - check cooldown
-          if (attempt.completedAt > oneMinuteAgo) {
-            // Still in cooldown - this level and all higher levels are locked
-            const nextAvailable = new Date(attempt.completedAt)
-            nextAvailable.setMinutes(nextAvailable.getMinutes() + 1)
-
+          // Failed or violation
+          const nextAvailable = attempt.nextAvailableAt || new Date(attempt.completedAt.getTime() + TWO_WEEKS_MS)
+          
+          if (now < nextAvailable) {
+            // Still in cooldown
             availability[level] = {
               available: false,
-              reason: "cooldown",
+              reason: attempt.isViolation ? "violation_cooldown" : "cooldown",
               locked: true,
               lastScore: attempt.percentage,
               nextAvailableAt: nextAvailable,
-              completedAt: attempt.completedAt,
+              lastAttemptDate: attempt.completedAt,
+              violationType: attempt.violationType,
             }
           } else {
-            // Cooldown expired - can retake if it's the next level to unlock
-            if (i === highestPassedLevel + 1) {
+            // Cooldown expired
+            if (i === highestPassedLevel + 1 || i === 0) {
               availability[level] = {
                 available: true,
                 reason: "cooldown_expired",
                 locked: false,
                 lastScore: attempt.percentage,
-                completedAt: attempt.completedAt,
+                lastAttemptDate: attempt.completedAt,
               }
             } else {
-              // Higher level - still locked by progression
               availability[level] = {
                 available: false,
                 reason: "progression_locked",
                 locked: true,
                 requiresLevel: levels[i - 1],
                 lastScore: attempt.percentage,
-                completedAt: attempt.completedAt,
+                lastAttemptDate: attempt.completedAt,
               }
             }
           }
