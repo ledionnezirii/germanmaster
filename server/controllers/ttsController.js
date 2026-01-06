@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-const ELEVENLABS_VOICE_ID = 'onwK4e9ZLuTAKqWW03F9'; // German voice - "Daniel"
+const ELEVENLABS_VOICE_ID = 't6LrOJGOwJlvBxDA0qqG'; // German voice - "Daniel"
 
 // Base path for audio files
 const AUDIO_BASE_PATH = path.join(__dirname, '..', 'audios');
@@ -15,7 +15,7 @@ const ensureDirectoryExists = (dirPath) => {
   }
 };
 
-// Get audio file path based on type (listenTexts, dictionary, phrases)
+// Get audio file path based on type (listenTexts, dictionary, phrases, dialogues)
 const getAudioFilePath = (id, level, type = 'listenTexts') => {
   const typeFolder = path.join(AUDIO_BASE_PATH, type, level || 'A1');
   ensureDirectoryExists(typeFolder);
@@ -29,11 +29,11 @@ const audioExists = (id, level, type = 'listenTexts') => {
 };
 
 // Generate audio with ElevenLabs
-const generateAudio = async (text, id, level, type = 'listenTexts') => {
+const generateAudio = async (text, id, level, type = 'listenTexts', voiceId = ELEVENLABS_VOICE_ID) => {
   try {
     const response = await axios({
       method: 'POST',
-      url: `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`,
+      url: `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
       headers: {
         'Accept': 'audio/mpeg',
         'Content-Type': 'application/json',
@@ -162,6 +162,41 @@ exports.getPhraseAudio = async (req, res) => {
   }
 };
 
+// Controller: Get or generate audio for dialogue lines
+exports.getDialogueAudio = async (req, res) => {
+  try {
+    const { dialogueId, lineIndex } = req.params;
+    const { text, level } = req.body;
+
+    if (!dialogueId) {
+      return res.status(400).json({ error: 'Dialogue ID is required' });
+    }
+
+    // Create unique ID for dialogue line: dialogueId_lineIndex
+    const audioId = `${dialogueId}_${lineIndex}`;
+    const filePath = getAudioFilePath(audioId, level, 'dialogues');
+
+    // Check if audio already exists
+    if (audioExists(audioId, level, 'dialogues')) {
+      console.log(`[TTS] Serving cached dialogue audio: ${filePath}`);
+      return res.sendFile(filePath);
+    }
+
+    // Generate new audio if text is provided
+    if (!text) {
+      return res.status(404).json({ error: 'Audio not found and no text provided to generate' });
+    }
+
+    console.log(`[TTS] Generating new dialogue audio for: ${audioId}`);
+    await generateAudio(text, audioId, level, 'dialogues');
+    
+    return res.sendFile(filePath);
+  } catch (error) {
+    console.error('[TTS] Dialogue controller error:', error);
+    return res.status(500).json({ error: 'Failed to get/generate dialogue audio' });
+  }
+};
+
 // Controller: Check if audio exists (generic)
 exports.checkAudio = async (req, res) => {
   try {
@@ -198,3 +233,42 @@ exports.preGenerateAudio = async (req, res) => {
     return res.status(500).json({ error: 'Failed to pre-generate audio' });
   }
 };
+
+// Controller: Pre-generate all dialogue audio lines
+exports.preGenerateDialogueAudio = async (req, res) => {
+  try {
+    const { dialogueId, dialogueLines, level } = req.body;
+
+    if (!dialogueId || !dialogueLines || !Array.isArray(dialogueLines)) {
+      return res.status(400).json({ error: 'Dialogue ID and lines array are required' });
+    }
+
+    const results = [];
+
+    for (let i = 0; i < dialogueLines.length; i++) {
+      const line = dialogueLines[i];
+      const audioId = `${dialogueId}_${i}`;
+
+      if (audioExists(audioId, level, 'dialogues')) {
+        results.push({ index: i, status: 'exists', audioId });
+      } else {
+        try {
+          await generateAudio(line.text, audioId, level, 'dialogues');
+          results.push({ index: i, status: 'generated', audioId });
+        } catch (error) {
+          results.push({ index: i, status: 'error', audioId, error: error.message });
+        }
+      }
+    }
+
+    return res.json({ 
+      message: 'Dialogue audio processing complete', 
+      dialogueId, 
+      level,
+      results 
+    });
+  } catch (error) {
+    console.error('[TTS] Pre-generate dialogue error:', error);
+    return res.status(500).json({ error: 'Failed to pre-generate dialogue audio' });
+  }
+}

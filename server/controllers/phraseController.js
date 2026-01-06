@@ -1,7 +1,7 @@
 const Phrase = require("../models/Phrase")
 const User = require("../models/User")
 
-const DAILY_PHRASE_LIMIT = 5
+const DAILY_PHRASE_LIMIT = 400
 
 // Helper function to check if it's a new day (resets at 00:01)
 const isNewDay = (lastDate) => {

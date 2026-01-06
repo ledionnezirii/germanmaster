@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ttsController = require('../controllers/ttsController');
-const  protect  = require('../middleware/auth'); // adjust path as needed
+const protect = require('../middleware/auth');
 
 // Listen tests audio
 router.post('/audio/:testId', protect, ttsController.getAudio);
@@ -11,6 +11,12 @@ router.post('/dictionary/:wordId', protect, ttsController.getDictionaryAudio);
 
 // Phrases audio
 router.post('/phrase/:phraseId', protect, ttsController.getPhraseAudio);
+
+// Dialogue audio - single line
+router.post('/dialogue/:dialogueId/:lineIndex', protect, ttsController.getDialogueAudio);
+
+// Pre-generate all dialogue lines
+router.post('/dialogue/pre-generate', protect, ttsController.preGenerateDialogueAudio);
 
 // Check if audio exists (generic)
 router.get('/check/:id', protect, ttsController.checkAudio);

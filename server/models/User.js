@@ -1,5 +1,5 @@
-const mongoose = require("mongoose")
-const bcrypt = require("bcryptjs")
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
@@ -117,7 +117,9 @@ const userSchema = new mongoose.Schema(
         ref: "Quiz",
       },
     ],
-    completedPronunciationPackages: [{ type: mongoose.Schema.Types.ObjectId, ref: "PronunciationPackage" }],
+    completedPronunciationPackages: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "PronunciationPackage" },
+    ],
     completedWords: {
       type: [String],
       default: [],
@@ -214,10 +216,10 @@ const userSchema = new mongoose.Schema(
       default: false,
     },
     subscriptionType: {
-  type: String,
-  enum: ["free_trial", "1_day", "1_month", "3_months", "1_year", null],  // Added 1_day
-  default: "free_trial",
-},
+      type: String,
+      enum: ["free_trial", "1_day", "1_month", "3_months", "1_year", null], // Added 1_day
+      default: "free_trial",
+    },
     subscriptionExpiresAt: {
       type: Date,
     },
@@ -264,6 +266,12 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    finishedDialogues: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Dialogue",
+      },
+    ],
     planProgress: [
       {
         level: {
@@ -312,18 +320,18 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  },
-)
+  }
+);
 
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next()
-  const salt = await bcrypt.genSalt(12)
-  this.password = await bcrypt.hash(this.password, salt)
-  next()
-})
+  if (!this.isModified("password")) return next();
+  const salt = await bcrypt.genSalt(12);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
 
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password)
-}
+  return await bcrypt.compare(candidatePassword, this.password);
+};
 
-module.exports = mongoose.model("User", userSchema)
+module.exports = mongoose.model("User", userSchema);
