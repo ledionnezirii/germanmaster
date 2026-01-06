@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useAuth } from "../context/AuthContext"
 import logo from "../../public/logo.png"
-import { ArrowLeft, Clock, BookOpen, RotateCcw, FileText, Lightbulb, Award, Lock, CheckCircle, AlertCircle, X, Check } from 'lucide-react'
+import { ArrowLeft, Clock, BookOpen, RotateCcw, FileText, Lightbulb, Award, Lock, CheckCircle, AlertCircle, X, Check, ShieldAlert, Eye } from 'lucide-react'
 import { testService } from "../services/api"
 
 const Tests = () => {
@@ -21,8 +21,13 @@ const Tests = () => {
   const [testResult, setTestResult] = useState(null)
   const [timeRemaining, setTimeRemaining] = useState(null)
   const [testStartTime, setTestStartTime] = useState(null)
+  const [testSessionId, setTestSessionId] = useState(null)
+  const [securityViolation, setSecurityViolation] = useState(null)
+  const [showSecurityWarning, setShowSecurityWarning] = useState(false)
   const timerIntervalRef = useRef(null)
   const isSubmittingRef = useRef(false)
+  const testActiveRef = useRef(false)
+  const visibilityViolationRef = useRef(false)
 
   const { user } = useAuth()
   const userId = user?.id
@@ -72,25 +77,216 @@ const Tests = () => {
     },
   ]
 
+  const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000 // 2 weeks in milliseconds
+
   const clearTestState = () => {
     localStorage.removeItem("activeTest")
     localStorage.removeItem("testAnswers")
     localStorage.removeItem("testStartTime")
+    localStorage.removeItem("testSessionId")
+    testActiveRef.current = false
+    visibilityViolationRef.current = false
   }
 
-  const saveTestState = (testId, answers, startTime) => {
+  const saveTestState = (testId, answers, startTime, sessionId) => {
     localStorage.setItem("activeTest", testId)
     localStorage.setItem("testAnswers", JSON.stringify(answers))
     localStorage.setItem("testStartTime", startTime.toString())
+    localStorage.setItem("testSessionId", sessionId)
   }
 
+  // Generate unique session ID for test
+  const generateSessionId = () => {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  }
+
+  // Handle security violation - fail test and lock for 2 weeks
+  const handleSecurityViolation = useCallback(async (violationType, test, answers) => {
+    if (isSubmittingRef.current || visibilityViolationRef.current) return
+    visibilityViolationRef.current = true
+    isSubmittingRef.current = true
+
+    console.log("[Security] Violation detected:", violationType)
+    setSecurityViolation(violationType)
+
+    try {
+      // Submit as failed due to security violation
+      await testService.submitTestViolation(test._id, {
+        answers: Object.entries(answers).map(([questionId, answer]) => ({
+          questionId,
+          answer,
+        })),
+        userId,
+        violationType,
+        forceFailure: true,
+      })
+    } catch (error) {
+      console.error("[Security] Error submitting violation:", error)
+    }
+
+    // Clear test state
+    clearTestState()
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current)
+    }
+
+    setTakingTest(false)
+    setUserAnswers({})
+    setTimeRemaining(null)
+    setTestStartTime(null)
+    setShowSecurityWarning(true)
+    
+    // Refresh availability after violation
+    fetchTestAvailability()
+
+    isSubmittingRef.current = false
+  }, [userId])
+
+  // Visibility change detection - STRICT MODE
+  useEffect(() => {
+    if (!takingTest || !selectedTest) return
+
+    const handleVisibilityChange = () => {
+      if (document.hidden && testActiveRef.current && !visibilityViolationRef.current) {
+        console.log("[Security] Tab switched or window hidden - VIOLATION")
+        handleSecurityViolation("tab_switch", selectedTest, userAnswers)
+      }
+    }
+
+    const handleWindowBlur = () => {
+      if (testActiveRef.current && !visibilityViolationRef.current) {
+        console.log("[Security] Window lost focus - VIOLATION")
+        handleSecurityViolation("window_blur", selectedTest, userAnswers)
+      }
+    }
+
+    const handleWindowFocus = () => {
+      // If we're back but already violated, don't do anything
+    }
+
+    // Prevent context menu
+    const handleContextMenu = (e) => {
+      if (testActiveRef.current) {
+        e.preventDefault()
+        return false
+      }
+    }
+
+    // Prevent keyboard shortcuts
+    const handleKeyDown = (e) => {
+      if (!testActiveRef.current) return
+
+      // Prevent common shortcuts
+      if (
+        (e.ctrlKey || e.metaKey) && 
+        (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'a' || 
+         e.key === 'p' || e.key === 's' || e.key === 'f' || e.key === 'u')
+      ) {
+        e.preventDefault()
+        return false
+      }
+
+      // Prevent F12, F5
+      if (e.key === 'F12' || e.key === 'F5') {
+        e.preventDefault()
+        return false
+      }
+
+      // Prevent Alt+Tab indicator (can't fully prevent but can detect)
+      if (e.altKey && e.key === 'Tab') {
+        e.preventDefault()
+        return false
+      }
+    }
+
+    // Prevent selection
+    const handleSelectStart = (e) => {
+      if (testActiveRef.current) {
+        e.preventDefault()
+        return false
+      }
+    }
+
+    // Prevent drag
+    const handleDragStart = (e) => {
+      if (testActiveRef.current) {
+        e.preventDefault()
+        return false
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    window.addEventListener("blur", handleWindowBlur)
+    window.addEventListener("focus", handleWindowFocus)
+    document.addEventListener("contextmenu", handleContextMenu)
+    document.addEventListener("keydown", handleKeyDown)
+    document.addEventListener("selectstart", handleSelectStart)
+    document.addEventListener("dragstart", handleDragStart)
+
+    // Set test as active
+    testActiveRef.current = true
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      window.removeEventListener("blur", handleWindowBlur)
+      window.removeEventListener("focus", handleWindowFocus)
+      document.removeEventListener("contextmenu", handleContextMenu)
+      document.removeEventListener("keydown", handleKeyDown)
+      document.removeEventListener("selectstart", handleSelectStart)
+      document.removeEventListener("dragstart", handleDragStart)
+      testActiveRef.current = false
+    }
+  }, [takingTest, selectedTest, userAnswers, handleSecurityViolation])
+
+  // Restore test state on mount - but check if it was abandoned
   useEffect(() => {
     const activeTestId = localStorage.getItem("activeTest")
     const savedAnswers = localStorage.getItem("testAnswers")
     const savedStartTime = localStorage.getItem("testStartTime")
+    const savedSessionId = localStorage.getItem("testSessionId")
 
     if (activeTestId && savedAnswers && savedStartTime) {
-      // Test was in progress, restore it
+      // Check if test time has expired (30 minutes)
+      const elapsed = Math.floor((Date.now() - Number.parseInt(savedStartTime)) / 1000)
+      const totalTime = 30 * 60
+
+      if (elapsed >= totalTime) {
+        // Test expired while away - this is a violation (left the test)
+        console.log("[Security] Test was abandoned - time expired while away")
+        
+        const handleAbandonedTest = async () => {
+          try {
+            const response = await testService.getTestById(activeTestId)
+            const test = response.data
+            
+            await testService.submitTestViolation(test._id, {
+              answers: Object.entries(JSON.parse(savedAnswers)).map(([questionId, answer]) => ({
+                questionId,
+                answer,
+              })),
+              userId,
+              violationType: "test_abandoned",
+              forceFailure: true,
+            })
+          } catch (error) {
+            console.error("[Security] Error handling abandoned test:", error)
+          }
+          
+          clearTestState()
+          fetchTestAvailability()
+          setShowSecurityWarning(true)
+          setSecurityViolation("test_abandoned")
+        }
+        
+        if (userId) {
+          handleAbandonedTest()
+        } else {
+          clearTestState()
+        }
+        return
+      }
+
+      // Test still valid - restore it
       const loadTestAndRestore = async () => {
         try {
           const response = await testService.getTestById(activeTestId)
@@ -99,15 +295,12 @@ const Tests = () => {
           setSelectedTest(test)
           setUserAnswers(JSON.parse(savedAnswers))
           setTestStartTime(Number.parseInt(savedStartTime))
+          setTestSessionId(savedSessionId)
           setTakingTest(true)
 
-          // Calculate remaining time
-          const elapsed = Math.floor((Date.now() - Number.parseInt(savedStartTime)) / 1000)
-          const totalTime = 30 * 60 // 30 minutes in seconds
           const remaining = Math.max(0, totalTime - elapsed)
           setTimeRemaining(remaining)
 
-          // If time already expired, auto-submit
           if (remaining === 0) {
             setTimeout(() => {
               handleAutoSubmit(test, JSON.parse(savedAnswers))
@@ -121,13 +314,15 @@ const Tests = () => {
 
       loadTestAndRestore()
     }
-  }, [])
+  }, [userId])
 
+  // Before unload warning
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (takingTest && !isSubmittingRef.current) {
         e.preventDefault()
-        e.returnValue = ""
+        e.returnValue = "Nëse largoheni, testi do të konsiderohet i dështuar dhe do të kyçeni për 2 javë!"
+        return e.returnValue
       }
     }
 
@@ -135,13 +330,13 @@ const Tests = () => {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload)
   }, [takingTest])
 
+  // Timer countdown
   useEffect(() => {
     if (takingTest && timeRemaining !== null && timeRemaining > 0) {
       timerIntervalRef.current = setInterval(() => {
         setTimeRemaining((prev) => {
           if (prev <= 1) {
             clearInterval(timerIntervalRef.current)
-            // Auto-submit when time runs out
             handleAutoSubmit(selectedTest, userAnswers)
             return 0
           }
@@ -157,11 +352,12 @@ const Tests = () => {
     }
   }, [takingTest, timeRemaining])
 
+  // Save test state on answer changes
   useEffect(() => {
-    if (takingTest && selectedTest && testStartTime) {
-      saveTestState(selectedTest._id, userAnswers, testStartTime)
+    if (takingTest && selectedTest && testStartTime && testSessionId) {
+      saveTestState(selectedTest._id, userAnswers, testStartTime, testSessionId)
     }
-  }, [userAnswers, takingTest, selectedTest, testStartTime])
+  }, [userAnswers, takingTest, selectedTest, testStartTime, testSessionId])
 
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60)
@@ -193,21 +389,12 @@ const Tests = () => {
         answer,
       }))
 
-      console.log("[v0] Submitting answers:", answersArray)
-      console.log("[v0] Test ID:", test._id)
-      console.log("[v0] User ID:", userId)
-
       const response = await testService.submitTest(test._id, answersArray, 30, userId)
-      console.log("[v0] Submit response:", response)
 
       if (response && (response.success === true || response.data)) {
         const result = response.data || response
-        console.log("[v0] Test result:", result)
 
-        // Clear test state from localStorage
         clearTestState()
-
-        // Clear timer
         if (timerIntervalRef.current) {
           clearInterval(timerIntervalRef.current)
         }
@@ -218,9 +405,9 @@ const Tests = () => {
         setUserAnswers({})
         setTimeRemaining(null)
         setTestStartTime(null)
+        setTestSessionId(null)
         fetchTestAvailability()
       } else {
-        console.log("[v0] Response indicates failure:", response)
         alert(response?.message || "Gabim në dorëzimin e testit")
       }
     } catch (error) {
@@ -230,46 +417,76 @@ const Tests = () => {
         const status = error.response.status
         const data = error.response.data
 
-        console.log("[v0] Error response status:", status)
-        console.log("[v0] Error response data:", data)
-
         if (status === 500) {
           const errorMsg = data?.error || data?.message || "Gabim i brendshëm në server"
-          console.log("[v0] Server error details:", errorMsg)
-
-          if (errorMsg.includes("getNextLevel")) {
-            alert("Gabim në server: Problem me llogaritjen e nivelit të ardhshëm. Ju lutemi kontaktoni mbështetjen.")
-          } else {
-            alert(`Gabim në server: ${errorMsg}. Ju lutemi provoni përsëri më vonë.`)
-          }
-        } else if (status === 400) {
-          alert(data?.message || "Të dhënat e dërguara janë të pavlefshme")
-        } else if (status === 401) {
-          alert("Ju nuk jeni të autorizuar. Ju lutemi kyçuni përsëri.")
-        } else if (status === 403) {
-          alert("Nuk keni leje për të kryer këtë veprim")
+          alert(`Gabim në server: ${errorMsg}. Ju lutemi provoni përsëri më vonë.`)
         } else if (data && data.message) {
           alert(data.message)
         } else {
           alert(`Gabim në dorëzimin e testit (Kodi: ${status})`)
         }
       } else if (error.request) {
-        console.log("[v0] Network error:", error.request)
         alert("Gabim në lidhjen me serverin. Kontrolloni internetin tuaj dhe provoni përsëri.")
       } else {
-        console.log("[v0] Other error:", error.message)
         alert(`Gabim i papritur: ${error.message}`)
       }
     }
   }
 
+  // Security Warning Modal
+  const SecurityWarningModal = ({ violation, onClose }) => {
+    const getViolationMessage = () => {
+      switch (violation) {
+        case "tab_switch":
+          return "Ju ndërruat tab-in ose dritaren gjatë testit."
+        case "window_blur":
+          return "Ju larguat nga dritarja e testit."
+        case "test_abandoned":
+          return "Ju e braktisët testin dhe koha skadoi."
+        case "test_cancelled":
+          return "Ju e anuluat testin."
+        default:
+          return "Shkelje e rregullave të testit."
+      }
+    }
+
+    return (
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-3">
+        <div className="w-full max-w-sm mx-auto bg-white rounded-lg shadow-xl border-2 border-red-200">
+          <div className="p-5 text-center space-y-4">
+            <div className="mx-auto w-14 h-14 bg-red-100 rounded-full flex items-center justify-center">
+              <ShieldAlert className="w-7 h-7 text-red-600" />
+            </div>
+            
+            <div className="space-y-2">
+              <h2 className="text-lg font-bold text-red-600">Shkelje e Sigurisë!</h2>
+              <p className="text-gray-700 text-sm">{getViolationMessage()}</p>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-2">
+              <p className="text-red-800 font-semibold text-sm">Pasojat:</p>
+              <ul className="text-red-700 text-xs space-y-1 text-left">
+                <li>• Testi konsiderohet i DËSHTUAR</li>
+                <li>• Ju jeni të KYÇUR për 2 javë</li>
+                <li>• Nuk mund të merrni këtë test deri më: <strong>{new Date(Date.now() + TWO_WEEKS_MS).toLocaleDateString('sq-AL')}</strong></li>
+              </ul>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors text-sm"
+            >
+              E kuptova
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const XPRewardModal = ({ result, onClose }) => {
     const isPassed = result.passed
     const xpEarned = result.xpEarned
-
-    const handleClose = () => {
-      onClose()
-    }
 
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-3">
@@ -308,13 +525,20 @@ const Tests = () => {
                   <p className="text-gray-600 text-xs leading-relaxed">
                     Ju morët {result.percentage}% por nevojitet 85% për të kaluar.
                   </p>
-                  <p className="text-xs text-gray-500">Mos u shqetësoni! Mund të provoni përsëri pas një muaji.</p>
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 mt-2">
+                    <p className="text-xs text-orange-700 font-medium">
+                      Mund të provoni përsëri pas 2 javësh.
+                    </p>
+                    <p className="text-xs text-orange-600 mt-1">
+                      Data e ardhshme: {new Date(Date.now() + TWO_WEEKS_MS).toLocaleDateString('sq-AL')}
+                    </p>
+                  </div>
                 </div>
               </>
             )}
 
             <button
-              onClick={handleClose}
+              onClick={onClose}
               className={`w-full px-2.5 py-1.5 rounded-md font-medium transition-colors text-xs ${
                 isPassed ? "bg-gray-800 hover:bg-gray-900 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
               }`}
@@ -354,6 +578,26 @@ const Tests = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
+            {/* Security Warning */}
+            <div className="bg-red-50 border-2 border-red-300 rounded-md p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <ShieldAlert className="w-5 h-5 text-red-600 shrink-0" />
+                <h3 className="font-bold text-red-800 text-sm">PARALAJMËRIM I RËNDËSISHËM!</h3>
+              </div>
+              <div className="space-y-1.5 text-xs text-red-700 leading-relaxed">
+                <p className="font-semibold">Ky test ka rregulla të RREPTA sigurie:</p>
+                <ul className="space-y-1 ml-3">
+                  <li>• <strong>NUK LEJOHET</strong> ndërrimi i tab-it ose dritares</li>
+                  <li>• <strong>NUK LEJOHET</strong> kopjimi, ngjitja, ose selektimi i tekstit</li>
+                  <li>• <strong>NUK LEJOHET</strong> largimi nga faqja e testit</li>
+                  <li>• <strong>NUK LEJOHET</strong> anulimi i testit pasi të fillojë</li>
+                </ul>
+                <p className="font-bold text-red-800 mt-2">
+                  Çdo shkelje = DËSHTIM + KYÇJE PËR 2 JAVË!
+                </p>
+              </div>
+            </div>
+
             <div className="bg-amber-50 border border-amber-200 rounded-md p-2">
               <div className="flex items-center gap-1.5">
                 <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
@@ -397,30 +641,6 @@ const Tests = () => {
               </div>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-2">
-              <div className="flex items-center gap-1 mb-1">
-                <BookOpen className="w-3 h-3 text-blue-600" />
-                <h3 className="font-medium text-blue-800 text-xs">Sistemi i Progresit</h3>
-              </div>
-              <div className="space-y-0.5 text-xs text-blue-700 leading-relaxed">
-                <p>
-                  • Duhet të kaloni <strong>A1</strong> për të hapur <strong>A2</strong>
-                </p>
-                <p>
-                  • Duhet të kaloni <strong>A2</strong> për të hapur <strong>B1</strong>
-                </p>
-                <p>
-                  • Duhet të kaloni <strong>B1</strong> për të hapur <strong>B2</strong>
-                </p>
-                <p>
-                  • Duhet të kaloni <strong>B2</strong> për të hapur <strong>C1</strong>
-                </p>
-                <p>
-                  • Duhet të kaloni <strong>C1</strong> për të hapur <strong>C2</strong>
-                </p>
-              </div>
-            </div>
-
             <div className="bg-orange-50 border border-orange-200 rounded-md p-2">
               <div className="flex items-center gap-1 mb-1">
                 <RotateCcw className="w-3 h-3 text-orange-600" />
@@ -428,13 +648,13 @@ const Tests = () => {
               </div>
               <div className="space-y-0.5 text-xs text-orange-700 leading-relaxed">
                 <p>
-                  • Nëse <strong>dështoni</strong> testin, mund ta rimarrni pas <strong>një muaji</strong>.
+                  • Nëse <strong>dështoni</strong> testin, mund ta rimarrni pas <strong>2 javësh</strong>.
+                </p>
+                <p>
+                  • Nëse <strong>anuloni</strong> ose <strong>largoheni</strong>, prisni <strong>2 javë</strong>.
                 </p>
                 <p>
                   • Nëse <strong>kaloni</strong> testin, mund të vazhdoni në nivelin tjetër.
-                </p>
-                <p>
-                  • Çdo pyetje ka <strong>një mundësi</strong> për përgjigje të saktë.
                 </p>
               </div>
             </div>
@@ -458,20 +678,6 @@ const Tests = () => {
                   <span className="text-gray-600">Pikët për Kalim:</span>
                   <span className="font-medium text-gray-900">85%</span>
                 </div>
-              </div>
-            </div>
-
-            <div className="bg-green-50 border border-green-200 rounded-md p-2">
-              <div className="flex items-center gap-1 mb-1">
-                <Lightbulb className="w-3 h-3 text-green-600" />
-                <h3 className="font-medium text-green-800 text-xs">Këshilla për Sukses</h3>
-              </div>
-              <div className="space-y-0.5 text-xs text-green-700 leading-relaxed">
-                <p>• Filloni me pyetjet që i dini më mirë</p>
-                <p>• Mos kaloni shumë kohë në një pyetje të vetme</p>
-                <p>• Përpiquni të eliminoni përgjigjet e gabuara</p>
-                <p>• Besoni në përgjigjen e parë nëse jeni të pasigurt</p>
-                <p>• Lini kohë për të kontrolluar përgjigjet në fund</p>
               </div>
             </div>
           </div>
@@ -549,8 +755,32 @@ const Tests = () => {
       }
     }
 
-    const handleCancelTest = () => {
-      if (window.confirm("Jeni të sigurt që dëshironi të anuloni testin? Do të ktheheni te zgjedhja e nivelit.")) {
+    const handleCancelTest = async () => {
+      const confirmed = window.confirm(
+        "KUJDES! Nëse anuloni testin:\n\n" +
+        "• Testi do të konsiderohet i DËSHTUAR\n" +
+        "• Do të jeni të KYÇUR për 2 JAVË\n\n" +
+        "Jeni absolutisht të sigurt?"
+      )
+      
+      if (confirmed) {
+        if (isSubmittingRef.current) return
+        isSubmittingRef.current = true
+
+        try {
+          await testService.submitTestViolation(test._id, {
+            answers: Object.entries(userAnswers).map(([questionId, answer]) => ({
+              questionId,
+              answer,
+            })),
+            userId,
+            violationType: "test_cancelled",
+            forceFailure: true,
+          })
+        } catch (error) {
+          console.error("[Security] Error submitting cancellation:", error)
+        }
+
         clearTestState()
         if (timerIntervalRef.current) {
           clearInterval(timerIntervalRef.current)
@@ -559,8 +789,14 @@ const Tests = () => {
         setUserAnswers({})
         setTimeRemaining(null)
         setTestStartTime(null)
+        setTestSessionId(null)
         setSelectedLevel(null)
         setLevelTests([])
+        setSecurityViolation("test_cancelled")
+        setShowSecurityWarning(true)
+        fetchTestAvailability()
+        
+        isSubmittingRef.current = false
       }
     }
 
@@ -570,19 +806,33 @@ const Tests = () => {
 
     const getTimerColor = () => {
       if (timeRemaining === null) return "text-gray-600"
-      if (timeRemaining <= 300) return "text-red-600" // 5 minutes or less
-      if (timeRemaining <= 900) return "text-orange-600" // 15 minutes or less
-      return "text-green-600" // More than 15 minutes
+      if (timeRemaining <= 300) return "text-red-600"
+      if (timeRemaining <= 900) return "text-orange-600"
+      return "text-green-600"
     }
 
     return (
       <div
         className="min-h-screen bg-gray-50 p-3 select-none"
+        style={{ 
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          MozUserSelect: 'none',
+          msUserSelect: 'none'
+        }}
         onCopy={(e) => e.preventDefault()}
         onCut={(e) => e.preventDefault()}
         onPaste={(e) => e.preventDefault()}
         onContextMenu={(e) => e.preventDefault()}
+        onDragStart={(e) => e.preventDefault()}
+        onSelectStart={(e) => e.preventDefault()}
       >
+        {/* Security indicator */}
+        <div className="fixed top-2 right-2 z-50 bg-green-100 border border-green-300 rounded-lg px-2 py-1 flex items-center gap-1.5">
+          <Eye className="w-3.5 h-3.5 text-green-600" />
+          <span className="text-xs font-medium text-green-700">Mbrojtje Aktive</span>
+        </div>
+
         <div className="max-w-4xl mx-auto space-y-2.5">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="p-3 text-center">
@@ -623,6 +873,14 @@ const Tests = () => {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Warning banner */}
+          <div className="bg-red-50 border border-red-200 rounded-lg p-2 flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-red-600 shrink-0" />
+            <p className="text-xs text-red-700">
+              <strong>Kujdes:</strong> Mos largohuni nga kjo dritare! Çdo shkelje e sigurisë do të rezultojë në dështim dhe kyçje për 2 javë.
+            </p>
           </div>
 
           <div className="grid gap-2.5 md:grid-cols-2 lg:grid-cols-3">
@@ -688,12 +946,12 @@ const Tests = () => {
                   {isSubmittingRef.current ? "Duke dorëzuar..." : "Dorëzo Testin"}
                 </button>
                 <button
-                  className="px-2.5 py-1.5 rounded-md bg-white text-gray-700 hover:bg-gray-100 transition-colors border border-gray-200 font-medium text-xs"
+                  className="px-2.5 py-1.5 rounded-md bg-red-50 text-red-700 hover:bg-red-100 transition-colors border border-red-200 font-medium text-xs"
                   style={{ fontFamily: "Poppins, sans-serif" }}
                   onClick={handleCancelTest}
                   disabled={isSubmittingRef.current}
                 >
-                  Anulo
+                  Anulo (2 javë kyçje)
                 </button>
               </div>
             </div>
@@ -777,8 +1035,13 @@ const Tests = () => {
     }
 
     if (availability.reason === "cooldown") {
-      const nextDate = new Date(availability.nextAvailableAt).toLocaleDateString()
+      const nextDate = new Date(availability.nextAvailableAt).toLocaleDateString('sq-AL')
       return `I disponueshëm ${nextDate} (Rezultati i fundit: ${availability.lastScore}%)`
+    }
+
+    if (availability.reason === "violation_cooldown") {
+      const nextDate = new Date(availability.nextAvailableAt).toLocaleDateString('sq-AL')
+      return `I kyçur deri më ${nextDate} (Shkelje sigurie)`
     }
 
     if (availability.reason === "progression_locked") {
@@ -809,6 +1072,20 @@ const Tests = () => {
           </div>
         </div>
       </div>
+    )
+  }
+
+  if (showSecurityWarning && securityViolation) {
+    return (
+      <SecurityWarningModal
+        violation={securityViolation}
+        onClose={() => {
+          setShowSecurityWarning(false)
+          setSecurityViolation(null)
+          setSelectedLevel(null)
+          setLevelTests([])
+        }}
+      />
     )
   }
 
@@ -848,6 +1125,7 @@ const Tests = () => {
               const availability = getLevelAvailability(level.code)
               const isAvailable = availability.available
               const isLocked = availability.locked
+              const isViolationLocked = availability.reason === "violation_cooldown"
               const availabilityMessage = getAvailabilityMessage(level.code)
 
               return (
@@ -869,7 +1147,11 @@ const Tests = () => {
 
                   {isLocked && (
                     <div className="absolute top-3 right-3 p-1.5 bg-white/70 rounded-lg shadow-sm">
-                      <LockIcon className="w-4 h-4 text-gray-600" />
+                      {isViolationLocked ? (
+                        <ShieldAlert className="w-4 h-4 text-red-600" />
+                      ) : (
+                        <LockIcon className="w-4 h-4 text-gray-600" />
+                      )}
                     </div>
                   )}
 
@@ -914,9 +1196,9 @@ const Tests = () => {
                       </div>
                     )}
 
-                    {availability.reason === "passed" && availability.lastAttemptDate && (
-                      <div className="text-xs opacity-75" style={{ fontFamily: "Inter, sans-serif" }}>
-                        Përfunduar më: {new Date(availability.lastAttemptDate).toLocaleDateString("sq-AL")}
+                    {(availability.reason === "cooldown" || availability.reason === "violation_cooldown") && availability.nextAvailableAt && (
+                      <div className="text-xs text-red-600 font-medium" style={{ fontFamily: "Inter, sans-serif" }}>
+                        I kyçur deri: {new Date(availability.nextAvailableAt).toLocaleDateString('sq-AL')}
                       </div>
                     )}
 
@@ -924,15 +1206,22 @@ const Tests = () => {
                       className={`w-full py-2 px-3 rounded-lg font-semibold transition-all duration-200 text-xs flex items-center justify-center gap-1.5 ${
                         isAvailable && !isLocked
                           ? `${level.buttonColor} text-white shadow-md hover:shadow-lg`
-                          : "bg-gray-200 text-gray-500 cursor-not-allowed"
+                          : isViolationLocked 
+                            ? "bg-red-100 text-red-600 cursor-not-allowed"
+                            : "bg-gray-200 text-gray-500 cursor-not-allowed"
                       }`}
                       style={{ fontFamily: "Poppins, sans-serif" }}
                       disabled={!isAvailable || isLocked}
                     >
-                      {isLocked ? (
+                      {isViolationLocked ? (
+                        <>
+                          <ShieldAlert className="w-3.5 h-3.5" />
+                          I kyçur (Shkelje)
+                        </>
+                      ) : isLocked ? (
                         <>
                           <LockIcon className="w-3.5 h-3.5" />
-                          Njohuri në nivel gjuhëtari
+                          I kyçur
                         </>
                       ) : isAvailable ? (
                         <>
@@ -1004,7 +1293,6 @@ const Tests = () => {
                 className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden"
               >
                 <div className="p-4 space-y-3">
-                  {/* Level badge and question mark icon */}
                   <div className="flex items-start justify-between">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold ${badgeColor}`}
@@ -1023,7 +1311,6 @@ const Tests = () => {
                     </div>
                   </div>
 
-                  {/* Question count and duration */}
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-1.5 text-gray-700">
                       <BookOpen className="w-3.5 h-3.5" />
@@ -1039,7 +1326,6 @@ const Tests = () => {
                     </div>
                   </div>
 
-                  {/* Buttons */}
                   <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => {
@@ -1055,9 +1341,12 @@ const Tests = () => {
                       onClick={() => {
                         setSelectedTest(test)
                         const startTime = Date.now()
+                        const sessionId = generateSessionId()
                         setTestStartTime(startTime)
+                        setTestSessionId(sessionId)
                         setTimeRemaining(30 * 60)
                         setTakingTest(true)
+                        visibilityViolationRef.current = false
                       }}
                       className="flex-1 px-3 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors text-xs font-semibold"
                       style={{ fontFamily: "Poppins, sans-serif" }}
@@ -1092,9 +1381,12 @@ const Tests = () => {
             onStartTest={() => {
               setShowInstructions(false)
               const startTime = Date.now()
+              const sessionId = generateSessionId()
               setTestStartTime(startTime)
+              setTestSessionId(sessionId)
               setTimeRemaining(30 * 60)
               setTakingTest(true)
+              visibilityViolationRef.current = false
             }}
           />
         )}
