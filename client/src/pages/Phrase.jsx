@@ -300,9 +300,10 @@ const Phrase = () => {
         selectedLevel
       )
 
-      const audioBlob = response.data
-      console.log("[TTS] Phrase audio blob received:", audioBlob.size, "bytes")
-
+      const audioBlob = response.data || response
+      if (!audioBlob || !audioBlob.size) {
+        throw new Error("Invalid audio response")
+      }
       const audioUrl = URL.createObjectURL(audioBlob)
 
       if (!audioRef.current) {
@@ -351,11 +352,10 @@ const Phrase = () => {
         <button
           onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          className={`p-2 rounded-lg border transition-colors ${
-            currentPage === 1
+          className={`p-2 rounded-lg border transition-colors ${currentPage === 1
               ? "border-gray-200 text-gray-400 cursor-not-allowed"
               : "border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400"
-          }`}
+            }`}
           data-testid="pagination-prev"
         >
           <ChevronLeft size={16} />
@@ -369,11 +369,10 @@ const Phrase = () => {
             <button
               key={pageNum}
               onClick={() => setCurrentPage(pageNum)}
-              className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
-                currentPage === pageNum
+              className={`px-4 py-2 text-sm rounded-lg border transition-colors ${currentPage === pageNum
                   ? "bg-[#14B8A6] text-white border-[#0D9488] shadow-sm"
                   : "border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400"
-              }`}
+                }`}
               data-testid={`pagination-page-${pageNum}`}
             >
               {pageNum}
@@ -384,11 +383,10 @@ const Phrase = () => {
         <button
           onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
-          className={`p-2 rounded-lg border transition-colors ${
-            currentPage === totalPages
+          className={`p-2 rounded-lg border transition-colors ${currentPage === totalPages
               ? "border-gray-200 text-gray-400 cursor-not-allowed"
               : "border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400"
-          }`}
+            }`}
           data-testid="pagination-next"
         >
           <ChevronRight size={16} />
@@ -399,24 +397,22 @@ const Phrase = () => {
 
   const DailyLimitBanner = () => (
     <div
-      className={`mb-4 p-3 md:p-4 rounded-xl border-2 ${
-        dailyLimitInfo.dailyLimitReached
+      className={`mb-4 p-3 md:p-4 rounded-xl border-2 ${dailyLimitInfo.dailyLimitReached
           ? "bg-red-50 border-red-200"
           : dailyLimitInfo.remainingUnlocks <= 3
             ? "bg-amber-50 border-amber-200"
             : "bg-blue-50 border-blue-200"
-      }`}
+        }`}
     >
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Clock
-            className={`w-5 h-5 ${
-              dailyLimitInfo.dailyLimitReached
+            className={`w-5 h-5 ${dailyLimitInfo.dailyLimitReached
                 ? "text-red-500"
                 : dailyLimitInfo.remainingUnlocks <= 3
                   ? "text-amber-500"
                   : "text-blue-500"
-            }`}
+              }`}
           />
           <span className="text-sm md:text-base font-semibold" style={{ fontFamily: fonts.poppins }}>
             {dailyLimitInfo.dailyLimitReached
@@ -434,9 +430,8 @@ const Phrase = () => {
         <div className="mt-2">
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div
-              className={`h-2 rounded-full transition-all ${
-                dailyLimitInfo.remainingUnlocks <= 3 ? "bg-amber-500" : "bg-blue-500"
-              }`}
+              className={`h-2 rounded-full transition-all ${dailyLimitInfo.remainingUnlocks <= 3 ? "bg-amber-500" : "bg-blue-500"
+                }`}
               style={{
                 width: `${((dailyLimitInfo.dailyLimit - dailyLimitInfo.remainingUnlocks) / dailyLimitInfo.dailyLimit) * 100}%`,
               }}
@@ -628,13 +623,12 @@ const Phrase = () => {
                               }
                             }}
                             disabled={isMatched}
-                            className={`w-full px-4 py-3 text-left rounded-lg border-2 transition-all font-semibold text-sm md:text-base ${
-                              isMatched
+                            className={`w-full px-4 py-3 text-left rounded-lg border-2 transition-all font-semibold text-sm md:text-base ${isMatched
                                 ? "bg-green-100 border-green-500 text-green-700 cursor-not-allowed"
                                 : isSelected
                                   ? "bg-blue-100 border-blue-500 text-blue-700"
                                   : "bg-white border-gray-300 text-gray-700 hover:border-blue-300 cursor-pointer"
-                            }`}
+                              }`}
                             style={{ fontFamily: fonts.inter }}
                           >
                             {phrase.german}
@@ -668,13 +662,12 @@ const Phrase = () => {
                               }
                             }}
                             disabled={isMatched}
-                            className={`w-full px-4 py-3 text-left rounded-lg border-2 transition-all font-semibold text-sm md:text-base ${
-                              isMatched
+                            className={`w-full px-4 py-3 text-left rounded-lg border-2 transition-all font-semibold text-sm md:text-base ${isMatched
                                 ? "bg-green-100 border-green-500 text-green-700 cursor-not-allowed"
                                 : isSelected
                                   ? "bg-purple-100 border-purple-500 text-purple-700"
                                   : "bg-white border-gray-300 text-gray-700 hover:border-purple-300 cursor-pointer"
-                            }`}
+                              }`}
                             style={{ fontFamily: fonts.inter }}
                           >
                             {phrase.albanian}
@@ -837,11 +830,10 @@ const Phrase = () => {
               <button
                 key={level}
                 onClick={() => setSelectedLevel(level)}
-                className={`px-3 py-1.5 md:px-5 md:py-2.5 border-2 rounded-lg text-sm md:text-base font-semibold cursor-pointer transition-all ${
-                  selectedLevel === level
+                className={`px-3 py-1.5 md:px-5 md:py-2.5 border-2 rounded-lg text-sm md:text-base font-semibold cursor-pointer transition-all ${selectedLevel === level
                     ? "bg-[#14B8A6] text-white border-[#0D9488]"
                     : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
-                }`}
+                  }`}
                 style={{ fontFamily: fonts.poppins }}
               >
                 {level}
@@ -897,9 +889,8 @@ const Phrase = () => {
                   return (
                     <div
                       key={phraseId}
-                      className={`rounded-lg p-2 md:p-3 shadow-[0_1px_3px_rgba(0,0,0,0.1)] transition-all ${
-                        isFinished ? "bg-green-50" : isLocked ? "bg-gray-100 opacity-60 blur-sm" : "bg-white"
-                      }`}
+                      className={`rounded-lg p-2 md:p-3 shadow-[0_1px_3px_rgba(0,0,0,0.1)] transition-all ${isFinished ? "bg-green-50" : isLocked ? "bg-gray-100 opacity-60 blur-sm" : "bg-white"
+                        }`}
                     >
                       <div className="flex justify-between items-center gap-2 md:gap-4">
                         <div className="flex-1 min-w-0">
@@ -914,13 +905,12 @@ const Phrase = () => {
                               <button
                                 onClick={() => !isLocked && speakGerman(phrase)}
                                 disabled={isLocked}
-                                className={`w-6 h-6 md:w-7 md:h-7 rounded-full border-2 ${
-                                  isLocked
+                                className={`w-6 h-6 md:w-7 md:h-7 rounded-full border-2 ${isLocked
                                     ? "border-gray-400 text-gray-400 cursor-not-allowed"
                                     : isPlaying
                                       ? "border-[#0D9488] text-[#0D9488] bg-[#F0FDFA]"
                                       : "border-[#14B8A6] text-[#14B8A6] hover:bg-[#F0FDFA]"
-                                } bg-white cursor-pointer flex items-center justify-center transition-all p-0 flex-shrink-0`}
+                                  } bg-white cursor-pointer flex items-center justify-center transition-all p-0 flex-shrink-0`}
                                 title={isLocked ? "Locked" : "Dëgjo frazën gjermane"}
                               >
                                 <Volume2 className={`w-3 h-3 md:w-4 md:h-4 ${isPlaying ? 'animate-pulse' : ''}`} />
