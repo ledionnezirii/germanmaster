@@ -383,17 +383,32 @@ export const phraseService = {
 }
 
 export const ttsService = {
-  getAudio: (testId, text, level) => api.post(`/tts/audio/${testId}`, { text, level }, { responseType: "blob" }),
+  getAudio: (testId, text, level) => 
+    api.post(`/tts/audio/${testId}`, { text, level }, { responseType: "blob" })
+      .then(res => res.data),
 
   getDictionaryAudio: (wordId, text, level) =>
-    api.post(`/tts/dictionary/${wordId}`, { text, level }, { responseType: "blob" }),
+    api.post(`/tts/dictionary/${wordId}`, { text, level }, { responseType: "blob" })
+      .then(res => res.data),
 
   getPhraseAudio: (phraseId, text, level) =>
-    api.post(`/tts/phrase/${phraseId}`, { text, level }, { responseType: "blob" }),
+    api.post(`/tts/phrase/${phraseId}`, { text, level }, { responseType: "blob" })
+      .then(res => res.data),
 
-  checkAudio: (id, level, type) => api.get(`/tts/check/${id}`, { params: { level, type } }),
+  // Dialogue audio - single line
+  getDialogueAudio: (dialogueId, lineIndex, text, level) =>
+    api.post(`/tts/dialogue/${dialogueId}/${lineIndex}`, { text, level }, { responseType: "blob" })
+      .then(res => res.data),
 
-  preGenerate: (id, text, level, type) => api.post("/tts/pre-generate", { id, text, level, type }),
+  // Pre-generate all dialogue lines (admin use)
+  preGenerateDialogueAudio: (dialogueId, dialogueLines, level) =>
+    api.post("/tts/dialogue/pre-generate", { dialogueId, dialogueLines, level }),
+
+  checkAudio: (id, level, type) => 
+    api.get(`/tts/check/${id}`, { params: { level, type } }),
+
+  preGenerate: (id, text, level, type) => 
+    api.post("/tts/pre-generate", { id, text, level, type }),
 }
 
 export const sessionService = {
@@ -609,6 +624,22 @@ export const raceService = {
   leaveRoom: (roomId) => api.post(`/race/rooms/${roomId}/leave`),
   deleteRoom: (roomId) => api.delete(`/race/rooms/${roomId}`),
   getUserRaceStats: () => api.get("/race/stats"),
+
+
+
 }
+
+
+
+export const dialogueService = {
+  getAllDialogues: (params = {}) => api.get("/dialogue", { params }),
+  getDialogueById: (id) => api.get(`/dialogue/${id}`),
+  submitDialogueQuiz: (dialogueId, answers) => api.post("/dialogue/submit", { dialogueId, answers }),
+  getFinishedDialogues: () => api.get("/dialogue/finished"),
+  getUserProgress: () => api.get("/dialogue/progress"),
+  createDialogue: (dialogueData) => api.post("/dialogue", dialogueData),
+  updateDialogue: (id, dialogueData) => api.put(`/dialogue/${id}`, dialogueData),
+  deleteDialogue: (id) => api.delete(`/dialogue/${id}`),
+};
 
 export default api
