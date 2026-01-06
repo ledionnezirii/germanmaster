@@ -169,7 +169,6 @@ const Listen = () => {
   }, [tests])
 
 const playAudio = async () => {
-  // Stop current playback if playing
   if (isPlaying && audioRef.current) {
     audioRef.current.pause()
     audioRef.current.currentTime = 0
@@ -182,18 +181,14 @@ const playAudio = async () => {
 
     console.log("[TTS] Requesting audio for test:", selectedTest._id)
 
-    // Use new ttsService - pass testId, text, and level
-    const response = await ttsService.getAudio(
+    // ttsService.getAudio already returns the blob directly (see api.js)
+    const audioBlob = await ttsService.getAudio(
       selectedTest._id,
       selectedTest.text,
       selectedTest.level
     )
 
-    console.log("[TTS] Response received:", response)
-
-    // Response.data is a Blob (binary audio)
-    const audioBlob = response.data
-    console.log("[TTS] Audio blob:", audioBlob.size, "bytes")
+    console.log("[TTS] Audio blob:", audioBlob?.size, "bytes")
 
     const audioUrl = URL.createObjectURL(audioBlob)
 
@@ -201,7 +196,6 @@ const playAudio = async () => {
       audioRef.current = new Audio()
     }
 
-    // Revoke old URL if exists
     if (audioRef.current.src && audioRef.current.src.startsWith('blob:')) {
       URL.revokeObjectURL(audioRef.current.src)
     }
@@ -228,7 +222,6 @@ const playAudio = async () => {
     alert("Gabim në luajtjen e audios. Provoni përsëri.")
   }
 }
-
   const handleSubmit = async () => {
     if (!userAnswer.trim()) return
     try {
