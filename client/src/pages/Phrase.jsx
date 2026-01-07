@@ -819,7 +819,7 @@ const Phrase = () => {
 
                         {showAlbanian && (
                           <p
-                            className={`text-gray-600 truncate ${levelTextSizes[selectedLevel].albanian}`}
+                            className={`text-gray-600  ${levelTextSizes[selectedLevel].albanian}`}
                             style={{ fontFamily: fonts.inter }}
                           >
                             {phrase.albanian}
