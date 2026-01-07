@@ -1,9 +1,8 @@
 "use client"
 import { useState, useEffect, useRef } from "react"
-import { motion, AnimatePresence } from "framer-motion"
 import { phraseService, ttsService } from "../services/api"
 import { useAuth } from "../context/AuthContext"
-import { Volume2, BookOpen, ChevronLeft, ChevronRight, LockIcon, Plus, Eye, EyeOff, Clock, Sparkles } from "lucide-react"
+import { Volume2, BookOpen, ChevronLeft, ChevronRight, LockIcon, Plus, Eye, EyeOff, Clock, Sparkles, Check } from "lucide-react"
 
 const Phrase = () => {
   const fonts = {
@@ -49,22 +48,14 @@ const Phrase = () => {
 
   const levels = ["A1", "A2", "B1", "B2", "C1", "C2"]
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.03, delayChildren: 0.1 }
-    }
-  }
-
-  const phraseCardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { type: "spring", stiffness: 300, damping: 25 }
-    }
+  // Text size mapping based on level - lower levels have shorter phrases so bigger text
+  const levelTextSizes = {
+    A1: { german: "text-lg sm:text-xl", albanian: "text-sm sm:text-base" },
+    A2: { german: "text-base sm:text-lg", albanian: "text-sm sm:text-base" },
+    B1: { german: "text-sm sm:text-base", albanian: "text-xs sm:text-sm" },
+    B2: { german: "text-sm sm:text-base", albanian: "text-xs sm:text-sm" },
+    C1: { german: "text-xs sm:text-sm", albanian: "text-[11px] sm:text-xs" },
+    C2: { german: "text-xs sm:text-sm", albanian: "text-[11px] sm:text-xs" },
   }
 
   useEffect(() => {
@@ -212,7 +203,7 @@ const Phrase = () => {
       return
     }
 
-    const quizSize = Math.min(10, finishedPhrases.length)
+    const quizSize = Math.min(5, finishedPhrases.length)
     const selectedPhrases = finishedPhrases.sort(() => Math.random() - 0.5).slice(0, quizSize)
     const shuffled = [...selectedPhrases].sort(() => Math.random() - 0.5)
 
@@ -338,555 +329,452 @@ const Phrase = () => {
     if (totalPages <= 1) return null
 
     return (
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="flex justify-center items-center gap-2 mt-8"
-      >
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+      <div className="flex justify-center items-center gap-1 sm:gap-2 mt-6 sm:mt-8">
+        <button
           onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
-          className={`p-2 rounded-xl border-2 transition-all ${currentPage === 1
+          className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border-2 transition-all ${currentPage === 1
               ? "border-gray-200 text-gray-400 cursor-not-allowed"
-              : "border-[#14B8A6] text-[#14B8A6] hover:bg-[#14B8A6] hover:text-white"
+              : "border-[#14B8A6] text-[#14B8A6] hover:bg-[#14B8A6] hover:text-white active:scale-95"
             }`}
         >
-          <ChevronLeft size={20} />
-        </motion.button>
+          <ChevronLeft size={18} className="sm:w-5 sm:h-5" />
+        </button>
 
         {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
           const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i
           if (pageNum > totalPages) return null
 
           return (
-            <motion.button
+            <button
               key={pageNum}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
               onClick={() => setCurrentPage(pageNum)}
-              className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all ${currentPage === pageNum
+              className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm transition-all active:scale-95 ${currentPage === pageNum
                   ? "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white shadow-lg shadow-[#14B8A6]/30"
                   : "bg-white text-gray-700 border-2 border-gray-200 hover:border-[#14B8A6]"
                 }`}
               style={{ fontFamily: fonts.poppins }}
             >
               {pageNum}
-            </motion.button>
+            </button>
           )
         })}
 
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+        <button
           onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
-          className={`p-2 rounded-xl border-2 transition-all ${currentPage === totalPages
+          className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border-2 transition-all ${currentPage === totalPages
               ? "border-gray-200 text-gray-400 cursor-not-allowed"
-              : "border-[#14B8A6] text-[#14B8A6] hover:bg-[#14B8A6] hover:text-white"
+              : "border-[#14B8A6] text-[#14B8A6] hover:bg-[#14B8A6] hover:text-white active:scale-95"
             }`}
         >
-          <ChevronRight size={20} />
-        </motion.button>
-      </motion.div>
+          <ChevronRight size={18} className="sm:w-5 sm:h-5" />
+        </button>
+      </div>
     )
   }
 
   if (!isAuthenticated) {
     return (
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="max-w-[1200px] mx-auto p-6"
-      >
-        <div className="bg-white rounded-2xl p-12 text-center shadow-2xl">
-          <h2 className="text-2xl font-bold text-red-600 mb-3" style={{ fontFamily: fonts.poppins }}>
+      <div className="max-w-[1200px] mx-auto p-4 sm:p-6">
+        <div className="bg-white rounded-2xl p-8 sm:p-12 text-center shadow-2xl">
+          <h2 className="text-xl sm:text-2xl font-bold text-red-600 mb-3" style={{ fontFamily: fonts.poppins }}>
             Kërkohet Autentifikimi
           </h2>
-          <p className="text-gray-600" style={{ fontFamily: fonts.inter }}>
+          <p className="text-gray-600 text-sm sm:text-base" style={{ fontFamily: fonts.inter }}>
             Ju lutem identifikohuni për të hyrë në fraza.
           </p>
         </div>
-      </motion.div>
+      </div>
     )
   }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] via-white to-[#CCFBF1] flex items-center justify-center">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-center"
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="w-16 h-16 border-4 border-gray-200 border-t-[#14B8A6] rounded-full mx-auto mb-4"
-          />
-          <p className="text-gray-600 font-medium" style={{ fontFamily: fonts.inter }}>
+        <div className="text-center">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-gray-200 border-t-[#14B8A6] rounded-full mx-auto mb-4 animate-spin" />
+          <p className="text-gray-600 font-medium text-sm sm:text-base" style={{ fontFamily: fonts.inter }}>
             Duke u ngarkuar frazat...
           </p>
-        </motion.div>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-[1200px] mx-auto p-6"
-      >
-        <div className="bg-white rounded-2xl p-12 text-center shadow-2xl">
-          <h2 className="text-2xl font-bold text-red-600 mb-3" style={{ fontFamily: fonts.poppins }}>
+      <div className="max-w-[1200px] mx-auto p-4 sm:p-6">
+        <div className="bg-white rounded-2xl p-8 sm:p-12 text-center shadow-2xl">
+          <h2 className="text-xl sm:text-2xl font-bold text-red-600 mb-3" style={{ fontFamily: fonts.poppins }}>
             Gabim
           </h2>
-          <p className="text-gray-600 mb-6" style={{ fontFamily: fonts.inter }}>
+          <p className="text-gray-600 mb-6 text-sm sm:text-base" style={{ fontFamily: fonts.inter }}>
             {error}
           </p>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <button
             onClick={fetchData}
-            className="px-6 py-3 bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white rounded-xl font-semibold shadow-lg"
+            className="px-5 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white rounded-xl font-semibold shadow-lg active:scale-95 transition-transform text-sm sm:text-base"
             style={{ fontFamily: fonts.poppins }}
           >
             Provo Përsëri
-          </motion.button>
+          </button>
         </div>
-      </motion.div>
+      </div>
     )
   }
 
+  // Quiz Mode
   if (quizMode) {
     return (
-      <AnimatePresence mode="wait">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="min-h-screen bg-gradient-to-br from-[#F0FDFA] via-white to-[#CCFBF1] p-4 md:p-6"
-        >
-          <div className="max-w-[900px] mx-auto">
-            {quizComplete ? (
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="bg-white rounded-2xl p-8 md:p-12 text-center shadow-2xl"
+      <div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] via-white to-[#CCFBF1] p-3 sm:p-6">
+        <div className="max-w-[600px] mx-auto">
+          {quizComplete ? (
+            <div className="bg-white rounded-2xl p-6 sm:p-10 text-center shadow-2xl">
+              <h2
+                className="text-2xl sm:text-3xl font-bold text-[#14B8A6] mb-4"
+                style={{ fontFamily: fonts.poppins }}
               >
-                <motion.h2
-                  initial={{ y: -20 }}
-                  animate={{ y: 0 }}
-                  className="text-3xl md:text-4xl font-bold text-[#14B8A6] mb-4"
+                Kuizi Përfundoi! 🎉
+              </h2>
+              <p className="text-lg sm:text-xl text-gray-600 mb-2" style={{ fontFamily: fonts.inter }}>
+                Përshtatjet e saktë: {Object.keys(matches).length + 1} / {quizPhrases.length}
+              </p>
+              <p
+                className="text-2xl sm:text-3xl font-bold text-amber-600 mb-6 sm:mb-8"
+                style={{ fontFamily: fonts.poppins }}
+              >
+                +{(Object.keys(matches).length + 1) * 1} XP
+              </p>
+              <div className="flex gap-3 justify-center flex-col sm:flex-row">
+                <button
+                  onClick={startQuiz}
+                  className="px-5 py-2.5 bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white rounded-xl font-semibold shadow-lg active:scale-95 transition-transform text-sm sm:text-base"
                   style={{ fontFamily: fonts.poppins }}
                 >
-                  Kuizi Përfundoi! 🎉
-                </motion.h2>
-                <p className="text-xl text-gray-600 mb-2" style={{ fontFamily: fonts.inter }}>
-                  Përshtatjet e saktë: {Object.keys(matches).length + 1} / {quizPhrases.length}
-                </p>
-                <motion.p
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ delay: 0.2, type: "spring" }}
-                  className="text-3xl font-bold text-amber-600 mb-8"
-                  style={{ fontFamily: fonts.poppins }}
-                >
-                  +{(Object.keys(matches).length + 1) * 1} XP
-                </motion.p>
-                <div className="flex gap-4 justify-center flex-wrap">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={startQuiz}
-                    className="px-6 py-3 bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white rounded-xl font-semibold shadow-lg"
-                    style={{ fontFamily: fonts.poppins }}
-                  >
-                    Fillo Kuizin Përsëri
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={exitQuiz}
-                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold"
-                    style={{ fontFamily: fonts.poppins }}
-                  >
-                    Dil nga Kuizi
-                  </motion.button>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                className="bg-white rounded-2xl p-6 md:p-8 shadow-2xl"
-              >
-                <div className="mb-6">
-                  <p className="text-sm text-gray-500 mb-3 text-center" style={{ fontFamily: fonts.inter }}>
-                    Përshtat Frazat Gjermane me Përkthimet Shqipe
-                  </p>
-                  <p className="text-xl font-bold text-center text-[#14B8A6] mb-4" style={{ fontFamily: fonts.poppins }}>
-                    {Object.keys(matches).length} / {quizPhrases.length}
-                  </p>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(Object.keys(matches).length / quizPhrases.length) * 100}%` }}
-                      transition={{ duration: 0.3 }}
-                      className="bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] h-3 rounded-full"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-600 mb-3 uppercase" style={{ fontFamily: fonts.poppins }}>
-                      Gjermane
-                    </h3>
-                    <div className="space-y-2">
-                      {quizPhrases.map((phrase) => {
-                        const phraseId = phrase._id || phrase.id
-                        const isMatched = matches[phraseId]
-                        const isSelected = selectedGerman === phraseId
-
-                        return (
-                          <motion.button
-                            key={phraseId}
-                            whileHover={{ scale: isMatched ? 1 : 1.02 }}
-                            whileTap={{ scale: isMatched ? 1 : 0.98 }}
-                            onClick={() => {
-                              if (!isMatched) {
-                                setSelectedGerman(isSelected ? null : phraseId)
-                              }
-                            }}
-                            disabled={isMatched}
-                            className={`w-full px-4 py-3 text-left rounded-xl border-2 transition-all font-semibold ${isMatched
-                                ? "bg-green-100 border-green-500 text-green-700"
-                                : isSelected
-                                  ? "bg-blue-100 border-blue-500 text-blue-700 shadow-lg"
-                                  : "bg-white border-gray-300 text-gray-700 hover:border-blue-400"
-                              }`}
-                            style={{ fontFamily: fonts.inter }}
-                          >
-                            {phrase.german}
-                          </motion.button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-600 mb-3 uppercase" style={{ fontFamily: fonts.poppins }}>
-                      Shqipe
-                    </h3>
-                    <div className="space-y-2">
-                      {shuffledAlbanian.map((phrase) => {
-                        const phraseId = phrase._id || phrase.id
-                        const isMatched = Object.values(matches).includes(phraseId)
-                        const isSelected = selectedAlbanian === phraseId
-
-                        return (
-                          <motion.button
-                            key={phraseId}
-                            whileHover={{ scale: isMatched ? 1 : 1.02 }}
-                            whileTap={{ scale: isMatched ? 1 : 0.98 }}
-                            onClick={() => {
-                              if (selectedGerman && !isMatched) {
-                                handleMatchClick(selectedGerman, phraseId)
-                              } else if (!isMatched) {
-                                setSelectedAlbanian(isSelected ? null : phraseId)
-                              }
-                            }}
-                            disabled={isMatched}
-                            className={`w-full px-4 py-3 text-left rounded-xl border-2 transition-all font-semibold ${isMatched
-                                ? "bg-green-100 border-green-500 text-green-700"
-                                : isSelected
-                                  ? "bg-purple-100 border-purple-500 text-purple-700 shadow-lg"
-                                  : "bg-white border-gray-300 text-gray-700 hover:border-purple-400"
-                              }`}
-                            style={{ fontFamily: fonts.inter }}
-                          >
-                            {phrase.albanian}
-                          </motion.button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                  Fillo Kuizin Përsëri
+                </button>
+                <button
                   onClick={exitQuiz}
-                  className="w-full px-4 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-colors"
+                  className="px-5 py-2.5 bg-gray-200 text-gray-700 rounded-xl font-semibold active:scale-95 transition-transform text-sm sm:text-base"
                   style={{ fontFamily: fonts.poppins }}
                 >
                   Dil nga Kuizi
-                </motion.button>
-              </motion.div>
-            )}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-2xl">
+              <div className="mb-4 sm:mb-6">
+                <p className="text-xs sm:text-sm text-gray-500 mb-2 text-center" style={{ fontFamily: fonts.inter }}>
+                  Përshtat Gjermanishten me Shqipen
+                </p>
+                <p className="text-lg sm:text-xl font-bold text-center text-[#14B8A6] mb-3" style={{ fontFamily: fonts.poppins }}>
+                  {Object.keys(matches).length} / {quizPhrases.length}
+                </p>
+                <div className="w-full bg-gray-200 rounded-full h-2 sm:h-3 overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] h-full rounded-full transition-all duration-300"
+                    style={{ width: `${(Object.keys(matches).length / quizPhrases.length) * 100}%` }}
+                  />
+                </div>
+              </div>
 
-            <AnimatePresence>
-              {showXpAnimation && (
-                <motion.div
-                  initial={{ opacity: 0, y: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, y: -100, scale: 1.2 }}
-                  exit={{ opacity: 0, y: -150, scale: 0.8 }}
-                  transition={{ duration: 1.5, ease: "easeOut" }}
-                  className="fixed z-50 pointer-events-none flex items-center gap-2"
-                  style={{
-                    left: `${xpPosition.x}px`,
-                    top: `${xpPosition.y}px`,
-                    fontFamily: fonts.poppins,
-                    textShadow: "0 0 30px rgba(245, 158, 11, 0.8)",
-                  }}
-                >
-                  <Sparkles className="w-6 h-6 text-amber-500" />
-                  <span className="text-4xl font-bold text-amber-500">+{animatedXp} XP</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </motion.div>
-      </AnimatePresence>
+              {/* Stacked Layout for Mobile */}
+              <div className="space-y-4 mb-4 sm:mb-6">
+                {/* German Section */}
+                <div>
+                  <h3 className="text-xs font-bold text-gray-600 mb-2 uppercase" style={{ fontFamily: fonts.poppins }}>
+                    🇩🇪 Gjermane
+                  </h3>
+                  <div className="space-y-1.5 sm:space-y-2">
+                    {quizPhrases.map((phrase) => {
+                      const phraseId = phrase._id || phrase.id
+                      const isMatched = matches[phraseId]
+                      const isSelected = selectedGerman === phraseId
+
+                      return (
+                        <button
+                          key={phraseId}
+                          onClick={() => {
+                            if (!isMatched) {
+                              if (isSelected) {
+                                setSelectedGerman(null)
+                              } else {
+                                setSelectedGerman(phraseId)
+                                if (selectedAlbanian) {
+                                  handleMatchClick(phraseId, selectedAlbanian)
+                                }
+                              }
+                            }
+                          }}
+                          disabled={isMatched}
+                          className={`w-full px-3 py-2 sm:px-4 sm:py-3 text-left rounded-lg sm:rounded-xl border-2 transition-all font-medium ${levelTextSizes[selectedLevel].german} ${isMatched
+                              ? "bg-green-100 border-green-500 text-green-700"
+                              : isSelected
+                                ? "bg-blue-100 border-blue-500 text-blue-700 shadow-md"
+                                : "bg-white border-gray-300 text-gray-700 hover:border-blue-400 active:bg-blue-50"
+                            }`}
+                          style={{ fontFamily: fonts.inter }}
+                        >
+                          {phrase.german}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Albanian Section */}
+                <div>
+                  <h3 className="text-xs font-bold text-gray-600 mb-2 uppercase" style={{ fontFamily: fonts.poppins }}>
+                    🇦🇱 Shqipe
+                  </h3>
+                  <div className="space-y-1.5 sm:space-y-2">
+                    {shuffledAlbanian.map((phrase) => {
+                      const phraseId = phrase._id || phrase.id
+                      const isMatched = Object.values(matches).includes(phraseId)
+                      const isSelected = selectedAlbanian === phraseId
+
+                      return (
+                        <button
+                          key={phraseId}
+                          onClick={() => {
+                            if (!isMatched) {
+                              if (selectedGerman) {
+                                handleMatchClick(selectedGerman, phraseId)
+                              } else {
+                                setSelectedAlbanian(isSelected ? null : phraseId)
+                              }
+                            }
+                          }}
+                          disabled={isMatched}
+                          className={`w-full px-3 py-2 sm:px-4 sm:py-3 text-left rounded-lg sm:rounded-xl border-2 transition-all font-medium ${levelTextSizes[selectedLevel].albanian} ${isMatched
+                              ? "bg-green-100 border-green-500 text-green-700"
+                              : isSelected
+                                ? "bg-purple-100 border-purple-500 text-purple-700 shadow-md"
+                                : "bg-white border-gray-300 text-gray-700 hover:border-purple-400 active:bg-purple-50"
+                            }`}
+                          style={{ fontFamily: fonts.inter }}
+                        >
+                          {phrase.albanian}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={exitQuiz}
+                className="w-full px-4 py-2.5 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-colors active:scale-[0.98] text-sm"
+                style={{ fontFamily: fonts.poppins }}
+              >
+                Dil nga Kuizi
+              </button>
+            </div>
+          )}
+
+          {/* XP Animation */}
+          {showXpAnimation && (
+            <div
+              className="fixed z-50 pointer-events-none flex items-center gap-2 animate-bounce"
+              style={{
+                left: '50%',
+                top: '40%',
+                transform: 'translate(-50%, -50%)',
+                fontFamily: fonts.poppins,
+              }}
+            >
+              <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
+              <span className="text-3xl sm:text-4xl font-bold text-amber-500 drop-shadow-lg">+{animatedXp} XP</span>
+            </div>
+          )}
+        </div>
+      </div>
     )
   }
 
+  // Main Phrase List View
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] via-white to-[#CCFBF1]">
-      <AnimatePresence>
-        {showLimitWarning && (
-          <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -50 }}
-            className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-red-500 text-white px-6 py-3 rounded-xl shadow-2xl"
-          >
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              <span className="font-semibold" style={{ fontFamily: fonts.poppins }}>
-                Keni arritur limitin ditor! Provoni përsëri pas {dailyLimitInfo.hoursUntilReset}h{" "}
-                {dailyLimitInfo.minutesUntilReset}min
-              </span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Limit Warning */}
+      {showLimitWarning && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-red-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-2xl animate-pulse">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="font-semibold text-xs sm:text-sm" style={{ fontFamily: fonts.poppins }}>
+              Limiti ditor i arritur! Provoni pas {dailyLimitInfo.hoursUntilReset}h {dailyLimitInfo.minutesUntilReset}min
+            </span>
+          </div>
+        </div>
+      )}
 
-      <AnimatePresence>
-        {showXpAnimation && (
-          <motion.div
-            initial={{ opacity: 0, y: 0, scale: 0.5 }}
-            animate={{ opacity: 1, y: -100, scale: 1.2 }}
-            exit={{ opacity: 0, y: -150, scale: 0.8 }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
-            className="fixed z-50 pointer-events-none flex items-center gap-2"
-            style={{
-              left: `${xpPosition.x}px`,
-              top: `${xpPosition.y}px`,
-              fontFamily: fonts.poppins,
-              textShadow: "0 0 30px rgba(245, 158, 11, 0.8)",
-            }}
-          >
-            <Sparkles className="w-6 h-6 text-amber-500" />
-            <span className="text-4xl font-bold text-amber-500">+{animatedXp} XP</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="max-w-[1200px] mx-auto p-4 md:p-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="relative mb-6 md:mb-8 overflow-hidden rounded-3xl bg-white/60 backdrop-blur-xl border border-white/50 shadow-2xl p-6 md:p-10"
+      {/* XP Animation */}
+      {showXpAnimation && (
+        <div
+          className="fixed z-50 pointer-events-none flex items-center gap-2"
+          style={{
+            left: `${xpPosition.x}px`,
+            top: `${xpPosition.y}px`,
+            fontFamily: fonts.poppins,
+            animation: 'floatUp 1.5s ease-out forwards',
+          }}
         >
-          <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-br from-teal-400/20 to-cyan-400/20 rounded-full blur-3xl" />
-          <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-gradient-to-tr from-amber-400/15 to-orange-400/15 rounded-full blur-3xl" />
+          <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500" />
+          <span className="text-3xl sm:text-4xl font-bold text-amber-500 drop-shadow-lg">+{animatedXp} XP</span>
+        </div>
+      )}
 
-          <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
-            <motion.div
-              whileHover={{ rotate: 5, scale: 1.05 }}
-              className="flex-shrink-0"
-            >
-              <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-gradient-to-br from-[#14B8A6] to-[#06B6D4] flex items-center justify-center shadow-lg shadow-[#14B8A6]/30">
-                <BookOpen className="w-8 h-8 md:w-10 md:h-10 text-white" />
+      <style>{`
+        @keyframes floatUp {
+          0% { opacity: 1; transform: translateY(0) scale(1); }
+          100% { opacity: 0; transform: translateY(-80px) scale(1.2); }
+        }
+      `}</style>
+
+      <div className="max-w-[1200px] mx-auto p-3 sm:p-6">
+        {/* Header */}
+        <div className="relative mb-4 sm:mb-8 overflow-hidden rounded-2xl sm:rounded-3xl bg-white/60 backdrop-blur-xl border border-white/50 shadow-xl sm:shadow-2xl p-4 sm:p-8">
+          <div className="absolute -top-20 -right-20 w-48 sm:w-64 h-48 sm:h-64 bg-gradient-to-br from-teal-400/20 to-cyan-400/20 rounded-full blur-3xl" />
+
+          <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-gradient-to-br from-[#14B8A6] to-[#06B6D4] flex items-center justify-center shadow-lg shadow-[#14B8A6]/30">
+                <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
               </div>
-            </motion.div>
+            </div>
 
             <div className="flex-1">
-              <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#14B8A6] via-[#06B6D4] to-[#14B8A6] bg-clip-text text-transparent mb-2" style={{ fontFamily: fonts.poppins }}>
+              <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-[#14B8A6] via-[#06B6D4] to-[#14B8A6] bg-clip-text text-transparent mb-1" style={{ fontFamily: fonts.poppins }}>
                 Fraza Gjermane
               </h1>
-              <p className="text-gray-600" style={{ fontFamily: fonts.inter }}>
-                Mëso fraza të zakonshme gjermane me përkthime në shqip
+              <p className="text-gray-600 text-xs sm:text-sm" style={{ fontFamily: fonts.inter }}>
+                Mëso fraza të zakonshme gjermane
               </p>
             </div>
 
-            <div className="flex gap-3">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="text-center px-4 py-2 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/50 shadow-lg"
-              >
-                <div className="text-2xl font-bold text-amber-600" style={{ fontFamily: fonts.poppins }}>{progress.finishedPhrases || 0}</div>
-                <div className="text-xs text-amber-600/70">Përfunduar</div>
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="text-center px-4 py-2 rounded-2xl bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-200/50 shadow-lg"
-              >
-                <div className="text-2xl font-bold text-teal-600" style={{ fontFamily: fonts.poppins }}>{progress.totalPhrases || 0}</div>
-                <div className="text-xs text-teal-600/70">Totali</div>
-              </motion.div>
+            <div className="flex gap-2 sm:gap-3">
+              <div className="text-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/50 shadow-md">
+                <div className="text-lg sm:text-2xl font-bold text-amber-600" style={{ fontFamily: fonts.poppins }}>{progress.finishedPhrases || 0}</div>
+                <div className="text-[10px] sm:text-xs text-amber-600/70">Përfunduar</div>
+              </div>
+              <div className="text-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl sm:rounded-2xl bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-200/50 shadow-md">
+                <div className="text-lg sm:text-2xl font-bold text-teal-600" style={{ fontFamily: fonts.poppins }}>{progress.totalPhrases || 0}</div>
+                <div className="text-[10px] sm:text-xs text-teal-600/70">Totali</div>
+              </div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Daily Limit Banner */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-          className={`mb-6 p-4 rounded-2xl border-2 ${
+        <div
+          className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 ${
             dailyLimitInfo.dailyLimitReached
               ? "bg-red-50/80 border-red-300"
               : "bg-gradient-to-r from-blue-50/80 to-cyan-50/80 border-blue-300"
           }`}
         >
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <motion.div
-                animate={{ rotate: dailyLimitInfo.dailyLimitReached ? 360 : 0 }}
-                transition={{ duration: 0.5 }}
-                className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+          <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div
+                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center ${
                   dailyLimitInfo.dailyLimitReached ? "bg-red-100" : "bg-blue-100"
                 }`}
               >
-                <Clock className={`w-6 h-6 ${
+                <Clock className={`w-5 h-5 sm:w-6 sm:h-6 ${
                   dailyLimitInfo.dailyLimitReached ? "text-red-500" : "text-blue-500"
                 }`} />
-              </motion.div>
+              </div>
               <div>
-                <p className="font-bold text-slate-800 text-lg" style={{ fontFamily: fonts.poppins }}>
+                <p className="font-bold text-slate-800 text-sm sm:text-lg" style={{ fontFamily: fonts.poppins }}>
                   {dailyLimitInfo.dailyLimitReached
-                    ? "Limiti ditor i arritur!"
-                    : `Fraza të mbetura: ${dailyLimitInfo.remainingUnlocks}/${dailyLimitInfo.dailyLimit}`}
+                    ? "Limiti ditor!"
+                    : `Fraza: ${dailyLimitInfo.remainingUnlocks}/${dailyLimitInfo.dailyLimit}`}
                 </p>
                 {!dailyLimitInfo.dailyLimitReached && (
-                  <div className="w-48 bg-gray-200 rounded-full h-2 mt-2">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${((dailyLimitInfo.dailyLimit - dailyLimitInfo.remainingUnlocks) / dailyLimitInfo.dailyLimit) * 100}%` }}
-                      className="bg-blue-500 h-2 rounded-full"
+                  <div className="w-24 sm:w-48 bg-gray-200 rounded-full h-1.5 sm:h-2 mt-1">
+                    <div
+                      className="bg-blue-500 h-full rounded-full transition-all duration-300"
+                      style={{ width: `${((dailyLimitInfo.dailyLimit - dailyLimitInfo.remainingUnlocks) / dailyLimitInfo.dailyLimit) * 100}%` }}
                     />
                   </div>
                 )}
               </div>
             </div>
             {dailyLimitInfo.dailyLimitReached && (
-              <span className="text-sm text-red-600 font-medium" style={{ fontFamily: fonts.inter }}>
-                Rifreskimi pas {dailyLimitInfo.hoursUntilReset}h {dailyLimitInfo.minutesUntilReset}min
+              <span className="text-xs sm:text-sm text-red-600 font-medium" style={{ fontFamily: fonts.inter }}>
+                Pas {dailyLimitInfo.hoursUntilReset}h {dailyLimitInfo.minutesUntilReset}min
               </span>
             )}
           </div>
-        </motion.div>
+        </div>
 
         {/* Level Selector */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="flex gap-2 mb-4 flex-wrap"
-        >
+        <div className="flex gap-1.5 sm:gap-2 mb-3 sm:mb-4 flex-wrap">
           {levels.map((level) => (
-            <motion.button
+            <button
               key={level}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
               onClick={() => setSelectedLevel(level)}
-              className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${selectedLevel === level
-                  ? "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white shadow-xl shadow-[#14B8A6]/30"
+              className={`px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95 ${selectedLevel === level
+                  ? "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white shadow-lg shadow-[#14B8A6]/30"
                   : "bg-white text-gray-600 border-2 border-gray-200 hover:border-[#14B8A6]"
                 }`}
               style={{ fontFamily: fonts.poppins }}
             >
               {level}
-            </motion.button>
+            </button>
           ))}
-        </motion.div>
+        </div>
 
         {/* Controls */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex gap-3 mb-6 flex-wrap"
-        >
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+        <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-6 flex-wrap">
+          <button
             onClick={() => setShowGerman(!showGerman)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 font-semibold transition-all ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border-2 font-semibold transition-all active:scale-95 text-xs sm:text-sm ${
               showGerman
                 ? "bg-blue-50 border-blue-400 text-blue-700"
                 : "bg-white border-gray-300 text-gray-500"
             }`}
             style={{ fontFamily: fonts.poppins }}
           >
-            {showGerman ? <Eye size={18} /> : <EyeOff size={18} />}
-            Gjermane
-          </motion.button>
+            {showGerman ? <Eye size={16} /> : <EyeOff size={16} />}
+            <span className="hidden sm:inline">Gjermane</span>
+            <span className="sm:hidden">DE</span>
+          </button>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <button
             onClick={() => setShowAlbanian(!showAlbanian)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl border-2 font-semibold transition-all ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border-2 font-semibold transition-all active:scale-95 text-xs sm:text-sm ${
               showAlbanian
                 ? "bg-purple-50 border-purple-400 text-purple-700"
                 : "bg-white border-gray-300 text-gray-500"
             }`}
             style={{ fontFamily: fonts.poppins }}
           >
-            {showAlbanian ? <Eye size={18} /> : <EyeOff size={18} />}
-            Shqipe
-          </motion.button>
+            {showAlbanian ? <Eye size={16} /> : <EyeOff size={16} />}
+            <span className="hidden sm:inline">Shqipe</span>
+            <span className="sm:hidden">AL</span>
+          </button>
 
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <button
             onClick={startQuiz}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl font-semibold shadow-lg shadow-amber-500/30"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-lg sm:rounded-xl font-semibold shadow-lg shadow-amber-500/30 active:scale-95 transition-transform text-xs sm:text-sm"
             style={{ fontFamily: fonts.poppins }}
           >
-            📝 Fillo Kuizin
-          </motion.button>
-        </motion.div>
+            📝 <span className="hidden sm:inline">Fillo</span> Kuizin
+          </button>
+        </div>
 
         {/* Phrases Grid */}
         {currentPhrases.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="bg-white rounded-2xl p-12 text-center shadow-xl"
-          >
-            <p className="text-gray-600" style={{ fontFamily: fonts.inter }}>
+          <div className="bg-white rounded-2xl p-8 sm:p-12 text-center shadow-xl">
+            <p className="text-gray-600 text-sm sm:text-base" style={{ fontFamily: fonts.inter }}>
               Nuk ka fraza të disponueshme për nivelin {selectedLevel}
             </p>
-          </motion.div>
+          </div>
         ) : (
           <>
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6"
-            >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
               {currentPhrases.map((phrase, index) => {
                 const isFinished = finishedPhraseIds.includes(phrase._id || phrase.id)
                 const phraseId = phrase._id || phrase.id
@@ -898,115 +786,90 @@ const Phrase = () => {
                 const isPlaying = playingPhraseId === phraseId
 
                 return (
-                  <motion.div
+                  <div
                     key={phraseId}
-                    variants={phraseCardVariants}
-                    whileHover={!isLocked ? { scale: 1.02, y: -2 } : {}}
-                    className={`rounded-2xl p-4 shadow-lg transition-all ${isFinished
+                    className={`rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-md transition-all ${isFinished
                         ? "bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200"
                         : isLocked
-                          ? "bg-gray-100/60 blur-[2px] border-2 border-gray-200"
-                          : "bg-white border-2 border-gray-200 hover:border-[#14B8A6] hover:shadow-xl"
+                          ? "bg-gray-100/60 blur-[3px] border-2 border-gray-200 opacity-60"
+                          : "bg-white border-2 border-gray-200 hover:border-[#14B8A6] hover:shadow-lg"
                       }`}
                   >
-                    <div className="flex justify-between items-center gap-4">
+                    <div className="flex justify-between items-center gap-2 sm:gap-4">
                       <div className="flex-1 min-w-0">
-                        <AnimatePresence mode="wait">
-                          {showGerman && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="flex items-center gap-2 mb-1"
+                        {showGerman && (
+                          <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+                            <p className={`font-bold text-gray-900 ${levelTextSizes[selectedLevel].german}`} style={{ fontFamily: fonts.poppins }}>
+                              {phrase.german}
+                            </p>
+                            <button
+                              onClick={() => !isLocked && speakGerman(phrase)}
+                              disabled={isLocked}
+                              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${isLocked
+                                  ? "border-gray-400 text-gray-400"
+                                  : isPlaying
+                                    ? "border-[#14B8A6] bg-[#14B8A6] text-white"
+                                    : "border-[#14B8A6] text-[#14B8A6] bg-white hover:bg-[#14B8A6] hover:text-white active:scale-90"
+                                }`}
                             >
-                              <p className="font-bold text-gray-900 text-base" style={{ fontFamily: fonts.poppins }}>
-                                {phrase.german}
-                              </p>
-                              <motion.button
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                onClick={() => !isLocked && speakGerman(phrase)}
-                                disabled={isLocked}
-                                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${isLocked
-                                    ? "border-gray-400 text-gray-400"
-                                    : isPlaying
-                                      ? "border-[#14B8A6] bg-[#14B8A6] text-white"
-                                      : "border-[#14B8A6] text-[#14B8A6] bg-white hover:bg-[#14B8A6] hover:text-white"
-                                  }`}
-                              >
-                                <Volume2 className={`w-4 h-4 ${isPlaying ? "animate-pulse" : ""}`} />
-                              </motion.button>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
+                              <Volume2 className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isPlaying ? "animate-pulse" : ""}`} />
+                            </button>
+                          </div>
+                        )}
 
-                        <AnimatePresence mode="wait">
-                          {showAlbanian && (
-                            <motion.p
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="text-gray-600 text-sm"
-                              style={{ fontFamily: fonts.inter }}
-                            >
-                              {phrase.albanian}
-                            </motion.p>
-                          )}
-                        </AnimatePresence>
+                        {showAlbanian && (
+                          <p
+                            className={`text-gray-600 truncate ${levelTextSizes[selectedLevel].albanian}`}
+                            style={{ fontFamily: fonts.inter }}
+                          >
+                            {phrase.albanian}
+                          </p>
+                        )}
                       </div>
 
-                      <div className="flex items-center gap-3 flex-shrink-0">
-                        <span className="text-sm font-bold text-amber-700 whitespace-nowrap" style={{ fontFamily: fonts.inter }}>
+                      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                        <span className="text-xs sm:text-sm font-bold text-amber-700 whitespace-nowrap" style={{ fontFamily: fonts.inter }}>
                           +{phrase.xp} XP
                         </span>
 
                         {!isFinished && !isLocked && canUnlock && (
-                          <motion.button
-                            whileHover={{ scale: 1.15, rotate: 90 }}
-                            whileTap={{ scale: 0.9 }}
+                          <button
                             onClick={(e) => handleMarkAsFinished(phraseId, phrase.xp, e)}
-                            className="w-11 h-11 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 text-white flex items-center justify-center shadow-lg shadow-green-500/40 hover:shadow-green-500/60 transition-all"
+                            className="w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 text-white flex items-center justify-center shadow-lg shadow-green-500/40 hover:shadow-green-500/60 transition-all active:scale-90"
                           >
-                            <Plus className="w-6 h-6" />
-                          </motion.button>
+                            <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
+                          </button>
                         )}
 
                         {!isFinished && !isLocked && !canUnlock && (
-                          <motion.button
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
+                          <button
                             onClick={() => {
                               setShowLimitWarning(true)
                               setTimeout(() => setShowLimitWarning(false), 5000)
                             }}
-                            className="w-10 h-10 rounded-full border-2 border-red-300 bg-red-50 text-red-500 flex items-center justify-center"
+                            className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-red-300 bg-red-50 text-red-500 flex items-center justify-center"
                           >
-                            <Clock className="w-5 h-5" />
-                          </motion.button>
+                            <Clock className="w-4 h-4 sm:w-5 sm:h-5" />
+                          </button>
                         )}
 
                         {!isFinished && isLocked && (
-                          <div className="w-10 h-10 rounded-full bg-gray-300 text-gray-500 flex items-center justify-center">
-                            <LockIcon className="w-5 h-5" />
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-300 text-gray-500 flex items-center justify-center">
+                            <LockIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                           </div>
                         )}
 
                         {isFinished && (
-                          <motion.div
-                            initial={{ scale: 0, rotate: -180 }}
-                            animate={{ scale: 1, rotate: 0 }}
-                            transition={{ type: "spring", stiffness: 400 }}
-                            className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 text-white flex items-center justify-center shadow-lg"
-                          >
-                            ✓
-                          </motion.div>
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 text-white flex items-center justify-center shadow-md">
+                            <Check className="w-4 h-4 sm:w-5 sm:h-5" />
+                          </div>
                         )}
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 )
               })}
-            </motion.div>
+            </div>
 
             <Pagination />
           </>
