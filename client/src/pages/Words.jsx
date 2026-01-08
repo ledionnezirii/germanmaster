@@ -8,13 +8,13 @@ import {
   Brain,
   Plus,
   HelpCircle,
-  X,
   Zap,
   CheckCircle,
   XCircle,
   Calendar,
   Search,
   Sparkles,
+  Trophy,
 } from "lucide-react";
 import { wordsService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -38,11 +38,12 @@ export default function Phrase() {
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [quizResult, setQuizResult] = useState(null);
   const [quizScore, setQuizScore] = useState({ correct: 0, total: 0 });
-  const [totalXP, setTotalXP] = useState(0);
   const [notification, setNotification] = useState(null);
   const [quizCycle, setQuizCycle] = useState([]);
   const [quizCycleIndex, setQuizCycleIndex] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showQuizResults, setShowQuizResults] = useState(false);
+  const [savingXp, setSavingXp] = useState(false);
 
   const newWordInputRef = useRef(null);
 
@@ -173,7 +174,7 @@ export default function Phrase() {
     }
     setActiveView("quiz");
     setQuizScore({ correct: 0, total: 0 });
-    setTotalXP(0);
+    setShowQuizResults(false);
     const shuffledWords = shuffleArray(words);
     setQuizCycle(shuffledWords);
     setQuizCycleIndex(0);
@@ -211,10 +212,25 @@ export default function Phrase() {
       correct: prev.correct + (isCorrect ? 1 : 0),
       total: prev.total + 1,
     }));
-    if (isCorrect) {
-      setTotalXP((prev) => prev + 1);
+    setTimeout(() => loadNextQuizWord(), 1500);
+  };
+
+  const finishQuiz = async () => {
+    setShowQuizResults(true);
+    const accuracy = quizScore.total > 0 ? (quizScore.correct / quizScore.total) * 100 : 0;
+    
+    // Award 5 XP if accuracy >= 60%
+    if (accuracy >= 60) {
+      setSavingXp(true);
+      try {
+        await wordsService.addQuizXp(5);
+        showNotification("Urime! Fituat 5 XP bonus!", "success");
+      } catch (error) {
+        console.error("Error adding XP:", error);
+      } finally {
+        setSavingXp(false);
+      }
     }
-    setTimeout(() => loadNextQuizWord(), 1800);
   };
 
   const indexOfLastWord = currentPage * wordsPerPage;
@@ -249,7 +265,7 @@ export default function Phrase() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
+    <div className="w-full mx-auto px-4 py-6">
       {/* Notification */}
       <AnimatePresence>
         {notification && (
@@ -281,11 +297,9 @@ export default function Phrase() {
             { id: "quiz", icon: Brain, label: "Kuizi" },
             { id: "help", icon: HelpCircle, label: "Ndihmë" },
           ].map((tab) => (
-            <motion.button
+            <button
               key={tab.id}
               onClick={() => tab.id === "quiz" ? startQuiz() : setActiveView(tab.id)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
                 activeView === tab.id
                   ? "bg-white text-teal-600 shadow-sm"
@@ -294,7 +308,7 @@ export default function Phrase() {
             >
               <tab.icon size={16} />
               {tab.label}
-            </motion.button>
+            </button>
           ))}
         </div>
       </motion.div>
@@ -320,7 +334,7 @@ export default function Phrase() {
               {[
                 { icon: Plus, title: "Shtoni Fjalë", desc: "Klikoni butonin + për të shtuar fjalë të reja gjermane." },
                 { icon: Brain, title: "Luani Kuizin", desc: "Testoni njohuritë duke zgjedhur përkthimin e saktë." },
-                { icon: Zap, title: "Fitoni XP", desc: "Çdo përgjigje e saktë ju jep 1 XP." },
+                { icon: Zap, title: "Fitoni XP", desc: "Nëse keni 60%+ saktësi, fitoni 5 XP bonus në fund të kuizit." },
               ].map((item, i) => (
                 <motion.div
                   key={i}
@@ -340,14 +354,12 @@ export default function Phrase() {
               ))}
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <button
               onClick={() => setActiveView("words")}
               className="w-full mt-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-2xl font-medium transition-colors"
             >
               E Kuptova!
-            </motion.button>
+            </button>
           </motion.div>
         )}
 
@@ -359,38 +371,103 @@ export default function Phrase() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
+            {/* Quiz Results Modal */}
+            <AnimatePresence>
+              {showQuizResults && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                >
+                  <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl text-center"
+                  >
+                    <div className="w-20 h-20 bg-gradient-to-br from-teal-400 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                      <Trophy size={36} className="text-white" />
+                    </div>
+                    
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Kuizi Përfundoi!</h2>
+                    
+                    <div className="bg-gray-50 rounded-2xl p-6 my-6 space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500">Përgjigje të sakta:</span>
+                        <span className="font-bold text-emerald-600 text-lg">{quizScore.correct}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500">Totali i pyetjeve:</span>
+                        <span className="font-bold text-gray-800 text-lg">{quizScore.total}</span>
+                      </div>
+                      <div className="border-t pt-4 flex justify-between items-center">
+                        <span className="text-gray-500">Saktësia:</span>
+                        <span className={`font-bold text-lg ${
+                          quizScore.total > 0 && (quizScore.correct / quizScore.total) >= 0.6 
+                            ? "text-emerald-600" 
+                            : "text-amber-600"
+                        }`}>
+                          {quizScore.total > 0 ? Math.round((quizScore.correct / quizScore.total) * 100) : 0}%
+                        </span>
+                      </div>
+                      
+                      {quizScore.total > 0 && (quizScore.correct / quizScore.total) >= 0.6 && (
+                        <motion.div 
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="bg-amber-50 rounded-xl p-4 flex items-center justify-center gap-2"
+                        >
+                          <Zap size={20} className="text-amber-500" />
+                          <span className="font-semibold text-amber-700">+5 XP Bonus!</span>
+                        </motion.div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
+                          setShowQuizResults(false);
+                          setActiveView("words");
+                        }}
+                        className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-2xl font-medium transition-colors"
+                      >
+                        Kthehu
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowQuizResults(false);
+                          startQuiz();
+                        }}
+                        className="flex-1 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-2xl font-medium transition-colors"
+                      >
+                        Luaj Përsëri
+                      </button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Quiz Stats */}
             <div className="flex justify-between items-center mb-6">
-              <div className="flex gap-3">
-                <div className="bg-white px-4 py-2 rounded-2xl shadow-sm border border-gray-100">
-                  <span className="text-sm text-gray-500">Rezultati: </span>
-                  <span className="font-semibold text-teal-600">{quizScore.correct}/{quizScore.total}</span>
-                </div>
-                <div className="bg-amber-50 px-4 py-2 rounded-2xl flex items-center gap-1.5">
-                  <Zap size={14} className="text-amber-500" />
-                  <span className="font-semibold text-amber-600">{totalXP} XP</span>
-                </div>
+              <div className="bg-white px-4 py-2 rounded-2xl shadow-sm border border-gray-100">
+                <span className="text-sm text-gray-500">Rezultati: </span>
+                <span className="font-semibold text-teal-600">{quizScore.correct}/{quizScore.total}</span>
               </div>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setActiveView("words")}
-                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
+              <button
+                onClick={finishQuiz}
+                className="px-4 py-2 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-medium transition-colors text-sm"
               >
-                <X size={20} className="text-gray-400" />
-              </motion.button>
+                Perfundo Kuizin
+              </button>
             </div>
 
             {/* Quiz Card */}
-            <motion.div
-              key={currentQuizWord._id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-gradient-to-br from-teal-500 to-emerald-500 rounded-3xl p-8 text-center mb-6 shadow-xl"
-            >
+            <div className="bg-gradient-to-br from-teal-500 to-emerald-500 rounded-3xl p-8 text-center mb-6 shadow-xl">
               <p className="text-teal-100 text-sm mb-3 uppercase tracking-wide">Përktheni</p>
               <h2 className="text-5xl font-bold text-white mb-2">{currentQuizWord.word}</h2>
-            </motion.div>
+            </div>
 
             {/* Options */}
             <div className="grid grid-cols-2 gap-3">
@@ -400,13 +477,8 @@ export default function Phrase() {
                 const showResult = quizResult !== null;
 
                 return (
-                  <motion.button
+                  <button
                     key={option._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    whileHover={!showResult ? { scale: 1.02 } : {}}
-                    whileTap={!showResult ? { scale: 0.98 } : {}}
                     onClick={() => handleAnswerSelection(option)}
                     disabled={showResult}
                     className={`p-5 rounded-2xl text-left transition-all border-2 ${
@@ -430,38 +502,27 @@ export default function Phrase() {
                         {option.translation || option.word}
                       </span>
                       {showResult && isCorrect && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                          <CheckCircle size={20} className="text-emerald-500" />
-                        </motion.div>
+                        <CheckCircle size={20} className="text-emerald-500" />
                       )}
                       {showResult && isSelected && !isCorrect && (
-                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                          <XCircle size={20} className="text-rose-500" />
-                        </motion.div>
+                        <XCircle size={20} className="text-rose-500" />
                       )}
                     </div>
-                  </motion.button>
+                  </button>
                 );
               })}
             </div>
 
             {/* Result Feedback */}
-            <AnimatePresence>
-              {quizResult !== null && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className={`mt-4 p-4 rounded-2xl flex items-center justify-center gap-2 ${
-                    quizResult ? "bg-emerald-50" : "bg-rose-50"
-                  }`}
-                >
-                  <span className={`font-medium ${quizResult ? "text-emerald-600" : "text-rose-600"}`}>
-                    {quizResult ? "E saktë! +1 XP" : "Gabim!"}
-                  </span>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {quizResult !== null && (
+              <div className={`mt-4 p-4 rounded-2xl flex items-center justify-center gap-2 ${
+                quizResult ? "bg-emerald-50" : "bg-rose-50"
+              }`}>
+                <span className={`font-medium ${quizResult ? "text-emerald-600" : "text-rose-600"}`}>
+                  {quizResult ? "E saktë!" : "Gabim!"}
+                </span>
+              </div>
+            )}
           </motion.div>
         )}
 
@@ -480,11 +541,8 @@ export default function Phrase() {
                 { icon: Calendar, label: "Këtë Javë", value: stats.wordsThisWeek, color: "blue" },
                 { icon: Zap, label: "Këtë Muaj", value: stats.wordsThisMonth, color: "amber" },
               ].map((stat, i) => (
-                <motion.div
+                <div
                   key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
                   className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100"
                 >
                   <div className={`w-8 h-8 bg-${stat.color}-50 rounded-lg flex items-center justify-center mb-2`}>
@@ -492,7 +550,7 @@ export default function Phrase() {
                   </div>
                   <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
                   <p className="text-xs text-gray-400">{stat.label}</p>
-                </motion.div>
+                </div>
               ))}
             </div>
 
@@ -508,14 +566,12 @@ export default function Phrase() {
                   className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 text-sm transition-all"
                 />
               </div>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+              <button
                 onClick={() => setShowAddForm(true)}
                 className="w-12 h-12 bg-teal-500 hover:bg-teal-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-teal-500/30 transition-colors"
               >
                 <Plus size={20} />
-              </motion.button>
+              </button>
             </div>
 
             {/* Add Word Modal */}
@@ -541,7 +597,7 @@ export default function Phrase() {
                         onClick={() => setShowAddForm(false)}
                         className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
                       >
-                        <X size={18} className="text-gray-400" />
+                        <XCircle size={18} className="text-gray-400" />
                       </button>
                     </div>
 
@@ -585,9 +641,7 @@ export default function Phrase() {
                         />
                       </div>
 
-                      <motion.button
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
+                      <button
                         type="submit"
                         disabled={adding || !newWord.trim()}
                         className="w-full py-3 bg-teal-500 hover:bg-teal-600 disabled:bg-gray-200 disabled:text-gray-400 text-white rounded-2xl font-medium transition-all flex items-center justify-center gap-2"
@@ -604,7 +658,7 @@ export default function Phrase() {
                             Shto Fjalën
                           </>
                         )}
-                      </motion.button>
+                      </button>
                     </form>
                   </motion.div>
                 </motion.div>
@@ -630,30 +684,24 @@ export default function Phrase() {
               </motion.div>
             ) : (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                   {currentWords.map((word, idx) => (
-                    <motion.div
+                    <div
                       key={word._id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.03 }}
-                      whileHover={{ y: -2 }}
-                      className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 group relative"
+                      className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 group relative hover:shadow-md transition-shadow"
                     >
-                      <motion.button
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
+                      <button
                         onClick={() => handleRemoveWord(word._id)}
-                        className="absolute top-3 right-3 p-1.5 bg-rose-50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="absolute top-3 right-3 p-1.5 bg-rose-50 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                       >
                         <Trash2 size={14} className="text-rose-500" />
-                      </motion.button>
-                      <h3 className="text-lg font-semibold text-teal-600 mb-1">{word.word}</h3>
-                      <p className="text-sm text-gray-500">{word.translation}</p>
-                      <p className="text-xs text-gray-300 mt-3">
+                      </button>
+                      <h3 className="text-xl font-semibold text-teal-600 mb-2 pr-8">{word.word}</h3>
+                      <p className="text-base text-gray-500">{word.translation}</p>
+                      <p className="text-xs text-gray-300 mt-4">
                         {new Date(word.createdAt).toLocaleDateString("sq-AL")}
                       </p>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
 

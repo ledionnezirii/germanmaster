@@ -15,6 +15,7 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.0",
     "@sendinblue/client": "^3.3.1",
+    "@tanstack/react-query": "^5.90.16",
     "axios": "^1.10.0",
     "cors": "^2.8.5",
     "framer-motion": "^12.23.22",

@@ -1,8 +1,8 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { dictionaryService, favoritesService, ttsService } from "../services/api"
-import { BookOpen, Volume2, Heart, Filter, ChevronLeft, ChevronRight } from 'lucide-react'
+import { dictionaryService, favoritesService, ttsService, wordsService } from "../services/api"
+import { BookOpen, Volume2, Heart, ChevronLeft, ChevronRight, Play, X, CheckCircle, XCircle, Trophy } from 'lucide-react'
 
 const Dictionary = () => {
   const [words, setWords] = useState([])
@@ -18,12 +18,23 @@ const Dictionary = () => {
   const audioRef = useRef(null)
   const wordsPerPage = 32
 
+  // Quiz state
+  const [showQuiz, setShowQuiz] = useState(false)
+  const [quizWords, setQuizWords] = useState([])
+  const [quizQuestions, setQuizQuestions] = useState([])
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
+  const [selectedAnswer, setSelectedAnswer] = useState(null)
+  const [correctAnswers, setCorrectAnswers] = useState(0)
+  const [showResult, setShowResult] = useState(false)
+  const [quizLoading, setQuizLoading] = useState(false)
+  const [answerSubmitted, setAnswerSubmitted] = useState(false)
+  const [xpAwarded, setXpAwarded] = useState(false)
+
   useEffect(() => {
     fetchWords()
     fetchFavorites()
   }, [selectedLevel, currentPage])
 
-  // Cleanup audio on unmount
   useEffect(() => {
     return () => {
       if (audioRef.current) {
@@ -87,7 +98,6 @@ const Dictionary = () => {
   }
 
   const playPronunciation = async (word) => {
-    // Stop if already playing this word
     if (playingWordId === word._id && audioRef.current) {
       audioRef.current.pause()
       audioRef.current.currentTime = 0
@@ -95,7 +105,6 @@ const Dictionary = () => {
       return
     }
 
-    // Stop any current playback
     if (audioRef.current) {
       audioRef.current.pause()
       if (audioRef.current.src && audioRef.current.src.startsWith('blob:')) {
@@ -105,17 +114,8 @@ const Dictionary = () => {
 
     try {
       setPlayingWordId(word._id)
-      console.log("[TTS] Requesting dictionary audio for:", word.word)
-
-      const response = await ttsService.getDictionaryAudio(
-        word._id,
-        word.word,
-        word.level
-      )
-
-      const audioBlob = response.data
-      console.log("[TTS] Audio blob received:", audioBlob.size, "bytes")
-
+      const response = await ttsService.getDictionaryAudio(word._id, word.word, word.level)
+      const audioBlob = response
       const audioUrl = URL.createObjectURL(audioBlob)
 
       if (!audioRef.current) {
@@ -123,30 +123,124 @@ const Dictionary = () => {
       }
 
       audioRef.current.src = audioUrl
-
       audioRef.current.onended = () => {
-        console.log("[TTS] Dictionary audio ended")
         setPlayingWordId(null)
         URL.revokeObjectURL(audioUrl)
       }
-
-      audioRef.current.onerror = (e) => {
-        console.error("[TTS] Audio error:", e)
+      audioRef.current.onerror = () => {
         setPlayingWordId(null)
         URL.revokeObjectURL(audioUrl)
       }
 
       await audioRef.current.play()
-      console.log("[TTS] Dictionary audio playing")
     } catch (error) {
-      console.error("[TTS] Error:", error)
+      console.error("Error playing audio:", error)
       setPlayingWordId(null)
-      // Fallback to browser TTS
-      const utterance = new SpeechSynthesisUtterance(word.word)
-      utterance.lang = "de-DE"
-      utterance.rate = 0.8
-      window.speechSynthesis.speak(utterance)
+      alert("Nuk mund të luhet audioja. Ju lutemi provoni përsëri.")
     }
+  }
+
+  const startQuiz = async () => {
+    if (selectedLevel === "all") {
+      alert("Ju lutemi zgjidhni një nivel (A1, A2, B1, B2, C1, C2) për të filluar kuizin.")
+      return
+    }
+
+    setQuizLoading(true)
+    try {
+      const response = await dictionaryService.getAllWords({ level: selectedLevel, limit: 100 })
+      const levelWords = response.data.words || response.data || []
+
+      if (levelWords.length < 19) {
+        alert(`Nuk ka mjaft fjalë për nivelin ${selectedLevel}. Nevojiten të paktën 19 fjalë.`)
+        setQuizLoading(false)
+        return
+      }
+
+      const shuffled = [...levelWords].sort(() => Math.random() - 0.5)
+      const selectedWords = shuffled.slice(0, 19)
+      setQuizWords(levelWords)
+
+      const questions = selectedWords.map((word) => {
+        const otherWords = levelWords.filter(w => w._id !== word._id)
+        const wrongOptions = otherWords
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 3)
+          .map(w => w.translation)
+
+        const options = [...wrongOptions, word.translation].sort(() => Math.random() - 0.5)
+
+        return {
+          word: word.word,
+          correctAnswer: word.translation,
+          options: options
+        }
+      })
+
+      setQuizQuestions(questions)
+      setCurrentQuestionIndex(0)
+      setSelectedAnswer(null)
+      setCorrectAnswers(0)
+      setShowResult(false)
+      setAnswerSubmitted(false)
+      setXpAwarded(false)
+      setShowQuiz(true)
+    } catch (error) {
+      console.error("Error starting quiz:", error)
+      alert("Ndodhi një gabim gjatë fillimit të kuizit. Ju lutemi provoni përsëri.")
+    } finally {
+      setQuizLoading(false)
+    }
+  }
+
+  const handleAnswerSelect = (answer) => {
+    if (answerSubmitted) return
+    
+    setSelectedAnswer(answer)
+    setAnswerSubmitted(true)
+    
+    const currentQuestion = quizQuestions[currentQuestionIndex]
+    const isCorrect = answer === currentQuestion.correctAnswer
+    
+    if (isCorrect) {
+      setCorrectAnswers(prev => prev + 1)
+    }
+
+    setTimeout(() => {
+      if (currentQuestionIndex < quizQuestions.length - 1) {
+        setCurrentQuestionIndex(prev => prev + 1)
+        setSelectedAnswer(null)
+        setAnswerSubmitted(false)
+      } else {
+        finishQuiz()
+      }
+    }, 1500)
+  }
+
+  const finishQuiz = async () => {
+    setShowResult(true)
+
+    const passed = correctAnswers >= 12
+
+    if (passed && !xpAwarded) {
+      try {
+        await wordsService.addQuizXp(5)
+        setXpAwarded(true)
+      } catch (error) {
+        console.error("Error awarding XP:", error)
+      }
+    }
+  }
+
+  const closeQuiz = () => {
+    setShowQuiz(false)
+    setQuizQuestions([])
+    setCurrentQuestionIndex(0)
+    setSelectedAnswer(null)
+    setCorrectAnswers(0)
+    setShowResult(false)
+    setAnswerSubmitted(false)
+    setXpAwarded(false)
   }
 
   const filteredWords = words.filter((word) => {
@@ -176,11 +270,6 @@ const Dictionary = () => {
 
   const handleLevelChange = (level) => {
     setSelectedLevel(level)
-    setCurrentPage(1)
-  }
-
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value)
     setCurrentPage(1)
   }
 
@@ -228,7 +317,6 @@ const Dictionary = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
       <div className="max-w-7xl mx-auto p-2 md:p-4 space-y-4">
-        {/* Hero Header */}
         <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-3 md:p-4">
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-emerald-100/30 to-teal-100/30 rounded-full blur-3xl -z-10" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-cyan-100/20 to-blue-100/20 rounded-full blur-3xl -z-10" />
@@ -248,14 +336,11 @@ const Dictionary = () => {
           </div>
         </div>
 
-        {/* Search & Filters */}
-        <div className="bg-white/80 backdrop-blur-sm flex items-center gap-2 rounded-xl shadow-sm border border-gray-200/50 p-3 md:p-4 space-y-3 md:space-y-4">
-          {/* Level Filters */}
-          <div className="space-y-2 md:space-y-3">
+        <div className="bg-white/80 backdrop-blur-sm flex flex-col md:flex-row md:items-center gap-3 rounded-xl shadow-sm border border-gray-200/50 p-3 md:p-4">
+          <div className="space-y-2 md:space-y-3 flex-1">
             <div className="flex items-center gap-2 md:gap-3">
-              <div className="flex items-center gap-1.5 bg-yellow-400/40 rounded-4xl p-1 text-xs md:text-sm font-semibold text-gray-700">
-                <Filter className="h-3 w-3 md:h-3.5 md:w-3.5 rounded-full text-emerald-600" />
-                <span>Niveli i gjuhës</span>
+              <div className="text-xs md:text-sm font-semibold text-gray-700">
+                Niveli i gjuhës
               </div>
             </div>
             <div className="flex flex-wrap gap-1 md:gap-1.5">
@@ -277,32 +362,49 @@ const Dictionary = () => {
             </div>
           </div>
 
-          {/* Favorites Toggle */}
-          <div className="pt-2 md:pt-2 border-t mt-3.5 border-gray-100">
+          <div className="flex items-center gap-2">
             <button
-              onClick={handleFavoritesToggle}
-              className={`w-full md:w-auto flex items-center justify-center md:justify-start gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all ${
-                showFavorites
-                  ? "bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/25"
-                  : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
+              onClick={startQuiz}
+              disabled={quizLoading || selectedLevel === "all"}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                selectedLevel === "all"
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                  : "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30"
               }`}
             >
-              <Heart className={`h-3 w-3 md:h-3.5 md:w-3.5 ${showFavorites ? "fill-current" : ""}`} />
-              <span>Të Preferuarat</span>
-              {favorites.length > 0 && (
-                <span
-                  className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
-                    showFavorites ? "bg-white/20" : "bg-rose-50 text-rose-600"
-                  }`}
-                >
-                  {favorites.length}
-                </span>
+              {quizLoading ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Play className="w-4 h-4" />
               )}
+              <span>Fillo Kuizin</span>
             </button>
           </div>
         </div>
 
-        {/* Words Grid */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-3 md:p-4">
+          <button
+            onClick={handleFavoritesToggle}
+            className={`w-full md:w-auto flex items-center justify-center md:justify-start gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all ${
+              showFavorites
+                ? "bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/25"
+                : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
+            }`}
+          >
+            <Heart className={`h-3 w-3 md:h-3.5 md:w-3.5 ${showFavorites ? "fill-current" : ""}`} />
+            <span>Të Preferuarat</span>
+            {favorites.length > 0 && (
+              <span
+                className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
+                  showFavorites ? "bg-white/20" : "bg-rose-50 text-rose-600"
+                }`}
+              >
+                {favorites.length}
+              </span>
+            )}
+          </button>
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center min-h-[300px]">
             <div className="text-center space-y-3">
@@ -325,11 +427,9 @@ const Dictionary = () => {
                   key={word._id}
                   className="group relative bg-white rounded-xl shadow-sm border border-gray-200/50 hover:shadow-lg hover:border-emerald-200/50 transition-all duration-300 p-3 flex flex-col h-full"
                 >
-                  {/* Hover Glow */}
                   <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
 
                   <div className="relative flex flex-col h-full">
-                    {/* Header */}
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <div className="flex-1 min-w-0">
                         <h3 className="text-base font-bold text-gray-900 mb-1 leading-tight">{word.word}</h3>
@@ -361,7 +461,6 @@ const Dictionary = () => {
                       </div>
                     </div>
 
-                    {/* Badges */}
                     <div className="flex items-center gap-1.5 mb-3 flex-wrap">
                       <span className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${getLevelColor(word.level)}`}>
                         {word.level}
@@ -375,7 +474,6 @@ const Dictionary = () => {
                       )}
                     </div>
 
-                    {/* Example */}
                     {firstExample && firstExample.german && (
                       <div className="mt-auto bg-gradient-to-br from-emerald-50/50 to-teal-50/50 rounded-lg p-2 border border-emerald-200/30">
                         <p className="text-gray-700 text-xs italic leading-tight line-clamp-3">
@@ -390,7 +488,6 @@ const Dictionary = () => {
           </div>
         )}
 
-        {/* Pagination */}
         {totalPages > 1 && !loading && (
           <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-4">
             <div className="flex flex-col md:flex-row items-center justify-between gap-3">
@@ -459,7 +556,6 @@ const Dictionary = () => {
           </div>
         )}
 
-        {/* Empty State */}
         {filteredWords.length === 0 && !loading && (
           <div className="flex items-center justify-center min-h-[300px]">
             <div className="text-center max-w-md">
@@ -471,16 +567,164 @@ const Dictionary = () => {
               </div>
               <h3 className="text-base font-bold text-gray-900 mb-1.5">Nuk u gjetën fjalë</h3>
               <p className="text-gray-600 leading-tight text-xs">
-                {searchTerm
-                  ? `Asnjë fjalë nuk përputhet me "${searchTerm}"`
-                  : showFavorites
-                    ? "Ende nuk ka fjalë të preferuara"
-                    : "Nuk ka fjalë të disponueshme për nivelin e zgjedhur"}
+                {showFavorites
+                  ? "Ende nuk ka fjalë të preferuara"
+                  : "Nuk ka fjalë të disponueshme për nivelin e zgjedhur"}
               </p>
             </div>
           </div>
         )}
       </div>
+
+      {showQuiz && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                  <BookOpen className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="font-bold text-gray-900">Kuiz - Niveli {selectedLevel}</h2>
+                  <p className="text-xs text-gray-500">
+                    {showResult ? "Rezultati" : `Pyetja ${currentQuestionIndex + 1} nga ${quizQuestions.length}`}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={closeQuiz}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {!showResult ? (
+                <>
+                  <div className="w-full bg-gray-100 rounded-full h-2 mb-6">
+                    <div
+                      className="bg-gradient-to-r from-purple-500 to-indigo-600 h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${((currentQuestionIndex + 1) / quizQuestions.length) * 100}%` }}
+                    />
+                  </div>
+
+                  <div className="text-center mb-6">
+                    <p className="text-sm text-gray-500 mb-2">Çfarë do të thotë:</p>
+                    <h3 className="text-2xl font-bold text-gray-900">
+                      {quizQuestions[currentQuestionIndex]?.word}
+                    </h3>
+                  </div>
+
+                  <div className="space-y-3 mb-6">
+                    {quizQuestions[currentQuestionIndex]?.options.map((option, index) => {
+                      const isCorrect = option === quizQuestions[currentQuestionIndex].correctAnswer
+                      const isSelected = selectedAnswer === option
+
+                      let optionClass = "bg-white border-gray-200 hover:border-purple-300 hover:bg-purple-50"
+
+                      if (answerSubmitted) {
+                        if (isCorrect) {
+                          optionClass = "bg-green-50 border-green-500 text-green-800"
+                        } else if (isSelected && !isCorrect) {
+                          optionClass = "bg-red-50 border-red-500 text-red-800"
+                        }
+                      } else if (isSelected) {
+                        optionClass = "bg-purple-50 border-purple-500"
+                      }
+
+                      return (
+                        <button
+                          key={index}
+                          onClick={() => handleAnswerSelect(option)}
+                          disabled={answerSubmitted}
+                          className={`w-full p-4 rounded-xl border-2 text-left font-medium transition-all ${optionClass}`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span>{option}</span>
+                            {answerSubmitted && isCorrect && (
+                              <CheckCircle className="w-5 h-5 text-green-600" />
+                            )}
+                            {answerSubmitted && isSelected && !isCorrect && (
+                              <XCircle className="w-5 h-5 text-red-600" />
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  <div className="text-center text-sm text-gray-500">
+                    Përgjigje të sakta: <span className="font-bold text-emerald-600">{correctAnswers}</span> / {currentQuestionIndex + (answerSubmitted ? 1 : 0)}
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-6">
+                  <div className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center ${
+                    correctAnswers >= 12 
+                      ? "bg-gradient-to-br from-emerald-400 to-teal-500" 
+                      : "bg-gradient-to-br from-orange-400 to-red-500"
+                  }`}>
+                    {correctAnswers >= 12 ? (
+                      <Trophy className="w-10 h-10 text-white" />
+                    ) : (
+                      <XCircle className="w-10 h-10 text-white" />
+                    )}
+                  </div>
+
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                    {correctAnswers >= 12 ? "Urime! 🎉" : "Provoni përsëri!"}
+                  </h3>
+
+                  <p className="text-gray-600 mb-4">
+                    Rezultati juaj: <span className="font-bold text-xl">{correctAnswers}</span> / {quizQuestions.length}
+                  </p>
+
+                  <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                    <div className="text-sm text-gray-500 mb-1">Përqindja</div>
+                    <div className="text-3xl font-bold text-gray-900">
+                      {Math.round((correctAnswers / quizQuestions.length) * 100)}%
+                    </div>
+                  </div>
+
+                  {correctAnswers >= 12 && xpAwarded && (
+                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 mb-6 border border-emerald-200">
+                      <div className="flex items-center justify-center gap-2 text-emerald-700">
+                        <Trophy className="w-5 h-5" />
+                        <span className="font-bold">+5 XP fituar!</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {correctAnswers < 12 && (
+                    <p className="text-sm text-gray-500 mb-6">
+                      Ju nevojiten të paktën 12 përgjigje të sakta (60%) për të fituar XP.
+                    </p>
+                  )}
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={closeQuiz}
+                      className="flex-1 py-3 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all"
+                    >
+                      Mbyll
+                    </button>
+                    <button
+                      onClick={() => {
+                        closeQuiz()
+                        startQuiz()
+                      }}
+                      className="flex-1 py-3 rounded-xl font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/25 hover:shadow-xl transition-all"
+                    >
+                      Provo Përsëri
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

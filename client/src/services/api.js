@@ -486,12 +486,27 @@ export const ttsService = {
         { responseType: "blob" }
       )
       .then((res) => res.data),
+       getCategoryAudio: (categoryId, wordIndex, text, level) =>
+    api
+      .post(
+        `/tts/category/${categoryId}/${wordIndex}`,
+        { text, level },
+        { responseType: "blob" }
+      )
+      .then((res) => res.data),
 
   // Pre-generate all dialogue lines (admin use)
   preGenerateDialogueAudio: (dialogueId, dialogueLines, level) =>
     api.post("/tts/dialogue/pre-generate", {
       dialogueId,
       dialogueLines,
+      level,
+    }),
+    
+     preGenerateCategoryAudio: (categoryId, words, level) =>
+    api.post("/tts/category/pre-generate", {
+      categoryId,
+      words,
       level,
     }),
 
@@ -501,6 +516,7 @@ export const ttsService = {
   preGenerate: (id, text, level, type) =>
     api.post("/tts/pre-generate", { id, text, level, type }),
 };
+
 
 export const sessionService = {
   getSessions: () => api.get("/auth/sessions"),
