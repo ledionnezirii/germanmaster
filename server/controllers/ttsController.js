@@ -4,9 +4,14 @@ const { Storage } = require("@google-cloud/storage")
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY
 const ELEVENLABS_VOICE_ID = "NE7AIW5DoJ7lUosXV2KR"
 
-const storage = new Storage({
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
-})
+let storageConfig = {}
+if (process.env.GOOGLE_CREDENTIALS_JSON) {
+  storageConfig.credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON)
+} else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+  storageConfig.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS
+}
+const storage = new Storage(storageConfig)
+
 const bucketName = process.env.BUCKET_NAME
 const bucket = storage.bucket(bucketName)
 
