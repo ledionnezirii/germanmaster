@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { dictionaryService, favoritesService, ttsService, wordsService } from "../services/api"
-import { BookOpen, Volume2, Heart, ChevronLeft, ChevronRight, Play, X, CheckCircle, XCircle, Trophy } from 'lucide-react'
+import { BookOpen, Volume2, Heart, ChevronLeft, ChevronRight, Play, X, CheckCircle, XCircle, Trophy, Lock, Unlock } from 'lucide-react'
 
 const Dictionary = () => {
   const [words, setWords] = useState([])
@@ -17,6 +17,14 @@ const Dictionary = () => {
   const [playingWordId, setPlayingWordId] = useState(null)
   const audioRef = useRef(null)
   const wordsPerPage = 32
+
+  // Unlock state
+  const [unlockStats, setUnlockStats] = useState({
+    todayUnlocks: 0,
+    remainingUnlocks: 15,
+    canUnlock: true
+  })
+  const [unlocking, setUnlocking] = useState(null)
 
   // Quiz state
   const [showQuiz, setShowQuiz] = useState(false)
@@ -33,6 +41,7 @@ const Dictionary = () => {
   useEffect(() => {
     fetchWords()
     fetchFavorites()
+    fetchUnlockStats()
   }, [selectedLevel, currentPage])
 
   useEffect(() => {
@@ -81,6 +90,44 @@ const Dictionary = () => {
     }
   }
 
+  const fetchUnlockStats = async () => {
+    try {
+      const response = await dictionaryService.getUnlockStats()
+      setUnlockStats(response.data || response)
+    } catch (error) {
+      console.error("Error fetching unlock stats:", error)
+    }
+  }
+
+  const handleUnlockWord = async (wordId) => {
+    if (!unlockStats.canUnlock) {
+      alert(`Keni arritur limitin ditor prej 15 fjalëve. Provoni sërish më vonë.`)
+      return
+    }
+
+    setUnlocking(wordId)
+    try {
+      const response = await dictionaryService.unlockWord(wordId)
+      
+      // Update the word in the list
+      setWords(prevWords => 
+        prevWords.map(w => 
+          w._id === wordId ? { ...w, isUnlocked: true } : w
+        )
+      )
+
+      // Refresh unlock stats
+      await fetchUnlockStats()
+
+      alert(response.message || "Fjala u zhbllokua me sukses!")
+    } catch (error) {
+      console.error("Error unlocking word:", error)
+      alert(error.response?.data?.message || "Gabim gjatë zhbllokimit të fjalës")
+    } finally {
+      setUnlocking(null)
+    }
+  }
+
   const toggleFavorite = async (wordId) => {
     try {
       const isFavorite = favorites.some((fav) => (fav._id || fav) === wordId)
@@ -107,16 +154,11 @@ const Dictionary = () => {
 
     if (audioRef.current) {
       audioRef.current.pause()
-      if (audioRef.current.src && audioRef.current.src.startsWith('blob:')) {
-        URL.revokeObjectURL(audioRef.current.src)
-      }
     }
 
     try {
       setPlayingWordId(word._id)
-      const response = await ttsService.getDictionaryAudio(word._id, word.word, word.level)
-      const audioBlob = response
-      const audioUrl = URL.createObjectURL(audioBlob)
+      const audioUrl = await ttsService.getDictionaryAudio(word._id, word.word, word.level)
 
       if (!audioRef.current) {
         audioRef.current = new Audio()
@@ -125,11 +167,10 @@ const Dictionary = () => {
       audioRef.current.src = audioUrl
       audioRef.current.onended = () => {
         setPlayingWordId(null)
-        URL.revokeObjectURL(audioUrl)
       }
-      audioRef.current.onerror = () => {
+      audioRef.current.onerror = (e) => {
+        console.error("Audio error:", e)
         setPlayingWordId(null)
-        URL.revokeObjectURL(audioUrl)
       }
 
       await audioRef.current.play()
@@ -151,18 +192,21 @@ const Dictionary = () => {
       const response = await dictionaryService.getAllWords({ level: selectedLevel, limit: 100 })
       const levelWords = response.data.words || response.data || []
 
-      if (levelWords.length < 19) {
-        alert(`Nuk ka mjaft fjalë për nivelin ${selectedLevel}. Nevojiten të paktën 19 fjalë.`)
+      // Filter only unlocked words for quiz
+      const unlockedWords = levelWords.filter(w => w.isUnlocked)
+
+      if (unlockedWords.length < 19) {
+        alert(`Nevojiten të paktën 19 fjalë të zhbllokkuara për nivelin ${selectedLevel}. Ju keni ${unlockedWords.length} fjalë të zhbllokkuara.`)
         setQuizLoading(false)
         return
       }
 
-      const shuffled = [...levelWords].sort(() => Math.random() - 0.5)
+      const shuffled = [...unlockedWords].sort(() => Math.random() - 0.5)
       const selectedWords = shuffled.slice(0, 19)
-      setQuizWords(levelWords)
+      setQuizWords(unlockedWords)
 
       const questions = selectedWords.map((word) => {
-        const otherWords = levelWords.filter(w => w._id !== word._id)
+        const otherWords = unlockedWords.filter(w => w._id !== word._id)
         const wrongOptions = otherWords
           .sort(() => Math.random() - 0.5)
           .slice(0, 3)
@@ -195,13 +239,13 @@ const Dictionary = () => {
 
   const handleAnswerSelect = (answer) => {
     if (answerSubmitted) return
-    
+
     setSelectedAnswer(answer)
     setAnswerSubmitted(true)
-    
+
     const currentQuestion = quizQuestions[currentQuestionIndex]
     const isCorrect = answer === currentQuestion.correctAnswer
-    
+
     if (isCorrect) {
       setCorrectAnswers(prev => prev + 1)
     }
@@ -302,12 +346,16 @@ const Dictionary = () => {
   const getPartOfSpeechColor = (partOfSpeech) => {
     switch (partOfSpeech?.toLowerCase()) {
       case "noun":
+      case "emër":
         return "bg-blue-50 text-blue-700 border border-blue-200/50"
       case "verb":
+      case "folje":
         return "bg-green-50 text-green-700 border border-green-200/50"
       case "adjective":
+      case "mbiemër":
         return "bg-purple-50 text-purple-700 border border-purple-200/50"
       case "adverb":
+      case "ndajfolje":
         return "bg-orange-50 text-orange-700 border border-orange-200/50"
       default:
         return "bg-gray-50 text-gray-700 border border-gray-200/50"
@@ -317,6 +365,7 @@ const Dictionary = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
       <div className="max-w-7xl mx-auto p-2 md:p-4 space-y-4">
+        {/* Header */}
         <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-3 md:p-4">
           <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-emerald-100/30 to-teal-100/30 rounded-full blur-3xl -z-10" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-cyan-100/20 to-blue-100/20 rounded-full blur-3xl -z-10" />
@@ -330,31 +379,59 @@ const Dictionary = () => {
                 Fjalor Gjermanisht
               </h1>
               <p className="text-gray-600 text-xs md:text-sm lg:text-base leading-tight">
-                Eksploroni fjalorin gjermanisht të organizuar sipas niveleve të gjuhës
+                Zhbllokoni dhe mësoni fjalë të reja - 15 fjalë në ditë
               </p>
             </div>
           </div>
         </div>
 
+        {/* Unlock Stats Banner */}
+        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200/50 rounded-xl shadow-sm p-3 md:p-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg">
+                <Unlock className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-sm md:text-base font-bold text-gray-900">
+                  Zhbllokimet e sotme: {unlockStats.todayUnlocks} / 15
+                </p>
+                <p className="text-xs text-gray-600">
+                  {unlockStats.remainingUnlocks} fjalë të mbetura për sot
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-2xl md:text-3xl font-bold text-purple-600">
+                {unlockStats.remainingUnlocks}
+              </p>
+              <p className="text-xs text-gray-600">të mbetura</p>
+            </div>
+          </div>
+          {!unlockStats.canUnlock && (
+            <div className="mt-3 text-xs text-orange-700 bg-orange-50 rounded-lg p-2 border border-orange-200">
+              ⚠️ Keni arritur limitin ditor. Provoni përsëri pas 24 orësh.
+            </div>
+          )}
+        </div>
+
+        {/* Level Selection & Quiz Button */}
         <div className="bg-white/80 backdrop-blur-sm flex flex-col md:flex-row md:items-center gap-3 rounded-xl shadow-sm border border-gray-200/50 p-3 md:p-4">
           <div className="space-y-2 md:space-y-3 flex-1">
-            <div className="flex items-center gap-2 md:gap-3">
-              <div className="text-xs md:text-sm font-semibold text-gray-700">
-                Niveli i gjuhës
-              </div>
+            <div className="text-xs md:text-sm font-semibold text-gray-700">
+              Niveli i gjuhës
             </div>
             <div className="flex flex-wrap gap-1 md:gap-1.5">
               {levels.map((level) => (
                 <button
                   key={level}
                   onClick={() => handleLevelChange(level)}
-                  className={`px-2.5 md:px-3 py-1.5 md:py-2 rounded-lg text-xs font-semibold transition-all border ${
-                    selectedLevel === level
+                  className={`px-2.5 md:px-3 py-1.5 md:py-2 rounded-lg text-xs font-semibold transition-all border ${selectedLevel === level
                       ? level === "all"
                         ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-lg shadow-emerald-500/25"
                         : `${getLevelColor(level)} shadow-md`
                       : "bg-white text-gray-600 hover:bg-gray-50 border-gray-200 hover:border-gray-300"
-                  }`}
+                    }`}
                 >
                   {level === "all" ? "Të gjitha" : level}
                 </button>
@@ -362,49 +439,43 @@ const Dictionary = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={startQuiz}
-              disabled={quizLoading || selectedLevel === "all"}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                selectedLevel === "all"
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-                  : "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30"
+          <button
+            onClick={startQuiz}
+            disabled={quizLoading || selectedLevel === "all"}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${selectedLevel === "all"
+                ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
+                : "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30"
               }`}
-            >
-              {quizLoading ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <Play className="w-4 h-4" />
-              )}
-              <span>Fillo Kuizin</span>
-            </button>
-          </div>
+          >
+            {quizLoading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <Play className="w-4 h-4" />
+            )}
+            <span>Fillo Kuizin</span>
+          </button>
         </div>
 
+        {/* Favorites Toggle */}
         <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-3 md:p-4">
           <button
             onClick={handleFavoritesToggle}
-            className={`w-full md:w-auto flex items-center justify-center md:justify-start gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all ${
-              showFavorites
+            className={`w-full md:w-auto flex items-center justify-center md:justify-start gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 rounded-lg text-xs md:text-sm font-semibold transition-all ${showFavorites
                 ? "bg-gradient-to-r from-rose-500 to-pink-600 text-white shadow-lg shadow-rose-500/25"
                 : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
-            }`}
+              }`}
           >
             <Heart className={`h-3 w-3 md:h-3.5 md:w-3.5 ${showFavorites ? "fill-current" : ""}`} />
             <span>Të Preferuarat</span>
             {favorites.length > 0 && (
-              <span
-                className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${
-                  showFavorites ? "bg-white/20" : "bg-rose-50 text-rose-600"
-                }`}
-              >
+              <span className={`px-1.5 py-0.5 rounded-full text-xs font-bold ${showFavorites ? "bg-white/20" : "bg-rose-50 text-rose-600"}`}>
                 {favorites.length}
               </span>
             )}
           </button>
         </div>
 
+        {/* Words Grid */}
         {loading ? (
           <div className="flex items-center justify-center min-h-[300px]">
             <div className="text-center space-y-3">
@@ -421,66 +492,112 @@ const Dictionary = () => {
               const isFavorite = favorites.some((fav) => fav._id === word._id)
               const firstExample = word.examples && word.examples.length > 0 ? word.examples[0] : null
               const isPlaying = playingWordId === word._id
+              const isLocked = !word.isUnlocked
 
               return (
                 <div
                   key={word._id}
-                  className="group relative bg-white rounded-xl shadow-sm border border-gray-200/50 hover:shadow-lg hover:border-emerald-200/50 transition-all duration-300 p-3 flex flex-col h-full"
+                  className={`group relative bg-white rounded-xl shadow-sm border transition-all duration-300 p-3 flex flex-col h-full ${
+                    isLocked 
+                      ? "border-gray-300 opacity-75" 
+                      : "border-gray-200/50 hover:shadow-lg hover:border-emerald-200/50"
+                  }`}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                  {!isLocked && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                  )}
 
                   <div className="relative flex flex-col h-full">
-                    <div className="flex items-start justify-between gap-2 mb-3">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-base font-bold text-gray-900 mb-1 leading-tight">{word.word}</h3>
-                        <p className="text-gray-600 text-xs font-medium leading-tight">{word.translation}</p>
-                      </div>
-                      <div className="flex items-center gap-0.5 flex-shrink-0">
+                    {/* Lock Overlay */}
+                    {isLocked && (
+                      <div className="absolute inset-0 bg-gradient-to-br from-gray-50/95 to-slate-50/95 backdrop-blur-sm rounded-xl z-10 flex flex-col items-center justify-center p-4">
+                        <Lock className="w-8 h-8 text-gray-400 mb-2" />
                         <button
-                          onClick={() => playPronunciation(word)}
-                          className={`p-1.5 rounded-lg transition-all ${
-                            isPlaying 
-                              ? "text-emerald-600 bg-emerald-100" 
-                              : "text-gray-400 hover:text-emerald-600 hover:bg-emerald-50"
+                          onClick={() => handleUnlockWord(word._id)}
+                          disabled={unlocking === word._id || !unlockStats.canUnlock}
+                          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all ${
+                            unlocking === word._id
+                              ? "bg-gray-200 text-gray-500 cursor-wait"
+                              : !unlockStats.canUnlock
+                              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                              : "bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:shadow-xl"
                           }`}
-                          title="Luaj shqiptimin"
                         >
-                          <Volume2 className={`h-3.5 w-3.5 ${isPlaying ? 'animate-pulse' : ''}`} />
+                          {unlocking === word._id ? (
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                              <span>Duke zhbllokuar...</span>
+                            </div>
+                          ) : (
+                            "Zhblloko Fjalën"
+                          )}
                         </button>
-                        <button
-                          onClick={() => toggleFavorite(word._id)}
-                          className={`p-1.5 rounded-lg transition-all ${
-                            isFavorite
-                              ? "text-rose-500 bg-rose-50"
-                              : "text-gray-400 hover:text-rose-500 hover:bg-rose-50"
-                          }`}
-                          title={isFavorite ? "Hiq nga të preferuarat" : "Shto te të preferuarat"}
-                        >
-                          <Heart className={`h-3.5 w-3.5 ${isFavorite ? "fill-current" : ""}`} />
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-                      <span className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${getLevelColor(word.level)}`}>
-                        {word.level}
-                      </span>
-                      {word.partOfSpeech && (
-                        <span
-                          className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${getPartOfSpeechColor(word.partOfSpeech)}`}
-                        >
-                          {word.partOfSpeech}
-                        </span>
-                      )}
-                    </div>
-
-                    {firstExample && firstExample.german && (
-                      <div className="mt-auto bg-gradient-to-br from-emerald-50/50 to-teal-50/50 rounded-lg p-2 border border-emerald-200/30">
-                        <p className="text-gray-700 text-xs italic leading-tight line-clamp-3">
-                          "{firstExample.german}"
-                        </p>
+                        {!unlockStats.canUnlock && (
+                          <p className="text-xs text-gray-500 mt-2 text-center">
+                            Limiti ditor u arrit
+                          </p>
+                        )}
                       </div>
                     )}
+
+                    {/* Word Content */}
+                    <div className={`${isLocked ? "blur-sm" : ""}`}>
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-base font-bold text-gray-900 mb-1 leading-tight">{word.word}</h3>
+                          <p className="text-gray-600 text-xs font-medium leading-tight">{word.translation}</p>
+                        </div>
+                        <div className="flex items-center gap-0.5 flex-shrink-0">
+                          <button
+                            onClick={() => playPronunciation(word)}
+                            disabled={isLocked}
+                            className={`p-1.5 rounded-lg transition-all ${
+                              isLocked
+                                ? "opacity-50 cursor-not-allowed"
+                                : isPlaying
+                                ? "text-emerald-600 bg-emerald-100"
+                                : "text-gray-400 hover:text-emerald-600 hover:bg-emerald-50"
+                            }`}
+                            title="Luaj shqiptimin"
+                          >
+                            <Volume2 className={`h-3.5 w-3.5 ${isPlaying ? 'animate-pulse' : ''}`} />
+                          </button>
+                          <button
+                            onClick={() => toggleFavorite(word._id)}
+                            disabled={isLocked}
+                            className={`p-1.5 rounded-lg transition-all ${
+                              isLocked
+                                ? "opacity-50 cursor-not-allowed"
+                                : isFavorite
+                                ? "text-rose-500 bg-rose-50"
+                                : "text-gray-400 hover:text-rose-500 hover:bg-rose-50"
+                            }`}
+                            title={isFavorite ? "Hiq nga të preferuarat" : "Shto te të preferuarat"}
+                          >
+                            <Heart className={`h-3.5 w-3.5 ${isFavorite ? "fill-current" : ""}`} />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+                        <span className={`px-2 py-0.5 rounded-lg text-xs font-bold border ${getLevelColor(word.level)}`}>
+                          {word.level}
+                        </span>
+                        {word.partOfSpeech && (
+                          <span className={`px-2 py-0.5 rounded-lg text-xs font-semibold ${getPartOfSpeechColor(word.partOfSpeech)}`}>
+                            {word.partOfSpeech}
+                          </span>
+                        )}
+                      </div>
+
+                      {firstExample && firstExample.german && (
+                        <div className="mt-auto bg-gradient-to-br from-emerald-50/50 to-teal-50/50 rounded-lg p-2 border border-emerald-200/30">
+                          <p className="text-gray-700 text-xs italic leading-tight line-clamp-3">
+                            "{firstExample.german}"
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )
@@ -488,6 +605,7 @@ const Dictionary = () => {
           </div>
         )}
 
+        {/* Pagination */}
         {totalPages > 1 && !loading && (
           <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-4">
             <div className="flex flex-col md:flex-row items-center justify-between gap-3">
@@ -500,11 +618,10 @@ const Dictionary = () => {
                 <button
                   onClick={handlePreviousPage}
                   disabled={currentPage === 1}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    currentPage === 1
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${currentPage === 1
                       ? "bg-gray-50 text-gray-400 cursor-not-allowed border border-gray-200"
                       : "bg-white text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-200 hover:border-emerald-200 shadow-sm"
-                  }`}
+                    }`}
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">E mëparshme</span>
@@ -527,11 +644,10 @@ const Dictionary = () => {
                       <button
                         key={pageNum}
                         onClick={() => handlePageChange(pageNum)}
-                        className={`min-w-[32px] px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                          currentPage === pageNum
+                        className={`min-w-[32px] px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${currentPage === pageNum
                             ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25"
                             : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 hover:border-gray-300"
-                        }`}
+                          }`}
                       >
                         {pageNum}
                       </button>
@@ -542,11 +658,10 @@ const Dictionary = () => {
                 <button
                   onClick={handleNextPage}
                   disabled={currentPage === totalPages}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    currentPage === totalPages
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${currentPage === totalPages
                       ? "bg-gray-50 text-gray-400 cursor-not-allowed border border-gray-200"
                       : "bg-white text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 border border-gray-200 hover:border-emerald-200 shadow-sm"
-                  }`}
+                    }`}
                 >
                   <span className="hidden sm:inline">E ardhshme</span>
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -556,6 +671,7 @@ const Dictionary = () => {
           </div>
         )}
 
+        {/* Empty State */}
         {filteredWords.length === 0 && !loading && (
           <div className="flex items-center justify-center min-h-[300px]">
             <div className="text-center max-w-md">
@@ -576,6 +692,7 @@ const Dictionary = () => {
         )}
       </div>
 
+      {/* Quiz Modal */}
       {showQuiz && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
@@ -660,11 +777,10 @@ const Dictionary = () => {
                 </>
               ) : (
                 <div className="text-center py-6">
-                  <div className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center ${
-                    correctAnswers >= 12 
-                      ? "bg-gradient-to-br from-emerald-400 to-teal-500" 
+                  <div className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center ${correctAnswers >= 12
+                      ? "bg-gradient-to-br from-emerald-400 to-teal-500"
                       : "bg-gradient-to-br from-orange-400 to-red-500"
-                  }`}>
+                    }`}>
                     {correctAnswers >= 12 ? (
                       <Trophy className="w-10 h-10 text-white" />
                     ) : (

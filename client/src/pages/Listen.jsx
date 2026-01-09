@@ -171,58 +171,48 @@ const Listen = () => {
   }, [tests])
 
 const playAudio = async () => {
-  if (isPlaying && audioRef.current) {
-    audioRef.current.pause()
-    audioRef.current.currentTime = 0
-    setIsPlaying(false)
-    return
-  }
-
-  try {
-    setIsPlaying(true)
-
-    console.log("[TTS] Requesting audio for test:", selectedTest._id)
-
-    const audioBlob = await ttsService.getAudio(
-      selectedTest._id,
-      selectedTest.text,
-      selectedTest.level
-    )
-
-    console.log("[TTS] Audio blob:", audioBlob?.size, "bytes")
-
-    const audioUrl = URL.createObjectURL(audioBlob)
-
-    if (!audioRef.current) {
-      audioRef.current = new Audio()
-    }
-
-    if (audioRef.current.src && audioRef.current.src.startsWith('blob:')) {
-      URL.revokeObjectURL(audioRef.current.src)
-    }
-
-    audioRef.current.src = audioUrl
-
-    audioRef.current.onended = () => {
-      console.log("[TTS] Audio playback ended")
+    if (isPlaying && audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
       setIsPlaying(false)
-      URL.revokeObjectURL(audioUrl)
+      return
     }
 
-    audioRef.current.onerror = (e) => {
-      console.error("[TTS] Audio element error:", e)
+    try {
+      setIsPlaying(true)
+
+      console.log("[TTS] Requesting audio for test:", selectedTest._id)
+
+      // Get the signed URL from GCS (no longer a blob)
+      const audioUrl = await ttsService.getAudio(selectedTest._id, selectedTest.text, selectedTest.level)
+
+      console.log("[TTS] Audio URL received:", audioUrl)
+
+      if (!audioRef.current) {
+        audioRef.current = new Audio()
+      }
+
+      // Use the signed URL directly (no createObjectURL needed)
+      audioRef.current.src = audioUrl
+
+      audioRef.current.onended = () => {
+        console.log("[TTS] Audio playback ended")
+        setIsPlaying(false)
+      }
+
+      audioRef.current.onerror = (e) => {
+        console.error("[TTS] Audio element error:", e)
+        setIsPlaying(false)
+      }
+
+      await audioRef.current.play()
+      console.log("[TTS] Audio playback started")
+    } catch (error) {
+      console.error("[TTS] Error:", error)
       setIsPlaying(false)
-      URL.revokeObjectURL(audioUrl)
+      alert("Gabim në luajtjen e audios. Provoni përsëri.")
     }
-
-    await audioRef.current.play()
-    console.log("[TTS] Audio playback started")
-  } catch (error) {
-    console.error("[TTS] Error:", error)
-    setIsPlaying(false)
-    alert("Gabim në luajtjen e audios. Provoni përsëri.")
   }
-}
   const handleSubmit = async () => {
     if (!userAnswer.trim()) return
     try {

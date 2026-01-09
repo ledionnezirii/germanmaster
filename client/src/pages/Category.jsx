@@ -226,14 +226,16 @@ const Category = () => {
     try {
       setLoadingAudioIndex(index)
       
-      const audioBlob = await ttsService.getCategoryAudio(
+      // Backend returns { url: signedUrl }, not a Blob
+      const response = await ttsService.getCategoryAudio(
         selectedCategory.id,
         index,
         wordObj.word,
         selectedCategory.level || "A1"
       )
       
-      const audioUrl = URL.createObjectURL(audioBlob)
+      // Extract the URL from the response
+      const audioUrl = response.url || response.data?.url || response
       
       setAudioCache(prev => ({
         ...prev,

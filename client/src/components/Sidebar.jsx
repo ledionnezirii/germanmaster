@@ -83,7 +83,7 @@ const Sidebar = () => {
     { icon: Calendar, label: "PlanProgrami", path: "/plan", requireAuth: true },
     /*{ icon: User, label: "Menaxho", path: "/academies", requireAuth: true },*/
     /*{ icon: Sword, label: "Garo", path: "/race", requireAuth: true },*/
-    { icon: SpeakerIcon, label: "Dialoge te ndryshme", path: "/dialogue", requireAuth: true },
+    /*{ icon: SpeakerIcon, label: "Dialoge te ndryshme", path: "/dialogue", requireAuth: true },*/
 
 
     { icon: User, label: "Llogaria", path: "/account", requireAuth: true },

@@ -396,7 +396,6 @@ const Account = () => {
               <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
                 {user.firstName} {user.lastName}
               </h1>
-              <div className="bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-xs font-bold">PRO</div>
             </div>
             <p className="text-gray-600 mt-2 flex items-center gap-2 justify-center md:justify-start">
               <User className="h-4 w-4" />

@@ -287,11 +287,21 @@ const Phrase = () => {
     try {
       setPlayingPhraseId(phraseId)
       const response = await ttsService.getPhraseAudio(phraseId, phrase.german, selectedLevel)
-      const audioBlob = response.data || response
       
-      if (!audioBlob || !audioBlob.size) throw new Error("Invalid audio response")
+      // Backend returns { url: "signed-url" } or { data: { url: "signed-url" } }
+      let audioUrl = null
       
-      const audioUrl = URL.createObjectURL(audioBlob)
+      if (typeof response === 'string') {
+        audioUrl = response
+      } else if (response?.url) {
+        audioUrl = response.url
+      } else if (response?.data?.url) {
+        audioUrl = response.data.url
+      }
+      
+      if (!audioUrl) {
+        throw new Error("No audio URL in response")
+      }
 
       if (!audioRef.current) {
         audioRef.current = new Audio()
@@ -300,17 +310,24 @@ const Phrase = () => {
       audioRef.current.src = audioUrl
       audioRef.current.onended = () => {
         setPlayingPhraseId(null)
-        URL.revokeObjectURL(audioUrl)
       }
-      audioRef.current.onerror = () => {
+      audioRef.current.onerror = (e) => {
+        console.error("[TTS] Audio playback error:", e)
         setPlayingPhraseId(null)
-        URL.revokeObjectURL(audioUrl)
+        // Fallback to browser TTS
+        if ("speechSynthesis" in window) {
+          const utterance = new SpeechSynthesisUtterance(phrase.german)
+          utterance.lang = "de-DE"
+          utterance.rate = 0.8
+          window.speechSynthesis.speak(utterance)
+        }
       }
 
       await audioRef.current.play()
     } catch (error) {
       console.error("[TTS] Error:", error)
       setPlayingPhraseId(null)
+      // Fallback to browser's built-in speech synthesis
       if ("speechSynthesis" in window) {
         const utterance = new SpeechSynthesisUtterance(phrase.german)
         utterance.lang = "de-DE"
