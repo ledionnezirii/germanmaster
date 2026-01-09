@@ -3,22 +3,32 @@ const {
   getAllWords,
   getWordsByLevel,
   getWordById,
+  unlockWord,
+  getUnlockStats,
+  getMyUnlockedWords,
   addWord,
   addMultipleWords,
   updateWord,
   deleteWord,
   searchWords,
 } = require("../controllers/dictionaryController")
-const  auth  = require("../middleware/auth")
+const auth = require("../middleware/auth")
 const isAdmin = require("../middleware/isAdmin")
 const { validateWord } = require("../middleware/validation")
 
 const router = express.Router()
 
 // Public routes
-router.get("/", getAllWords)
-router.get("/search", searchWords)
-router.get("/level/:level", getWordsByLevel)
+router.get("/", auth,getAllWords)
+router.get("/search", auth,searchWords)
+router.get("/level/:level", auth,getWordsByLevel)
+
+// Protected user routes - unlock features (MUST come BEFORE /:id route!)
+router.get("/unlocks/stats", auth, getUnlockStats)
+router.get("/unlocks/my", auth, getMyUnlockedWords)
+router.post("/:id/unlock", auth, unlockWord)
+
+// This MUST come after the specific routes above
 router.get("/:id", getWordById)
 
 // Protected admin routes

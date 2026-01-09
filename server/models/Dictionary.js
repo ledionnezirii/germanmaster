@@ -1,4 +1,5 @@
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
+
 
 const dictionarySchema = new mongoose.Schema(
   {
@@ -29,10 +30,8 @@ const dictionarySchema = new mongoose.Schema(
     partOfSpeech: {
       type: String,
       enum: [
-        // English terms
         "noun", "verb", "adjective", "adverb", "preposition", 
         "conjunction", "interjection", "article","pronoun",
-        // Albanian terms
         "emër", "folje", "mbiemër", "ndajfolje", "parafjalë", 
         "lidhëz", "thirrje", "nyjë","përemër",
       ],
@@ -45,7 +44,7 @@ const dictionarySchema = new mongoose.Schema(
           required: true,
           trim: true,
         },
-        albanian: {  // Changed from 'english' to 'albanian'
+        albanian: {
           type: String,
           required: true,
           trim: true,
@@ -65,6 +64,20 @@ const dictionarySchema = new mongoose.Schema(
         trim: true,
       },
     ],
+    // Unlock tracking - array of user unlocks
+    unlocks: [
+      {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        unlockedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -82,6 +95,7 @@ const dictionarySchema = new mongoose.Schema(
 // Indexes for better performance
 dictionarySchema.index({ word: 1 })
 dictionarySchema.index({ level: 1 })
+dictionarySchema.index({ "unlocks.userId": 1 })
 dictionarySchema.index({ word: "text", translation: "text" })
 
 module.exports = mongoose.model("Dictionary", dictionarySchema)

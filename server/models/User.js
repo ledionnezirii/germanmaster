@@ -272,6 +272,19 @@ const userSchema = new mongoose.Schema(
         ref: "Dialogue",
       },
     ],
+    dictionaryUnlockedWords: [
+  {
+    wordId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Dictionary",
+      required: true,
+    },
+    unlockedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+],
     planProgress: [
       {
         level: {

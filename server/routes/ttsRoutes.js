@@ -20,8 +20,10 @@ router.post('/dialogue/pre-generate', protect, ttsController.preGenerateDialogue
 
 // Check if audio exists (generic)
 router.get('/check/:id', protect, ttsController.checkAudio);
-
+router.post('/category/:categoryId/:wordIndex', ttsController.getCategoryAudio);
 // Pre-generate audio (admin)
 router.post('/pre-generate', protect, ttsController.preGenerateAudio);
+router.post('/category/pre-generate', ttsController.preGenerateCategoryAudio);
+
 
 module.exports = router;

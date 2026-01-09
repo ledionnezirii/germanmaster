@@ -3,11 +3,11 @@ const PDFDocument = require("pdfkit")
 const fs = require("fs")
 const path = require("path")
 
-const generateSerialNumber = (level, userId) => {
+const generateSerialNumber = (level) => {
   const year = new Date().getFullYear()
-  const userIdShort = userId.toString().slice(-4).toUpperCase()
-  const randomCode = Math.random().toString(36).substring(2, 6).toUpperCase()
-  return `${year}-${level}-${userIdShort}-${randomCode}`
+  const month = String(new Date().getMonth() + 1).padStart(2, '0')
+  const randomCode = Math.random().toString(36).substring(2, 8).toUpperCase()
+  return `GLC-${year}${month}-${level}-${randomCode}`
 }
 
 // Helper function to generate certificate PDF
@@ -29,101 +29,115 @@ const generateCertificatePDF = async (user, level, serialNumber) => {
       // Set page margins to zero
       doc.page.margins = { top: 0, bottom: 0, left: 0, right: 0 }
 
-      // Background colors and borders
-      doc.rect(0, 0, 842, 595).fill("#1a2332")
-      doc.rect(15, 15, 812, 565).fill("#f5f1e8")
-      doc.strokeColor("#c9a961").lineWidth(2).rect(45, 35, 752, 525).stroke()
+      // Elegant gradient-like background with layers
+      doc.rect(0, 0, 842, 595).fill("#0f1419")
+      doc.rect(20, 20, 802, 555).fill("#ffffff")
+      
+      // Outer gold border
+      doc.strokeColor("#d4af37").lineWidth(3).rect(35, 35, 772, 525).stroke()
+      
+      // Inner elegant border
+      doc.strokeColor("#b8960f").lineWidth(1).rect(45, 45, 752, 505).stroke()
 
-      // Decorative corners
-      doc.fillColor("#c9a961")
-      // Top left corner
-      doc.moveTo(50, 60).bezierCurveTo(55, 50, 60, 45, 70, 50).bezierCurveTo(60, 55, 55, 60, 50, 70).fill()
-      // Top right corner
-      doc.moveTo(792, 60).bezierCurveTo(787, 50, 782, 45, 772, 50).bezierCurveTo(782, 55, 787, 60, 792, 70).fill()
-      // Bottom left corner
-      doc.moveTo(50, 535).bezierCurveTo(55, 545, 60, 550, 70, 545).bezierCurveTo(60, 540, 55, 535, 50, 525).fill()
-      // Bottom right corner
-      doc
-        .moveTo(792, 535)
-        .bezierCurveTo(787, 545, 782, 550, 772, 545)
-        .bezierCurveTo(782, 540, 787, 535, 792, 525)
-        .fill()
+      // Decorative corner elements - more refined
+      doc.fillColor("#d4af37")
+      
+      // Top corners - elegant flourish
+      doc.moveTo(55, 55).lineTo(55, 85).lineTo(52, 85).lineTo(52, 52).lineTo(85, 52).lineTo(85, 55).fill()
+      doc.moveTo(787, 55).lineTo(787, 85).lineTo(790, 85).lineTo(790, 52).lineTo(757, 52).lineTo(757, 55).fill()
+      
+      // Bottom corners - elegant flourish
+      doc.moveTo(55, 540).lineTo(55, 510).lineTo(52, 510).lineTo(52, 543).lineTo(85, 543).lineTo(85, 540).fill()
+      doc.moveTo(787, 540).lineTo(787, 510).lineTo(790, 510).lineTo(790, 543).lineTo(757, 543).lineTo(757, 540).fill()
 
-      const logoSize = 80 // Reduced from 100 to prevent overlap with decorative elements
-      const logoX = (842 - logoSize) / 2 // center horizontally
-      const logoY = 75 // moved down from 60 to give more space from top border and decorative corners
+      // Logo with elegant circular frame
+      const logoSize = 85
+      const logoX = (842 - logoSize) / 2
+      const logoY = 70
 
+      // Gold circle around logo
+      doc.strokeColor("#d4af37").lineWidth(2).circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2 + 3).stroke()
+      
       doc.save()
       doc.circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2).clip()
       doc.image(path.join(__dirname, "../public/images/logo.png"), logoX, logoY, { width: logoSize })
       doc.restore()
 
-      doc.fontSize(38).fillColor("#1a2332").font("Times-Bold").text("CERTIFIKATË E PËRFUNDIMIT", 0, 180, {
+      // Decorative line under logo
+      doc.strokeColor("#d4af37").lineWidth(1)
+      doc.moveTo(321, 175).lineTo(521, 175).stroke()
+
+      // Main title - more elegant spacing
+      doc.fontSize(42).fillColor("#0f1419").font("Times-Bold").text("CERTIFIKATË E PËRFUNDIMIT", 0, 195, {
+        align: "center",
+        width: 842,
+        characterSpacing: 1
+      })
+
+      // Decorative line under title
+      doc.strokeColor("#d4af37").lineWidth(1)
+      doc.moveTo(321, 245).lineTo(521, 245).stroke()
+
+      // Intro text - refined
+      doc.fontSize(14).fillColor("#4a5568").font("Times-Italic").text("Me kënaqësi vërtetojmë se", 0, 265, {
         align: "center",
         width: 842,
       })
 
-      // Intro text
-      doc
-        .fontSize(13)
-        .fillColor("#4a4a4a")
-        .font("Times-Roman")
-        .text("Me anë të kësaj certifikatë vërtetohet se", 0, 230, {
-          align: "center",
-          width: 842,
-        })
-
-      // User name
-      doc.fontSize(48).fillColor("#c9a961").font("Times-Bold").text(`${user.emri} ${user.mbiemri}`, 0, 265, {
+      // User name - more prominent and elegant
+      doc.fontSize(52).fillColor("#d4af37").font("Times-Bold").text(`${user.emri} ${user.mbiemri}`, 0, 295, {
         align: "center",
         width: 842,
+        characterSpacing: 0.5
       })
+
+      // Decorative accent under name
+      doc.fillColor("#d4af37")
+      doc.moveTo(371, 355).lineTo(421, 358).lineTo(471, 355).fill()
 
       // Completion text
-      doc.fontSize(15).fillColor("#4a4a4a").font("Times-Roman").text("ka përfunduar me sukses kursin e", 0, 325, {
+      doc.fontSize(16).fillColor("#4a5568").font("Times-Roman").text("ka përfunduar me sukses programin e gjuhës gjermane", 0, 375, {
         align: "center",
         width: 842,
       })
 
-      // Course name
-      doc.fontSize(26).fillColor("#1a2332").font("Times-Bold").text("Gjuha Gjermane", 0, 355, {
+      // Level badge - elegant design
+      doc.fontSize(72).fillColor("#0f1419").font("Times-Bold").text(level, 0, 410, {
         align: "center",
         width: 842,
+        characterSpacing: 2
       })
 
-      // Level
-      doc.fontSize(80).fillColor("#c9a961").font("Times-Bold").text(level, 0, 395, {
-        align: "center",
-        width: 842,
-      })
+      // Decorative elements around level
+      doc.strokeColor("#d4af37").lineWidth(2)
+      doc.moveTo(300, 455).lineTo(370, 455).stroke()
+      doc.moveTo(472, 455).lineTo(542, 455).stroke()
 
-      // Issue date (moved a bit up)
+      // Issue date section - refined
       const issueDate = new Date().toLocaleDateString("sq-AL", {
         day: "numeric",
         month: "long",
         year: "numeric",
       })
-      doc.fontSize(14).fillColor("#4a4a4a").font("Times-Roman").text(`${issueDate}`, 0, 485, {
+      
+      doc.fontSize(15).fillColor("#2d3748").font("Times-Roman").text(issueDate, 0, 488, {
         align: "center",
         width: 842,
       })
 
-      doc.fontSize(11).fillColor("#6a6a6a").font("Times-Italic").text("Data e Lëshimit", 0, 505, {
-        align: "center",
-        width: 842,
-      })
-
-      // Footer block (moved a bit up)
-      doc.rect(350, 540, 142, 20).fill("#e8d68a")
-      doc.fontSize(11).fillColor("#4a4a4a").font("Times-Roman").text("German Learn Website", 350, 545, {
-        width: 142,
-        align: "center",
-      })
-
-      // Serial number (moved up to avoid page break)
-      doc.fontSize(10).fillColor("#d97706").font("Times-Roman").text(`Nr. Serie: ${serialNumber}`, 0, 570, {
+      // Serial number - top right, elegant
+      doc.fontSize(9).fillColor("#718096").font("Times-Italic").text(`Nr. Serie: ${serialNumber}`, 0, 60, {
         align: "right",
-        width: 792,
+        width: 772,
+      })
+
+      // Bottom signature line - refined
+      doc.strokeColor("#2d3748").lineWidth(1)
+      doc.moveTo(321, 530).lineTo(521, 530).stroke()
+      
+      doc.fontSize(11).fillColor("#4a5568").font("Times-Italic").text("Drejtori i Programit", 0, 538, {
+        align: "center",
+        width: 842,
       })
 
       doc.end()
@@ -146,7 +160,6 @@ exports.checkAndIssueCertificate = async (req, res) => {
   try {
     console.log("[v0] ===== CERTIFICATE ISSUE REQUEST =====")
     console.log("[v0] Request user:", req.user?.id)
-    console.log("[v0] Request headers:", req.headers)
 
     const userId = req.user.id
     const user = await User.findById(userId)
@@ -159,8 +172,6 @@ exports.checkAndIssueCertificate = async (req, res) => {
     const currentLevel = user.level
     console.log("[v0] User found:", user.emri, user.mbiemri)
     console.log("[v0] User current level:", currentLevel)
-    console.log("[v0] User XP:", user.xp)
-    console.log("[v0] User completed tests:", user.completedTests)
 
     if (!currentLevel) {
       console.log("[v0] No certificate issued - level is null")
@@ -170,14 +181,10 @@ exports.checkAndIssueCertificate = async (req, res) => {
       })
     }
 
-    console.log("[v0] Checking existing certificates...")
-    console.log("[v0] User has", user.certificates?.length || 0, "certificates")
-
     const existingCertificate = user.certificates.find((cert) => cert.level === currentLevel)
 
     if (existingCertificate) {
       console.log("[v0] Certificate already exists for level:", currentLevel)
-      console.log("[v0] Existing certificate:", existingCertificate)
       return res.status(200).json({
         success: true,
         message: "Certifikata tashmë ekziston për këtë nivel",
@@ -185,18 +192,11 @@ exports.checkAndIssueCertificate = async (req, res) => {
       })
     }
 
-    console.log("[v0] No existing certificate found, generating new one...")
-    console.log("[v0] Generating certificate PDF for level:", currentLevel)
+    console.log("[v0] Generating new certificate for level:", currentLevel)
 
-    const serialNumber = generateSerialNumber(currentLevel, userId)
-    console.log("[v0] Generated serial number:", serialNumber)
-
-    // Generate certificate PDF with serial number
+    const serialNumber = generateSerialNumber(currentLevel)
     const filePath = await generateCertificatePDF(user, currentLevel, serialNumber)
 
-    console.log("[v0] Certificate PDF generated:", filePath)
-
-    console.log("[v0] Adding certificate to user...")
     user.certificates.push({
       level: currentLevel,
       filePath: filePath,
@@ -204,14 +204,11 @@ exports.checkAndIssueCertificate = async (req, res) => {
       issuedAt: new Date(),
     })
 
-    console.log("[v0] Saving user with new certificate...")
     await user.save()
 
-    console.log("[v0] Certificate saved to user successfully")
-    console.log("[v0] User now has", user.certificates.length, "certificates")
+    console.log("[v0] Certificate created successfully")
 
     const newCertificate = user.certificates[user.certificates.length - 1]
-    console.log("[v0] New certificate:", newCertificate)
 
     res.status(201).json({
       success: true,
@@ -219,9 +216,7 @@ exports.checkAndIssueCertificate = async (req, res) => {
       certificate: newCertificate,
     })
   } catch (error) {
-    console.error("[v0] ===== CERTIFICATE ISSUE ERROR =====")
     console.error("[v0] Error issuing certificate:", error)
-    console.error("[v0] Error stack:", error.stack)
     res.status(500).json({ success: false, message: "Gabim në krijimin e certifikatës", error: error.message })
   }
 }
@@ -229,17 +224,12 @@ exports.checkAndIssueCertificate = async (req, res) => {
 // Get all certificates for a user
 exports.getUserCertificates = async (req, res) => {
   try {
-    console.log("[v0] Getting certificates for user:", req.user?.id)
-
     const userId = req.user.id
     const user = await User.findById(userId).select("certificates emri mbiemri level")
 
     if (!user) {
-      console.log("[v0] User not found:", userId)
       return res.status(404).json({ success: false, message: "Përdoruesi nuk u gjet" })
     }
-
-    console.log("[v0] Found user certificates:", user.certificates.length)
 
     res.status(200).json({
       success: true,
@@ -273,7 +263,7 @@ exports.downloadCertificate = async (req, res) => {
       return res.status(404).json({ success: false, message: "Skedari i certifikatës nuk u gjet" })
     }
 
-    res.download(filePath, `Certifikata_${certificate.level}.pdf`)
+    res.download(filePath, `Certifikata_${certificate.level}_${user.emri}_${user.mbiemri}.pdf`)
   } catch (error) {
     console.error("Error downloading certificate:", error)
     res.status(500).json({ success: false, message: "Gabim në shkarkimin e certifikatës" })
@@ -299,7 +289,7 @@ exports.generateCertificateForLevel = async (req, res) => {
       return res.status(400).json({ success: false, message: "Certifikata tashmë ekziston për këtë nivel" })
     }
 
-    const serialNumber = generateSerialNumber(level, userId)
+    const serialNumber = generateSerialNumber(level)
     const filePath = await generateCertificatePDF(user, level, serialNumber)
 
     user.certificates.push({
