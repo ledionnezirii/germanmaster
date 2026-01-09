@@ -4,13 +4,27 @@ const { Storage } = require("@google-cloud/storage")
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY
 const ELEVENLABS_VOICE_ID = "NE7AIW5DoJ7lUosXV2KR"
 
-let storageConfig = {}
-if (process.env.GOOGLE_CREDENTIALS_JSON) {
-  storageConfig.credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON)
-} else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-  storageConfig.keyFilename = process.env.GOOGLE_APPLICATION_CREDENTIALS
+let storage;
+try {
+  let storageConfig = {}
+  
+  if (process.env.GOOGLE_CREDENTIALS_JSON) {
+    console.log("[TTS] Using GOOGLE_CREDENTIALS_JSON")
+    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON)
+    storageConfig = { credentials }
+  } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    console.log("[TTS] Using GOOGLE_APPLICATION_CREDENTIALS file path")
+    storageConfig = { keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS }
+  } else {
+    console.error("[TTS] WARNING: No Google credentials found!")
+  }
+  
+  storage = new Storage(storageConfig)
+  console.log("[TTS] Google Cloud Storage initialized successfully")
+} catch (error) {
+  console.error("[TTS] Failed to initialize Google Cloud Storage:", error.message)
+  throw error
 }
-const storage = new Storage(storageConfig)
 
 const bucketName = process.env.BUCKET_NAME
 const bucket = storage.bucket(bucketName)

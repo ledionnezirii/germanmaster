@@ -55,7 +55,7 @@ exports.createCheckoutSession = async (req, res) => {
     if (existingPayment) {
       const now = new Date()
       const expiresAt = new Date(existingPayment.expiresAt)
-      const daysRemaining = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24))
+      const daysRemaining = Math.max(0, Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24)))
 
       console.log("[v0] ⚠️ User already has active subscription:", existingPayment._id)
       console.log("[v0] ⚠️ Subscription type:", existingPayment.subscriptionType)
@@ -68,7 +68,7 @@ exports.createCheckoutSession = async (req, res) => {
         data: {
           subscriptionType: existingPayment.subscriptionType,
           expiresAt: existingPayment.expiresAt,
-          daysRemaining: Math.max(0, daysRemaining),
+          daysRemaining: daysRemaining,
           status: existingPayment.status,
         },
       })
@@ -263,8 +263,6 @@ exports.handleWebhook = async (req, res) => {
   }
 }
 
-
-
 const handleTransactionCompleted = async (event) => {
   console.log("\n[v0] ===================== TRANSACTION COMPLETED =====================")
 
@@ -343,7 +341,7 @@ const handleTransactionCompleted = async (event) => {
     let durationDays = 30
     let matched = false
 
-const transactionBillingCycle = data.billing_cycle || data.items?.[0]?.price?.billing_cycle
+    const transactionBillingCycle = data.billing_cycle || data.items?.[0]?.price?.billing_cycle
 
     if (transactionBillingCycle) {
       console.log("[v0] 🔍 Using billing cycle from transaction:", JSON.stringify(transactionBillingCycle))
@@ -480,26 +478,39 @@ const transactionBillingCycle = data.billing_cycle || data.items?.[0]?.price?.bi
       duration: durationDays + " days",
     })
 
-    const billingPeriod = data.billing_period || data.current_billing_period
-let expiresAt
-let nextBillingDate
+    // ============ CRITICAL FIX FOR NEGATIVE DAYS ISSUE ============
+    // ALWAYS calculate from NOW for new purchases to avoid negative days
+    const now = new Date()
+    let expiresAt
+    let nextBillingDate
 
-if (billingPeriod?.ends_at) {
-  expiresAt = new Date(billingPeriod.ends_at)
-  nextBillingDate = new Date(billingPeriod.ends_at)
-  console.log("[v0] ✅ Using Paddle billing period end date:", expiresAt.toISOString())
-} else {
-  // Fallback to manual calculation
-  const now = new Date()
-  expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
-  nextBillingDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
-  console.log("[v0] ⚠️ Fallback: calculated expiresAt:", expiresAt.toISOString())
-}
+    // Check if user's previous subscription was expired
+    const userWasExpired = user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) <= now
 
-
+    // Check for existing payment
     const existingPayment = await Payment.findOne({
       paddleTransactionId: data.id,
     })
+
+    if (userWasExpired || !existingPayment) {
+      // For expired users or first-time purchases, ALWAYS start from NOW
+      expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
+      nextBillingDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
+      console.log("[v0] ✅ User was expired or new purchase - calculating from NOW:", expiresAt.toISOString())
+    } else {
+      // For active renewals, use Paddle's billing period if available
+      const billingPeriod = data.billing_period || data.current_billing_period
+      if (billingPeriod?.ends_at) {
+        expiresAt = new Date(billingPeriod.ends_at)
+        nextBillingDate = new Date(billingPeriod.ends_at)
+        console.log("[v0] ✅ Using Paddle billing period end date:", expiresAt.toISOString())
+      } else {
+        expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
+        nextBillingDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
+        console.log("[v0] ⚠️ Fallback: calculated from NOW:", expiresAt.toISOString())
+      }
+    }
+    // ============ END OF FIX ============
 
     if (existingPayment) {
       console.log("[v0] ⚠️ Payment already processed for transaction:", data.id)
@@ -669,22 +680,34 @@ const handleSubscriptionCreated = async (event) => {
       console.log("[v0] ⚠️ Unknown billing cycle, defaulting to monthly")
     }
 
-    // Use Paddle's billing period instead of manual calculation
-    const currentBillingPeriod = data.current_billing_period
+    // ============ CRITICAL FIX FOR NEGATIVE DAYS ISSUE ============
+    // ALWAYS calculate from NOW for new subscriptions
+    const now = new Date()
     let expiresAt
     let nextBillingDate
 
-    if (currentBillingPeriod?.ends_at) {
-      expiresAt = new Date(currentBillingPeriod.ends_at)
-      nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
-      console.log("[v0] ✅ Using Paddle billing period end date:", expiresAt.toISOString())
-    } else {
-      // Fallback to manual calculation
-      const now = new Date()
+    // Check if user's previous subscription was expired
+    const userWasExpired = user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) <= now
+
+    if (userWasExpired || !user.isPaid) {
+      // For expired users or first-time subscriptions, ALWAYS start from NOW
       expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
       nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
-      console.log("[v0] ⚠️ Fallback: calculated expiresAt:", expiresAt.toISOString())
+      console.log("[v0] ✅ User was expired or new subscription - calculating from NOW:", expiresAt.toISOString())
+    } else {
+      // For active renewals, use Paddle's billing period if available
+      const currentBillingPeriod = data.current_billing_period
+      if (currentBillingPeriod?.ends_at) {
+        expiresAt = new Date(currentBillingPeriod.ends_at)
+        nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
+        console.log("[v0] ✅ Using Paddle billing period end date:", expiresAt.toISOString())
+      } else {
+        expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
+        nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
+        console.log("[v0] ⚠️ Fallback: calculated from NOW:", expiresAt.toISOString())
+      }
     }
+    // ============ END OF FIX ============
 
     console.log("[v0] ⏰ Subscription expires at:", expiresAt.toISOString())
     console.log("[v0] ⏰ Next billing date:", nextBillingDate.toISOString())
@@ -696,15 +719,12 @@ const handleSubscriptionCreated = async (event) => {
     // Check if payment record already exists (by subscription ID OR transaction ID)
     console.log("[v0] 🔍 Checking for existing payment record...")
     const existingPayment = await Payment.findOne({
-      $or: [
-        { paddleSubscriptionId: data.id },
-        ...(transactionId ? [{ paddleTransactionId: transactionId }] : [])
-      ]
+      $or: [{ paddleSubscriptionId: data.id }, ...(transactionId ? [{ paddleTransactionId: transactionId }] : [])],
     })
 
     if (existingPayment) {
       console.log("[v0] ⚠️ Payment already exists for subscription/transaction:", existingPayment._id)
-      
+
       // Update with subscription ID if missing
       if (!existingPayment.paddleSubscriptionId && data.id) {
         existingPayment.paddleSubscriptionId = data.id
@@ -1064,7 +1084,7 @@ exports.cancelSubscription = async (req, res) => {
 
       const now = new Date()
       const expiresAt = new Date(user.subscriptionExpiresAt)
-      const daysRemaining = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24))
+      const daysRemaining = Math.max(0, Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24)))
 
       console.log("[v0] ✅ User subscription cancelled but access maintained until:", user.subscriptionExpiresAt)
       console.log("[v0] ✅ Days remaining:", daysRemaining)
@@ -1174,25 +1194,38 @@ const handleSubscriptionUpdated = async (event) => {
       console.log("[v0] ⚠️ Unknown billing cycle, defaulting to monthly")
     }
 
-    const currentBillingPeriod = data.current_billing_period
-let expiresAt
-let nextBillingDate
+    // ============ CRITICAL FIX FOR NEGATIVE DAYS ISSUE ============
+    // ALWAYS calculate from NOW for updated subscriptions
+    const now = new Date()
+    let expiresAt
+    let nextBillingDate
 
-if (currentBillingPeriod?.ends_at) {
-  expiresAt = new Date(currentBillingPeriod.ends_at)
-  nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
-  console.log("[v0] ✅ Using Paddle billing period end date:", expiresAt.toISOString())
-} else {
-  // Fallback to manual calculation
-  const now = new Date()
-  expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
-  nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
-  console.log("[v0] ⚠️ Fallback: calculated expiresAt:", expiresAt.toISOString())
-}
+    // Check if user's previous subscription was expired
+    const userWasExpired = user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) <= now
 
-console.log("[v0] ⏰ Subscription expires at:", expiresAt.toISOString())
-console.log("[v0] ⏰ Next billing date:", nextBillingDate.toISOString())
-console.log("[v0] 📅 Duration:", durationDays, "days")
+    if (userWasExpired) {
+      // For expired users, ALWAYS start from NOW
+      expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
+      nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
+      console.log("[v0] ✅ User was expired - calculating from NOW:", expiresAt.toISOString())
+    } else {
+      // For active renewals, use Paddle's billing period if available
+      const currentBillingPeriod = data.current_billing_period
+      if (currentBillingPeriod?.ends_at) {
+        expiresAt = new Date(currentBillingPeriod.ends_at)
+        nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
+        console.log("[v0] ✅ Using Paddle billing period end date:", expiresAt.toISOString())
+      } else {
+        expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
+        nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
+        console.log("[v0] ⚠️ Fallback: calculated from NOW:", expiresAt.toISOString())
+      }
+    }
+    // ============ END OF FIX ============
+
+    console.log("[v0] ⏰ Subscription expires at:", expiresAt.toISOString())
+    console.log("[v0] ⏰ Next billing date:", nextBillingDate.toISOString())
+    console.log("[v0] 📅 Duration:", durationDays, "days")
 
     // Check if payment record already exists
     console.log("[v0] 🔍 Checking for existing payment record...")
