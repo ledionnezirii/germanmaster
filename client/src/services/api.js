@@ -528,7 +528,6 @@ export const paymentService = {
   },
 }
 
-// FIXED subscription service - now properly checks the subscription
 export const subscriptionService = {
   checkStatus: async () => {
     console.log("[Subscription] Checking subscription status...")
@@ -558,7 +557,8 @@ export const subscriptionService = {
       console.log("[Subscription] Expires at:", expiresAt)
       console.log("[Subscription] Time difference (ms):", expiresAt - now)
 
-      const daysRemaining = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24))
+      // FIX: Ensure daysRemaining is never negative
+      const daysRemaining = Math.max(0, Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24)))
       const isExpired = expiresAt <= now
       const isActive = user.subscription.active && !isExpired
 
@@ -570,11 +570,11 @@ export const subscriptionService = {
       return {
         active: isActive,
         expired: isExpired,
-        daysRemaining: Math.max(0, daysRemaining),
+        daysRemaining: daysRemaining, // Already clamped to 0 minimum
         type: user.subscription.type,
         expiresAt: user.subscription.expiresAt,
         trialStartedAt: user.subscription.trialStartedAt,
-        cancelled: user.subscription.cancelled || false, // Include cancelled status
+        cancelled: user.subscription.cancelled || false,
       }
     } catch (error) {
       console.error("[Subscription] Error parsing user data:", error)
