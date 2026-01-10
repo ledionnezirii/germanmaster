@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   Mic,
   MicOff,
@@ -14,7 +14,7 @@ import {
   X,
   AlertTriangle,
 } from "lucide-react"
-import { pronunciationService } from "../services/api.js"
+import { pronunciationService, ttsService } from "../services/api.js"
 
 const PronunciationPractice = () => {
   const [packages, setPackages] = useState([])
@@ -23,7 +23,7 @@ const PronunciationPractice = () => {
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
   const [isListening, setIsListening] = useState(false)
   const [recognition, setRecognition] = useState(null)
-  const [synthesis, setSynthesis] = useState(null)
+  const [audioCache, setAudioCache] = useState({})
   const [sessionStats, setSessionStats] = useState({
     correctAnswers: 0,
     totalAttempts: 0,
@@ -38,6 +38,7 @@ const PronunciationPractice = () => {
   const [selectedLevel, setSelectedLevel] = useState("all")
   const [isMobile, setIsMobile] = useState(false)
   const [skipsUsed, setSkipsUsed] = useState(0)
+  const currentAudioRef = useRef(null)
   const maxSkips = 2
 
   useEffect(() => {
@@ -58,10 +59,6 @@ const PronunciationPractice = () => {
       recognitionInstance.interimResults = false
       recognitionInstance.lang = "de-DE"
       setRecognition(recognitionInstance)
-    }
-
-    if ("speechSynthesis" in window) {
-      setSynthesis(window.speechSynthesis)
     }
 
     loadPackages()
@@ -147,6 +144,13 @@ const PronunciationPractice = () => {
     }
   }
 
+  const stopListening = () => {
+    if (recognition && isListening) {
+      recognition.stop()
+      setIsListening(false)
+    }
+  }
+
   const checkPronunciation = async (spokenText) => {
     if (!selectedPackage) return
     const currentWord = selectedPackage.words[currentWordIndex]
@@ -168,6 +172,9 @@ const PronunciationPractice = () => {
 
       if (correct) {
         setFeedback(`Shkëlqyeshëm! +${xpAdded} XP`)
+        setTimeout(() => {
+          nextWord()
+        }, 1500)
       } else {
         setFeedback("Provoni përsëri! Dëgjoni shqiptimin.")
       }
@@ -177,12 +184,30 @@ const PronunciationPractice = () => {
     }
   }
 
-  const playPronunciation = (word) => {
-    if (synthesis) {
-      const utterance = new SpeechSynthesisUtterance(word)
-      utterance.lang = "de-DE"
-      utterance.rate = 0.8
-      synthesis.speak(utterance)
+  const playPronunciation = async (word, wordId, level) => {
+    try {
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause()
+        currentAudioRef.current.currentTime = 0
+      }
+
+      const cacheKey = `${wordId}_${level}`
+      if (audioCache[cacheKey]) {
+        const audio = new Audio(audioCache[cacheKey])
+        currentAudioRef.current = audio
+        audio.play()
+        return
+      }
+
+      const audioUrl = await ttsService.getPronunciationAudio(wordId, word, level)
+      setAudioCache((prev) => ({ ...prev, [cacheKey]: audioUrl }))
+
+      const audio = new Audio(audioUrl)
+      currentAudioRef.current = audio
+      audio.play()
+    } catch (error) {
+      console.error("Error playing pronunciation audio:", error)
+      setFeedback("Error playing audio. Please try again.")
     }
   }
 
@@ -256,7 +281,7 @@ const PronunciationPractice = () => {
   }
 
   const finishQuiz = () => {
-    console.log("[v0] Finish quiz clicked")
+    console.log("Finish quiz clicked")
     const passThreshold = Math.ceil(selectedPackage.words.length * 0.7)
     if (sessionStats.completedWords.length >= passThreshold) {
       setCompletedPackages((prev) => new Set([...Array.from(prev), selectedPackage._id.toString()]))
@@ -439,16 +464,22 @@ const PronunciationPractice = () => {
 
               <div className="flex justify-center gap-4 sm:gap-6">
                 <button
-                  onClick={() => playPronunciation(selectedPackage.words[currentWordIndex]?.word)}
-                  className="w-12 h-12 sm:w-16 sm:h-16 bg-orange-500 hover:bg-orange-600 text-white rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg"
+                  onClick={() =>
+                    playPronunciation(
+                      selectedPackage.words[currentWordIndex]?.word,
+                      selectedPackage.words[currentWordIndex]?._id || `${selectedPackage._id}_${currentWordIndex}`,
+                      selectedPackage.level,
+                    )
+                  }
+                  className="w-12 h-12 sm:w-16 sm:h-16 bg-orange-500 hover:bg-orange-600 text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 shadow-lg active:scale-95"
                 >
                   <Volume2 className="w-5 h-5 sm:w-6 sm:w-6" />
                 </button>
 
                 <button
-                  onClick={startListening}
-                  disabled={isListening || sessionStats.completedWords.includes(currentWordIndex)}
-                  className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg ${
+                  onClick={isListening ? stopListening : startListening}
+                  disabled={sessionStats.completedWords.includes(currentWordIndex)}
+                  className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 shadow-lg active:scale-95 ${
                     isListening
                       ? "bg-red-500 hover:bg-red-600 text-white"
                       : sessionStats.completedWords.includes(currentWordIndex)
@@ -468,7 +499,7 @@ const PronunciationPractice = () => {
                 <button
                   onClick={skipWord}
                   disabled={sessionStats.completedWords.includes(currentWordIndex) || skipsUsed >= maxSkips}
-                  className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all hover:scale-105 shadow-lg ${
+                  className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 shadow-lg active:scale-95 ${
                     sessionStats.completedWords.includes(currentWordIndex) || skipsUsed >= maxSkips
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                       : "bg-orange-500 hover:bg-orange-600 text-white"
@@ -569,7 +600,8 @@ const PronunciationPractice = () => {
             <div>
               <p style={{ fontWeight: "bold", color: "#92400E", margin: "0 0 4px 0" }}>Kujdes</p>
               <p style={{ color: "#78350F", margin: 0, fontSize: "14px" }}>
-               Ky seksion për praktikimin e shqiptimit funksionon më mirë në pajisje desktop. Njohja e zërit mund të mos funksionojë si duhet në telefonat celularë
+                Ky seksion për praktikimin e shqiptimit funksionon më mirë në pajisje desktop. Njohja e zërit mund të
+                mos funksionojë si duhet në telefonat celularë
               </p>
             </div>
           </div>

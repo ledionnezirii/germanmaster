@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react"
 import { paymentService, subscriptionService, authService } from "../services/api"
+import { useAuth } from "../context/AuthContext"
 
 const Payment = () => {
+  const { updateUser } = useAuth()
   const [paddleInitialized, setPaddleInitialized] = useState(false)
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState(null)
@@ -89,24 +91,36 @@ const Payment = () => {
           eventCallback: (data) => {
             console.log("📢 Paddle event:", data)
             if (data.type === "checkout.completed") {
-              console.log("✅ Payment completed! Granting immediate access...")
-              authService
-                .getProfile()
-                .then((response) => {
+              console.log("✅ Payment completed! Refreshing user data...")
+              
+              // Wait a moment for webhook to process
+              setTimeout(async () => {
+                try {
+                  const response = await authService.getProfile()
                   const userData = response.data?.user
+                  
                   if (userData) {
-                    localStorage.setItem("user", JSON.stringify(userData))
-                    alert("✅ Pagesa u krye me sukses! Abonimi juaj është aktiv MENJËHERË. Mirë se vini në Premium!")
+                    // Update user in AuthContext (this updates both state and localStorage)
+                    updateUser({
+                      subscription: userData.subscription,
+                      isPaid: true,
+                      subscriptionType: userData.subscriptionType,
+                      subscriptionExpiresAt: userData.subscriptionExpiresAt,
+                    })
+                    
+                    alert("✅ Pagesa u krye me sukses! Abonimi juaj është aktiv MENJËHERË!")
                     localStorage.removeItem("subscription_expired")
-                    setTimeout(() => window.location.reload(), 1500)
+                    
+                    // Refresh subscription status
+                    const status = await subscriptionService.checkStatus()
+                    setSubscriptionStatus(status)
                   }
-                })
-                .catch((err) => {
+                } catch (err) {
                   console.error("Failed to refresh user data:", err)
-                  alert("✅ Pagesa u krye me sukses! Abonimi juaj është aktiv MENJËHERË.")
-                  localStorage.removeItem("subscription_expired")
+                  alert("✅ Pagesa u krye me sukses! Ju lutem rifreskoni faqen për të parë ndryshimet.")
                   setTimeout(() => window.location.reload(), 2000)
-                })
+                }
+              }, 2000)
             }
             if (data.type === "checkout.error") {
               console.error("❌ Payment error:", data)
@@ -145,7 +159,7 @@ const Payment = () => {
         }
       }, 10000)
     }
-  }, [PADDLE_CLIENT_TOKEN])
+  }, [PADDLE_CLIENT_TOKEN, updateUser])
 
   // Fetch user and subscription data
   useEffect(() => {
@@ -264,11 +278,27 @@ const Payment = () => {
     try {
       const response = await paymentService.cancelSubscription(user.id)
       console.log("✅ Cancellation response:", response)
+      
+      // Refresh user data to get updated subscription status
+      const profileResponse = await authService.getProfile()
+      const userData = profileResponse.data?.user
+      
+      if (userData) {
+        // Update user in AuthContext
+        updateUser({
+          subscription: userData.subscription,
+          subscriptionCancelled: true,
+        })
+        
+        // Refresh subscription status
+        const status = await subscriptionService.checkStatus()
+        setSubscriptionStatus(status)
+      }
+      
       alert(
         response.message ||
           "Abonimi u anulua me sukses. Do të keni qasje të plotë deri në fund të periudhës së faturimit.",
       )
-      window.location.reload()
     } catch (err) {
       console.error("Gabim në anulimin e abonimit:", err)
       setError("Dështoi anulimi i abonimit. Ju lutem kontaktoni mbështetjen.")

@@ -373,3 +373,34 @@ exports.preGenerateCategoryAudio = async (req, res) => {
     return res.status(500).json({ error: "Failed to pre-generate category audio" })
   }
 }
+exports.getPronunciationAudio = async (req, res) => {
+  try {
+    const { wordId } = req.params
+    const { text, level } = req.body
+
+    if (!wordId) {
+      return res.status(400).json({ error: "Word ID is required" })
+    }
+
+    const filePath = getAudioFilePath(wordId, level, "pronunciation")
+
+    if (await audioExists(wordId, level, "pronunciation")) {
+      console.log(`[TTS] Serving cached pronunciation audio from GCS: ${filePath}`)
+      const url = await getSignedUrl(filePath)
+      return res.json({ url })
+    }
+
+    if (!text) {
+      return res.status(404).json({ error: "Audio not found and no text provided to generate" })
+    }
+
+    console.log(`[TTS] Generating new pronunciation audio for: ${wordId}`)
+    await generateAudio(text, wordId, level, "pronunciation")
+
+    const url = await getSignedUrl(filePath)
+    return res.json({ url })
+  } catch (error) {
+    console.error("[TTS] Pronunciation controller error:", error)
+    return res.status(500).json({ error: "Failed to get/generate pronunciation audio" })
+  }
+}

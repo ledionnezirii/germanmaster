@@ -76,7 +76,7 @@ const Sidebar = () => {
     },
     { icon: InfinityIcon, label: "Baza Gjuhësore", path: "/category" },
     { icon: LightbulbIcon, label: "Kuizet", path: "/quizes" },
-    /* { icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation" },*/
+    { icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation" },
     { icon: NotebookPenIcon, label: "Fraza te ndryshme", path: "/phrases" },
     { icon: Pen, label: "Fjalori Personal", path: "/words" },
     { icon: TestTube2Icon, label: "Tests", path: "/tests" },

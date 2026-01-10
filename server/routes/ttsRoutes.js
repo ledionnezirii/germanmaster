@@ -24,6 +24,7 @@ router.post('/category/:categoryId/:wordIndex', ttsController.getCategoryAudio);
 // Pre-generate audio (admin)
 router.post('/pre-generate', protect, ttsController.preGenerateAudio);
 router.post('/category/pre-generate', ttsController.preGenerateCategoryAudio);
+router.post('/pronunciation/:wordId', protect, ttsController.getPronunciationAudio);
 
 
 module.exports = router;
