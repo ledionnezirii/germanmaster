@@ -22,9 +22,11 @@ const Dictionary = () => {
   const [unlockStats, setUnlockStats] = useState({
     todayUnlocks: 0,
     remainingUnlocks: 15,
-    canUnlock: true
+    canUnlock: true,
+    nextResetTime: null
   })
   const [unlocking, setUnlocking] = useState(null)
+  const [timeUntilReset, setTimeUntilReset] = useState(null)
 
   // Quiz state
   const [showQuiz, setShowQuiz] = useState(false)
@@ -54,6 +56,34 @@ const Dictionary = () => {
       }
     }
   }, [])
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!unlockStats.canUnlock && unlockStats.nextResetTime) {
+      const calculateTimeLeft = () => {
+        const now = new Date().getTime()
+        const resetTime = new Date(unlockStats.nextResetTime).getTime()
+        const diff = resetTime - now
+
+        if (diff <= 0) {
+          setTimeUntilReset(null)
+          fetchUnlockStats() // Refresh stats when time is up
+          return
+        }
+
+        const hours = Math.floor(diff / (1000 * 60 * 60))
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+        setTimeUntilReset(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`)
+      }
+
+      calculateTimeLeft()
+      const interval = setInterval(calculateTimeLeft, 60000) // Update every minute
+
+      return () => clearInterval(interval)
+    } else {
+      setTimeUntilReset(null)
+    }
+  }, [unlockStats.canUnlock, unlockStats.nextResetTime])
 
   const fetchWords = async () => {
     try {
@@ -409,8 +439,13 @@ const Dictionary = () => {
             </div>
           </div>
           {!unlockStats.canUnlock && (
-            <div className="mt-3 text-xs text-orange-700 bg-orange-50 rounded-lg p-2 border border-orange-200">
-              ⚠️ Keni arritur limitin ditor. Provoni përsëri pas 24 orësh.
+            <div className="mt-3 text-xs text-orange-700 bg-orange-50 rounded-lg p-2 border border-orange-200 flex items-center justify-between">
+              <span>⚠️ Keni arritur limitin ditor.</span>
+              {timeUntilReset && (
+                <span className="font-bold text-orange-800 bg-orange-100 px-2 py-1 rounded ml-2">
+                  Hapet pas: {timeUntilReset}
+                </span>
+              )}
             </div>
           )}
         </div>

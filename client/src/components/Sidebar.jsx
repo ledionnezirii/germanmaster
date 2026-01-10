@@ -59,9 +59,10 @@ const Sidebar = () => {
 
   const menuItems = [
     { icon: Home, label: "Kryefaqja", path: "/", requireAuth: false },
-    { icon: BookUser, label: "Fjalor", path: "/dictionary" },
     { icon: Languages, label: "Përkthe", path: "/translate" },
     { icon: Headphones, label: "Dëgjo", path: "/listen" },
+    { icon: BookUser, label: "Fjalori", path: "/dictionary" },
+
 
     {
       icon: FileTerminal,
@@ -215,8 +216,8 @@ const Sidebar = () => {
                         <div className={`relative flex items-center ${isCollapsed ? "" : "mr-3"}`}>
                           <Icon
                             className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${isActive
-                                ? "text-emerald-400"
-                                : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
+                              ? "text-emerald-400"
+                              : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
                               }`}
                           />
                           {isActive && <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-md"></div>}
@@ -249,8 +250,8 @@ const Sidebar = () => {
                                 to={subItem.path}
                                 onClick={handleLinkClick}
                                 className={`relative group flex items-center rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 ${isSubActive
-                                    ? "text-emerald-400 bg-emerald-500/10"
-                                    : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
+                                  ? "text-emerald-400 bg-emerald-500/10"
+                                  : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
                                   }`}
                               >
                                 <SubIcon
@@ -273,8 +274,8 @@ const Sidebar = () => {
                     to={item.path}
                     onClick={handleLinkClick}
                     className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 overflow-hidden ${isActive
-                        ? "bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-white shadow-lg shadow-emerald-500/10"
-                        : "text-slate-300 hover:bg-white/5 hover:text-white"
+                      ? "bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-white shadow-lg shadow-emerald-500/10"
+                      : "text-slate-300 hover:bg-white/5 hover:text-white"
                       } ${isCollapsed ? "justify-center" : "justify-start"}`}
                     title={isCollapsed ? item.label : ""}
                     aria-current={isActive ? "page" : undefined}
@@ -285,8 +286,8 @@ const Sidebar = () => {
                     <div className={`relative flex items-center ${isCollapsed ? "" : "mr-3"}`}>
                       <Icon
                         className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${isActive
-                            ? "text-emerald-400"
-                            : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
+                          ? "text-emerald-400"
+                          : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
                           }`}
                       />
                       {isActive && <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-md"></div>}
@@ -313,8 +314,8 @@ const Sidebar = () => {
                     to={item.path}
                     onClick={item.action || handleLinkClick}
                     className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-200 overflow-hidden ${isActive
-                        ? "bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-white shadow-lg shadow-amber-500/10"
-                        : "bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-300 hover:from-amber-500/20 hover:to-orange-500/20 hover:text-amber-200 border border-amber-500/20 hover:border-amber-500/30"
+                      ? "bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-white shadow-lg shadow-amber-500/10"
+                      : "bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-300 hover:from-amber-500/20 hover:to-orange-500/20 hover:text-amber-200 border border-amber-500/20 hover:border-amber-500/30"
                       } ${isCollapsed ? "justify-center" : "justify-start"}`}
                     title={isCollapsed ? item.label : ""}
                     aria-current={isActive ? "page" : undefined}
