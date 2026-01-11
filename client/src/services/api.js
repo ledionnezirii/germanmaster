@@ -764,4 +764,14 @@ export const dialogueService = {
   deleteDialogue: (id) => api.delete(`/dialogue/${id}`),
 };
 
+
+export const activityService = {
+  startSession: () => api.post("/activity/start-session"),
+  endSession: (sessionId) => api.post("/activity/end-session", { sessionId }),
+  addTime: (minutes = 1) => api.post("/activity/add-time", { minutes }),
+  getHeatmap: (months = 12) => api.get(`/activity/heatmap?months=${months}`),
+  getTodayActivity: () => api.get("/activity/today"),
+  getStats: () => api.get("/activity/stats"),
+};
+
 export default api;

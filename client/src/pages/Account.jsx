@@ -8,6 +8,7 @@ import {
   achievementsService,
   generateAvatarOptions,
   generateDicebearUrl,
+  activityService,
 } from "../services/api"
 import { User, Star, BookOpen, Flame, Award, Download, FileText, Pencil, X, Search } from "lucide-react"
 import { useNavigate } from "react-router-dom"
@@ -38,7 +39,14 @@ const Account = () => {
 
   const [achievementCarouselIndex, setAchievementCarouselIndex] = useState(0)
 
+  // Activity tracking states
+  const [activityData, setActivityData] = useState({})
+  const [activityStats, setActivityStats] = useState(null)
+  const [loadingActivity, setLoadingActivity] = useState(true)
+  const [hoveredDay, setHoveredDay] = useState(null)
+
   const AVATARS_PER_PAGE = 20
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
   useEffect(() => {
     const allAvatars = generateAvatarOptions()
@@ -47,6 +55,28 @@ const Account = () => {
 
   useEffect(() => {
     setSelectedAvatarStyle(user?.avatarStyle || "adventurer-1")
+  }, [user])
+
+  useEffect(() => {
+    const fetchActivityData = async () => {
+      try {
+        setLoadingActivity(true)
+        const [heatmapRes, statsRes] = await Promise.all([
+          activityService.getHeatmap(12),
+          activityService.getStats(),
+        ])
+        setActivityData(heatmapRes.data || {})
+        setActivityStats(statsRes.data || null)
+      } catch (error) {
+        console.error("Error fetching activity data:", error)
+      } finally {
+        setLoadingActivity(false)
+      }
+    }
+
+    if (user) {
+      fetchActivityData()
+    }
   }, [user])
 
   const getFilteredAvatars = () => {
@@ -244,6 +274,98 @@ const Account = () => {
     setAchievementCarouselIndex((prev) => Math.min(achievements.length - 1, prev + 1))
   }
 
+  // Activity heatmap functions
+  const getIntensityLevel = (minutes) => {
+    if (!minutes || minutes === 0) return 0
+    if (minutes < 15) return 1
+    if (minutes < 30) return 2
+    if (minutes < 60) return 3
+    return 4
+  }
+
+  const getIntensityColor = (level) => {
+    const colors = [
+      "bg-gray-800 border-gray-700",
+      "bg-green-900 border-green-800",
+      "bg-green-700 border-green-600",
+      "bg-green-500 border-green-400",
+      "bg-green-400 border-green-300",
+    ]
+    return colors[level]
+  }
+
+  const generateCalendarData = () => {
+    const weeks = []
+    const today = new Date()
+    const startDate = new Date(today)
+    startDate.setFullYear(startDate.getFullYear() - 1)
+    startDate.setDate(startDate.getDate() - startDate.getDay())
+
+    let currentDate = new Date(startDate)
+
+    while (currentDate <= today) {
+      const week = []
+      for (let i = 0; i < 7; i++) {
+        if (currentDate <= today) {
+          const dateStr = currentDate.toISOString().split("T")[0]
+          const minutes = activityData[dateStr] || 0
+          week.push({
+            date: new Date(currentDate),
+            dateStr,
+            minutes,
+            level: getIntensityLevel(minutes),
+          })
+        }
+        currentDate.setDate(currentDate.getDate() + 1)
+      }
+      if (week.length > 0) {
+        weeks.push(week)
+      }
+    }
+
+    return weeks
+  }
+
+  const getMonthLabels = () => {
+    const labels = []
+    const today = new Date()
+    const startDate = new Date(today)
+    startDate.setFullYear(startDate.getFullYear() - 1)
+
+    let currentMonth = -1
+    let weekIndex = 0
+    let currentDate = new Date(startDate)
+    currentDate.setDate(currentDate.getDate() - currentDate.getDay())
+
+    while (currentDate <= today) {
+      const month = currentDate.getMonth()
+      if (month !== currentMonth) {
+        labels.push({ month: months[month], weekIndex })
+        currentMonth = month
+      }
+      currentDate.setDate(currentDate.getDate() + 7)
+      weekIndex++
+    }
+
+    return labels
+  }
+
+  const formatMinutes = (minutes) => {
+    if (minutes < 60) return `${minutes} min`
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
+  }
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
+  }
+
   if (authLoading || !user) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -255,18 +377,22 @@ const Account = () => {
     )
   }
 
+  const calendarData = generateCalendarData()
+  const monthLabels = getMonthLabels()
+
   return (
     <div className="max-w-6xl mx-auto space-y-4 p-4">
       {/* Profile Header */}
       <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-200 p-6">
-        <div className="flex flex-col md:flex-row items-center gap-8">
-          <div className="relative">
+        <div className="flex flex-col lg:flex-row items-start gap-6">
+          {/* Avatar Section */}
+          <div className="relative flex-shrink-0">
             <button
               onClick={() => {
                 setShowAvatarSelector(!showAvatarSelector)
                 setAvatarError(null)
               }}
-              className="relative w-32 h-32 rounded-full flex items-center justify-center overflow-hidden border-4 border-white shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer"
+              className="relative w-24 h-24 rounded-full flex items-center justify-center overflow-hidden border-4 border-white shadow-xl hover:shadow-2xl transition-all duration-300 cursor-pointer"
               disabled={updating}
               title="Kliko për të ndryshuar avatarin"
             >
@@ -277,7 +403,7 @@ const Account = () => {
               />
             </button>
             <div className="absolute -bottom-1 -right-1 bg-teal-600 text-white p-2 rounded-full shadow-lg border-2 border-white">
-              <Pencil className="h-4 w-4" />
+              <Pencil className="h-3 w-3" />
             </div>
             {updating && (
               <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
@@ -391,26 +517,94 @@ const Account = () => {
             </div>
           )}
 
-          <div className="text-center md:text-left flex-1">
-            <div className="flex items-center gap-3 justify-center md:justify-start">
-              <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-                {user.firstName} {user.lastName}
-              </h1>
-            </div>
-            <p className="text-gray-600 mt-2 flex items-center gap-2 justify-center md:justify-start">
-              <User className="h-4 w-4" />
-              {user.email}
-            </p>
-            <div className="mt-4 flex items-center justify-center md:justify-start gap-3 flex-wrap">
-            
+          {/* Name and Activity Section */}
+          <div className="flex-1 w-full">
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-4">
+              {user.firstName} {user.lastName}
+            </h1>
+
+            {/* Activity Heatmap */}
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              {loadingActivity ? (
+                <div className="animate-pulse">
+                  <div className="h-6 bg-gray-200 rounded w-48 mb-4"></div>
+                  <div className="h-32 bg-gray-200 rounded"></div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-gray-700">Aktiviteti i Mësimit</h3>
+                    {activityStats && (
+                      <div className="flex items-center gap-3 text-xs">
+                        <div className="text-gray-600">
+                          <span className="text-gray-900 font-medium">{activityStats.totalDays}</span> ditë aktive
+                        </div>
+                        <div className="text-gray-600">
+                          <span className="text-green-600 font-medium">{activityStats.currentStreak}</span> ditë rresht
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <div className="inline-block min-w-full">
+                      <div className="flex mb-2 ml-6 text-xs">
+                        {monthLabels.map((label, idx) => (
+                          <div
+                            key={idx}
+                            className="text-gray-500"
+                            style={{
+                              position: "relative",
+                              left: `${label.weekIndex * 12}px`,
+                              width: "fit-content",
+                            }}
+                          >
+                            {label.month}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex gap-1">
+                        <div className="flex gap-1">
+                          {calendarData.map((week, weekIdx) => (
+                            <div key={weekIdx} className="flex flex-col gap-1">
+                              {week.map((day, dayIdx) => (
+                                <div
+                                  key={`${weekIdx}-${dayIdx}`}
+                                  className={`w-2.5 h-2.5 rounded-sm border cursor-pointer transition-all hover:scale-125 ${getIntensityColor(
+                                    day.level
+                                  )}`}
+                                  onMouseEnter={() => setHoveredDay(day)}
+                                  onMouseLeave={() => setHoveredDay(null)}
+                                  title={`${formatMinutes(day.minutes)} on ${formatDate(day.date)}`}
+                                />
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-1 mt-3">
+                        <span className="text-xs text-gray-500">Më pak</span>
+                        {[0, 1, 2, 3, 4].map((level) => (
+                          <div key={level} className={`w-2.5 h-2.5 rounded-sm border ${getIntensityColor(level)}`} />
+                        ))}
+                        <span className="text-xs text-gray-500">Më shumë</span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
+
+          {/* Logout Button */}
           <button
             onClick={() => {
               logout()
               navigate("/signin")
             }}
-            className="bg-gradient-to-r from-red-500 to-red-600 text-white px-8 py-3 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-bold shadow-lg hover:shadow-xl transform hover:scale-105"
+            className="bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-3 rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200 font-bold shadow-lg hover:shadow-xl transform hover:scale-105 flex-shrink-0"
           >
             Dil
           </button>
