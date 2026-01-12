@@ -1,159 +1,105 @@
-const Activity = require("../models/Activity");
+const User = require("../models/User");
 const moment = require("moment");
 
-// Start a new session
-exports.startSession = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const today = moment().startOf("day").toDate();
-
-    let activity = await Activity.findOne({ userId, date: today });
-
-    if (!activity) {
-      activity = new Activity({
-        userId,
-        date: today,
-        timeSpent: 0,
-        sessions: [],
-      });
-    }
-
-    activity.sessions.push({
-      startTime: new Date(),
-    });
-
-    await activity.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Session started",
-      sessionId: activity.sessions[activity.sessions.length - 1]._id,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error starting session",
-      error: error.message,
-    });
-  }
-};
-
-// End a session
-exports.endSession = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    const { sessionId } = req.body;
-    const today = moment().startOf("day").toDate();
-
-    const activity = await Activity.findOne({ userId, date: today });
-
-    if (!activity) {
-      return res.status(404).json({
-        success: false,
-        message: "No activity found for today",
-      });
-    }
-
-    const session = activity.sessions.id(sessionId);
-
-    if (!session) {
-      return res.status(404).json({
-        success: false,
-        message: "Session not found",
-      });
-    }
-
-    session.endTime = new Date();
-    session.duration = Math.round(
-      (session.endTime - session.startTime) / (1000 * 60)
-    );
-
-    // Update total time spent
-    activity.timeSpent = activity.sessions.reduce(
-      (total, s) => total + (s.duration || 0),
-      0
-    );
-
-    await activity.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Session ended",
-      duration: session.duration,
-      totalTimeSpent: activity.timeSpent,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error ending session",
-      error: error.message,
-    });
-  }
-};
-
-// Add time manually (heartbeat/ping approach)
-exports.addTime = async (req, res) => {
+// Add learning time (called periodically from frontend - every minute or when user does an activity)
+exports.addLearningTime = async (req, res) => {
   try {
     const userId = req.user._id;
     const { minutes = 1 } = req.body;
     const today = moment().startOf("day").toDate();
 
-    let activity = await Activity.findOne({ userId, date: today });
+    const user = await User.findById(userId);
 
-    if (!activity) {
-      activity = new Activity({
-        userId,
-        date: today,
-        timeSpent: 0,
-        sessions: [],
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
       });
     }
 
-    activity.timeSpent += minutes;
-    await activity.save();
+    // Find if there's already an entry for today
+    const todayActivity = user.learningActivity.find(
+      (activity) => moment(activity.date).isSame(today, "day")
+    );
+
+    if (todayActivity) {
+      // Add minutes to existing entry
+      todayActivity.minutes += minutes;
+      
+      // Convert minutes to hours if >= 60
+      if (todayActivity.minutes >= 60) {
+        const additionalHours = Math.floor(todayActivity.minutes / 60);
+        todayActivity.hours += additionalHours;
+        todayActivity.minutes = todayActivity.minutes % 60;
+      }
+    } else {
+      // Create new entry for today
+      user.learningActivity.push({
+        date: today,
+        hours: 0,
+        minutes: minutes,
+      });
+    }
+
+    await user.save();
+
+    // Calculate total time for today
+    const updatedActivity = user.learningActivity.find(
+      (activity) => moment(activity.date).isSame(today, "day")
+    );
 
     res.status(200).json({
       success: true,
-      totalTimeSpent: activity.timeSpent,
+      todayHours: updatedActivity.hours,
+      todayMinutes: updatedActivity.minutes,
+      totalMinutes: updatedActivity.hours * 60 + updatedActivity.minutes,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error adding time",
+      message: "Error adding learning time",
       error: error.message,
     });
   }
 };
 
-// Get activity for a date range (for heatmap)
+// Get activity heatmap (for the last 12 months)
 exports.getActivityHeatmap = async (req, res) => {
   try {
     const userId = req.user._id;
     const { months = 12 } = req.query;
 
-    const startDate = moment()
-      .subtract(months, "months")
-      .startOf("day")
-      .toDate();
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const startDate = moment().subtract(months, "months").startOf("day").toDate();
     const endDate = moment().endOf("day").toDate();
 
-    const activities = await Activity.find({
-      userId,
-      date: { $gte: startDate, $lte: endDate },
-    }).sort({ date: 1 });
+    // Filter activities within date range
+    const relevantActivities = user.learningActivity.filter((activity) => {
+      const activityDate = moment(activity.date);
+      return activityDate.isSameOrAfter(startDate) && activityDate.isSameOrBefore(endDate);
+    });
 
-    // Create a map of date -> timeSpent
+    // Create a map of date -> hours (as decimal)
     const activityMap = {};
-    activities.forEach((activity) => {
+    relevantActivities.forEach((activity) => {
       const dateKey = moment(activity.date).format("YYYY-MM-DD");
-      activityMap[dateKey] = activity.timeSpent;
+      const totalHours = activity.hours + activity.minutes / 60;
+      activityMap[dateKey] = parseFloat(totalHours.toFixed(2));
     });
 
     res.status(200).json({
       success: true,
       data: activityMap,
-      totalDays: activities.length,
-      totalMinutes: activities.reduce((sum, a) => sum + a.timeSpent, 0),
+      totalDays: relevantActivities.length,
+      totalHours: relevantActivities.reduce((sum, a) => sum + a.hours + a.minutes / 60, 0).toFixed(2),
     });
   } catch (error) {
     res.status(500).json({
@@ -170,11 +116,22 @@ exports.getTodayActivity = async (req, res) => {
     const userId = req.user._id;
     const today = moment().startOf("day").toDate();
 
-    const activity = await Activity.findOne({ userId, date: today });
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const todayActivity = user.learningActivity.find(
+      (activity) => moment(activity.date).isSame(today, "day")
+    );
 
     res.status(200).json({
       success: true,
-      data: activity || { timeSpent: 0, sessions: [] },
+      data: todayActivity || { hours: 0, minutes: 0 },
     });
   } catch (error) {
     res.status(500).json({
@@ -190,23 +147,31 @@ exports.getActivityStats = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    const allActivities = await Activity.find({ userId });
+    const user = await User.findById(userId);
 
-    const totalMinutes = allActivities.reduce((sum, a) => sum + a.timeSpent, 0);
-    const totalDays = allActivities.length;
-    const averagePerDay = totalDays > 0 ? Math.round(totalMinutes / totalDays) : 0;
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const activities = user.learningActivity;
+
+    const totalHours = activities.reduce((sum, a) => sum + a.hours + a.minutes / 60, 0);
+    const totalDays = activities.filter((a) => a.hours > 0 || a.minutes > 0).length;
+    const averagePerDay = totalDays > 0 ? (totalHours / totalDays).toFixed(2) : 0;
 
     // Current streak
     let streak = 0;
     let currentDate = moment().startOf("day");
 
     while (true) {
-      const dateKey = currentDate.format("YYYY-MM-DD");
-      const activity = allActivities.find(
-        (a) => moment(a.date).format("YYYY-MM-DD") === dateKey
+      const activity = activities.find(
+        (a) => moment(a.date).isSame(currentDate, "day") && (a.hours > 0 || a.minutes > 0)
       );
 
-      if (activity && activity.timeSpent > 0) {
+      if (activity) {
         streak++;
         currentDate.subtract(1, "day");
       } else {
@@ -217,8 +182,8 @@ exports.getActivityStats = async (req, res) => {
     // Longest streak
     let longestStreak = 0;
     let tempStreak = 0;
-    const sortedActivities = allActivities
-      .filter((a) => a.timeSpent > 0)
+    const sortedActivities = activities
+      .filter((a) => a.hours > 0 || a.minutes > 0)
       .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     for (let i = 0; i < sortedActivities.length; i++) {
@@ -241,10 +206,9 @@ exports.getActivityStats = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
-        totalMinutes,
-        totalHours: Math.round(totalMinutes / 60),
+        totalHours: parseFloat(totalHours.toFixed(2)),
         totalDays,
-        averagePerDay,
+        averagePerDay: parseFloat(averagePerDay),
         currentStreak: streak,
         longestStreak,
       },
@@ -256,4 +220,4 @@ exports.getActivityStats = async (req, res) => {
       error: error.message,
     });
   }
-};
+}

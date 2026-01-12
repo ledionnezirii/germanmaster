@@ -285,6 +285,22 @@ const userSchema = new mongoose.Schema(
     },
   },
 ],
+learningActivity: [
+  {
+    date: {
+      type: Date,
+      required: true,
+    },
+    hours: {
+      type: Number,
+      default: 0,
+    },
+    minutes: {
+      type: Number,
+      default: 0,
+    },
+  },
+],
     planProgress: [
       {
         level: {

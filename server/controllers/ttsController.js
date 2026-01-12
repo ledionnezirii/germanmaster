@@ -2,7 +2,7 @@ const axios = require("axios")
 const { Storage } = require("@google-cloud/storage")
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY
-const ELEVENLABS_VOICE_ID = "NE7AIW5DoJ7lUosXV2KR"
+const ELEVENLABS_VOICE_ID = "rDmv3mOhK6TnhYWckFaD"
 
 let storage;
 try {

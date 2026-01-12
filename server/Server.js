@@ -287,7 +287,7 @@ app.use("/api/phrases", phraseRoutes)
 app.use("/api/academies", academyRoutes)
 app.use("/api/race", raceRoutes)
 app.use("/api/dialogue",dialoguesRoutes)
-app.use("api/activity",activityRoutes)
+app.use("/api/activity",activityRoutes)
 
 app.use(notFound)
 app.use(errorHandler)
