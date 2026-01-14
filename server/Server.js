@@ -57,10 +57,22 @@ const { requestLogger } = require("./middleware/loggerMiddleware");
 
 const app = express();
 const server = createServer(app);
+
+
+// TXT
 app.get("/loaderio-ecd07655e5377db9f6ef702a58dfa55c.txt", (req, res) => {
-  res.send("ecd07655e5377db9f6ef702a58dfa55c");
+  res.send("loaderio-ecd07655e5377db9f6ef702a58dfa55c");
 });
 
+// HTML
+app.get("/loaderio-ecd07655e5377db9f6ef702a58dfa55c.html", (req, res) => {
+  res.send("loaderio-ecd07655e5377db9f6ef702a58dfa55c");
+});
+
+// FOLDER
+app.get("/loaderio-ecd07655e5377db9f6ef702a58dfa55c", (req, res) => {
+  res.send("loaderio-ecd07655e5377db9f6ef702a58dfa55c");
+});
 
 const io = new Server(server, {
   cors: {
