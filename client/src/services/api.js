@@ -649,27 +649,37 @@ export const subscriptionService = {
       console.log("[Subscription] Expires at:", expiresAt);
       console.log("[Subscription] Time difference (ms):", expiresAt - now);
 
-      // FIX: Ensure daysRemaining is never negative
-      const daysRemaining = Math.max(
-        0,
-        Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24))
-      );
+      // FIX: Check if subscription has expired
       const isExpired = expiresAt <= now;
+      
+      // FIX: Ensure daysRemaining is never negative
+      const daysRemaining = isExpired ? 0 : Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
+      
+      // FIX: If cancelled AND expired, subscription is NOT active
+      const isCancelled = user.subscription.cancelled || false;
       const isActive = user.subscription.active && !isExpired;
 
       console.log("[Subscription] Days remaining:", daysRemaining);
       console.log("[Subscription] Is expired:", isExpired);
       console.log("[Subscription] Is active:", isActive);
-      console.log("[Subscription] Is cancelled:", user.subscription.cancelled);
+      console.log("[Subscription] Is cancelled:", isCancelled);
+
+      // FIX: If subscription is expired, update localStorage to reflect this
+      if (isExpired && user.subscription.active) {
+        console.log("[Subscription] Subscription has expired, updating localStorage...");
+        user.subscription.active = false;
+        user.isPaid = false;
+        localStorage.setItem("user", JSON.stringify(user));
+      }
 
       return {
         active: isActive,
         expired: isExpired,
-        daysRemaining: daysRemaining, // Already clamped to 0 minimum
+        daysRemaining: daysRemaining,
         type: user.subscription.type,
         expiresAt: user.subscription.expiresAt,
         trialStartedAt: user.subscription.trialStartedAt,
-        cancelled: user.subscription.cancelled || false,
+        cancelled: isCancelled,
       };
     } catch (error) {
       console.error("[Subscription] Error parsing user data:", error);
