@@ -149,7 +149,6 @@ const Dictionary = () => {
       // Refresh unlock stats
       await fetchUnlockStats()
 
-      alert(response.message || "Fjala u zhbllokua me sukses!")
     } catch (error) {
       console.error("Error unlocking word:", error)
       alert(error.response?.data?.message || "Gabim gjatë zhbllokimit të fjalës")
@@ -561,10 +560,10 @@ const Dictionary = () => {
                           {unlocking === word._id ? (
                             <div className="flex items-center gap-2">
                               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                              <span>Duke zhbllokuar...</span>
+                              <span>Duke Hapur...</span>
                             </div>
                           ) : (
-                            "Zhblloko Fjalën"
+                            "Hap Fjalën"
                           )}
                         </button>
                         {!unlockStats.canUnlock && (

@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react"
+"use client"
+
+import { useState, useEffect } from "react"
 import {
   ArrowLeft,
   Check,
@@ -19,42 +21,44 @@ function ConfirmationDialog({ isOpen, onClose, onConfirm, weekNumber, loading })
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 animate-scale-in">
-        <div className="flex items-center justify-center mb-6">
-          <div className="w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center">
-            <Play className="w-7 h-7 text-emerald-600" />
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-5 sm:p-6 md:p-8 animate-scale-in">
+        <div className="flex items-center justify-center mb-4 sm:mb-6">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-emerald-100 flex items-center justify-center">
+            <Play className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-600" />
           </div>
         </div>
 
-        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 text-center mb-3">Fillo Javën {weekNumber}?</h3>
+        <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 text-center mb-2 sm:mb-3">
+          Fillo Javën {weekNumber}?
+        </h3>
 
-        <p className="text-gray-600 text-center mb-6 text-sm sm:text-base leading-relaxed">
-          Duke filluar këtë javë, ajo do të bllokohet për <strong>7 ditë</strong>. Javët e tjera do të mbeten të hapura
-          që të mund të vazhdoni mësimin tuaj.
+        <p className="text-gray-600 text-center mb-5 sm:mb-6 text-xs sm:text-sm md:text-base leading-relaxed">
+          Duke filluar këtë javë, ajo do të jete e hapur për <strong>7 ditë</strong>. Javët e tjera do te jene te
+          blokuara per 7 dite që të mund të vazhdoni mësimin tuaj me nje strukure te duhur per mesin e gjuhes.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={onClose}
             disabled={loading}
-            className="flex-1 px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all disabled:opacity-50"
+            className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 transition-all disabled:opacity-50 text-sm"
           >
             Anullo
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
-            className="flex-1 px-6 py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/30 disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl bg-emerald-500 text-white font-semibold hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/30 disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
           >
             {loading ? (
               <>
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-white border-t-transparent"></div>
                 <span>Duke filluar...</span>
               </>
             ) : (
               <>
-                <Play className="w-5 h-5" />
+                <Play className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>Po, Fillo</span>
               </>
             )}
@@ -105,11 +109,11 @@ function CountdownTimer({ lockedUntil }) {
   }
 
   return (
-    <div className="flex items-center gap-2 text-xs font-mono font-bold text-amber-900">
-      {timeLeft.days > 0 && <span className="bg-amber-100 px-2 py-1 rounded">{timeLeft.days}d</span>}
-      <span className="bg-amber-100 px-2 py-1 rounded">{timeLeft.hours}h</span>
-      <span className="bg-amber-100 px-2 py-1 rounded">{timeLeft.minutes}m</span>
-      <span className="bg-amber-100 px-2 py-1 rounded">{timeLeft.seconds}s</span>
+    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs font-mono font-bold text-amber-900">
+      {timeLeft.days > 0 && <span className="bg-amber-100 px-1.5 sm:px-2 py-1 rounded">{timeLeft.days}d</span>}
+      <span className="bg-amber-100 px-1.5 sm:px-2 py-1 rounded">{timeLeft.hours}h</span>
+      <span className="bg-amber-100 px-1.5 sm:px-2 py-1 rounded">{timeLeft.minutes}m</span>
+      <span className="bg-amber-100 px-1.5 sm:px-2 py-1 rounded">{timeLeft.seconds}s</span>
     </div>
   )
 }
@@ -196,7 +200,7 @@ export default function PlanPage() {
       const responseData = response.data || response
       if (responseData && responseData.weekNumber) {
         console.log("[PlanPage] Week started successfully, fetching updated plan...")
-        
+
         const planResponse = await planService.getPlanByLevel(selectedLevel)
         console.log("[PlanPage] Updated plan response:", planResponse)
 
@@ -255,21 +259,21 @@ export default function PlanPage() {
     try {
       const response = await planService.markTopicAsCompleted(plan._id, topicId)
       console.log("[PlanPage] Mark topic completed response:", response)
-      
+
       const responseData = response.data || response
       if (responseData && (responseData.success || responseData.data)) {
         const newXp = responseData.data?.userXp || responseData.userXp
         if (newXp) {
           setUserXp(newXp)
         }
-        
+
         const planResponse = await planService.getPlanByLevel(selectedLevel)
         const planData = planResponse.data || planResponse
         setPlan(planData)
       }
     } catch (err) {
       console.error("Failed to mark topic as finished:", err)
-      
+
       setPlan((prevPlan) => {
         if (!prevPlan?.weeks) return null
         const revertedWeeks = prevPlan.weeks.map((week) => {
@@ -347,31 +351,35 @@ export default function PlanPage() {
   if (!selectedLevel) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-12 lg:py-20">
-          <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-gray-200/50 p-5 sm:p-8 md:p-10 mb-8 sm:mb-12 lg:mb-20 animate-fade-in">
-            <div className="flex items-start gap-3 sm:gap-4">
-              <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                <Pen className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" />
+        <div className="mx-auto max-w-7xl px-3 py-6 sm:px-4 sm:py-8 md:px-6 md:py-12 lg:px-12 lg:py-20">
+          <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-sm border border-gray-200/50 p-4 sm:p-5 md:p-8 lg:p-10 mb-6 sm:mb-8 lg:mb-20 animate-fade-in">
+            <div className="flex items-start gap-2.5 sm:gap-3 md:gap-4">
+              <div className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg sm:rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <Pen className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 text-white" />
               </div>
-              <div className="flex-1">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-emerald-900 bg-clip-text text-transparent mb-1 sm:mb-2">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-emerald-900 bg-clip-text text-transparent mb-1 sm:mb-2 leading-tight">
                   Zgjidhni Nivelin Tuaj
                 </h1>
-                <p className="text-gray-600 text-sm sm:text-base md:text-lg leading-relaxed">
+                <p className="text-gray-600 text-xs sm:text-sm md:text-base lg:text-lg leading-relaxed">
                   Filloni udhëtimin tuaj të mësimit të gjermanishtes duke zgjedhur nivelin që ju përshtatet më mirë
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 max-w-5xl mx-auto">
             {levels.map((level, index) => (
               <button
                 key={level}
                 onClick={() => handleLevelSelect(level)}
-                className={`bg-gradient-to-br ${levelConfigs[index].gradient} border-2 ${levelConfigs[index].border} ${levelConfigs[index].hover} rounded-2xl sm:rounded-3xl p-6 sm:p-8 text-center transition-all duration-300 hover:shadow-2xl shadow-lg hover:-translate-y-1`}
+                className={`bg-gradient-to-br ${levelConfigs[index].gradient} border-2 ${levelConfigs[index].border} ${levelConfigs[index].hover} rounded-xl sm:rounded-2xl lg:rounded-3xl p-4 sm:p-6 md:p-8 text-center transition-all duration-300 hover:shadow-2xl shadow-lg hover:-translate-y-1 active:scale-95`}
               >
-                <div className={`text-3xl sm:text-4xl font-bold ${levelConfigs[index].text} mb-2 sm:mb-3`}>{level}</div>
+                <div
+                  className={`text-2xl sm:text-3xl md:text-4xl font-bold ${levelConfigs[index].text} mb-1 sm:mb-2 md:mb-3`}
+                >
+                  {level}
+                </div>
                 <p className="text-xs sm:text-sm text-gray-700 font-medium">{levelNames[level]}</p>
               </button>
             ))}
@@ -470,52 +478,54 @@ export default function PlanPage() {
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 py-6 sm:py-10 lg:py-12 px-4 sm:px-6 lg:px-12">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 py-4 sm:py-6 md:py-10 lg:py-12 px-3 sm:px-4 md:px-6 lg:px-12">
         <div className="mx-auto max-w-5xl">
-          <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/40 p-4 md:p-8 shadow-xl backdrop-blur-md mb-6 sm:mb-10">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6">
+          <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-white/20 bg-white/40 p-3 sm:p-4 md:p-6 lg:p-8 shadow-xl backdrop-blur-md mb-4 sm:mb-6 md:mb-10">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-3 sm:gap-4 md:gap-6">
               <button
                 onClick={handleBackToWeeks}
-                className="inline-flex items-center justify-center gap-2 bg-gray-900 text-white px-4 py-2.5 rounded-xl hover:bg-gray-800 transition-all text-sm font-medium shadow-lg"
+                className="inline-flex items-center justify-center gap-1.5 sm:gap-2 bg-gray-900 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl hover:bg-gray-800 active:scale-95 transition-all text-xs sm:text-sm font-medium shadow-lg whitespace-nowrap"
               >
-                <ArrowLeft className="h-4 w-4" strokeWidth={2} />
+                <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
                 Kthehu te Javët
               </button>
-              <div className="flex-1">
-                <h1 className="mb-1 bg-gradient-to-r from-emerald-500 to-cyan-500 bg-clip-text text-2xl md:text-4xl font-bold text-transparent">
+              <div className="flex-1 min-w-0">
+                <h1 className="mb-0.5 sm:mb-1 bg-gradient-to-r from-emerald-500 to-cyan-500 bg-clip-text text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-transparent leading-tight">
                   {currentWeek.title}
                 </h1>
-                <p className="text-sm md:text-base text-gray-600">
+                <p className="text-xs sm:text-sm md:text-base text-gray-600 leading-relaxed">
                   {currentWeek.description || `Përfundoni të gjitha temat e javës ${selectedWeek}`}
                 </p>
               </div>
-              <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-200">
-                <Award className="h-5 w-5 text-emerald-600" />
-                <span className="text-sm font-bold text-emerald-900">{userXp} XP</span>
+              <div className="flex items-center gap-1.5 sm:gap-2 bg-emerald-50 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-emerald-200">
+                <Award className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
+                <span className="text-xs sm:text-sm font-bold text-emerald-900">{userXp} XP</span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Target className="h-5 w-5 text-emerald-600" />
-                <span className="font-semibold text-gray-900">Progresi i Javës</span>
+          <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-gray-200 p-4 sm:p-5 md:p-6 mb-4 sm:mb-6">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Target className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
+                <span className="font-semibold text-gray-900 text-sm sm:text-base">Progresi i Javës</span>
               </div>
-              <span className="text-sm font-bold text-emerald-600">
+              <span className="text-xs sm:text-sm font-bold text-emerald-600">
                 {currentWeek.progress.completed}/{currentWeek.progress.total} tema
               </span>
             </div>
-            <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-2.5 sm:h-3 bg-gray-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500"
                 style={{ width: `${currentWeek.progress.percentage}%` }}
               />
             </div>
-            <p className="text-sm text-gray-600 mt-2">{currentWeek.progress.percentage}% e përfunduar</p>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1.5 sm:mt-2">
+              {currentWeek.progress.percentage}% e përfunduar
+            </p>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {currentWeek.topics.map((topic, index) => {
               const locked = isTopicLocked(index)
               const isSubmitting = submittingTopicId === topic._id
@@ -523,7 +533,7 @@ export default function PlanPage() {
               return (
                 <div
                   key={topic._id}
-                  className={`bg-white rounded-2xl border-2 p-6 transition-all duration-300 ${
+                  className={`bg-white rounded-xl sm:rounded-2xl border-2 p-3 sm:p-4 md:p-6 transition-all duration-300 ${
                     locked
                       ? "border-gray-200 bg-gray-50/50 opacity-60"
                       : topic.isCompleted
@@ -531,9 +541,9 @@ export default function PlanPage() {
                         : "border-gray-200 hover:border-emerald-200 hover:shadow-lg"
                   }`}
                 >
-                  <div className="flex items-start gap-4">
+                  <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
                     <div
-                      className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
+                      className={`flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center font-bold ${
                         locked
                           ? "bg-gray-200 text-gray-500"
                           : topic.isCompleted
@@ -542,25 +552,29 @@ export default function PlanPage() {
                       }`}
                     >
                       {locked ? (
-                        <Lock className="w-5 h-5" />
+                        <Lock className="w-4 h-4 sm:w-5 sm:h-5" />
                       ) : topic.isCompleted ? (
-                        <Check className="w-5 h-5" strokeWidth={2.5} />
+                        <Check className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
                       ) : (
-                        <span>{index + 1}</span>
+                        <span className="text-sm sm:text-base">{index + 1}</span>
                       )}
                     </div>
 
-                    <div className="flex-1 min-w-0">
-                      <h3 className={`text-lg font-bold mb-2 ${locked ? "text-gray-500" : "text-gray-900"}`}>
+                    <div className="flex-1 min-w-0 w-full sm:w-auto">
+                      <h3
+                        className={`text-base sm:text-lg font-bold mb-1.5 sm:mb-2 ${locked ? "text-gray-500" : "text-gray-900"} leading-tight`}
+                      >
                         {topic.title}
                       </h3>
-                      <p className={`text-sm mb-4 ${locked ? "text-gray-400" : "text-gray-600"}`}>
+                      <p
+                        className={`text-xs sm:text-sm mb-3 sm:mb-4 ${locked ? "text-gray-400" : "text-gray-600"} leading-relaxed`}
+                      >
                         {topic.description}
                       </p>
 
-                      <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                         <div
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold ${
+                          className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold ${
                             locked
                               ? "bg-gray-100 text-gray-500"
                               : topic.isCompleted
@@ -573,13 +587,13 @@ export default function PlanPage() {
                         </div>
 
                         {topic.isCompleted && (
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700">
+                          <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-700">
                             <Check className="w-3.5 h-3.5" />E përfunduar
                           </div>
                         )}
 
                         {locked && (
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 text-gray-500">
+                          <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 text-gray-500">
                             <Lock className="w-3.5 h-3.5" />E bllokuar
                           </div>
                         )}
@@ -590,15 +604,15 @@ export default function PlanPage() {
                       <button
                         onClick={() => handleMarkAsFinished(topic._id)}
                         disabled={isSubmitting}
-                        className="flex-shrink-0 bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg shadow-emerald-500/30 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full sm:w-auto sm:flex-shrink-0 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg sm:rounded-xl font-medium transition-all shadow-lg shadow-emerald-500/30 hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                       >
                         {isSubmitting ? (
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-center gap-2">
                             <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                            <span className="text-sm">Duke ruajtur...</span>
+                            <span>Duke ruajtur...</span>
                           </div>
                         ) : (
-                          <span className="text-sm">Shëno si të Përfunduar</span>
+                          <span>Shëno si të Përfunduar</span>
                         )}
                       </button>
                     )}
@@ -614,7 +628,7 @@ export default function PlanPage() {
 
   // Weeks Selection View
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 py-6 sm:py-10 lg:py-12 px-4 sm:px-6 lg:px-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 py-4 sm:py-6 md:py-10 lg:py-12 px-3 sm:px-4 md:px-6 lg:px-12">
       <ConfirmationDialog
         isOpen={confirmDialog.isOpen}
         onClose={() => setConfirmDialog({ isOpen: false, weekNumber: null })}
@@ -624,46 +638,50 @@ export default function PlanPage() {
       />
 
       <div className="mx-auto max-w-7xl">
-        <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/40 p-4 md:p-8 shadow-xl backdrop-blur-md mb-6 sm:mb-10 lg:mb-12">
-          <div className="relative z-10 flex flex-col items-center gap-4 md:gap-6 text-center md:flex-row md:text-left">
-            <div className="flex-shrink-0">
-              <div className="flex h-12 w-12 md:h-16 md:w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg">
-                <Calendar className="h-6 w-6 md:h-8 md:w-8 text-white" strokeWidth={1.5} />
+        <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-white/20 bg-white/40 p-4 sm:p-5 md:p-6 lg:p-8 shadow-xl backdrop-blur-md mb-4 sm:mb-6 md:mb-10 lg:mb-12">
+          <div className="relative z-10 flex flex-col items-start gap-3 sm:gap-4 md:gap-6 text-left">
+            <div className="flex items-start gap-3 sm:gap-4 md:gap-6 w-full">
+              <div className="flex-shrink-0">
+                <div className="flex h-10 w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg">
+                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-white" strokeWidth={1.5} />
+                </div>
               </div>
-            </div>
-            <div className="flex-1">
-              <h1 className="mb-1 md:mb-2 bg-gradient-to-r from-emerald-500 to-cyan-500 bg-clip-text text-2xl md:text-4xl font-bold text-transparent">
-                Gjermanisht {plan.level} - Zgjidhni Javën
-              </h1>
-              <p className="text-sm md:text-base text-gray-600">Çdo javë përmban tema që duhet të përfundoni</p>
+              <div className="flex-1 min-w-0">
+                <h1 className="mb-1 bg-gradient-to-r from-emerald-500 to-cyan-500 bg-clip-text text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-transparent leading-tight">
+                  Gjermanisht {plan.level} - Zgjidhni Javën
+                </h1>
+                <p className="text-xs sm:text-sm md:text-base text-gray-600 leading-relaxed">
+                  Çdo javë përmban tema që duhet të përfundoni
+                </p>
+              </div>
             </div>
             <button
               onClick={() => setSelectedLevel(null)}
-              className="flex-shrink-0 inline-flex items-center justify-center gap-2 bg-gray-900 text-white px-6 py-3 md:py-3.5 rounded-xl md:rounded-2xl hover:bg-gray-800 transition-all text-sm font-medium shadow-xl shadow-gray-900/30 hover:shadow-2xl whitespace-nowrap"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 bg-gray-900 text-white px-4 sm:px-6 py-2.5 sm:py-3 md:py-3.5 rounded-lg sm:rounded-xl md:rounded-2xl hover:bg-gray-800 active:scale-95 transition-all text-xs sm:text-sm font-medium shadow-xl shadow-gray-900/30 hover:shadow-2xl whitespace-nowrap"
             >
-              <ArrowLeft className="h-4 w-4" strokeWidth={2} />
+              <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
               Ndrysho Nivelin
             </button>
           </div>
         </div>
 
         {lockStatus?.isLocked && (
-          <div className="mb-6 sm:mb-8 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 p-4 sm:p-6 shadow-lg">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="mb-4 sm:mb-6 md:mb-8 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 p-3 sm:p-4 md:p-6 shadow-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 rounded-xl bg-amber-200 flex items-center justify-center">
-                  <Clock className="h-6 w-6 text-amber-700" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-amber-200 flex items-center justify-center">
+                  <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-amber-700" />
                 </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-base sm:text-lg font-bold text-amber-900 mb-1">
+              <div className="flex-1 min-w-0 w-full">
+                <h3 className="text-sm sm:text-base md:text-lg font-bold text-amber-900 mb-1">
                   Java Aktive: Java {lockStatus.activeWeekNumber}
                 </h3>
-                <p className="text-amber-800 text-xs sm:text-sm leading-relaxed mb-3">
+                <p className="text-amber-800 text-xs sm:text-sm leading-relaxed mb-2 sm:mb-3">
                   Kjo javë është e hapur për 7 ditë për t'ju ndihmuar të përqendroheni. Javët e tjera janë ende të
                   mbyllura.
                 </p>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-2">
                   <span className="text-xs sm:text-sm font-semibold text-amber-900">Zhbllokohet pas:</span>
                   <CountdownTimer lockedUntil={lockStatus.lockedUntil} />
                 </div>
@@ -672,7 +690,7 @@ export default function PlanPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
           {plan.weeks.map((week) => {
             const completedTopics = week.topics.filter((t) => t.isCompleted).length
             const totalTopics = week.topics.length
@@ -684,30 +702,30 @@ export default function PlanPage() {
             return (
               <div
                 key={week._id}
-                className={`relative bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 transition-all duration-300 ${
+                className={`relative bg-white rounded-xl sm:rounded-2xl lg:rounded-3xl p-4 sm:p-5 md:p-6 transition-all duration-300 ${
                   isLocked
                     ? "border-2 border-amber-200 bg-amber-50/30 opacity-90"
-                    : "border-2 border-gray-200 hover:border-emerald-200 shadow-lg hover:shadow-2xl hover:-translate-y-1"
+                    : "border-2 border-gray-200 hover:border-emerald-200 shadow-lg hover:shadow-2xl hover:-translate-y-1 active:scale-95"
                 }`}
               >
-                <div className="absolute top-4 right-4 sm:top-5 sm:right-5">
+                <div className="absolute top-3 right-3 sm:top-4 sm:right-4 md:top-5 md:right-5">
                   {isLocked ? (
-                    <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-amber-400 shadow-lg animate-pulse">
-                      <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-amber-900" strokeWidth={2} />
+                    <div className="flex h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-amber-400 shadow-lg animate-pulse">
+                      <Lock className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-amber-900" strokeWidth={2} />
                     </div>
                   ) : isCompleted ? (
-                    <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50">
-                      <Check className="h-4 w-4 sm:h-5 sm:w-5 text-white" strokeWidth={2.5} />
+                    <div className="flex h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50">
+                      <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-white" strokeWidth={2.5} />
                     </div>
                   ) : isActiveWeek ? (
-                    <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-blue-500 shadow-lg shadow-blue-500/50 animate-pulse">
-                      <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 text-white" strokeWidth={2} />
+                    <div className="flex h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 items-center justify-center rounded-full bg-blue-500 shadow-lg shadow-blue-500/50 animate-pulse">
+                      <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 md:h-5 md:w-5 text-white" strokeWidth={2} />
                     </div>
                   ) : null}
                 </div>
 
                 <div
-                  className={`inline-block px-3 py-1.5 rounded-xl text-xs font-bold mb-3 ${
+                  className={`inline-block px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-xs font-bold mb-2 sm:mb-3 ${
                     isLocked
                       ? "bg-amber-200 text-amber-800"
                       : isActiveWeek
@@ -720,22 +738,22 @@ export default function PlanPage() {
                   {isLocked ? "E BLLOKUAR" : isActiveWeek && !isCompleted ? "JAVA AKTIVE" : `JAVA ${week.weekNumber}`}
                 </div>
 
-                <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-2 leading-tight pr-10 sm:pr-12">
+                <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 mb-1.5 sm:mb-2 leading-tight pr-8 sm:pr-10 md:pr-12">
                   {week.title || `Java e ${week.weekNumber}`}
                 </h3>
 
-                <p className="text-xs sm:text-sm text-gray-600 mb-4">
+                <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
                   {completedTopics} nga {totalTopics} tema të përfunduara
                 </p>
 
                 {isLocked && lockStatus?.lockedUntil && (
-                  <div className="mb-4 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
-                    <p className="text-xs text-amber-800 font-medium mb-2">Zhbllokohet pas:</p>
+                  <div className="mb-3 sm:mb-4 bg-amber-50 border border-amber-200 rounded-lg px-2.5 sm:px-3 py-2 sm:py-2.5">
+                    <p className="text-xs text-amber-800 font-medium mb-1.5 sm:mb-2">Zhbllokohet pas:</p>
                     <CountdownTimer lockedUntil={lockStatus.lockedUntil} />
                   </div>
                 )}
 
-                <div className="mb-4">
+                <div className="mb-3 sm:mb-4">
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
@@ -744,7 +762,7 @@ export default function PlanPage() {
                       style={{ width: `${weekProgress}%` }}
                     />
                   </div>
-                  <div className="flex items-center justify-between mt-2">
+                  <div className="flex items-center justify-between mt-1.5 sm:mt-2">
                     <span className={`text-xs font-semibold ${isLocked ? "text-amber-600" : "text-emerald-600"}`}>
                       {Math.round(weekProgress)}% e përfunduar
                     </span>
@@ -754,7 +772,7 @@ export default function PlanPage() {
                 <button
                   onClick={() => handleWeekButtonClick(week.weekNumber, isLocked, isActiveWeek)}
                   disabled={isLocked || startingWeek}
-                  className={`w-full py-3 px-4 rounded-xl font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 ${
+                  className={`w-full py-2.5 sm:py-3 px-3 sm:px-4 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm transition-all duration-300 flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 ${
                     isLocked
                       ? "bg-amber-200 text-amber-800 cursor-not-allowed"
                       : isActiveWeek
@@ -764,17 +782,17 @@ export default function PlanPage() {
                 >
                   {isLocked ? (
                     <>
-                      <Lock className="w-4 h-4" />
+                      <Lock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       <span>E Bllokuar</span>
                     </>
                   ) : isActiveWeek ? (
                     <>
-                      <BookOpen className="w-4 h-4" />
+                      <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       <span>Shiko Temat</span>
                     </>
                   ) : (
                     <>
-                      <Play className="w-4 h-4" />
+                      <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                       <span>Fillo Javën</span>
                     </>
                   )}
