@@ -26,6 +26,8 @@ import {
   FileTerminal,
   Sword,
   SpeakerIcon,
+  BookAlertIcon,
+  BookHeartIcon,
 } from "lucide-react"
 import { MicrophoneIcon } from "@heroicons/react/24/outline"
 
@@ -62,6 +64,7 @@ const Sidebar = () => {
     { icon: Languages, label: "Përkthe", path: "/translate" },
     { icon: Headphones, label: "Dëgjo", path: "/listen" },
     { icon: BookUser, label: "Fjalori", path: "/dictionary" },
+    { icon: InfinityIcon, label: "Baza Gjuhësore", path: "/category" },
 
 
     {
@@ -74,14 +77,14 @@ const Sidebar = () => {
         { icon: Dumbbell, label: "Ushtro Gramatiken", path: "/practice" },
       ],
     },
-    { icon: InfinityIcon, label: "Baza Gjuhësore", path: "/category" },
     { icon: LightbulbIcon, label: "Kuizet", path: "/quizes" },
-    { icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation" },
+    /*{ icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation" },*/
     { icon: NotebookPenIcon, label: "Fraza te ndryshme", path: "/phrases" },
-    { icon: Pen, label: "Fjalori Personal", path: "/words" },
+    { icon: BookHeartIcon, label: "Fjalori Personal", path: "/words" },
     { icon: TestTube2Icon, label: "Tests", path: "/tests" },
-    { icon: BarChart, label: "Renditja", path: "/leaderboard", requireAuth: false },
     { icon: Calendar, label: "PlanProgrami", path: "/plan", requireAuth: true },
+        { icon: BarChart, label: "Renditja", path: "/leaderboard", requireAuth: false },
+
     /*{ icon: User, label: "Menaxho", path: "/academies", requireAuth: true },*/
     /*{ icon: Sword, label: "Garo", path: "/race", requireAuth: true },*/
     /*{ icon: SpeakerIcon, label: "Dialoge te ndryshme", path: "/dialogue", requireAuth: true },*/

@@ -9,10 +9,9 @@ import {
   generateAvatarOptions,
   generateDicebearUrl,
 } from "../services/api"
-import { User, Star, BookOpen, Flame, Award, Download, FileText, Pencil, X, Search, TrendingUp } from "lucide-react"
+import { User, Star, BookOpen, Flame, Award, Download, FileText, Pencil, X, Search } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import logo from "../../public/logo.png"
-import Activity from "../components/Activity"
 
 const Account = () => {
   const { user, logout, updateUser, loading: authLoading } = useAuth()
@@ -38,7 +37,6 @@ const Account = () => {
   const [groupedAchievements, setGroupedAchievements] = useState({ xp: [], streak: [], tests: [] })
 
   const [achievementCarouselIndex, setAchievementCarouselIndex] = useState(0)
-  const [showActivity, setShowActivity] = useState(false)
 
   const AVATARS_PER_PAGE = 20
 
@@ -415,22 +413,9 @@ const Account = () => {
             >
               Dil
             </button>
-            <button
-              onClick={() => setShowActivity(!showActivity)}
-              className="bg-gradient-to-r from-teal-500 to-teal-600 text-white px-8 py-3 rounded-xl hover:from-teal-600 hover:to-teal-700 transition-all duration-200 font-bold shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center gap-2"
-            >
-              <TrendingUp className="h-5 w-5" />
-              {showActivity ? "Fshih Aktivitetin" : "Shfaq Aktivitetin"}
-            </button>
           </div>
         </div>
       </div>
-
-      {showActivity && (
-        <div className="animate-in fade-in slide-in-from-top-4 duration-300">
-          <Activity />
-        </div>
-      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

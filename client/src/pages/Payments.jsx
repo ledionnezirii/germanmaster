@@ -307,7 +307,7 @@ const Payment = () => {
 
   if (loading)
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-50 to-orange-50">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-red-50 to-orange-50" style={{ fontFamily: 'Inter, sans-serif' }}>
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-red-600 border-t-transparent mb-4"></div>
           <p className="text-gray-700 font-medium">Duke ngarkuar detajet e abonimit...</p>
@@ -324,10 +324,10 @@ const Payment = () => {
   const shouldShowCancelButton = subscriptionActive && !isCancelled
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50">
+    <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50" style={{ fontFamily: 'Inter, sans-serif' }}>
       <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white py-8 px-4 shadow-lg rounded-3xl">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold mb-2">Abonimi & Faturat</h1>
+          <h1 className="text-4xl font-bold mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>Abonimi & Faturat</h1>
           <p className="text-red-100">Menaxho planin tënd të abonimit dhe shiko detajet e pagesave</p>
         </div>
       </div>
@@ -358,7 +358,7 @@ const Payment = () => {
                 <span className="text-2xl">⏰</span>
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-bold mb-1">Abonimi i Anuluar</h3>
+                <h3 className="text-lg font-bold mb-1" style={{ fontFamily: 'Poppins, sans-serif' }}>Abonimi i Anuluar</h3>
                 <p className="text-orange-100 text-sm mb-2">
                   Abonimi yt është anuluar, por ke akoma{" "}
                   <span className="font-bold text-white text-lg">{subscriptionStatus.daysRemaining}</span> ditë qasje
@@ -386,7 +386,7 @@ const Payment = () => {
                 <span className="text-2xl">✅</span>
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-bold mb-1">✅ Abonimi Aktiv - Qasje e Plotë!</h3>
+                <h3 className="text-lg font-bold mb-1" style={{ fontFamily: 'Poppins, sans-serif' }}>✅ Abonimi Aktiv - Qasje e Plotë!</h3>
                 <p className="text-green-100 text-sm mb-2">
                   Abonimi yt <span className="font-bold text-white">Premium</span> është aktiv.
                 </p>
@@ -412,7 +412,7 @@ const Payment = () => {
                 <span className="text-2xl">🎉</span>
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-bold mb-1">Periudha Falas Aktive</h3>
+                <h3 className="text-lg font-bold mb-1" style={{ fontFamily: 'Poppins, sans-serif' }}>Periudha Falas Aktive</h3>
                 <p className="text-blue-100 text-sm mb-2">
                   Të kanë mbetur{" "}
                   <span className="font-bold text-white text-lg">{subscriptionStatus.daysRemaining}</span> ditë në
@@ -427,7 +427,7 @@ const Payment = () => {
         {shouldShowBuyButton && (
           <div className="mb-8">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Zgjidh Planin Tënd</h2>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>Zgjidh Planin Tënd</h2>
               <p className="text-gray-600">Zhblloko të gjitha veçoritë dhe vazhdo udhëtimin tënd</p>
             </div>
 
@@ -443,25 +443,25 @@ const Payment = () => {
                   }`}
                 >
                   {plan.popular && (
-                    <div className="absolute top-0 right-0 bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
+                    <div className="absolute top-0 right-0 bg-gradient-to-r from-red-500 to-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg" style={{ fontFamily: 'Poppins, sans-serif' }}>
                       MË I POPULLARIZUARI
                     </div>
                   )}
                   {plan.savings && (
-                    <div className="absolute top-0 left-0 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-br-lg">
+                    <div className="absolute top-0 left-0 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-br-lg" style={{ fontFamily: 'Poppins, sans-serif' }}>
                       {plan.savings}
                     </div>
                   )}
 
                   <div className={`p-6 ${plan.popular ? "pt-10" : ""}`}>
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">{plan.name}</h3>
+                    <h3 className="text-xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'Poppins, sans-serif' }}>{plan.name}</h3>
                     <p className="text-sm text-gray-500 mb-4">{plan.description}</p>
 
                     <div className="mb-4">
                       {plan.originalPrice && (
                         <span className="text-gray-400 line-through text-lg mr-2">{plan.originalPrice}</span>
                       )}
-                      <span className="text-4xl font-bold text-red-600">{plan.price}</span>
+                      <span className="text-4xl font-bold text-red-600" style={{ fontFamily: 'Poppins, sans-serif' }}>{plan.price}</span>
                       <span className="text-gray-500 text-sm ml-1 block mt-1">{plan.period}</span>
                     </div>
 
@@ -489,7 +489,7 @@ const Payment = () => {
 
             {/* Benefits */}
             <div className="bg-white rounded-xl shadow-lg p-6 mt-6">
-              <h4 className="font-semibold text-gray-900 mb-4 text-lg">✅ Përfitimet e Premium:</h4>
+              <h4 className="font-semibold text-gray-900 mb-4 text-lg" style={{ fontFamily: 'Poppins, sans-serif' }}>✅ Përfitimet e Premium:</h4>
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-green-500 text-xl">✓</span>
@@ -531,6 +531,7 @@ const Payment = () => {
                     ? "bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800"
                     : "bg-gray-300 text-gray-600 cursor-not-allowed"
                 }`}
+                style={{ fontFamily: 'Poppins, sans-serif' }}
               >
                 {paddleInitialized
                   ? `💳 Abonohu me Planin ${PLANS.find((p) => p.id === selectedPlan)?.name}`
@@ -552,7 +553,7 @@ const Payment = () => {
                 <span className="text-xl">⚙️</span>
               </div>
               <div className="flex-1">
-                <h2 className="text-xl font-bold text-gray-900 mb-1">Menaxho Abonimin</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-1" style={{ fontFamily: 'Poppins, sans-serif' }}>Menaxho Abonimin</h2>
                 <p className="text-gray-600 text-sm">
                   Dëshiron të anulosh? Mund ta anulosh abonimin tënd në çdo kohë.{" "}
                   <strong>Do të vazhdosh të kesh qasje të plotë deri në fund të periudhës së faturimit</strong> dhe
@@ -563,6 +564,7 @@ const Payment = () => {
             <button
               onClick={handleCancelSubscription}
               className="px-5 py-2.5 text-red-600 font-semibold border-2 border-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all"
+              style={{ fontFamily: 'Poppins, sans-serif' }}
             >
               Anulo Abonimin
             </button>
