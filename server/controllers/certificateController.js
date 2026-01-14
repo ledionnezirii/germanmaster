@@ -5,7 +5,7 @@ const path = require("path")
 
 const generateSerialNumber = (level) => {
   const year = new Date().getFullYear()
-  const month = String(new Date().getMonth() + 1).padStart(2, '0')
+  const month = String(new Date().getMonth() + 1).padStart(2, "0")
   const randomCode = Math.random().toString(36).substring(2, 8).toUpperCase()
   return `GLC-${year}${month}-${level}-${randomCode}`
 }
@@ -32,20 +32,20 @@ const generateCertificatePDF = async (user, level, serialNumber) => {
       // Elegant gradient-like background with layers
       doc.rect(0, 0, 842, 595).fill("#0f1419")
       doc.rect(20, 20, 802, 555).fill("#ffffff")
-      
+
       // Outer gold border
       doc.strokeColor("#d4af37").lineWidth(3).rect(35, 35, 772, 525).stroke()
-      
+
       // Inner elegant border
       doc.strokeColor("#b8960f").lineWidth(1).rect(45, 45, 752, 505).stroke()
 
       // Decorative corner elements - more refined
       doc.fillColor("#d4af37")
-      
+
       // Top corners - elegant flourish
       doc.moveTo(55, 55).lineTo(55, 85).lineTo(52, 85).lineTo(52, 52).lineTo(85, 52).lineTo(85, 55).fill()
       doc.moveTo(787, 55).lineTo(787, 85).lineTo(790, 85).lineTo(790, 52).lineTo(757, 52).lineTo(757, 55).fill()
-      
+
       // Bottom corners - elegant flourish
       doc.moveTo(55, 540).lineTo(55, 510).lineTo(52, 510).lineTo(52, 543).lineTo(85, 543).lineTo(85, 540).fill()
       doc.moveTo(787, 540).lineTo(787, 510).lineTo(790, 510).lineTo(790, 543).lineTo(757, 543).lineTo(757, 540).fill()
@@ -56,8 +56,12 @@ const generateCertificatePDF = async (user, level, serialNumber) => {
       const logoY = 70
 
       // Gold circle around logo
-      doc.strokeColor("#d4af37").lineWidth(2).circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2 + 3).stroke()
-      
+      doc
+        .strokeColor("#d4af37")
+        .lineWidth(2)
+        .circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2 + 3)
+        .stroke()
+
       doc.save()
       doc.circle(logoX + logoSize / 2, logoY + logoSize / 2, logoSize / 2).clip()
       doc.image(path.join(__dirname, "../public/images/logo.png"), logoX, logoY, { width: logoSize })
@@ -71,7 +75,7 @@ const generateCertificatePDF = async (user, level, serialNumber) => {
       doc.fontSize(42).fillColor("#0f1419").font("Times-Bold").text("CERTIFIKATË E PËRFUNDIMIT", 0, 195, {
         align: "center",
         width: 842,
-        characterSpacing: 1
+        characterSpacing: 1,
       })
 
       // Decorative line under title
@@ -88,24 +92,27 @@ const generateCertificatePDF = async (user, level, serialNumber) => {
       doc.fontSize(52).fillColor("#d4af37").font("Times-Bold").text(`${user.emri} ${user.mbiemri}`, 0, 295, {
         align: "center",
         width: 842,
-        characterSpacing: 0.5
+        characterSpacing: 0.5,
       })
 
       // Decorative accent under name
       doc.fillColor("#d4af37")
       doc.moveTo(371, 355).lineTo(421, 358).lineTo(471, 355).fill()
 
-      // Completion text
-      doc.fontSize(16).fillColor("#4a5568").font("Times-Roman").text("ka përfunduar me sukses programin e gjuhës gjermane", 0, 375, {
-        align: "center",
-        width: 842,
-      })
+      doc
+        .fontSize(16)
+        .fillColor("#4a5568")
+        .font("Times-Roman")
+        .text("ka përfunduar me sukses programin e Gjuhës Gjermane", 0, 375, {
+          align: "center",
+          width: 842,
+        })
 
       // Level badge - elegant design
       doc.fontSize(72).fillColor("#0f1419").font("Times-Bold").text(level, 0, 410, {
         align: "center",
         width: 842,
-        characterSpacing: 2
+        characterSpacing: 2,
       })
 
       // Decorative elements around level
@@ -119,23 +126,17 @@ const generateCertificatePDF = async (user, level, serialNumber) => {
         month: "long",
         year: "numeric",
       })
-      
+
       doc.fontSize(15).fillColor("#2d3748").font("Times-Roman").text(issueDate, 0, 488, {
         align: "center",
         width: 842,
       })
 
-      // Serial number - top right, elegant
-      doc.fontSize(9).fillColor("#718096").font("Times-Italic").text(`Nr. Serie: ${serialNumber}`, 0, 60, {
-        align: "right",
-        width: 772,
-      })
-
       // Bottom signature line - refined
       doc.strokeColor("#2d3748").lineWidth(1)
       doc.moveTo(321, 530).lineTo(521, 530).stroke()
-      
-      doc.fontSize(11).fillColor("#4a5568").font("Times-Italic").text("Drejtori i Programit", 0, 538, {
+
+      doc.fontSize(11).fillColor("#4a5568").font("Times-Italic").text("Gjuha Gjermane", 0, 538, {
         align: "center",
         width: 842,
       })

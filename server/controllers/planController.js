@@ -433,13 +433,8 @@ exports.markTopicAsCompleted = async (req, res) => {
           completedAt: new Date(),
         })
 
-        // Clear active week lock if this was the active week
-        if (
-          user.planProgress[levelProgressIndex].activeWeek &&
-          user.planProgress[levelProgressIndex].activeWeek.weekNumber === foundWeek.weekNumber
-        ) {
-          user.planProgress[levelProgressIndex].activeWeek = null
-        }
+        // The lock will expire naturally after 7 days based on lockedUntil date
+        // User can only start a new week after the 7-day period OR when starting a new week explicitly
 
         weekFinishedMessage = ` 🎉 Java ${foundWeek.weekNumber} u përfundua me sukses!`
       }
