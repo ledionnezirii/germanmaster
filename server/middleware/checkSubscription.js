@@ -1,33 +1,47 @@
-const User = require("../models/User")
-const { ApiError } = require("../utils/ApiError")
-const { asyncHandler } = require("../utils/asyncHandler")
+const User = require("../models/User");
 
-// Middleware to check if user's subscription is active
-const checkSubscription = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user.id)
+const checkSubscription = async (req, res, next) => {
+  try {
+    // Skip for non-protected routes
+    if (!req.user) {
+      return next();
+    }
 
-  if (!user) {
-    throw new ApiError(404, "User not found")
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return next();
+    }
+
+    const now = new Date();
+    const expiresAt = user.subscriptionExpiresAt ? new Date(user.subscriptionExpiresAt) : null;
+
+    // Check if subscription has expired
+    if (expiresAt && expiresAt <= now) {
+      console.log(`[Subscription Check] User ${user._id} subscription expired at ${expiresAt}`);
+      
+      // If user was paid but subscription expired, revoke access
+      if (user.isPaid) {
+        console.log(`[Subscription Check] Revoking access for user ${user._id}`);
+        user.isPaid = false;
+        user.isActive = false;
+        user.subscriptionCancelled = false; // Reset cancelled flag
+        await user.save();
+      }
+    }
+
+    // Attach fresh subscription status to request
+    req.subscriptionStatus = {
+      active: user.isPaid && expiresAt && expiresAt > now,
+      expired: !expiresAt || expiresAt <= now,
+      expiresAt: expiresAt,
+      cancelled: user.subscriptionCancelled || false,
+    };
+
+    next();
+  } catch (error) {
+    console.error("[Subscription Check] Error:", error);
+    next(); // Don't block request on error
   }
+};
 
-  const now = new Date()
-
-  // Check if subscription has expired
-  if (user.subscriptionExpiresAt && user.subscriptionExpiresAt < now) {
-    return res.status(403).json({
-      success: false,
-      message: "Your free trial has expired. Please subscribe to continue.",
-      code: "SUBSCRIPTION_EXPIRED",
-      data: {
-        subscriptionType: user.subscriptionType,
-        expiresAt: user.subscriptionExpiresAt,
-        trialStartedAt: user.trialStartedAt,
-      },
-    })
-  }
-
-  // User has active subscription or trial
-  next()
-})
-
-module.exports = { checkSubscription }
+module.exports = checkSubscription;

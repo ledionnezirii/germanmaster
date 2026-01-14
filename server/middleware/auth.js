@@ -47,6 +47,23 @@ const protect = asyncHandler(async (req, res, next) => {
       throw new ApiError(401, "User not found")
     }
 
+    // ============ CRITICAL FIX: CHECK SUBSCRIPTION EXPIRATION ============
+    const now = new Date()
+    const expiresAt = req.user.subscriptionExpiresAt ? new Date(req.user.subscriptionExpiresAt) : null
+
+    // If subscription expired and user still has paid status, revoke access
+    if (expiresAt && expiresAt <= now && req.user.isPaid) {
+      console.log(`[Auth] User ${req.user._id} subscription expired at ${expiresAt}, revoking access`)
+      req.user.isPaid = false
+      req.user.isActive = false
+      req.user.subscriptionCancelled = false // Reset cancelled flag after expiration
+      await req.user.save()
+      
+      // Update the req.user object to reflect changes
+      req.user = await User.findById(decoded.id).select("-password")
+    }
+    // ============ END OF FIX ============
+
     next()
   } catch (error) {
     if (error instanceof ApiError) {

@@ -10,7 +10,7 @@ const {
   updateStreak,
 } = require("../controllers/userController")
 const protect = require("../middleware/auth")
-const { checkSubscription } = require("../middleware/checkSubscription")
+const  checkSubscription  = require("../middleware/checkSubscription")
 
 // Apply subscription check to all routes that require active subscription
 router.get("/profile", protect, checkSubscription, getProfile)

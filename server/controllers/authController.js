@@ -325,11 +325,25 @@ const logoutFromDevice = asyncHandler(async (req, res) => {
 const getMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id)
 
+  // ============ CHECK AND UPDATE SUBSCRIPTION STATUS ============
+  const now = new Date()
+  const expiresAt = user.subscriptionExpiresAt ? new Date(user.subscriptionExpiresAt) : null
+  
+  // If subscription expired, revoke access immediately
+  if (expiresAt && expiresAt <= now && user.isPaid) {
+    console.log(`[GetMe] User ${user._id} subscription expired, revoking access`)
+    user.isPaid = false
+    user.isActive = false
+    user.subscriptionCancelled = false // Reset cancelled flag
+    await user.save()
+  }
+  // ============ END OF CHECK ============
+
   const avatarUrl = user.avatarStyle
     ? `https://api.dicebear.com/7.x/${user.avatarStyle}/svg?seed=${user._id}`
     : `https://api.dicebear.com/7.x/adventurer/svg?seed=${user._id}`
 
- const subscriptionStatus = calculateSubscriptionStatus(user)
+  const subscriptionStatus = calculateSubscriptionStatus(user)
 
   res.json(
     new ApiResponse(200, {
