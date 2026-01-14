@@ -57,8 +57,8 @@ const { requestLogger } = require("./middleware/loggerMiddleware");
 
 const app = express();
 const server = createServer(app);
-app.get("/loaderio-fe0c41d01670d6b76b19cd2edc744e17.txt", (req, res) => {
-  res.send("fe0c41d01670d6b76b19cd2edc744e17");
+app.get("/loaderio-loaderio-ecd07655e5377db9f6ef702a58dfa55c.txt", (req, res) => {
+  res.send("loaderio-ecd07655e5377db9f6ef702a58dfa55c");
 });
 
 
