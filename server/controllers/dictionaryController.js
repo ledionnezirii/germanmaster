@@ -68,8 +68,7 @@ const addUnlockStatus = (words, userId) => {
 
 // Helper function to get daily unlock count
 const getDailyUnlockCount = async (userId) => {
-  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
-
+const twentyFourHoursAgo = new Date(Date.now() - 25 * 60 * 60 * 1000)
   const result = await Dictionary.aggregate([
     { $unwind: "$unlocks" },
     {
@@ -232,7 +231,7 @@ const unlockWord = asyncHandler(async (req, res) => {
 
   console.log("[v0] Daily unlocks count:", dailyUnlocks)
 
-  if (dailyUnlocks >= 15) {
+  if (dailyUnlocks >= 2000) {
     throw new ApiError(429, `Keni arritur limitin ditor prej 15 fjalëve. Provoni përsëri pas 24 orësh.`)
   }
 
@@ -320,10 +319,10 @@ const getUnlockStats = asyncHandler(async (req, res) => {
     new ApiResponse(200, {
       todayUnlocks: dailyUnlocks,
       totalUnlocks,
-      remainingUnlocks: Math.max(0, 15 - dailyUnlocks),
-      dailyLimit: 15,
+      remainingUnlocks: Math.max(0, 2000 - dailyUnlocks),
+      dailyLimit: 2000,
       nextResetTime,
-      canUnlock: dailyUnlocks < 15,
+      canUnlock: dailyUnlocks < 2000,
     }),
   )
 })
