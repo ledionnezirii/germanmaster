@@ -47,7 +47,7 @@ const getLeaderboard = async (protocol, host, filter = {}, limit = 10, xpField =
 // Get all-time leaderboard
 exports.getAllTimeLeaderboard = async (req, res) => {
   try {
-    const limit = Number.parseInt(req.query.limit) || 10
+    const limit = Number.parseInt(req.query.limit) || 20
     const protocol = req.protocol
     const host = req.get("host")
     const leaderboard = await getLeaderboard(protocol, host, {}, limit, "xp")
@@ -72,7 +72,7 @@ exports.getWeeklyLeaderboard = async (req, res) => {
 
 exports.getMonthlyLeaderboard = async (req, res) => {
   try {
-    const limit = Number.parseInt(req.query.limit) || 10
+    const limit = Number.parseInt(req.query.limit) || 20
     const protocol = req.protocol
     const host = req.get("host")
     // Use monthlyXp field for monthly leaderboard
