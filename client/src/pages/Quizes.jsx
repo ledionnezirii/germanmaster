@@ -425,57 +425,81 @@ export default function Quizes() {
 
               {currentQuestion.type === "multiple-choice" && (
                 <div className="grid gap-3 mb-6">
-                  {currentQuestion.options.map((option, index) => {
-                    const isSelected = currentAnswer === option
-                    const isSubmitted = submittedAnswer !== undefined
-                    const isCorrect = submittedAnswer?.answer === option && submittedAnswer?.isCorrect
-                    const isWrong = submittedAnswer?.answer === option && !submittedAnswer?.isCorrect
+                  {(() => {
+                    const uniqueOptions = [...new Set(currentQuestion.options)]
+                    const letterMap = ["a", "b", "c", "d"]
+                    const letterLabels = ["A", "B", "C", "D"]
 
-                    return (
-                      <motion.button
-                        key={index}
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.08, duration: 0.3 }}
-                        onClick={() => !isSubmitted && handleAnswer(option)}
-                        disabled={isSubmitted}
-                        className={`w-full p-4 rounded-2xl text-left transition-all duration-300 flex items-center justify-between ${
-                          isCorrect
-                            ? "bg-emerald-50 border-2 border-emerald-500 shadow-lg shadow-emerald-500/10"
-                            : isWrong
-                              ? "bg-red-50 border-2 border-red-400"
-                              : isSelected && !isSubmitted
-                                ? "bg-emerald-50 border-2 border-emerald-500 shadow-lg shadow-emerald-500/10"
-                                : "bg-slate-50 border-2 border-transparent hover:bg-slate-100 hover:border-slate-200"
-                        } ${isSubmitted ? "cursor-default" : "cursor-pointer"}`}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div
-                            className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                              isCorrect
-                                ? "border-emerald-500 bg-emerald-500"
-                                : isWrong
-                                  ? "border-red-400 bg-red-400"
+                    return uniqueOptions.map((option, index) => {
+                      const optionLetter = letterMap[index]
+                      const isSelected = currentAnswer === optionLetter
+                      const isSubmitted = submittedAnswer !== undefined
+                      const isCorrect = submittedAnswer?.answer === optionLetter && submittedAnswer?.isCorrect
+                      const isWrong = submittedAnswer?.answer === optionLetter && !submittedAnswer?.isCorrect
+                      const isCorrectAnswer = currentQuestion.correctAnswer === optionLetter
+
+                      return (
+                        <motion.button
+                          key={index}
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: index * 0.08, duration: 0.3 }}
+                          onClick={() => !isSubmitted && handleAnswer(optionLetter)}
+                          disabled={isSubmitted}
+                          className={`w-full p-4 rounded-2xl text-left transition-all duration-300 flex items-center justify-between ${
+                            isCorrect
+                              ? "bg-emerald-50 border-2 border-emerald-500 shadow-lg shadow-emerald-500/10"
+                              : isWrong
+                                ? "bg-red-50 border-2 border-red-400"
+                                : isSubmitted && isCorrectAnswer
+                                  ? "bg-emerald-50 border-2 border-emerald-500 shadow-lg shadow-emerald-500/10"
                                   : isSelected && !isSubmitted
-                                    ? "border-emerald-500 bg-emerald-500"
-                                    : "border-slate-300"
-                            }`}
-                          >
-                            {isCorrect && <CheckCircle className="w-4 h-4 text-white" />}
-                            {isWrong && <XCircle className="w-4 h-4 text-white" />}
-                            {isSelected && !isSubmitted && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
+                                    ? "bg-emerald-50 border-2 border-emerald-500 shadow-lg shadow-emerald-500/10"
+                                    : "bg-slate-50 border-2 border-transparent hover:bg-slate-100 hover:border-slate-200"
+                          } ${isSubmitted ? "cursor-default" : "cursor-pointer"}`}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div
+                              className={`w-8 h-8 rounded-full border-2 flex items-center justify-center font-bold text-sm transition-all ${
+                                isCorrect
+                                  ? "border-emerald-500 bg-emerald-500 text-white"
+                                  : isWrong
+                                    ? "border-red-400 bg-red-400 text-white"
+                                    : isSubmitted && isCorrectAnswer
+                                      ? "border-emerald-500 bg-emerald-500 text-white"
+                                      : isSelected && !isSubmitted
+                                        ? "border-emerald-500 bg-emerald-500 text-white"
+                                        : "border-slate-300 text-slate-500"
+                              }`}
+                            >
+                              {isCorrect ? (
+                                <CheckCircle className="w-4 h-4" />
+                              ) : isWrong ? (
+                                <XCircle className="w-4 h-4" />
+                              ) : isSubmitted && isCorrectAnswer ? (
+                                <CheckCircle className="w-4 h-4" />
+                              ) : (
+                                letterLabels[index]
+                              )}
+                            </div>
+                            <span
+                              className={`font-medium ${
+                                isCorrect
+                                  ? "text-emerald-700"
+                                  : isWrong
+                                    ? "text-red-600"
+                                    : isSubmitted && isCorrectAnswer
+                                      ? "text-emerald-700"
+                                      : "text-slate-700"
+                              }`}
+                            >
+                              {option}
+                            </span>
                           </div>
-                          <span
-                            className={`font-medium ${
-                              isCorrect ? "text-emerald-700" : isWrong ? "text-red-600" : "text-slate-700"
-                            }`}
-                          >
-                            {option}
-                          </span>
-                        </div>
-                      </motion.button>
-                    )
-                  })}
+                        </motion.button>
+                      )
+                    })
+                  })()}
                 </div>
               )}
 
