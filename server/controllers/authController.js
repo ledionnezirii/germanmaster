@@ -8,22 +8,23 @@ const crypto = require("crypto")
 const sendEmail = require("../utils/sendEmail")
 
 
-// Helper function to calculate subscription status (ADD THIS AT TOP OF FILE)
+// Helper function to calculate subscription status (FIXED VERSION)
 const calculateSubscriptionStatus = (user) => {
   const nowDate = new Date()
-  const isSubscriptionActive = user.subscriptionExpiresAt && user.subscriptionExpiresAt > nowDate
+  const expiresAt = user.subscriptionExpiresAt ? new Date(user.subscriptionExpiresAt) : null
   
-  // Calculate days remaining (always from NOW, never negative display)
+  // Check if expired
+  const isExpired = !expiresAt || expiresAt <= nowDate
+  
+  // Calculate days remaining - ONLY if not expired
   let daysRemaining = 0
-  if (user.subscriptionExpiresAt) {
-    const diffMs = user.subscriptionExpiresAt - nowDate
+  if (!isExpired && expiresAt) {
+    const diffMs = expiresAt - nowDate
     daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
-    // If subscription is expired, show 0 instead of negative
-    if (daysRemaining < 0) daysRemaining = 0
   }
 
   return {
-    active: isSubscriptionActive,
+    active: !isExpired && user.isPaid,
     type: user.subscriptionType || "free_trial",
     expiresAt: user.subscriptionExpiresAt,
     trialStartedAt: user.trialStartedAt,
@@ -229,7 +230,7 @@ const login = asyncHandler(async (req, res) => {
     ? `https://api.dicebear.com/7.x/${user.avatarStyle}/svg?seed=${user._id}`
     : `https://api.dicebear.com/7.x/adventurer/svg?seed=${user._id}`
 
- const subscriptionStatus = calculateSubscriptionStatus(user)
+  const subscriptionStatus = calculateSubscriptionStatus(user)
 
   res.json(
     new ApiResponse(
@@ -238,6 +239,8 @@ const login = asyncHandler(async (req, res) => {
         token,
         user: {
           id: user._id,
+          firstName: user.emri,  // Add firstName alias
+          lastName: user.mbiemri, // Add lastName alias
           emri: user.emri,
           mbiemri: user.mbiemri,
           email: user.email,
@@ -247,6 +250,12 @@ const login = asyncHandler(async (req, res) => {
           avatarUrl,
           avatarStyle: user.avatarStyle || "adventurer",
           streakCount: user.streakCount || 0,
+          // Add these fields that frontend needs
+          isPaid: user.isPaid,
+          subscriptionType: user.subscriptionType,
+          subscriptionExpiresAt: user.subscriptionExpiresAt,
+          subscriptionCancelled: user.subscriptionCancelled || false,
+          // Computed subscription object
           subscription: subscriptionStatus,
         },
       },
@@ -254,7 +263,6 @@ const login = asyncHandler(async (req, res) => {
     ),
   )
 })
-// </CHANGE>
 
 const logout = asyncHandler(async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer ", "")
@@ -325,6 +333,10 @@ const logoutFromDevice = asyncHandler(async (req, res) => {
 const getMe = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id)
 
+  if (!user) {
+    throw new ApiError(404, "User not found")
+  }
+
   // ============ CHECK AND UPDATE SUBSCRIPTION STATUS ============
   const now = new Date()
   const expiresAt = user.subscriptionExpiresAt ? new Date(user.subscriptionExpiresAt) : null
@@ -349,6 +361,8 @@ const getMe = asyncHandler(async (req, res) => {
     new ApiResponse(200, {
       user: {
         id: user._id,
+        firstName: user.emri,  // Add firstName alias
+        lastName: user.mbiemri, // Add lastName alias
         emri: user.emri,
         mbiemri: user.mbiemri,
         email: user.email,
@@ -361,11 +375,18 @@ const getMe = asyncHandler(async (req, res) => {
         completedTests: user.completedTests,
         achievements: user.achievements,
         streakCount: user.streakCount || 0,
+        // Add these fields that frontend needs
+        isPaid: user.isPaid,
+        subscriptionType: user.subscriptionType,
+        subscriptionExpiresAt: user.subscriptionExpiresAt,
+        subscriptionCancelled: user.subscriptionCancelled || false,
+        // Computed subscription object
         subscription: subscriptionStatus,
       },
     }),
   )
 })
+
 
 const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body
