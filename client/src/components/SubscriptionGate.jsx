@@ -20,10 +20,12 @@ const SubscriptionGate = ({ children }) => {
 
     const checkSubscription = async () => {
       try {
+        console.log("[SubscriptionGate] Checking subscription status...")
         const status = await subscriptionService.checkStatus()
+        console.log("[SubscriptionGate] Status received:", status)
         setSubscriptionStatus(status)
       } catch (error) {
-        console.error("Failed to check subscription status:", error)
+        console.error("[SubscriptionGate] Failed to check subscription status:", error)
       } finally {
         setLoading(false)
       }
@@ -52,7 +54,8 @@ const SubscriptionGate = ({ children }) => {
     return children
   }
 
-  if (subscriptionStatus?.active && subscriptionStatus?.daysRemaining <= 3) {
+  // Show warning if subscription will expire soon (3 days or less) and NOT cancelled
+  if (subscriptionStatus?.active && subscriptionStatus?.daysRemaining <= 3 && !subscriptionStatus?.cancelled) {
     return (
       <div>
         <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 p-3 mb-3 shadow-sm">
@@ -81,6 +84,7 @@ const SubscriptionGate = ({ children }) => {
     )
   }
 
+  // Show expired screen if subscription is expired
   if (subscriptionStatus?.expired) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 p-4">
@@ -100,7 +104,7 @@ const SubscriptionGate = ({ children }) => {
             <div className="text-center mb-5">
               <h2 className="text-lg font-bold text-gray-900 mb-2">Periudha juaj falas ka përfunduar</h2>
               <p className="text-sm text-gray-600 leading-relaxed">
-                Faleminderit që provuat platformën tonë! Periudha juaj falas 2-ditore ka mbaruar. Abonohuni tani për të
+                Faleminderit që provuat platformën tonë! Periudha juaj falas ka mbaruar. Abonohuni tani për të
                 vazhduar mësimin e gjermanishtes me qasje të pakufizuar në të gjitha funksionet.
               </p>
             </div>

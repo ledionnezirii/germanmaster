@@ -487,28 +487,28 @@ export default function Words() {
             </AnimatePresence>
 
             {/* Quiz Stats */}
-            <div className="flex justify-between items-center mb-6">
-              <div className="bg-white px-4 py-2 rounded-2xl shadow-sm border border-blue-100">
-                <span className="text-sm text-gray-500">Rezultati: </span>
-                <span className="font-semibold bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">
+            <div className="flex justify-between items-center mb-4">
+              <div className="bg-white px-3 py-1.5 rounded-xl shadow-sm border border-blue-100">
+                <span className="text-xs text-gray-500">Rezultati: </span>
+                <span className="font-semibold text-sm bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">
                   {quizScore.correct}/{quizScore.total}
                 </span>
               </div>
               <button
                 onClick={finishQuiz}
-                className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl font-medium transition-all shadow-lg text-sm"
+                className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-xl font-medium transition-all shadow-lg text-xs"
               >
                 Perfundo Kuizin
               </button>
             </div>
 
             {/* Quiz Card */}
-            <div className="bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 rounded-3xl p-8 text-center mb-6 shadow-xl">
-              <p className="text-blue-100 text-sm mb-3 uppercase tracking-wide">Përktheni</p>
-              <h2 className="text-5xl font-bold text-white mb-2 break-words">{currentQuizWord.word}</h2>
+            <div className="bg-gradient-to-br from-blue-500 via-cyan-500 to-teal-500 rounded-2xl p-6 text-center mb-4 shadow-xl">
+              <p className="text-blue-100 text-xs mb-2 uppercase tracking-wide">Përktheni</p>
+              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-1 break-words">{currentQuizWord.word}</h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               {multipleChoiceOptions.map((option, idx) => {
                 const isSelected = selectedAnswer?._id === option._id
                 const isCorrect = option._id === currentQuizWord._id
@@ -516,12 +516,12 @@ export default function Words() {
 
                 const textContent = option.translation || option.word
                 const textLength = textContent.length
-                // Better responsive font sizing for long words
-                let fontSize = "text-base sm:text-lg" // Default
-                if (textLength > 50) {
-                  fontSize = "text-xs sm:text-sm"
-                } else if (textLength > 35) {
-                  fontSize = "text-sm sm:text-base"
+                // Smaller font sizing for compact buttons
+                let fontSize = "text-xs sm:text-sm"
+                if (textLength > 40) {
+                  fontSize = "text-[10px] sm:text-xs"
+                } else if (textLength > 25) {
+                  fontSize = "text-[11px] sm:text-xs"
                 }
 
                 return (
@@ -529,7 +529,7 @@ export default function Words() {
                     key={option._id}
                     onClick={() => handleAnswerSelection(option)}
                     disabled={showResult}
-                    className={`p-5 min-h-[80px] rounded-2xl text-left transition-all border-2 ${
+                    className={`p-3 min-h-[60px] rounded-xl text-left transition-all border-2 ${
                       showResult
                         ? isCorrect
                           ? "border-green-500 bg-gradient-to-br from-green-50 to-emerald-50"
@@ -541,9 +541,9 @@ export default function Words() {
                           : "border-gray-200 bg-white hover:border-purple-400 hover:bg-gradient-to-br hover:from-purple-50 hover:to-blue-50"
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center justify-between gap-2">
                       <span
-                        className={`font-medium break-words flex-1 leading-snug ${fontSize} ${
+                        className={`font-medium break-words flex-1 leading-tight ${fontSize} ${
                           showResult && isCorrect
                             ? "text-green-700"
                             : showResult && isSelected && !isCorrect
@@ -553,9 +553,9 @@ export default function Words() {
                       >
                         {textContent}
                       </span>
-                      {showResult && isCorrect && <CheckCircle size={20} className="text-green-600 flex-shrink-0" />}
+                      {showResult && isCorrect && <CheckCircle size={16} className="text-green-600 flex-shrink-0" />}
                       {showResult && isSelected && !isCorrect && (
-                        <XCircle size={20} className="text-red-600 flex-shrink-0" />
+                        <XCircle size={16} className="text-red-600 flex-shrink-0" />
                       )}
                     </div>
                   </button>
@@ -566,13 +566,13 @@ export default function Words() {
             {/* Result Feedback */}
             {quizResult !== null && (
               <div
-                className={`mt-4 p-4 rounded-2xl flex items-center justify-center gap-2 ${
+                className={`mt-3 p-3 rounded-xl flex items-center justify-center gap-2 ${
                   quizResult
                     ? "bg-gradient-to-r from-emerald-50 to-green-50"
                     : "bg-gradient-to-r from-rose-50 to-red-50"
                 }`}
               >
-                <span className={`font-medium ${quizResult ? "text-emerald-600" : "text-rose-600"}`}>
+                <span className={`font-medium text-sm ${quizResult ? "text-emerald-600" : "text-rose-600"}`}>
                   {quizResult ? "E saktë! 🎉" : "Gabim! 😅"}
                 </span>
               </div>
@@ -738,7 +738,7 @@ export default function Words() {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Fjala Gjermane</label>
                         <input
-                          ref={newWordInputRef}
+                          ref__={newWordInputRef}
                           type="text"
                           value={newWord}
                           onChange={(e) => setNewWord(e.target.value)}

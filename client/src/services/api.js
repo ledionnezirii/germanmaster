@@ -622,19 +622,23 @@ export const paymentService = {
 
 export const subscriptionService = {
   checkStatus: async () => {
-    console.log("[Subscription] Checking subscription status...");
-
-    const userStr = localStorage.getItem("user");
-    console.log("[Subscription] User from localStorage:", userStr);
-
-    if (!userStr) {
-      console.log("[Subscription] No user found in localStorage");
-      return { active: false, expired: true, daysRemaining: 0 };
-    }
+    console.log("[Subscription] Checking subscription status from backend...");
 
     try {
-      const user = JSON.parse(userStr);
-      console.log("[Subscription] Parsed user:", user);
+      // Fetch fresh user data from backend
+      const response = await authService.getProfile();
+      const user = response.data?.user || response.data;
+      
+      console.log("[Subscription] Fresh user data from backend:", user);
+
+      if (!user) {
+        console.log("[Subscription] No user found from backend");
+        return { active: false, expired: true, daysRemaining: 0 };
+      }
+
+      // Update localStorage with fresh data from backend
+      localStorage.setItem("user", JSON.stringify(user));
+      console.log("[Subscription] Updated localStorage with fresh user data");
 
       // Check if subscription object exists
       if (!user.subscription) {
@@ -649,45 +653,43 @@ export const subscriptionService = {
       console.log("[Subscription] Expires at:", expiresAt);
       console.log("[Subscription] Time difference (ms):", expiresAt - now);
 
-      // FIX: Check if subscription has expired
+      // Check if subscription has expired
       const isExpired = expiresAt <= now;
       
-      // FIX: Ensure daysRemaining is never negative
-      const daysRemaining = isExpired ? 0 : Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24));
+      // CRITICAL FIX: Only calculate days remaining if NOT expired
+      let daysRemaining = 0;
+      if (!isExpired) {
+        const diffMs = expiresAt - now;
+        daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      }
       
-      // FIX: If cancelled AND expired, subscription is NOT active
-      const isCancelled = user.subscription.cancelled || false;
-      const isActive = user.subscription.active && !isExpired;
+      // If cancelled AND expired, subscription is NOT active
+      const isCancelled = user.subscriptionCancelled || user.subscription.cancelled || false;
+      const isActive = user.isPaid && !isExpired;
 
       console.log("[Subscription] Days remaining:", daysRemaining);
       console.log("[Subscription] Is expired:", isExpired);
       console.log("[Subscription] Is active:", isActive);
       console.log("[Subscription] Is cancelled:", isCancelled);
 
-      // FIX: If subscription is expired, update localStorage to reflect this
-      if (isExpired && user.subscription.active) {
-        console.log("[Subscription] Subscription has expired, updating localStorage...");
-        user.subscription.active = false;
-        user.isPaid = false;
-        localStorage.setItem("user", JSON.stringify(user));
-      }
-
-      return {
+      const status = {
         active: isActive,
         expired: isExpired,
         daysRemaining: daysRemaining,
-        type: user.subscription.type,
+        type: user.subscriptionType || user.subscription.type,
         expiresAt: user.subscription.expiresAt,
-        trialStartedAt: user.subscription.trialStartedAt,
+        trialStartedAt: user.subscription.trialStartedAt || user.trialStartedAt,
         cancelled: isCancelled,
       };
+
+      console.log("[Subscription] Final status:", status);
+      return status;
     } catch (error) {
-      console.error("[Subscription] Error parsing user data:", error);
+      console.error("[Subscription] Error fetching fresh subscription data:", error);
       return { active: false, expired: true, daysRemaining: 0 };
     }
   },
 };
-
 export const academyService = {
   // Academy operations
   getAllAcademies: (params = {}) => api.get("/academies", { params }),
