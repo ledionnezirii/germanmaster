@@ -333,6 +333,20 @@ const handleTransactionCompleted = async (event) => {
     console.log("[v0] 💵 Transaction amount:", amount, currency)
     console.log("[v0] 🔗 Subscription ID:", subscriptionId)
 
+    // ============ CRITICAL FIX: Check if subscription was cancelled ============
+    if (subscriptionId) {
+      const existingPayment = await Payment.findOne({
+        paddleSubscriptionId: subscriptionId,
+      }).sort({ createdAt: -1 })
+
+      if (existingPayment && existingPayment.status === 'cancelled') {
+        console.log("[v0] ⚠️⚠️⚠️ Subscription was CANCELLED - ignoring renewal transaction")
+        console.log("[v0] ⚠️ This prevents double-billing after cancellation")
+        return
+      }
+    }
+    // ============ END OF CANCELLATION CHECK ============
+
     const priceId = data.items?.[0]?.price_id
     console.log("[v0] 🏷️ Price ID:", priceId)
 
@@ -478,39 +492,31 @@ const handleTransactionCompleted = async (event) => {
       duration: durationDays + " days",
     })
 
-    // ============ CRITICAL FIX FOR NEGATIVE DAYS ISSUE ============
-    // ALWAYS calculate from NOW for new purchases to avoid negative days
-    const now = new Date()
+    // ============ CRITICAL FIX: Use Paddle's EXACT timestamps ============
     let expiresAt
     let nextBillingDate
 
-    // Check if user's previous subscription was expired
-    const userWasExpired = user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) <= now
+    const billingPeriod = data.billing_period || data.current_billing_period
+    
+    if (billingPeriod?.ends_at) {
+      // USE PADDLE'S EXACT TIMESTAMP - this fixes timezone issues
+      expiresAt = new Date(billingPeriod.ends_at)
+      nextBillingDate = new Date(billingPeriod.ends_at)
+      console.log("[v0] ✅✅✅ Using Paddle's EXACT billing period end time:", expiresAt.toISOString())
+      console.log("[v0] ✅ This ensures exact 24-hour period without timezone bugs")
+    } else {
+      // Fallback only if Paddle doesn't provide timestamp
+      const now = new Date()
+      expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
+      nextBillingDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
+      console.log("[v0] ⚠️ Fallback: calculated from now:", expiresAt.toISOString())
+    }
+    // ============ END OF TIMESTAMP FIX ============
 
-    // Check for existing payment
+    // Check for duplicate transaction
     const existingPayment = await Payment.findOne({
       paddleTransactionId: data.id,
     })
-
-    if (userWasExpired || !existingPayment) {
-      // For expired users or first-time purchases, ALWAYS start from NOW
-      expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
-      nextBillingDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
-      console.log("[v0] ✅ User was expired or new purchase - calculating from NOW:", expiresAt.toISOString())
-    } else {
-      // For active renewals, use Paddle's billing period if available
-      const billingPeriod = data.billing_period || data.current_billing_period
-      if (billingPeriod?.ends_at) {
-        expiresAt = new Date(billingPeriod.ends_at)
-        nextBillingDate = new Date(billingPeriod.ends_at)
-        console.log("[v0] ✅ Using Paddle billing period end date:", expiresAt.toISOString())
-      } else {
-        expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
-        nextBillingDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
-        console.log("[v0] ⚠️ Fallback: calculated from NOW:", expiresAt.toISOString())
-      }
-    }
-    // ============ END OF FIX ============
 
     if (existingPayment) {
       console.log("[v0] ⚠️ Payment already processed for transaction:", data.id)
@@ -623,7 +629,6 @@ const handleSubscriptionCreated = async (event) => {
     // Try to get userId from customer email if not in customData
     if (!userId && data.customer_id) {
       console.log("[v0] 🔍 No userId in customData, trying to find user by customer email")
-      // Note: We'll wait for transaction.completed to handle this
       console.log("[v0] ⚠️ Will process in transaction.completed event")
       return
     }
@@ -680,34 +685,25 @@ const handleSubscriptionCreated = async (event) => {
       console.log("[v0] ⚠️ Unknown billing cycle, defaulting to monthly")
     }
 
-    // ============ CRITICAL FIX FOR NEGATIVE DAYS ISSUE ============
-    // ALWAYS calculate from NOW for new subscriptions
-    const now = new Date()
+    // ============ CRITICAL FIX: Use Paddle's EXACT timestamps ============
     let expiresAt
     let nextBillingDate
 
-    // Check if user's previous subscription was expired
-    const userWasExpired = user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) <= now
-
-    if (userWasExpired || !user.isPaid) {
-      // For expired users or first-time subscriptions, ALWAYS start from NOW
+    const currentBillingPeriod = data.current_billing_period
+    
+    if (currentBillingPeriod?.ends_at) {
+      // USE PADDLE'S EXACT TIMESTAMP
+      expiresAt = new Date(currentBillingPeriod.ends_at)
+      nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
+      console.log("[v0] ✅✅✅ Using Paddle's EXACT billing period end time:", expiresAt.toISOString())
+    } else {
+      // Fallback
+      const now = new Date()
       expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
       nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
-      console.log("[v0] ✅ User was expired or new subscription - calculating from NOW:", expiresAt.toISOString())
-    } else {
-      // For active renewals, use Paddle's billing period if available
-      const currentBillingPeriod = data.current_billing_period
-      if (currentBillingPeriod?.ends_at) {
-        expiresAt = new Date(currentBillingPeriod.ends_at)
-        nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
-        console.log("[v0] ✅ Using Paddle billing period end date:", expiresAt.toISOString())
-      } else {
-        expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
-        nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
-        console.log("[v0] ⚠️ Fallback: calculated from NOW:", expiresAt.toISOString())
-      }
+      console.log("[v0] ⚠️ Fallback: calculated from now:", expiresAt.toISOString())
     }
-    // ============ END OF FIX ============
+    // ============ END OF TIMESTAMP FIX ============
 
     console.log("[v0] ⏰ Subscription expires at:", expiresAt.toISOString())
     console.log("[v0] ⏰ Next billing date:", nextBillingDate.toISOString())
@@ -1052,10 +1048,13 @@ exports.cancelSubscription = async (req, res) => {
     if (payment.paddleSubscriptionId && paddleClient) {
       console.log("[v0] 📞 Calling Paddle API to cancel subscription...")
       try {
+        // ============ CRITICAL FIX: Cancel immediately to prevent future billing ============
         await paddleClient.subscriptions.cancel(payment.paddleSubscriptionId, {
-          effectiveFrom: "next_billing_period",
+          effectiveFrom: "immediately",  // Changed from "next_billing_period"
         })
-        console.log(`[v0] ✅ Paddle subscription cancelled via API: ${payment.paddleSubscriptionId}`)
+        console.log(`[v0] ✅ Paddle subscription cancelled IMMEDIATELY: ${payment.paddleSubscriptionId}`)
+        console.log(`[v0] ✅ This prevents any future auto-renewal attempts`)
+        // ============ END OF CANCELLATION FIX ============
       } catch (paddleError) {
         console.error("[v0] ❌ Paddle API error:", paddleError)
         console.error("[v0] Error message:", paddleError.message)
@@ -1194,34 +1193,25 @@ const handleSubscriptionUpdated = async (event) => {
       console.log("[v0] ⚠️ Unknown billing cycle, defaulting to monthly")
     }
 
-    // ============ CRITICAL FIX FOR NEGATIVE DAYS ISSUE ============
-    // ALWAYS calculate from NOW for updated subscriptions
-    const now = new Date()
+    // ============ CRITICAL FIX: Use Paddle's EXACT timestamps ============
     let expiresAt
     let nextBillingDate
 
-    // Check if user's previous subscription was expired
-    const userWasExpired = user.subscriptionExpiresAt && new Date(user.subscriptionExpiresAt) <= now
-
-    if (userWasExpired) {
-      // For expired users, ALWAYS start from NOW
+    const currentBillingPeriod = data.current_billing_period
+    
+    if (currentBillingPeriod?.ends_at) {
+      // USE PADDLE'S EXACT TIMESTAMP
+      expiresAt = new Date(currentBillingPeriod.ends_at)
+      nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
+      console.log("[v0] ✅✅✅ Using Paddle's EXACT billing period end time:", expiresAt.toISOString())
+    } else {
+      // Fallback
+      const now = new Date()
       expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
       nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
-      console.log("[v0] ✅ User was expired - calculating from NOW:", expiresAt.toISOString())
-    } else {
-      // For active renewals, use Paddle's billing period if available
-      const currentBillingPeriod = data.current_billing_period
-      if (currentBillingPeriod?.ends_at) {
-        expiresAt = new Date(currentBillingPeriod.ends_at)
-        nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
-        console.log("[v0] ✅ Using Paddle billing period end date:", expiresAt.toISOString())
-      } else {
-        expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
-        nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
-        console.log("[v0] ⚠️ Fallback: calculated from NOW:", expiresAt.toISOString())
-      }
+      console.log("[v0] ⚠️ Fallback: calculated from now:", expiresAt.toISOString())
     }
-    // ============ END OF FIX ============
+    // ============ END OF TIMESTAMP FIX ============
 
     console.log("[v0] ⏰ Subscription expires at:", expiresAt.toISOString())
     console.log("[v0] ⏰ Next billing date:", nextBillingDate.toISOString())
