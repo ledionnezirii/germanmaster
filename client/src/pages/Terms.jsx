@@ -4,7 +4,7 @@ import React from "react"
 
 const Terms = () => {
   // Përdorim një datë statike për të ruajtur konsistencën e dokumentit ligjor.
-  const lastUpdatedDate = "06 Dhjetor 2025"
+  const lastUpdatedDate = "21 Janar 2026"
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
@@ -115,11 +115,32 @@ const Terms = () => {
             </p>
           </section>
 
-          {/* Seksioni 5: Kufizimi i Përgjegjësisë - Seksion i RI */}
+{/* Seksioni 5: Politika e Abonimit dhe Pagesave - Seksion i RI */}
+          <section className="bg-gray-50 p-6 rounded-xl border-l-4 border-orange-500">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
+              <span className="bg-orange-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
+                5
+              </span>
+              Politika e Abonimit dhe Pagesave
+            </h2>
+            <p className="text-gray-700 leading-relaxed mb-4">
+              Të gjitha abonimet janë <strong>jo të rimbursueshme</strong>. Përdoruesit janë përgjegjës për të menaxhuar dhe anuluar abonimet para rinovimit.
+            </p>
+            <div className="bg-orange-50 p-4 rounded-lg mb-4">
+              <p className="text-orange-800 text-sm font-medium">
+                ⚠️ Në rast të një <strong>dispute ose chargeback</strong>, aksesimi në platformë mund të <strong>ndalohet menjëherë</strong> dhe llogaria mund të <strong>pezullohet ose bllokohet për përdorim të mëtejshëm</strong>.
+              </p>
+            </div>
+            <p className="text-gray-700 leading-relaxed">
+              Ju lutemi, kontrolloni datën e rinovimit dhe anuloni abonimin nëse nuk dëshironi ta vazhdoni.
+            </p>
+          </section>
+
+          {/* Seksioni 6: Kufizimi i Përgjegjësisë */}
           <section className="bg-gray-50 p-6 rounded-xl border-l-4 border-yellow-600">
             <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
               <span className="bg-yellow-600 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
-                5
+                6
               </span>
               Kufizimi i Përgjegjësisë
             </h2>
@@ -128,11 +149,11 @@ const Terms = () => {
             </p>
           </section>
 
-          {/* Seksioni 6: Ndryshimet në Kushte dhe Politika - I zhvendosur nga 5 në 6 */}
+{/* Seksioni 7: Ndryshimet në Kushte dhe Politika */}
           <section className="bg-gray-50 p-6 rounded-xl border-l-4 border-red-500">
             <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
               <span className="bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
-                6
+                7
               </span>
               Ndryshimet në Kushte dhe Politika
             </h2>
@@ -142,11 +163,11 @@ const Terms = () => {
             </p>
           </section>
 
-          {/* Seksioni 7: Kontakt - I zhvendosur nga 6 në 7 */}
+{/* Seksioni 8: Kontakt */}
           <section className="bg-gray-50 p-6 rounded-xl border-l-4 border-cyan-500">
             <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
               <span className="bg-cyan-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm">
-                7
+                8
               </span>
               Kontakt
             </h2>
