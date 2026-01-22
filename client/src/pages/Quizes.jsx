@@ -660,8 +660,8 @@ export default function Quizes() {
                     <div className="relative z-10">
                       <div className="flex items-center gap-2 mb-2">
                         {isNew && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-violet-500 to-purple-500 text-white">
-                            <Sparkles className="w-3 h-3" />E RE
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-yellow-500 to-purple-500 text-white">
+                            <Sparkles className="w-3 h-3" />
                           </span>
                         )}
                       </div>
