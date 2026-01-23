@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com//api";
+const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api";
 export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com";
 
 export const getAbsoluteImageUrl = (path) => {
@@ -357,6 +357,7 @@ export const quizService = {
   submitQuiz: (quizId, answers) =>
     api.post(`/quizes/${quizId}/submit`, { answers }),
   getCompletedQuizzes: () => api.get("/quizes/completed/user"),
+  addQuizXp: (xp) => api.post("/phrases/quiz/xp", { xp }),
 };
 
 export const certificatesService = {

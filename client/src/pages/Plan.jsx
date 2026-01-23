@@ -58,7 +58,7 @@ function ConfirmationDialog({ isOpen, onClose, onConfirm, weekNumber, loading })
               </>
             ) : (
               <>
-                <Play className="w-4 h-4 sm:w-5 sm:h-5" />
+                <Play className="w-4 h-4 sm:w-5 sm:w-5" />
                 <span>Po, Fillo</span>
               </>
             )}
@@ -350,23 +350,25 @@ export default function PlanPage() {
   // Level Selection View
   if (!selectedLevel) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
-        <div className="mx-auto max-w-7xl px-3 py-6 sm:px-4 sm:py-8 md:px-6 md:py-12 lg:px-12 lg:py-20">
-          <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-sm border border-gray-200/50 p-4 sm:p-5 md:p-8 lg:p-10 mb-6 sm:mb-8 lg:mb-20 animate-fade-in">
-            <div className="flex items-start gap-2.5 sm:gap-3 md:gap-4">
-              <div className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg sm:rounded-xl md:rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                <Pen className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6 lg:w-7 lg:h-7 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-gray-900 via-gray-800 to-emerald-900 bg-clip-text text-transparent mb-1 sm:mb-2 leading-tight">
-                  Zgjidhni Nivelin Tuaj
-                </h1>
-                <p className="text-gray-600 text-xs sm:text-sm md:text-base lg:text-lg leading-relaxed">
-                  Filloni udhëtimin tuaj të mësimit të gjermanishtes duke zgjedhur nivelin që ju përshtatet më mirë
-                </p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 p-4">
+        <div className="mx-auto max-w-7xl">
+          {/* HEADER WITH LISTEN.JSX STYLE */}
+          <header className="mb-6 flex-shrink-0">
+            <div className="bg-white rounded-2xl shadow-xl border border-emerald-100 p-6 overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full transform translate-x-16 -translate-y-16 opacity-50" />
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-teal-100 to-emerald-100 rounded-full transform -translate-x-8 translate-y-8 opacity-50" />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Zgjidhni Nivelin Tuaj</h1>
+                    <p className="text-gray-600">
+                      Filloni udhëtimin tuaj të mësimit të gjermanishtes duke zgjedhur nivelin që ju përshtatet më mirë
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          </header>
 
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6 max-w-5xl mx-auto">
             {levels.map((level, index) => (
@@ -478,31 +480,36 @@ export default function PlanPage() {
     }
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 py-4 sm:py-6 md:py-10 lg:py-12 px-3 sm:px-4 md:px-6 lg:px-12">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 p-4">
         <div className="mx-auto max-w-5xl">
-          <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-white/20 bg-white/40 p-3 sm:p-4 md:p-6 lg:p-8 shadow-xl backdrop-blur-md mb-4 sm:mb-6 md:mb-10">
-            <div className="flex flex-col md:flex-row items-start md:items-center gap-3 sm:gap-4 md:gap-6">
-              <button
-                onClick={handleBackToWeeks}
-                className="inline-flex items-center justify-center gap-1.5 sm:gap-2 bg-gray-900 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl hover:bg-gray-800 active:scale-95 transition-all text-xs sm:text-sm font-medium shadow-lg whitespace-nowrap"
-              >
-                <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
-                Kthehu te Javët
-              </button>
-              <div className="flex-1 min-w-0">
-                <h1 className="mb-0.5 sm:mb-1 bg-gradient-to-r from-emerald-500 to-cyan-500 bg-clip-text text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-transparent leading-tight">
-                  {currentWeek.title}
-                </h1>
-                <p className="text-xs sm:text-sm md:text-base text-gray-600 leading-relaxed">
-                  {currentWeek.description || `Përfundoni të gjitha temat e javës ${selectedWeek}`}
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5 sm:gap-2 bg-emerald-50 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-emerald-200">
-                <Award className="h-4 w-4 sm:h-5 sm:w-5 text-emerald-600" />
-                <span className="text-xs sm:text-sm font-bold text-emerald-900">{userXp} XP</span>
+          {/* HEADER WITH LISTEN.JSX STYLE */}
+          <header className="mb-6 flex-shrink-0">
+            <div className="bg-white rounded-2xl shadow-xl border border-emerald-100 p-6 overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full transform translate-x-16 -translate-y-16 opacity-50" />
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-teal-100 to-emerald-100 rounded-full transform -translate-x-8 translate-y-8 opacity-50" />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex-1">
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">{currentWeek.title}</h1>
+                    <p className="text-gray-600">
+                      {currentWeek.description || `Përfundoni të gjitha temat e javës ${selectedWeek}`}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-200">
+                    <Award className="h-5 w-5 text-emerald-600" />
+                    <span className="text-sm font-bold text-emerald-900">{userXp} XP</span>
+                  </div>
+                </div>
+                <button
+                  onClick={handleBackToWeeks}
+                  className="inline-flex items-center justify-center gap-2 bg-gray-900 text-white px-4 py-2.5 rounded-xl hover:bg-gray-800 active:scale-95 transition-all text-sm font-medium shadow-lg whitespace-nowrap"
+                >
+                  <ArrowLeft className="h-4 w-4" strokeWidth={2} />
+                  Kthehu te Javët
+                </button>
               </div>
             </div>
-          </div>
+          </header>
 
           <div className="bg-white rounded-xl sm:rounded-2xl border-2 border-gray-200 p-4 sm:p-5 md:p-6 mb-4 sm:mb-6">
             <div className="flex items-center justify-between mb-2 sm:mb-3">
@@ -628,7 +635,7 @@ export default function PlanPage() {
 
   // Weeks Selection View
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 py-4 sm:py-6 md:py-10 lg:py-12 px-3 sm:px-4 md:px-6 lg:px-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 p-4">
       <ConfirmationDialog
         isOpen={confirmDialog.isOpen}
         onClose={() => setConfirmDialog({ isOpen: false, weekNumber: null })}
@@ -638,35 +645,33 @@ export default function PlanPage() {
       />
 
       <div className="mx-auto max-w-7xl">
-        <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-white/20 bg-white/40 p-4 sm:p-5 md:p-6 lg:p-8 shadow-xl backdrop-blur-md mb-4 sm:mb-6 md:mb-10 lg:mb-12">
-          <div className="relative z-10 flex flex-col items-start gap-3 sm:gap-4 md:gap-6 text-left">
-            <div className="flex items-start gap-3 sm:gap-4 md:gap-6 w-full">
-              <div className="flex-shrink-0">
-                <div className="flex h-10 w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 items-center justify-center rounded-xl sm:rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 shadow-lg">
-                  <Calendar className="h-5 w-5 sm:h-6 sm:w-6 md:h-8 md:w-8 text-white" strokeWidth={1.5} />
+        {/* HEADER WITH LISTEN.JSX STYLE */}
+        <header className="mb-6 flex-shrink-0">
+          <div className="bg-white rounded-2xl shadow-xl border border-emerald-100 p-6 overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full transform translate-x-16 -translate-y-16 opacity-50" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-teal-100 to-emerald-100 rounded-full transform -translate-x-8 translate-y-8 opacity-50" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                    Gjermanisht {plan.level} - Zgjidhni Javën
+                  </h1>
+                  <p className="text-gray-600">Çdo javë përmban tema që duhet të përfundoni</p>
                 </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <h1 className="mb-1 bg-gradient-to-r from-emerald-500 to-cyan-500 bg-clip-text text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-transparent leading-tight">
-                  Gjermanisht {plan.level} - Zgjidhni Javën
-                </h1>
-                <p className="text-xs sm:text-sm md:text-base text-gray-600 leading-relaxed">
-                  Çdo javë përmban tema që duhet të përfundoni
-                </p>
-              </div>
+              <button
+                onClick={() => setSelectedLevel(null)}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-xl hover:bg-gray-800 active:scale-95 transition-all text-sm font-medium shadow-xl shadow-gray-900/30 hover:shadow-2xl whitespace-nowrap"
+              >
+                <ArrowLeft className="h-4 w-4" strokeWidth={2} />
+                Ndrysho Nivelin
+              </button>
             </div>
-            <button
-              onClick={() => setSelectedLevel(null)}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 sm:gap-2 bg-gray-900 text-white px-4 sm:px-6 py-2.5 sm:py-3 md:py-3.5 rounded-lg sm:rounded-xl md:rounded-2xl hover:bg-gray-800 active:scale-95 transition-all text-xs sm:text-sm font-medium shadow-xl shadow-gray-900/30 hover:shadow-2xl whitespace-nowrap"
-            >
-              <ArrowLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
-              Ndrysho Nivelin
-            </button>
           </div>
-        </div>
+        </header>
 
         {lockStatus?.isLocked && (
-          <div className="mb-4 sm:mb-6 md:mb-8 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 p-3 sm:p-4 md:p-6 shadow-lg">
+          <div className="mb-6 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 p-4 sm:p-6 shadow-lg">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
               <div className="flex-shrink-0">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-amber-200 flex items-center justify-center">
@@ -690,7 +695,7 @@ export default function PlanPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {plan.weeks.map((week) => {
             const completedTopics = week.topics.filter((t) => t.isCompleted).length
             const totalTopics = week.topics.length

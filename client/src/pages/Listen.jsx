@@ -170,7 +170,7 @@ const Listen = () => {
     }
   }, [tests])
 
-const playAudio = async () => {
+  const playAudio = async () => {
     if (isPlaying && audioRef.current) {
       audioRef.current.pause()
       audioRef.current.currentTime = 0
@@ -292,16 +292,16 @@ const playAudio = async () => {
       <div className="h-[750px] bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 p-2 sm:p-4 rounded-xl shadow-lg border-2 border-emerald-200 overflow-hidden">
         <AnimatePresence>
           {showXpAnimation && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.5, y: -50 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.5, y: -50 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}
               className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
             >
-              <motion.div 
+              <motion.div
                 className="bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 px-8 py-6 rounded-2xl shadow-2xl border-2 border-emerald-500"
-                animate={{ 
+                animate={{
                   boxShadow: [
                     "0 0 20px rgba(16, 185, 129, 0.3)",
                     "0 0 40px rgba(16, 185, 129, 0.5)",
@@ -334,7 +334,7 @@ const playAudio = async () => {
         </AnimatePresence>
 
         <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 h-full">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
@@ -354,7 +354,7 @@ const playAudio = async () => {
             </div>
             <div className="space-y-4 sm:space-y-6">
               {/* Audio Player with Enhanced Design */}
-              <motion.div 
+              <motion.div
                 className="relative bg-gradient-to-br from-emerald-500 via-teal-500 to-emerald-600 rounded-2xl p-6 sm:p-8 text-center shadow-xl overflow-hidden"
                 whileHover={{ scale: 1.01 }}
                 transition={{ type: "spring", stiffness: 400 }}
@@ -403,11 +403,11 @@ const playAudio = async () => {
                           key={i}
                           initial={{ height: 8 }}
                           animate={{ height: [8, 24 + Math.random() * 16, 8] }}
-                          transition={{ 
-                            duration: 0.5 + Math.random() * 0.3, 
-                            repeat: Infinity, 
+                          transition={{
+                            duration: 0.5 + Math.random() * 0.3,
+                            repeat: Infinity,
                             ease: "easeInOut",
-                            delay: i * 0.1 
+                            delay: i * 0.1
                           }}
                           className="w-1.5 bg-white/60 rounded-full"
                         />
@@ -420,9 +420,8 @@ const playAudio = async () => {
                   onClick={playAudio}
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.95 }}
-                  className={`relative z-10 bg-white/25 backdrop-blur-sm text-white p-4 sm:p-5 rounded-full transition-all shadow-lg ${
-                    isPlaying ? 'ring-4 ring-white/40' : 'hover:bg-white/35'
-                  }`}
+                  className={`relative z-10 bg-white/25 backdrop-blur-sm text-white p-4 sm:p-5 rounded-full transition-all shadow-lg ${isPlaying ? 'ring-4 ring-white/40' : 'hover:bg-white/35'
+                    }`}
                   aria-label={isPlaying ? "Pauzë" : "Luaj"}
                 >
                   <AnimatePresence mode="wait">
@@ -449,7 +448,7 @@ const playAudio = async () => {
                     )}
                   </AnimatePresence>
                 </motion.button>
-                <motion.p 
+                <motion.p
                   className="relative z-10 mt-4 sm:mt-5 text-sm sm:text-base text-white/95 font-medium"
                   animate={isPlaying ? { opacity: [0.7, 1, 0.7] } : { opacity: 1 }}
                   transition={isPlaying ? { duration: 1.5, repeat: Infinity } : {}}
@@ -459,7 +458,7 @@ const playAudio = async () => {
               </motion.div>
 
               {!showResult && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
@@ -538,13 +537,12 @@ const playAudio = async () => {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.9, y: -20 }}
                     transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                    className={`p-4 sm:p-5 rounded-2xl border-2 shadow-xl ${
-                      result.correct
+                    className={`p-4 sm:p-5 rounded-2xl border-2 shadow-xl ${result.correct
                         ? "bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 border-emerald-400"
                         : "bg-gradient-to-br from-red-50 via-rose-50 to-pink-50 border-red-400"
-                    }`}
+                      }`}
                   >
-                    <motion.div 
+                    <motion.div
                       initial={{ x: -20 }}
                       animate={{ x: 0 }}
                       className="flex items-center gap-3 mb-3"
@@ -565,15 +563,14 @@ const playAudio = async () => {
                         )}
                       </motion.div>
                       <p
-                        className={`font-semibold text-base sm:text-lg ${
-                          result.correct ? "text-emerald-700" : "text-red-700"
-                        }`}
+                        className={`font-semibold text-base sm:text-lg ${result.correct ? "text-emerald-700" : "text-red-700"
+                          }`}
                       >
                         {result.message}
                       </p>
                     </motion.div>
                     {result.correct && (
-                      <motion.div 
+                      <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
@@ -583,7 +580,7 @@ const playAudio = async () => {
                         <span className="font-bold text-emerald-700">+{xpGained} XP fituar!</span>
                       </motion.div>
                     )}
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.4 }}
@@ -616,7 +613,7 @@ const playAudio = async () => {
               </AnimatePresence>
 
               {showResult && !result.correct && failedAttempts >= 4 && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="mt-3 sm:mt-4 text-center"
@@ -631,7 +628,7 @@ const playAudio = async () => {
                       Shfaq Tekstin e Plotë ({failedAttempts} tentativa)
                     </motion.button>
                   ) : (
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: "auto" }}
                       className="bg-gradient-to-br from-slate-50 to-gray-100 p-3 sm:p-4 rounded-lg border-2 border-gray-300 text-gray-800 text-left shadow-md"
@@ -639,8 +636,7 @@ const playAudio = async () => {
                       <p className="font-semibold mb-2 text-sm sm:text-base text-slate-700">Teksti Origjinal:</p>
                       <p className="text-sm sm:text-base">{selectedTest.text}</p>
                       <p className="text-xs text-gray-600 mt-2 italic">
-                        Mund ta kopjoni tekstin, por do të merrni{" "}
-                        {selectedTest.xpReward || getBaseXP(selectedTest.level)} XP kur të kaloni testin.
+                      
                       </p>
                     </motion.div>
                   )}
@@ -683,13 +679,12 @@ const playAudio = async () => {
               <button
                 key={level}
                 onClick={() => setSelectedLevel(level)}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border shadow-sm hover:shadow-md hover:scale-105 active:scale-95 ${
-                  selectedLevel === level
+                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border shadow-sm hover:shadow-md hover:scale-105 active:scale-95 ${selectedLevel === level
                     ? level === "all"
                       ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-emerald-500 shadow-emerald-500/30"
                       : getLevelColor(level) + " border-2"
                     : "bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200"
-                }`}
+                  }`}
               >
                 {level === "all" ? "Të gjitha" : level}
               </button>
@@ -710,11 +705,10 @@ const playAudio = async () => {
                 return (
                   <div
                     key={test._id}
-                    className={`p-4 rounded-2xl shadow-lg border-2 transition-all duration-200 cursor-pointer overflow-hidden relative group h-fit hover:-translate-y-1 ${
-                      isCompleted
+                    className={`p-4 rounded-2xl shadow-lg border-2 transition-all duration-200 cursor-pointer overflow-hidden relative group h-fit hover:-translate-y-1 ${isCompleted
                         ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-amber-300 hover:border-amber-400"
                         : "bg-white border-gray-100 hover:border-emerald-300"
-                    }`}
+                      }`}
                     onClick={() => setSelectedTest(test)}
                   >
                     <div
@@ -723,17 +717,15 @@ const playAudio = async () => {
                       {test.level}
                     </div>
                     <Volume2
-                      className={`absolute -bottom-4 -right-4 w-20 h-20 ${
-                        isCompleted ? "text-amber-100" : "text-gray-100"
-                      } transition-transform group-hover:scale-110`}
+                      className={`absolute -bottom-4 -right-4 w-20 h-20 ${isCompleted ? "text-amber-100" : "text-gray-100"
+                        } transition-transform group-hover:scale-110`}
                     />
                     <div className="relative z-10">
                       <h3
-                        className={`text-sm font-bold mb-2 pr-14 truncate ${
-                          isCompleted
+                        className={`text-sm font-bold mb-2 pr-14 truncate ${isCompleted
                             ? "text-amber-700 group-hover:text-amber-800"
                             : "text-gray-800 group-hover:text-emerald-700"
-                        }`}
+                          }`}
                       >
                         {test.title}
                       </h3>
@@ -745,18 +737,15 @@ const playAudio = async () => {
                           Gjermanisht • Audio
                         </span>
                         <div className="flex items-center gap-2">
-                          {!isCompleted && (
-                            <span className="text-xs bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 px-2.5 py-1 rounded-full font-bold flex items-center gap-1 shadow-sm border border-emerald-200">
-                              <Star className="h-3 w-3" />
-                              {potentialXP}
-                            </span>
-                          )}
+                          <span className="text-xs bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 px-2.5 py-1 rounded-full font-bold flex items-center gap-1 shadow-sm border border-emerald-200">
+                            <Star className="h-3 w-3" />
+                            {isCompleted ? "2" : potentialXP}
+                          </span>
                           <span
-                            className={`text-xs px-3 py-1 rounded-full font-semibold shadow-sm ${
-                              isCompleted
+                            className={`text-xs px-3 py-1 rounded-full font-semibold shadow-sm ${isCompleted
                                 ? "bg-gradient-to-r from-amber-400 to-orange-400 text-white"
                                 : "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
-                            }`}
+                              }`}
                           >
                             {isCompleted ? "✓ Kryer" : "Dëgjo"}
                           </span>

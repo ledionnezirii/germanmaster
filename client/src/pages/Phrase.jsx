@@ -287,10 +287,10 @@ const Phrase = () => {
     try {
       setPlayingPhraseId(phraseId)
       const response = await ttsService.getPhraseAudio(phraseId, phrase.german, selectedLevel)
-      
+
       // Backend returns { url: "signed-url" } or { data: { url: "signed-url" } }
       let audioUrl = null
-      
+
       if (typeof response === 'string') {
         audioUrl = response
       } else if (response?.url) {
@@ -298,7 +298,7 @@ const Phrase = () => {
       } else if (response?.data?.url) {
         audioUrl = response.data.url
       }
-      
+
       if (!audioUrl) {
         throw new Error("No audio URL in response")
       }
@@ -351,8 +351,8 @@ const Phrase = () => {
           onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
           className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border-2 transition-all ${currentPage === 1
-              ? "border-gray-200 text-gray-400 cursor-not-allowed"
-              : "border-[#14B8A6] text-[#14B8A6] hover:bg-[#14B8A6] hover:text-white active:scale-95"
+            ? "border-gray-200 text-gray-400 cursor-not-allowed"
+            : "border-[#14B8A6] text-[#14B8A6] hover:bg-[#14B8A6] hover:text-white active:scale-95"
             }`}
         >
           <ChevronLeft size={18} className="sm:w-5 sm:h-5" />
@@ -367,8 +367,8 @@ const Phrase = () => {
               key={pageNum}
               onClick={() => setCurrentPage(pageNum)}
               className={`px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm transition-all active:scale-95 ${currentPage === pageNum
-                  ? "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white shadow-lg shadow-[#14B8A6]/30"
-                  : "bg-white text-gray-700 border-2 border-gray-200 hover:border-[#14B8A6]"
+                ? "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white shadow-lg shadow-[#14B8A6]/30"
+                : "bg-white text-gray-700 border-2 border-gray-200 hover:border-[#14B8A6]"
                 }`}
               style={{ fontFamily: fonts.poppins }}
             >
@@ -381,8 +381,8 @@ const Phrase = () => {
           onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
           className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl border-2 transition-all ${currentPage === totalPages
-              ? "border-gray-200 text-gray-400 cursor-not-allowed"
-              : "border-[#14B8A6] text-[#14B8A6] hover:bg-[#14B8A6] hover:text-white active:scale-95"
+            ? "border-gray-200 text-gray-400 cursor-not-allowed"
+            : "border-[#14B8A6] text-[#14B8A6] hover:bg-[#14B8A6] hover:text-white active:scale-95"
             }`}
         >
           <ChevronRight size={18} className="sm:w-5 sm:h-5" />
@@ -457,11 +457,8 @@ const Phrase = () => {
               <p className="text-lg sm:text-xl text-gray-600 mb-2" style={{ fontFamily: fonts.inter }}>
                 Përshtatjet e saktë: {Object.keys(matches).length + 1} / {quizPhrases.length}
               </p>
-              <p
-                className="text-2xl sm:text-3xl font-bold text-amber-600 mb-6 sm:mb-8"
-                style={{ fontFamily: fonts.poppins }}
-              >
-                +{(Object.keys(matches).length + 1) * 1} XP
+              <p className="text-2xl sm:text-3xl font-bold text-amber-600 mb-6 sm:mb-8" style={{ fontFamily: fonts.poppins }}>
+                +5 XP
               </p>
               <div className="flex gap-3 justify-center flex-col sm:flex-row">
                 <button
@@ -527,10 +524,10 @@ const Phrase = () => {
                           }}
                           disabled={isMatched}
                           className={`w-full px-3 py-2 sm:px-4 sm:py-3 text-left rounded-lg sm:rounded-xl border-2 transition-all font-medium ${levelTextSizes[selectedLevel].german} ${isMatched
-                              ? "bg-green-100 border-green-500 text-green-700"
-                              : isSelected
-                                ? "bg-blue-100 border-blue-500 text-blue-700 shadow-md"
-                                : "bg-white border-gray-300 text-gray-700 hover:border-blue-400 active:bg-blue-50"
+                            ? "bg-green-100 border-green-500 text-green-700"
+                            : isSelected
+                              ? "bg-blue-100 border-blue-500 text-blue-700 shadow-md"
+                              : "bg-white border-gray-300 text-gray-700 hover:border-blue-400 active:bg-blue-50"
                             }`}
                           style={{ fontFamily: fonts.inter }}
                         >
@@ -566,10 +563,10 @@ const Phrase = () => {
                           }}
                           disabled={isMatched}
                           className={`w-full px-3 py-2 sm:px-4 sm:py-3 text-left rounded-lg sm:rounded-xl border-2 transition-all font-medium ${levelTextSizes[selectedLevel].albanian} ${isMatched
-                              ? "bg-green-100 border-green-500 text-green-700"
-                              : isSelected
-                                ? "bg-purple-100 border-purple-500 text-purple-700 shadow-md"
-                                : "bg-white border-gray-300 text-gray-700 hover:border-purple-400 active:bg-purple-50"
+                            ? "bg-green-100 border-green-500 text-green-700"
+                            : isSelected
+                              ? "bg-purple-100 border-purple-500 text-purple-700 shadow-md"
+                              : "bg-white border-gray-300 text-gray-700 hover:border-purple-400 active:bg-purple-50"
                             }`}
                           style={{ fontFamily: fonts.inter }}
                         >
@@ -685,22 +682,19 @@ const Phrase = () => {
 
         {/* Daily Limit Banner */}
         <div
-          className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 ${
-            dailyLimitInfo.dailyLimitReached
+          className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 ${dailyLimitInfo.dailyLimitReached
               ? "bg-red-50/80 border-red-300"
               : "bg-gradient-to-r from-blue-50/80 to-cyan-50/80 border-blue-300"
-          }`}
+            }`}
         >
           <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-3">
             <div className="flex items-center gap-2 sm:gap-3">
               <div
-                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center ${
-                  dailyLimitInfo.dailyLimitReached ? "bg-red-100" : "bg-blue-100"
-                }`}
+                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center ${dailyLimitInfo.dailyLimitReached ? "bg-red-100" : "bg-blue-100"
+                  }`}
               >
-                <Clock className={`w-5 h-5 sm:w-6 sm:h-6 ${
-                  dailyLimitInfo.dailyLimitReached ? "text-red-500" : "text-blue-500"
-                }`} />
+                <Clock className={`w-5 h-5 sm:w-6 sm:h-6 ${dailyLimitInfo.dailyLimitReached ? "text-red-500" : "text-blue-500"
+                  }`} />
               </div>
               <div>
                 <p className="font-bold text-slate-800 text-sm sm:text-lg" style={{ fontFamily: fonts.poppins }}>
@@ -733,8 +727,8 @@ const Phrase = () => {
               key={level}
               onClick={() => setSelectedLevel(level)}
               className={`px-3 sm:px-5 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition-all active:scale-95 ${selectedLevel === level
-                  ? "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white shadow-lg shadow-[#14B8A6]/30"
-                  : "bg-white text-gray-600 border-2 border-gray-200 hover:border-[#14B8A6]"
+                ? "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white shadow-lg shadow-[#14B8A6]/30"
+                : "bg-white text-gray-600 border-2 border-gray-200 hover:border-[#14B8A6]"
                 }`}
               style={{ fontFamily: fonts.poppins }}
             >
@@ -747,11 +741,10 @@ const Phrase = () => {
         <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-6 flex-wrap">
           <button
             onClick={() => setShowGerman(!showGerman)}
-            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border-2 font-semibold transition-all active:scale-95 text-xs sm:text-sm ${
-              showGerman
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border-2 font-semibold transition-all active:scale-95 text-xs sm:text-sm ${showGerman
                 ? "bg-blue-50 border-blue-400 text-blue-700"
                 : "bg-white border-gray-300 text-gray-500"
-            }`}
+              }`}
             style={{ fontFamily: fonts.poppins }}
           >
             {showGerman ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -761,11 +754,10 @@ const Phrase = () => {
 
           <button
             onClick={() => setShowAlbanian(!showAlbanian)}
-            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border-2 font-semibold transition-all active:scale-95 text-xs sm:text-sm ${
-              showAlbanian
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border-2 font-semibold transition-all active:scale-95 text-xs sm:text-sm ${showAlbanian
                 ? "bg-purple-50 border-purple-400 text-purple-700"
                 : "bg-white border-gray-300 text-gray-500"
-            }`}
+              }`}
             style={{ fontFamily: fonts.poppins }}
           >
             {showAlbanian ? <Eye size={16} /> : <EyeOff size={16} />}
@@ -806,10 +798,10 @@ const Phrase = () => {
                   <div
                     key={phraseId}
                     className={`rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-md transition-all ${isFinished
-                        ? "bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200"
-                        : isLocked
-                          ? "bg-gray-100/60 blur-[3px] border-2 border-gray-200 opacity-60"
-                          : "bg-white border-2 border-gray-200 hover:border-[#14B8A6] hover:shadow-lg"
+                      ? "bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200"
+                      : isLocked
+                        ? "bg-gray-100/60 blur-[3px] border-2 border-gray-200 opacity-60"
+                        : "bg-white border-2 border-gray-200 hover:border-[#14B8A6] hover:shadow-lg"
                       }`}
                   >
                     <div className="flex justify-between items-center gap-2 sm:gap-4">
@@ -823,10 +815,10 @@ const Phrase = () => {
                               onClick={() => !isLocked && speakGerman(phrase)}
                               disabled={isLocked}
                               className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 flex items-center justify-center transition-all flex-shrink-0 ${isLocked
-                                  ? "border-gray-400 text-gray-400"
-                                  : isPlaying
-                                    ? "border-[#14B8A6] bg-[#14B8A6] text-white"
-                                    : "border-[#14B8A6] text-[#14B8A6] bg-white hover:bg-[#14B8A6] hover:text-white active:scale-90"
+                                ? "border-gray-400 text-gray-400"
+                                : isPlaying
+                                  ? "border-[#14B8A6] bg-[#14B8A6] text-white"
+                                  : "border-[#14B8A6] text-[#14B8A6] bg-white hover:bg-[#14B8A6] hover:text-white active:scale-90"
                                 }`}
                             >
                               <Volume2 className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${isPlaying ? "animate-pulse" : ""}`} />

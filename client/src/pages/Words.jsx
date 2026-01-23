@@ -101,7 +101,7 @@ export default function Words() {
     const shuffled = [...array]
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
-      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
     }
     return shuffled
   }
@@ -298,9 +298,8 @@ export default function Words() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className={`fixed bottom-6 right-6 px-4 py-3 rounded-2xl font-medium text-sm shadow-xl z-50 flex items-center gap-2 backdrop-blur-sm ${
-              notification.type === "success" ? "bg-emerald-500/90 text-white" : "bg-rose-500/90 text-white"
-            }`}
+            className={`fixed bottom-6 right-6 px-4 py-3 rounded-2xl font-medium text-sm shadow-xl z-50 flex items-center gap-2 backdrop-blur-sm ${notification.type === "success" ? "bg-emerald-500/90 text-white" : "bg-rose-500/90 text-white"
+              }`}
           >
             {notification.type === "success" ? <CheckCircle size={16} /> : <XCircle size={16} />}
             {notification.message}
@@ -318,11 +317,10 @@ export default function Words() {
             <button
               key={tab.id}
               onClick={() => (tab.id === "quiz" ? startQuiz() : setActiveView(tab.id))}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                activeView === tab.id
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${activeView === tab.id
                   ? `bg-gradient-to-r ${tab.color} text-white shadow-lg`
                   : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
-              }`}
+                }`}
             >
               <tab.icon size={16} />
               {tab.label}
@@ -439,11 +437,10 @@ export default function Words() {
                       <div className="border-t pt-4 flex justify-between items-center">
                         <span className="text-gray-600">Saktësia:</span>
                         <span
-                          className={`font-bold text-lg ${
-                            quizScore.total > 0 && quizScore.correct / quizScore.total >= 0.6
+                          className={`font-bold text-lg ${quizScore.total > 0 && quizScore.correct / quizScore.total >= 0.6
                               ? "text-emerald-600"
                               : "text-amber-600"
-                          }`}
+                            }`}
                         >
                           {quizScore.total > 0 ? Math.round((quizScore.correct / quizScore.total) * 100) : 0}%
                         </span>
@@ -529,8 +526,7 @@ export default function Words() {
                     key={option._id}
                     onClick={() => handleAnswerSelection(option)}
                     disabled={showResult}
-                    className={`p-3 min-h-[60px] rounded-xl text-left transition-all border-2 ${
-                      showResult
+                    className={`p-3 min-h-[60px] rounded-xl text-left transition-all border-2 ${showResult
                         ? isCorrect
                           ? "border-green-500 bg-gradient-to-br from-green-50 to-emerald-50"
                           : isSelected
@@ -539,17 +535,16 @@ export default function Words() {
                         : isSelected
                           ? "border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50"
                           : "border-gray-200 bg-white hover:border-purple-400 hover:bg-gradient-to-br hover:from-purple-50 hover:to-blue-50"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span
-                        className={`font-medium break-words flex-1 leading-tight ${fontSize} ${
-                          showResult && isCorrect
+                        className={`font-medium break-words flex-1 leading-tight ${fontSize} ${showResult && isCorrect
                             ? "text-green-700"
                             : showResult && isSelected && !isCorrect
                               ? "text-red-700"
                               : "text-gray-800"
-                        }`}
+                          }`}
                       >
                         {textContent}
                       </span>
@@ -566,11 +561,10 @@ export default function Words() {
             {/* Result Feedback */}
             {quizResult !== null && (
               <div
-                className={`mt-3 p-3 rounded-xl flex items-center justify-center gap-2 ${
-                  quizResult
+                className={`mt-3 p-3 rounded-xl flex items-center justify-center gap-2 ${quizResult
                     ? "bg-gradient-to-r from-emerald-50 to-green-50"
                     : "bg-gradient-to-r from-rose-50 to-red-50"
-                }`}
+                  }`}
               >
                 <span className={`font-medium text-sm ${quizResult ? "text-emerald-600" : "text-rose-600"}`}>
                   {quizResult ? "E saktë! 🎉" : "Gabim! 😅"}
@@ -738,7 +732,7 @@ export default function Words() {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Fjala Gjermane</label>
                         <input
-                          ref__={newWordInputRef}
+                          ref={newWordInputRef}  // ✅ Fixed - single underscore
                           type="text"
                           value={newWord}
                           onChange={(e) => setNewWord(e.target.value)}
@@ -758,7 +752,6 @@ export default function Words() {
                           ))}
                         </div>
                       </div>
-
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Përkthimi (Shqip)</label>
                         <input
@@ -879,11 +872,10 @@ export default function Words() {
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
                               onClick={() => setCurrentPage(pageNumber)}
-                              className={`w-10 h-10 rounded-xl text-sm font-medium transition-all ${
-                                currentPage === pageNumber
+                              className={`w-10 h-10 rounded-xl text-sm font-medium transition-all ${currentPage === pageNumber
                                   ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30"
                                   : "bg-white border border-gray-200 text-gray-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50"
-                              }`}
+                                }`}
                             >
                               {pageNumber}
                             </motion.button>
