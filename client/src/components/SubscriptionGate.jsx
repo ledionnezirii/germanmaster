@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { subscriptionService } from "../services/api"
-import { AlertCircle, Crown, Sparkles, Zap } from "lucide-react"
+import { AlertCircle, Crown, Sparkles, Check, Clock, ArrowRight } from "lucide-react"
 
 const SubscriptionGate = ({ children }) => {
   const { user, isAuthenticated, loading: authLoading } = useAuth()
@@ -41,10 +41,13 @@ const SubscriptionGate = ({ children }) => {
 
   if (loading && isAuthenticated) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-3 text-sm text-gray-600">Duke ngarkuar...</p>
+          <div className="relative w-12 h-12 mx-auto">
+            <div className="absolute inset-0 rounded-full border-4 border-slate-200"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div>
+          </div>
+          <p className="mt-4 text-sm font-medium text-slate-600">Duke ngarkuar...</p>
         </div>
       </div>
     )
@@ -58,25 +61,24 @@ const SubscriptionGate = ({ children }) => {
   if (subscriptionStatus?.active && subscriptionStatus?.daysRemaining <= 3 && !subscriptionStatus?.cancelled) {
     return (
       <div>
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 p-3 mb-3 shadow-sm">
-          <div className="flex items-start gap-2">
-            <div className="flex-shrink-0">
-              <AlertCircle className="h-4 w-4 text-amber-600" />
+        <div className="mx-4 mt-4 mb-4 overflow-hidden rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 shadow-sm">
+          <div className="flex items-center gap-4 p-4">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-amber-100">
+              <Clock className="h-6 w-6 text-amber-600" />
             </div>
-            <div className="flex-1">
-              <h4 className="text-xs font-semibold text-amber-900 mb-1">Periudha provuese po mbaron</h4>
-              <p className="text-xs text-amber-800">
-                Periudha juaj falas skadon në <span className="font-bold">{subscriptionStatus.daysRemaining} ditë</span>
-                . Abonohuni tani për të vazhduar pa ndërprerje.
+            <div className="flex-1 min-w-0">
+              <h4 className="text-sm font-semibold text-slate-900">Periudha provuese po mbaron</h4>
+              <p className="mt-0.5 text-sm text-slate-600">
+                Ju kanë mbetur <span className="font-bold text-amber-600">{subscriptionStatus.daysRemaining} ditë</span> të provës falas
               </p>
-              <button
-                onClick={() => navigate("/payments")}
-                className="mt-2 inline-flex items-center gap-1.5 bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-amber-700 transition-colors shadow-sm"
-              >
-                <Crown className="h-3 w-3" />
-                Shiko planet
-              </button>
             </div>
+            <button
+              onClick={() => navigate("/payments")}
+              className="flex-shrink-0 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 hover:shadow-md"
+            >
+              Abonohu
+              <ArrowRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
         {children}
@@ -87,70 +89,78 @@ const SubscriptionGate = ({ children }) => {
   // Show expired screen if subscription is expired
   if (subscriptionStatus?.expired) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 p-4">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-            {/* Icon Header */}
-            <div className="flex justify-center mb-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full blur-lg opacity-20 animate-pulse"></div>
-                <div className="relative bg-gradient-to-r from-blue-500 to-purple-500 p-3 rounded-full">
-                  <Crown className="h-5 w-5 text-white" />
-                </div>
-              </div>
-            </div>
+      <div className="flex items-center justify-center min-h-screen bg-slate-50 p-4">
+        {/* Background decoration */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-emerald-100/50 blur-3xl"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-teal-100/50 blur-3xl"></div>
+        </div>
 
-            {/* Content */}
-            <div className="text-center mb-5">
-              <h2 className="text-lg font-bold text-gray-900 mb-2">Periudha juaj falas ka përfunduar</h2>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                Faleminderit që provuat platformën tonë! Periudha juaj falas ka mbaruar. Abonohuni tani për të
-                vazhduar mësimin e gjermanishtes me qasje të pakufizuar në të gjitha funksionet.
+        <div className="relative max-w-lg w-full">
+          <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+            {/* Header Section */}
+            <div className="relative px-8 pt-10 pb-8 text-center">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/25 mb-6">
+                <Crown className="h-10 w-10 text-white" />
+              </div>
+              
+              <h2 className="text-2xl font-bold text-slate-900 mb-3 text-balance">
+                Periudha juaj falas ka përfunduar
+              </h2>
+              <p className="text-slate-500 leading-relaxed max-w-sm mx-auto">
+                Faleminderit që provuat platformën tonë! Abonohuni për të vazhduar mësimin e gjermanishtes.
               </p>
             </div>
 
-            {/* Features List */}
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg p-4 mb-4">
-              <h3 className="text-xs font-semibold text-gray-900 mb-3 flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-purple-600" />
-                Çfarë do të fitoni me abonimin:
-              </h3>
-              <ul className="space-y-2">
-                {[
-                  "Qasje e pakufizuar në të gjitha mësimet",
-                  "Ushtrime të avancuara gramatikore",
-                  "Kuize dhe teste interaktive",
-                  "Ndjekje e progresit dhe analizë",
-                ].map((feature, index) => (
-                  <li key={index} className="flex items-start gap-2 text-xs text-gray-700">
-                    <Zap className="h-3.5 w-3.5 text-blue-600 flex-shrink-0 mt-0.5" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
+            {/* Features Section */}
+            <div className="px-8 pb-8">
+              <div className="rounded-2xl bg-slate-50 p-6">
+                <div className="flex items-center gap-2 mb-5">
+                  <Sparkles className="h-5 w-5 text-emerald-600" />
+                  <h3 className="text-sm font-semibold text-slate-900">Çfarë përfitoni me abonimin</h3>
+                </div>
+                <ul className="space-y-4">
+                  {[
+                    "Qasje e pakufizuar në të gjitha mësimet",
+                    "Ushtrime të avancuara gramatikore",
+                    "Kuize dhe teste interaktive",
+                    "Ndjekje e progresit dhe analizë",
+                  ].map((feature, index) => (
+                    <li key={index} className="flex items-center gap-3">
+                      <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-emerald-100">
+                        <Check className="h-3.5 w-3.5 text-emerald-600" strokeWidth={3} />
+                      </div>
+                      <span className="text-sm text-slate-700">{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
-            {/* CTA Buttons */}
-            <div className="space-y-2">
+            {/* CTA Section */}
+            <div className="px-8 pb-8 space-y-3">
               <button
                 onClick={() => navigate("/payments")}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2.5 px-4 rounded-lg text-sm font-semibold hover:from-blue-700 hover:to-purple-700 transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                className="group w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-4 px-6 rounded-2xl text-base font-semibold shadow-lg shadow-emerald-500/25 transition-all hover:shadow-xl hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:translate-y-0"
               >
                 Shiko planet e abonimit
+                <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
               </button>
 
               <button
                 onClick={() => navigate("/")}
-                className="w-full bg-white text-gray-700 py-2.5 px-4 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors border border-gray-200"
+                className="w-full py-3.5 px-6 rounded-2xl text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
               >
                 Kthehu në faqen kryesore
               </button>
             </div>
 
-            {/* Footer Note */}
-            <p className="text-center text-xs text-gray-500 mt-4">
-              Pyetje? Kontaktoni ekipin tonë të mbështetjes për ndihmë.
-            </p>
+            {/* Footer */}
+            <div className="px-8 pb-6">
+              <p className="text-center text-xs text-slate-400">
+                Keni pyetje? Na kontaktoni në çdo kohë për ndihmë.
+              </p>
+            </div>
           </div>
         </div>
       </div>
