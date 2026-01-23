@@ -81,7 +81,7 @@ const Sidebar = () => {
     /*{ icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation" },*/
     { icon: NotebookPenIcon, label: "Fraza te ndryshme", path: "/phrases" },
     { icon: BookHeartIcon, label: "Fjalori Personal", path: "/words" },
-    { icon: TestTube2Icon, label: "Tests", path: "/tests" },
+    { icon: TestTube2Icon, label: "Testet e Nivelit", path: "/tests" },
     { icon: Calendar, label: "PlanProgrami", path: "/plan", requireAuth: true },
         { icon: BarChart, label: "Renditja", path: "/leaderboard", requireAuth: false },
 

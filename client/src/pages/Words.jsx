@@ -35,12 +35,13 @@ export default function Words() {
   const [currentPage, setCurrentPage] = useState(1)
   const wordsPerPage = 30
 
-  const [activeView, setActiveView] = useState("words") // words, quiz, help
+  const [activeView, setActiveView] = useState("words")
   const [currentQuizWord, setCurrentQuizWord] = useState(null)
   const [multipleChoiceOptions, setMultipleChoiceOptions] = useState([])
   const [selectedAnswer, setSelectedAnswer] = useState(null)
   const [quizResult, setQuizResult] = useState(null)
   const [quizScore, setQuizScore] = useState({ correct: 0, total: 0 })
+  const [quizXpEarned, setQuizXpEarned] = useState(0) // NEW: Track XP earned during quiz
   const [notification, setNotification] = useState(null)
   const [quizCycle, setQuizCycle] = useState([])
   const [quizCycleIndex, setQuizCycleIndex] = useState(0)
@@ -101,7 +102,7 @@ export default function Words() {
     const shuffled = [...array]
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
-        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
     }
     return shuffled
   }
@@ -175,7 +176,6 @@ export default function Words() {
   const handleDeleteAllWords = async () => {
     try {
       setDeletingAll(true)
-      // Delete all words one by one
       for (const word of words) {
         await wordsService.removeLearnedWord(word._id)
       }
@@ -199,6 +199,7 @@ export default function Words() {
     }
     setActiveView("quiz")
     setQuizScore({ correct: 0, total: 0 })
+    setQuizXpEarned(0) // NEW: Reset XP earned
     setShowQuizResults(false)
     const shuffledWords = shuffleArray(words)
     setQuizCycle(shuffledWords)
@@ -233,25 +234,37 @@ export default function Words() {
     setSelectedAnswer(option)
     const isCorrect = option._id === currentQuizWord._id
     setQuizResult(isCorrect)
+    
+    // Update score
     setQuizScore((prev) => ({
       correct: prev.correct + (isCorrect ? 1 : 0),
       total: prev.total + 1,
     }))
+
+    // NEW: Update XP earned (can't go below 0)
+    setQuizXpEarned((prev) => {
+      if (isCorrect) {
+        return prev + 1 // +1 XP for correct answer
+      } else {
+        return Math.max(0, prev - 1) // -1 XP for wrong answer, but can't go below 0
+      }
+    })
+
     setTimeout(() => loadNextQuizWord(), 1500)
   }
 
   const finishQuiz = async () => {
     setShowQuizResults(true)
-    const accuracy = quizScore.total > 0 ? (quizScore.correct / quizScore.total) * 100 : 0
 
-    // Award 5 XP if accuracy >= 60%
-    if (accuracy >= 60) {
+    // NEW: Send the earned XP to backend (only if positive)
+    if (quizXpEarned > 0) {
       setSavingXp(true)
       try {
-        await wordsService.addQuizXp(5)
-        showNotification("Urime! Fituat 5 XP bonus!", "success")
+        await wordsService.addQuizXp(quizXpEarned)
+        showNotification(`Urime! Fituat ${quizXpEarned} XP!`, "success")
       } catch (error) {
         console.error("Error adding XP:", error)
+        showNotification("Gabim në ruajtjen e XP", "error")
       } finally {
         setSavingXp(false)
       }
@@ -298,8 +311,9 @@ export default function Words() {
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className={`fixed bottom-6 right-6 px-4 py-3 rounded-2xl font-medium text-sm shadow-xl z-50 flex items-center gap-2 backdrop-blur-sm ${notification.type === "success" ? "bg-emerald-500/90 text-white" : "bg-rose-500/90 text-white"
-              }`}
+            className={`fixed bottom-6 right-6 px-4 py-3 rounded-2xl font-medium text-sm shadow-xl z-50 flex items-center gap-2 backdrop-blur-sm ${
+              notification.type === "success" ? "bg-emerald-500/90 text-white" : "bg-rose-500/90 text-white"
+            }`}
           >
             {notification.type === "success" ? <CheckCircle size={16} /> : <XCircle size={16} />}
             {notification.message}
@@ -317,10 +331,11 @@ export default function Words() {
             <button
               key={tab.id}
               onClick={() => (tab.id === "quiz" ? startQuiz() : setActiveView(tab.id))}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${activeView === tab.id
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                activeView === tab.id
                   ? `bg-gradient-to-r ${tab.color} text-white shadow-lg`
                   : "text-gray-600 hover:text-gray-800 hover:bg-white/50"
-                }`}
+              }`}
             >
               <tab.icon size={16} />
               {tab.label}
@@ -363,7 +378,7 @@ export default function Words() {
                 {
                   icon: Zap,
                   title: "Fitoni XP",
-                  desc: "Nëse keni 60%+ saktësi, fitoni 5 XP bonus në fund të kuizit.",
+                  desc: "Për çdo përgjigje të saktë fitoni +1 XP, për gabim -1 XP (minimumi 0).",
                   color: "from-amber-500 to-yellow-500",
                 },
               ].map((item, i) => (
@@ -436,26 +451,24 @@ export default function Words() {
                       </div>
                       <div className="border-t pt-4 flex justify-between items-center">
                         <span className="text-gray-600">Saktësia:</span>
-                        <span
-                          className={`font-bold text-lg ${quizScore.total > 0 && quizScore.correct / quizScore.total >= 0.6
-                              ? "text-emerald-600"
-                              : "text-amber-600"
-                            }`}
-                        >
+                        <span className="font-bold text-lg text-gray-800">
                           {quizScore.total > 0 ? Math.round((quizScore.correct / quizScore.total) * 100) : 0}%
                         </span>
                       </div>
 
-                      {quizScore.total > 0 && quizScore.correct / quizScore.total >= 0.6 && (
+                      {/* NEW: Show XP earned */}
+                      <div className="border-t pt-4">
                         <motion.div
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
                           className="bg-gradient-to-r from-amber-100 to-yellow-100 rounded-xl p-4 flex items-center justify-center gap-2"
                         >
                           <Zap size={20} className="text-amber-600" />
-                          <span className="font-semibold text-amber-700">+5 XP Bonus!</span>
+                          <span className="font-semibold text-amber-700">
+                            {quizXpEarned > 0 ? `+${quizXpEarned} XP Fituar!` : "0 XP"}
+                          </span>
                         </motion.div>
-                      )}
+                      </div>
                     </div>
 
                     <div className="flex gap-3">
@@ -483,13 +496,20 @@ export default function Words() {
               )}
             </AnimatePresence>
 
-            {/* Quiz Stats */}
+            {/* Quiz Stats - UPDATED to show XP */}
             <div className="flex justify-between items-center mb-4">
-              <div className="bg-white px-3 py-1.5 rounded-xl shadow-sm border border-blue-100">
-                <span className="text-xs text-gray-500">Rezultati: </span>
-                <span className="font-semibold text-sm bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">
-                  {quizScore.correct}/{quizScore.total}
-                </span>
+              <div className="flex gap-2">
+                <div className="bg-white px-3 py-1.5 rounded-xl shadow-sm border border-blue-100">
+                  <span className="text-xs text-gray-500">Rezultati: </span>
+                  <span className="font-semibold text-sm bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">
+                    {quizScore.correct}/{quizScore.total}
+                  </span>
+                </div>
+                {/* NEW: Show current XP during quiz */}
+                <div className="bg-white px-3 py-1.5 rounded-xl shadow-sm border border-amber-100 flex items-center gap-1">
+                  <Zap size={14} className="text-amber-500" />
+                  <span className="font-semibold text-sm text-amber-600">{quizXpEarned} XP</span>
+                </div>
               </div>
               <button
                 onClick={finishQuiz}
@@ -513,7 +533,6 @@ export default function Words() {
 
                 const textContent = option.translation || option.word
                 const textLength = textContent.length
-                // Smaller font sizing for compact buttons
                 let fontSize = "text-xs sm:text-sm"
                 if (textLength > 40) {
                   fontSize = "text-[10px] sm:text-xs"
@@ -526,7 +545,8 @@ export default function Words() {
                     key={option._id}
                     onClick={() => handleAnswerSelection(option)}
                     disabled={showResult}
-                    className={`p-3 min-h-[60px] rounded-xl text-left transition-all border-2 ${showResult
+                    className={`p-3 min-h-[60px] rounded-xl text-left transition-all border-2 ${
+                      showResult
                         ? isCorrect
                           ? "border-green-500 bg-gradient-to-br from-green-50 to-emerald-50"
                           : isSelected
@@ -535,16 +555,17 @@ export default function Words() {
                         : isSelected
                           ? "border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50"
                           : "border-gray-200 bg-white hover:border-purple-400 hover:bg-gradient-to-br hover:from-purple-50 hover:to-blue-50"
-                      }`}
+                    }`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span
-                        className={`font-medium break-words flex-1 leading-tight ${fontSize} ${showResult && isCorrect
+                        className={`font-medium break-words flex-1 leading-tight ${fontSize} ${
+                          showResult && isCorrect
                             ? "text-green-700"
                             : showResult && isSelected && !isCorrect
                               ? "text-red-700"
                               : "text-gray-800"
-                          }`}
+                        }`}
                       >
                         {textContent}
                       </span>
@@ -561,20 +582,21 @@ export default function Words() {
             {/* Result Feedback */}
             {quizResult !== null && (
               <div
-                className={`mt-3 p-3 rounded-xl flex items-center justify-center gap-2 ${quizResult
+                className={`mt-3 p-3 rounded-xl flex items-center justify-center gap-2 ${
+                  quizResult
                     ? "bg-gradient-to-r from-emerald-50 to-green-50"
                     : "bg-gradient-to-r from-rose-50 to-red-50"
-                  }`}
+                }`}
               >
                 <span className={`font-medium text-sm ${quizResult ? "text-emerald-600" : "text-rose-600"}`}>
-                  {quizResult ? "E saktë! 🎉" : "Gabim! 😅"}
+                  {quizResult ? "E saktë! +1 XP 🎉" : "Gabim! -1 XP 😅"}
                 </span>
               </div>
             )}
           </motion.div>
         )}
 
-        {/* Words View */}
+        {/* Words View - keeping the rest unchanged */}
         {activeView === "words" && (
           <motion.div
             key="words"
@@ -582,6 +604,7 @@ export default function Words() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
+            {/* Rest of the Words view code remains the same... */}
             <div className="grid grid-cols-3 gap-4 mb-6">
               {[
                 { icon: Sparkles, label: "Totali", value: stats.totalWords, gradient: "from-purple-500 to-pink-500" },
@@ -732,7 +755,7 @@ export default function Words() {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Fjala Gjermane</label>
                         <input
-                          ref={newWordInputRef}  // ✅ Fixed - single underscore
+                          ref__={newWordInputRef}
                           type="text"
                           value={newWord}
                           onChange={(e) => setNewWord(e.target.value)}
@@ -804,7 +827,6 @@ export default function Words() {
               <>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                   {currentWords.map((word, idx) => {
-                    // Dynamic gradient colors for variety
                     const gradients = [
                       "from-purple-500 to-pink-500",
                       "from-blue-500 to-cyan-500",
@@ -827,12 +849,16 @@ export default function Words() {
                           <Trash2 size={14} className="text-rose-500" />
                         </button>
                         <h3
-                          className={`font-bold mb-2 pr-8 bg-gradient-to-r ${gradient} bg-clip-text text-transparent break-words line-clamp-2 ${word.word.length > 15 ? "text-base" : "text-xl"}`}
+                          className={`font-bold mb-2 pr-8 bg-gradient-to-r ${gradient} bg-clip-text text-transparent break-words line-clamp-2 ${
+                            word.word.length > 15 ? "text-base" : "text-xl"
+                          }`}
                         >
                           {word.word}
                         </h3>
                         <p
-                          className={`text-gray-600 break-words line-clamp-3 ${word.translation.length > 30 ? "text-xs" : "text-sm"}`}
+                          className={`text-gray-600 break-words line-clamp-3 ${
+                            word.translation.length > 30 ? "text-xs" : "text-sm"
+                          }`}
                         >
                           {word.translation || "—"}
                         </p>
@@ -860,7 +886,6 @@ export default function Words() {
                     <div className="flex gap-1.5 flex-wrap justify-center">
                       {[...Array(totalPages)].map((_, i) => {
                         const pageNumber = i + 1
-                        // Show first, last, current, and pages around current
                         if (
                           pageNumber === 1 ||
                           pageNumber === totalPages ||
@@ -872,10 +897,11 @@ export default function Words() {
                               whileHover={{ scale: 1.1 }}
                               whileTap={{ scale: 0.9 }}
                               onClick={() => setCurrentPage(pageNumber)}
-                              className={`w-10 h-10 rounded-xl text-sm font-medium transition-all ${currentPage === pageNumber
+                              className={`w-10 h-10 rounded-xl text-sm font-medium transition-all ${
+                                currentPage === pageNumber
                                   ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/30"
                                   : "bg-white border border-gray-200 text-gray-600 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50"
-                                }`}
+                              }`}
                             >
                               {pageNumber}
                             </motion.button>

@@ -107,7 +107,7 @@ const Home = () => {
     {
       icon: Award,
       label: "Niveli",
-      value: user?.level || "C1",
+      value: user?.level || "0",
       bgColor: "bg-gradient-to-br from-[#DDD6FE] to-[#C4B5FD]",
       textColor: "text-[#7C3AED]",
       iconColor: "text-[#8B5CF6]",
@@ -269,7 +269,7 @@ const Home = () => {
               <div className="text-4xl">👋</div>
               <div>
                 <h2 className="text-xl font-bold text-gray-900">
-                  Mirë se vini përsëri, {user.firstName || user.emri || "Ledion"}!
+                  Mirë se vini përsëri, {user.firstName || user.emri || "//"}!
                 </h2>
                 <p className="text-sm text-gray-600">Vazhdoni progresin tuaj të shkëlqyer</p>
               </div>

@@ -203,7 +203,7 @@ const Phrase = () => {
       return
     }
 
-    const quizSize = Math.min(5, finishedPhrases.length)
+    const quizSize = Math.min(10, finishedPhrases.length)
     const selectedPhrases = finishedPhrases.sort(() => Math.random() - 0.5).slice(0, quizSize)
     const shuffled = [...selectedPhrases].sort(() => Math.random() - 0.5)
 
@@ -444,8 +444,8 @@ const Phrase = () => {
   // Quiz Mode
   if (quizMode) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] via-white to-[#CCFBF1] p-3 sm:p-6">
-        <div className="max-w-[600px] mx-auto">
+<div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] via-white to-[#CCFBF1] p-3 sm:p-6">
+        <div className="max-w-[700px] mx-auto">
           {quizComplete ? (
             <div className="bg-white rounded-2xl p-6 sm:p-10 text-center shadow-2xl">
               <h2
@@ -494,18 +494,20 @@ const Phrase = () => {
                 </div>
               </div>
 
-              {/* Stacked Layout for Mobile */}
-              <div className="space-y-4 mb-4 sm:mb-6">
-                {/* German Section */}
+              {/* Horizontal Layout - German Left, Albanian Right */}
+              <div className="grid grid-cols-2 gap-3 mb-4 sm:mb-6">
+                {/* German Section - Left */}
                 <div>
-                  <h3 className="text-xs font-bold text-gray-600 mb-2 uppercase" style={{ fontFamily: fonts.poppins }}>
+                  <h3 className="text-xs font-bold text-gray-600 mb-2 uppercase text-center" style={{ fontFamily: fonts.poppins }}>
                     🇩🇪 Gjermane
                   </h3>
-                  <div className="space-y-1.5 sm:space-y-2">
+                  <div className="space-y-1.5">
                     {quizPhrases.map((phrase) => {
                       const phraseId = phrase._id || phrase.id
                       const isMatched = matches[phraseId]
                       const isSelected = selectedGerman === phraseId
+                      const textLength = phrase.german.length
+                      const textSizeClass = textLength > 40 ? "text-[10px] sm:text-xs" : textLength > 25 ? "text-xs sm:text-sm" : "text-xs sm:text-sm"
 
                       return (
                         <button
@@ -523,7 +525,7 @@ const Phrase = () => {
                             }
                           }}
                           disabled={isMatched}
-                          className={`w-full px-3 py-2 sm:px-4 sm:py-3 text-left rounded-lg sm:rounded-xl border-2 transition-all font-medium ${levelTextSizes[selectedLevel].german} ${isMatched
+                          className={`w-full px-2 py-1.5 sm:px-3 sm:py-2 text-left rounded-lg border-2 transition-all font-medium ${textSizeClass} leading-tight ${isMatched
                             ? "bg-green-100 border-green-500 text-green-700"
                             : isSelected
                               ? "bg-blue-100 border-blue-500 text-blue-700 shadow-md"
@@ -538,16 +540,18 @@ const Phrase = () => {
                   </div>
                 </div>
 
-                {/* Albanian Section */}
+                {/* Albanian Section - Right */}
                 <div>
-                  <h3 className="text-xs font-bold text-gray-600 mb-2 uppercase" style={{ fontFamily: fonts.poppins }}>
+                  <h3 className="text-xs font-bold text-gray-600 mb-2 uppercase text-center" style={{ fontFamily: fonts.poppins }}>
                     🇦🇱 Shqipe
                   </h3>
-                  <div className="space-y-1.5 sm:space-y-2">
+                  <div className="space-y-1.5">
                     {shuffledAlbanian.map((phrase) => {
                       const phraseId = phrase._id || phrase.id
                       const isMatched = Object.values(matches).includes(phraseId)
                       const isSelected = selectedAlbanian === phraseId
+                      const textLength = phrase.albanian.length
+                      const textSizeClass = textLength > 40 ? "text-[10px] sm:text-xs" : textLength > 25 ? "text-xs sm:text-sm" : "text-xs sm:text-sm"
 
                       return (
                         <button
@@ -562,7 +566,7 @@ const Phrase = () => {
                             }
                           }}
                           disabled={isMatched}
-                          className={`w-full px-3 py-2 sm:px-4 sm:py-3 text-left rounded-lg sm:rounded-xl border-2 transition-all font-medium ${levelTextSizes[selectedLevel].albanian} ${isMatched
+                          className={`w-full px-2 py-1.5 sm:px-3 sm:py-2 text-left rounded-lg border-2 transition-all font-medium ${textSizeClass} leading-tight ${isMatched
                             ? "bg-green-100 border-green-500 text-green-700"
                             : isSelected
                               ? "bg-purple-100 border-purple-500 text-purple-700 shadow-md"
