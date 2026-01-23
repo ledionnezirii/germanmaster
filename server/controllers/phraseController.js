@@ -495,3 +495,44 @@ exports.getDailyLimitStatus = async (req, res) => {
     })
   }
 }
+// Add XP from quiz completion
+exports.addQuizXp = async (req, res) => {
+  try {
+    const userId = req.user.id
+    const { xp } = req.body
+
+    if (!xp || xp <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid XP amount is required",
+      })
+    }
+
+    const user = await User.findById(userId)
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      })
+    }
+
+    // Add XP to user
+    user.xp += xp
+    await user.save()
+
+    res.status(200).json({
+      success: true,
+      data: {
+        xpGained: xp,
+        totalXp: user.xp,
+      },
+      message: "Quiz XP added successfully",
+    })
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error adding quiz XP",
+      error: error.message,
+    })
+  }
+}

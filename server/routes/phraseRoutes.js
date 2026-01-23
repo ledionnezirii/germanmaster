@@ -12,6 +12,7 @@ const {
   unmarkPhraseAsFinished,
   getFinishedPhrases,
   getUserPhraseProgress,
+  addQuizXp,
 } = require("../controllers/phraseController");
 const isAdmin = require("../middleware/isAdmin");
 const protect = require("../middleware/auth");
@@ -26,6 +27,8 @@ router.get("/level/:level",protect,getPhrasesByLevel); // Add protect middleware
 router.get("/user/finished", protect,getFinishedPhrases); // Requires protect middleware
 router.get("/user/progress", protect,getUserPhraseProgress); // Requires protect middleware
 router.get("/:id",protect, getPhraseById); // Add protect middleware if needed
+
+router.post("/quiz-xp", protect,addQuizXp)
 
 // User routes - mark/unmark phrases as finished
 router.post("/:phraseId/finish", protect,markPhraseAsFinished); // Requires protect middleware
