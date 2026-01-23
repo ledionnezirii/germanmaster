@@ -333,15 +333,16 @@ const handleTransactionCompleted = async (event) => {
     console.log("[v0] 💵 Transaction amount:", amount, currency)
     console.log("[v0] 🔗 Subscription ID:", subscriptionId)
 
-    // ============ CRITICAL FIX: Check if subscription was cancelled ============
+    // ============ CHECK IF SUBSCRIPTION WAS CANCELLED - Prevent renewal after scheduled cancellation ============
     if (subscriptionId) {
       const existingPayment = await Payment.findOne({
         paddleSubscriptionId: subscriptionId,
       }).sort({ createdAt: -1 })
 
       if (existingPayment && existingPayment.status === 'cancelled') {
-        console.log("[v0] ⚠️⚠️⚠️ Subscription was CANCELLED - ignoring renewal transaction")
-        console.log("[v0] ⚠️ This prevents double-billing after cancellation")
+        console.log("[v0] ⚠️⚠️⚠️ Subscription was CANCELLED in Paddle - ignoring renewal transaction")
+        console.log("[v0] ⚠️ This transaction came AFTER the scheduled cancellation date")
+        console.log("[v0] ⚠️ User should not be charged again")
         return
       }
     }
@@ -492,26 +493,26 @@ const handleTransactionCompleted = async (event) => {
       duration: durationDays + " days",
     })
 
-    // ============ CRITICAL FIX: Use Paddle's EXACT timestamps ============
+    // ============ ALWAYS USE PADDLE'S EXACT TIMESTAMPS - THIS FIXES TIMEZONE ISSUES ============
     let expiresAt
     let nextBillingDate
 
     const billingPeriod = data.billing_period || data.current_billing_period
     
     if (billingPeriod?.ends_at) {
-      // USE PADDLE'S EXACT TIMESTAMP - this fixes timezone issues
+      // ALWAYS use Paddle's exact timestamp - never calculate ourselves
       expiresAt = new Date(billingPeriod.ends_at)
       nextBillingDate = new Date(billingPeriod.ends_at)
-      console.log("[v0] ✅✅✅ Using Paddle's EXACT billing period end time:", expiresAt.toISOString())
-      console.log("[v0] ✅ This ensures exact 24-hour period without timezone bugs")
+      console.log("[v0] ✅✅✅ Using Paddle's EXACT billing period end timestamp (Paddle timezone):", expiresAt.toISOString())
+      console.log("[v0] ✅ This ensures the subscription ends at the EXACT time Paddle specifies")
     } else {
-      // Fallback only if Paddle doesn't provide timestamp
+      // Fallback only if Paddle doesn't provide timestamp (rare)
       const now = new Date()
       expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
       nextBillingDate = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
-      console.log("[v0] ⚠️ Fallback: calculated from now:", expiresAt.toISOString())
+      console.log("[v0] ⚠️ Fallback: calculated from now (only used when Paddle doesn't provide timestamp):", expiresAt.toISOString())
     }
-    // ============ END OF TIMESTAMP FIX ============
+    // ============ END OF TIMESTAMP LOGIC ============
 
     // Check for duplicate transaction
     const existingPayment = await Payment.findOne({
@@ -593,7 +594,7 @@ const handleTransactionCompleted = async (event) => {
         isActive: user.isActive,
       })
       console.log(
-        `[v0] 🎉🎉🎉 Payment completed for user ${userId} - Immediate Access Granted for ${durationDays} days!`,
+        `[v0] 🎉🎉🎉 Payment completed for user ${userId} - Immediate Access Granted until ${expiresAt.toISOString()}!`,
       )
     } catch (userError) {
       console.error("[v0] ❌❌❌ Error updating user:", userError)
@@ -626,10 +627,8 @@ const handleSubscriptionCreated = async (event) => {
     console.log("[v0] 📋 Custom data:", JSON.stringify(customData, null, 2))
     console.log("[v0] 👤 UserId from customData:", userId)
 
-    // Try to get userId from customer email if not in customData
     if (!userId && data.customer_id) {
-      console.log("[v0] 🔍 No userId in customData, trying to find user by customer email")
-      console.log("[v0] ⚠️ Will process in transaction.completed event")
+      console.log("[v0] 🔍 No userId in customData, will process in transaction.completed event")
       return
     }
 
@@ -640,7 +639,6 @@ const handleSubscriptionCreated = async (event) => {
 
     console.log(`[v0] 💾 Processing subscription creation for user: ${userId}`)
 
-    // Get user
     const user = await User.findById(userId)
     if (!user) {
       console.error(`[v0] ❌ User not found: ${userId}`)
@@ -653,66 +651,56 @@ const handleSubscriptionCreated = async (event) => {
       isPaid: user.isPaid,
     })
 
-    // Get billing cycle from subscription data (MORE RELIABLE than price ID matching)
     const billingCycle = data.billing_cycle
     let subscriptionType = "1_month"
     let billingCycleType = "monthly"
-    let durationDays = 30
 
     console.log("[v0] 🔍 Billing cycle from Paddle:", billingCycle)
 
     if (billingCycle?.interval === "day" && billingCycle?.frequency === 1) {
       subscriptionType = "1_day"
       billingCycleType = "daily"
-      durationDays = 1
       console.log("[v0] ✅ Detected: Daily subscription (1 day)")
     } else if (billingCycle?.interval === "month" && billingCycle?.frequency === 1) {
       subscriptionType = "1_month"
       billingCycleType = "monthly"
-      durationDays = 30
       console.log("[v0] ✅ Detected: Monthly subscription (30 days)")
     } else if (billingCycle?.interval === "month" && billingCycle?.frequency === 3) {
       subscriptionType = "3_months"
       billingCycleType = "quarterly"
-      durationDays = 90
       console.log("[v0] ✅ Detected: Quarterly subscription (90 days)")
     } else if (billingCycle?.interval === "year" && billingCycle?.frequency === 1) {
       subscriptionType = "1_year"
       billingCycleType = "yearly"
-      durationDays = 365
       console.log("[v0] ✅ Detected: Yearly subscription (365 days)")
     } else {
       console.log("[v0] ⚠️ Unknown billing cycle, defaulting to monthly")
     }
 
-    // ============ CRITICAL FIX: Use Paddle's EXACT timestamps ============
+    // ============ ALWAYS USE PADDLE'S EXACT TIMESTAMPS ============
     let expiresAt
     let nextBillingDate
 
     const currentBillingPeriod = data.current_billing_period
     
     if (currentBillingPeriod?.ends_at) {
-      // USE PADDLE'S EXACT TIMESTAMP
       expiresAt = new Date(currentBillingPeriod.ends_at)
       nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
-      console.log("[v0] ✅✅✅ Using Paddle's EXACT billing period end time:", expiresAt.toISOString())
+      console.log("[v0] ✅✅✅ Using Paddle's EXACT billing period end timestamp:", expiresAt.toISOString())
     } else {
-      // Fallback
       const now = new Date()
+      const durationDays = subscriptionType === "1_day" ? 1 : subscriptionType === "3_months" ? 90 : subscriptionType === "1_year" ? 365 : 30
       expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
       nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
       console.log("[v0] ⚠️ Fallback: calculated from now:", expiresAt.toISOString())
     }
-    // ============ END OF TIMESTAMP FIX ============
+    // ============ END OF TIMESTAMP LOGIC ============
 
     console.log("[v0] ⏰ Subscription expires at:", expiresAt.toISOString())
     console.log("[v0] ⏰ Next billing date:", nextBillingDate.toISOString())
-    console.log("[v0] 📅 Duration:", durationDays, "days")
 
-    // Get first transaction ID if available
     const transactionId = data.transaction_id || null
 
-    // Check if payment record already exists (by subscription ID OR transaction ID)
     console.log("[v0] 🔍 Checking for existing payment record...")
     const existingPayment = await Payment.findOne({
       $or: [{ paddleSubscriptionId: data.id }, ...(transactionId ? [{ paddleTransactionId: transactionId }] : [])],
@@ -721,14 +709,12 @@ const handleSubscriptionCreated = async (event) => {
     if (existingPayment) {
       console.log("[v0] ⚠️ Payment already exists for subscription/transaction:", existingPayment._id)
 
-      // Update with subscription ID if missing
       if (!existingPayment.paddleSubscriptionId && data.id) {
         existingPayment.paddleSubscriptionId = data.id
         await existingPayment.save()
         console.log("[v0] ✅ Updated existing payment with subscription ID")
       }
 
-      // Still update user if not paid
       if (!user.isPaid) {
         user.isPaid = true
         user.subscriptionType = subscriptionType
@@ -741,7 +727,6 @@ const handleSubscriptionCreated = async (event) => {
       return
     }
 
-    // Get amount from items
     const amount = data.items?.[0]?.price?.unit_price?.amount
       ? Number.parseInt(data.items[0].price.unit_price.amount) / 100
       : 0
@@ -757,7 +742,6 @@ const handleSubscriptionCreated = async (event) => {
       productId,
     })
 
-    // Create payment record
     console.log("[v0] 💾 Creating payment record...")
     const payment = await Payment.create({
       userId: userId,
@@ -784,7 +768,6 @@ const handleSubscriptionCreated = async (event) => {
 
     console.log("[v0] ✅ Payment record created:", payment._id)
 
-    // Grant immediate access to user
     console.log("[v0] 🔄 Granting immediate access to user...")
     user.isPaid = true
     user.subscriptionType = subscriptionType
@@ -1046,15 +1029,16 @@ exports.cancelSubscription = async (req, res) => {
     console.log("[v0] 🔗 Paddle subscription ID:", payment.paddleSubscriptionId)
 
     if (payment.paddleSubscriptionId && paddleClient) {
-      console.log("[v0] 📞 Calling Paddle API to cancel subscription...")
+      console.log("[v0] 📞 Calling Paddle API to schedule cancellation...")
       try {
-        // ============ CRITICAL FIX: Cancel immediately to prevent future billing ============
+        // ============ SCHEDULED CANCELLATION - User keeps access until end of billing period ============
         await paddleClient.subscriptions.cancel(payment.paddleSubscriptionId, {
-          effectiveFrom: "immediately",  // Changed from "next_billing_period"
+          effectiveFrom: "next_billing_period",  // This schedules cancellation, doesn't cancel immediately
         })
-        console.log(`[v0] ✅ Paddle subscription cancelled IMMEDIATELY: ${payment.paddleSubscriptionId}`)
-        console.log(`[v0] ✅ This prevents any future auto-renewal attempts`)
-        // ============ END OF CANCELLATION FIX ============
+        console.log(`[v0] ✅ Paddle subscription SCHEDULED for cancellation: ${payment.paddleSubscriptionId}`)
+        console.log(`[v0] ✅ User will keep access until: ${payment.expiresAt}`)
+        console.log(`[v0] ✅ After that date, Paddle will NOT charge the user again`)
+        // ============ END OF SCHEDULED CANCELLATION ============
       } catch (paddleError) {
         console.error("[v0] ❌ Paddle API error:", paddleError)
         console.error("[v0] Error message:", paddleError.message)
@@ -1064,20 +1048,27 @@ exports.cancelSubscription = async (req, res) => {
       console.log("[v0] ⚠️ No Paddle subscription ID or Paddle client not available")
     }
 
-    console.log("[v0] 💾 Updating payment record to cancelled...")
-    payment.status = "cancelled"
-    payment.cancelledAt = new Date()
+    // DON'T update payment status to 'cancelled' yet - wait for Paddle webhook
+    // Just mark that cancellation was requested
+    console.log("[v0] 💾 Marking subscription as scheduled for cancellation...")
+    payment.webhookEvents.push({
+      eventType: "cancellation_requested",
+      eventId: `cancel_req_${Date.now()}`,
+      receivedAt: new Date(),
+      data: { userId, requestedAt: new Date() },
+    })
     await payment.save()
-    console.log("[v0] ✅ Payment record updated")
+    console.log("[v0] ✅ Cancellation request recorded")
 
     console.log("[v0] 🔍 Looking up user:", userId)
     const user = await User.findById(userId)
     if (user) {
-      console.log("[v0] ✅ User found, marking as cancelled but maintaining access")
+      console.log("[v0] ✅ User found, marking subscription as scheduled for cancellation")
 
+      // Mark as cancelled but DON'T remove access
       user.subscriptionCancelled = true
-      // Don't set isPaid to false or subscriptionType to null yet
-      // User keeps access until subscriptionExpiresAt
+      // Keep isPaid = true and isActive = true until expiration date
+      // Paddle will send webhook when subscription actually expires
 
       await user.save()
 
@@ -1085,19 +1076,22 @@ exports.cancelSubscription = async (req, res) => {
       const expiresAt = new Date(user.subscriptionExpiresAt)
       const daysRemaining = Math.max(0, Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24)))
 
-      console.log("[v0] ✅ User subscription cancelled but access maintained until:", user.subscriptionExpiresAt)
+      console.log("[v0] ✅ User subscription SCHEDULED for cancellation")
+      console.log("[v0] ✅ User KEEPS full access until:", user.subscriptionExpiresAt)
       console.log("[v0] ✅ Days remaining:", daysRemaining)
+      console.log("[v0] ✅ After expiration, Paddle will NOT renew automatically")
     } else {
       console.error("[v0] ❌ User not found:", userId)
     }
 
-    console.log("[v0] ✅✅✅ Subscription cancelled successfully - user maintains access until end of period")
+    console.log("[v0] ✅✅✅ Subscription scheduled for cancellation - user keeps access until end of period")
     res.status(200).json({
       success: true,
-      message: "Abonimi u anulua me sukses. Do të vazhdosh të kesh qasje deri në fund të periudhës së faturimit.",
+      message: "Abonimi u anulua me sukses. Do të vazhdosh të kesh qasje të plotë deri në fund të periudhës së faturimit. Nuk do të faturohesh përsëri.",
       data: {
         paddleSubscriptionId: payment.paddleSubscriptionId,
         expiresAt: user?.subscriptionExpiresAt,
+        daysRemaining: user ? Math.max(0, Math.ceil((new Date(user.subscriptionExpiresAt) - new Date()) / (1000 * 60 * 60 * 24))) : 0,
       },
     })
   } catch (error) {
@@ -1123,7 +1117,6 @@ const handleSubscriptionUpdated = async (event) => {
     console.log("[v0] 📋 Custom data:", JSON.stringify(customData, null, 2))
     console.log("[v0] 👤 UserId from customData:", userId)
 
-    // Try to get userId from customer email if not in customData
     if (!userId && data.customer_id) {
       console.log("[v0] 🔍 No userId in customData, trying to find user by customer email")
       const customerEmail = data.customer?.email || data.billing_details?.email
@@ -1148,7 +1141,6 @@ const handleSubscriptionUpdated = async (event) => {
 
     console.log(`[v0] 💾 Processing subscription update for user: ${userId}`)
 
-    // Get user
     const user = await User.findById(userId)
     if (!user) {
       console.error(`[v0] ❌ User not found: ${userId}`)
@@ -1161,63 +1153,54 @@ const handleSubscriptionUpdated = async (event) => {
       isPaid: user.isPaid,
     })
 
-    // Get billing cycle from subscription data (MORE RELIABLE than price ID matching)
     const billingCycle = data.billing_cycle
     let subscriptionType = "1_month"
     let billingCycleType = "monthly"
-    let durationDays = 30
 
     console.log("[v0] 🔍 Billing cycle from Paddle:", billingCycle)
 
     if (billingCycle?.interval === "day" && billingCycle?.frequency === 1) {
       subscriptionType = "1_day"
       billingCycleType = "daily"
-      durationDays = 1
       console.log("[v0] ✅ Detected: Daily subscription (1 day)")
     } else if (billingCycle?.interval === "month" && billingCycle?.frequency === 1) {
       subscriptionType = "1_month"
       billingCycleType = "monthly"
-      durationDays = 30
       console.log("[v0] ✅ Detected: Monthly subscription (30 days)")
     } else if (billingCycle?.interval === "month" && billingCycle?.frequency === 3) {
       subscriptionType = "3_months"
       billingCycleType = "quarterly"
-      durationDays = 90
       console.log("[v0] ✅ Detected: Quarterly subscription (90 days)")
     } else if (billingCycle?.interval === "year" && billingCycle?.frequency === 1) {
       subscriptionType = "1_year"
       billingCycleType = "yearly"
-      durationDays = 365
       console.log("[v0] ✅ Detected: Yearly subscription (365 days)")
     } else {
       console.log("[v0] ⚠️ Unknown billing cycle, defaulting to monthly")
     }
 
-    // ============ CRITICAL FIX: Use Paddle's EXACT timestamps ============
+    // ============ ALWAYS USE PADDLE'S EXACT TIMESTAMPS ============
     let expiresAt
     let nextBillingDate
 
     const currentBillingPeriod = data.current_billing_period
     
     if (currentBillingPeriod?.ends_at) {
-      // USE PADDLE'S EXACT TIMESTAMP
       expiresAt = new Date(currentBillingPeriod.ends_at)
       nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
-      console.log("[v0] ✅✅✅ Using Paddle's EXACT billing period end time:", expiresAt.toISOString())
+      console.log("[v0] ✅✅✅ Using Paddle's EXACT billing period end timestamp:", expiresAt.toISOString())
     } else {
-      // Fallback
       const now = new Date()
+      const durationDays = subscriptionType === "1_day" ? 1 : subscriptionType === "3_months" ? 90 : subscriptionType === "1_year" ? 365 : 30
       expiresAt = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000)
       nextBillingDate = data.next_billed_at ? new Date(data.next_billed_at) : expiresAt
       console.log("[v0] ⚠️ Fallback: calculated from now:", expiresAt.toISOString())
     }
-    // ============ END OF TIMESTAMP FIX ============
+    // ============ END OF TIMESTAMP LOGIC ============
 
     console.log("[v0] ⏰ Subscription expires at:", expiresAt.toISOString())
     console.log("[v0] ⏰ Next billing date:", nextBillingDate.toISOString())
-    console.log("[v0] 📅 Duration:", durationDays, "days")
 
-    // Check if payment record already exists
     console.log("[v0] 🔍 Checking for existing payment record...")
     const payment = await Payment.findOne({
       paddleSubscriptionId: data.id,
@@ -1266,10 +1249,11 @@ const handleSubscriptionUpdated = async (event) => {
 }
 
 const handleSubscriptionCancelled = async (event) => {
-  console.log("\n[v0] ===================== SUBSCRIPTION CANCELLED =====================")
+  console.log("\n[v0] ===================== SUBSCRIPTION CANCELLED (by Paddle) =====================")
 
   const data = event.data
   console.log("[v0] 📋 Subscription data:", JSON.stringify(data, null, 2))
+  console.log("[v0] ⚠️ This webhook is sent by Paddle when cancellation is confirmed")
 
   console.log("[v0] 🔍 Looking for payment record with subscription ID:", data.id)
   const payment = await Payment.findOne({
@@ -1283,6 +1267,7 @@ const handleSubscriptionCancelled = async (event) => {
 
   console.log("[v0] ✅ Payment record found:", payment._id)
 
+  // Mark payment as cancelled in our database to match Paddle's state
   payment.status = "cancelled"
   payment.cancelledAt = new Date()
   payment.webhookEvents.push({
@@ -1293,19 +1278,38 @@ const handleSubscriptionCancelled = async (event) => {
 
   console.log("[v0] 💾 Saving cancelled payment record...")
   await payment.save()
-  console.log("[v0] ✅ Payment record cancelled")
+  console.log("[v0] ✅ Payment record status updated to 'cancelled' to match Paddle")
 
   console.log("[v0] 🔍 Looking up user:", payment.userId)
   const user = await User.findById(payment.userId)
   if (user) {
-    console.log("[v0] ✅ User found, marking as cancelled")
+    console.log("[v0] ✅ User found")
+    
+    // Mark as cancelled in user record
     user.subscriptionCancelled = true
-    user.isActive = false
+    
+    // Check if subscription has expired
+    const now = new Date()
+    const expiresAt = new Date(user.subscriptionExpiresAt)
+    
+    if (expiresAt <= now) {
+      // Subscription period has ended - remove access
+      console.log("[v0] ⏰ Subscription period has ENDED - removing access")
+      user.isPaid = false
+      user.isActive = false
+      user.subscriptionType = null
+    } else {
+      // Subscription still has time left - keep access
+      const daysRemaining = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24))
+      console.log("[v0] ⏰ Subscription still active for", daysRemaining, "more days - keeping access")
+      console.log("[v0] ✅ User keeps isPaid=true and isActive=true until", expiresAt.toISOString())
+    }
+    
     await user.save()
-    console.log("[v0] ✅ User marked as cancelled")
+    console.log("[v0] ✅ User record updated based on Paddle cancellation")
   } else {
     console.error("[v0] ❌ User not found:", payment.userId)
   }
 
-  console.log(`[v0] ✅✅✅ Subscription cancelled: ${data.id}`)
+  console.log(`[v0] ✅✅✅ Subscription cancellation processed from Paddle: ${data.id}`)
 }

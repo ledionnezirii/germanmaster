@@ -2,35 +2,35 @@ const User = require("../models/User");
 const Payment = require("../models/Payment");
 
 /**
- * Checks all users and revokes access if subscription has expired
- * Should be run periodically (every hour or every 15 minutes)
+ * ✅ CRON JOB: Checks all users and revokes access if subscription has expired
+ * Run this every hour via node-cron or a scheduler
  */
 const checkExpiredSubscriptions = async () => {
   try {
-    console.log("[Subscription Checker] Starting expired subscription check...");
+    console.log("[Subscription Checker] 🔍 Starting expired subscription check...");
     
     const now = new Date();
     
-    // Find all users who:
-    // 1. Have isPaid = true
-    // 2. But their subscriptionExpiresAt has passed
+    // Find all users who have isPaid = true BUT subscriptionExpiresAt has passed
     const expiredUsers = await User.find({
       isPaid: true,
       subscriptionExpiresAt: { $lte: now }
     });
 
-    console.log(`[Subscription Checker] Found ${expiredUsers.length} expired subscriptions`);
+    console.log(`[Subscription Checker] ⚠️ Found ${expiredUsers.length} expired subscriptions`);
 
     for (const user of expiredUsers) {
-      console.log(`[Subscription Checker] Revoking access for user ${user._id} (${user.email})`);
+      console.log(`[Subscription Checker] ❌ Revoking access for user ${user._id} (${user.email})`);
       console.log(`[Subscription Checker] - Expired at: ${user.subscriptionExpiresAt}`);
       
+      // Revoke access
       user.isPaid = false;
       user.isActive = false;
       user.subscriptionCancelled = false; // Reset cancelled flag
+      user.subscriptionType = null; // Clear subscription type
       await user.save();
 
-      // Also update the Payment record status
+      // Update Payment records to 'expired'
       await Payment.updateMany(
         {
           userId: user._id,
@@ -38,17 +38,17 @@ const checkExpiredSubscriptions = async () => {
           expiresAt: { $lte: now }
         },
         {
-          $set: { status: "cancelled" }
+          $set: { status: "expired" }
         }
       );
     }
 
-    console.log("[Subscription Checker] Finished checking expired subscriptions");
+    console.log(`[Subscription Checker] ✅ Finished. Revoked ${expiredUsers.length} subscriptions.`);
     return expiredUsers.length;
   } catch (error) {
-    console.error("[Subscription Checker] Error:", error);
+    console.error("[Subscription Checker] ❌ Error:", error);
     throw error;
   }
 };
 
-module.exports =  checkExpiredSubscriptions;
+module.exports = checkExpiredSubscriptions;
