@@ -1,5 +1,7 @@
 const Phrase = require("../models/Phrase")
 const User = require("../models/User")
+const { notifyPhraseLimitReached } = require("./notificationController")
+
 
 const DAILY_PHRASE_LIMIT = 10
 
@@ -222,7 +224,6 @@ exports.markPhraseAsFinished = async (req, res) => {
     const { phraseId } = req.params
     const userId = req.user.id
 
-    // Find the phrase to get XP value
     const phrase = await Phrase.findById(phraseId)
     if (!phrase) {
       return res.status(404).json({
@@ -231,7 +232,6 @@ exports.markPhraseAsFinished = async (req, res) => {
       })
     }
 
-    // Update user's phrasesFinished array and add XP
     const user = await User.findById(userId)
 
     if (!user) {
@@ -241,7 +241,6 @@ exports.markPhraseAsFinished = async (req, res) => {
       })
     }
 
-    // Check if phrase is already finished
     if (user.phrasesFinished.includes(phraseId)) {
       return res.status(400).json({
         success: false,
@@ -249,18 +248,17 @@ exports.markPhraseAsFinished = async (req, res) => {
       })
     }
 
-    // Check daily limit
     const newDay = isNewDay(user.lastPhraseUnlockDate)
     
     if (newDay) {
-      // Reset daily counter for new day
       user.dailyPhraseUnlocks = 0
       user.lastPhraseUnlockDate = new Date()
     }
 
-    // Check if user has reached daily limit
     if (user.dailyPhraseUnlocks >= DAILY_PHRASE_LIMIT) {
-      // Calculate time until next reset (00:01)
+      // ✅ SEND NOTIFICATION WHEN LIMIT REACHED
+      await notifyPhraseLimitReached(userId)
+      
       const now = new Date()
       const nextReset = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 1, 0, 0)
       const timeUntilReset = nextReset - now
@@ -278,11 +276,16 @@ exports.markPhraseAsFinished = async (req, res) => {
       })
     }
 
-    // Add phrase to finished list and update XP
     user.phrasesFinished.push(phraseId)
     user.xp += phrase.xp
     user.dailyPhraseUnlocks += 1
     user.lastPhraseUnlockDate = new Date()
+    
+    // Send notification when exactly reaching the limit
+    if (user.dailyPhraseUnlocks === DAILY_PHRASE_LIMIT) {
+      await notifyPhraseLimitReached(userId)
+    }
+    
     await user.save()
 
     res.status(200).json({
@@ -304,7 +307,6 @@ exports.markPhraseAsFinished = async (req, res) => {
     })
   }
 }
-
 // Unmark phrase as finished for user
 exports.unmarkPhraseAsFinished = async (req, res) => {
   try {

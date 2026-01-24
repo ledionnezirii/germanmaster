@@ -4,7 +4,8 @@ const { ApiResponse } = require("../utils/ApiResponse");
 const { asyncHandler } = require("../utils/asyncHandler");
 const achievementsService = require("../services/achievementsService");
 const { addUserXp } = require("./xpController");
-// </CHANGE>
+// ✅ ADD THIS IMPORT
+const { notifyXpMilestone } = require("./notificationController");
 
 const getProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id)
@@ -118,12 +119,22 @@ const addXp = asyncHandler(async (req, res) => {
     throw new ApiError(400, "XP amount must be greater than 0");
   }
 
+  const user = await User.findById(req.user.id);
+  const oldXp = user.xp;
+  
   const result = await addUserXp(req.user.id, xpAmount);
   
   // Calculate new level based on total XP
-  const user = await User.findById(req.user.id);
   user.level = Math.floor(user.xp / 1000) + 1;
   await user.save();
+
+  // ✅ CHECK FOR XP MILESTONES AND SEND NOTIFICATIONS
+  const milestones = [100, 500, 1000, 2000, 5000, 10000];
+  for (const milestone of milestones) {
+    if (result.totalXp >= milestone && oldXp < milestone) {
+      await notifyXpMilestone(req.user.id, milestone);
+    }
+  }
 
   res.json(
     new ApiResponse(200, {
@@ -134,7 +145,6 @@ const addXp = asyncHandler(async (req, res) => {
       message: "XP added successfully",
     })
   );
-  // </CHANGE>
 });
 
 const updateStreak = asyncHandler(async (req, res) => {
@@ -161,21 +171,17 @@ const updateStreak = asyncHandler(async (req, res) => {
 
   let message = "";
 
-  // First time login or no previous login - start streak at 1
   if (!lastLoginTime || daysDifference === null) {
     user.streakCount = 1;
     message = "Streak started!";
   }
-  // Logged in yesterday - increment streak
   else if (daysDifference === 1) {
     user.streakCount += 1;
     message = "Streak incremented!";
   }
-  // Already logged in today - no change to streak
   else if (daysDifference === 0) {
     message = "Already logged in today";
   }
-  // Missed days - reset streak to 1
   else if (daysDifference > 1) {
     user.streakCount = 1;
     message = "Streak reset to 1";

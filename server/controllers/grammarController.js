@@ -3,6 +3,8 @@ const { ApiError } = require("../utils/ApiError")
 const { ApiResponse } = require("../utils/ApiResponse")
 const { asyncHandler } = require("../utils/asyncHandler")
 
+const { notifyGrammarLimitReached } = require("./notificationController")
+
 const isDateToday = (date) => {
   if (!date) return false
   const today = new Date()
@@ -14,15 +16,13 @@ const isDateToday = (date) => {
   )
 }
 
-
-
 const canAccessMoreTopicsToday = (user) => {
   if (!user.grammarDailyTopics || !user.grammarDailyTopics.date) {
     return true
   }
 
   if (!isDateToday(user.grammarDailyTopics.date)) {
-    return true // New day, reset limit
+    return true
   }
 
   const topicsAccessedToday = user.grammarDailyTopics.topicIds.length
@@ -35,7 +35,7 @@ const getTopicsAccessedToday = (user) => {
   }
 
   if (!isDateToday(user.grammarDailyTopics.date)) {
-    return 0 // New day, reset count
+    return 0
   }
 
   return user.grammarDailyTopics.topicIds.length
@@ -47,7 +47,7 @@ const getAccessedTopicIdsToday = (user) => {
   }
 
   if (!isDateToday(user.grammarDailyTopics.date)) {
-    return [] // New day, no topics accessed yet
+    return []
   }
 
   return user.grammarDailyTopics.topicIds.map((id) => String(id))
@@ -152,14 +152,15 @@ const getTopicById = asyncHandler(async (req, res) => {
 
     const topicIdString = String(req.params.id)
     const alreadyAccessedToday = user.grammarDailyTopics.topicIds.some((id) => String(id) === topicIdString)
-
-    // Check if topic is already finished (always allow access)
     const isFinished = user.grammarFinished.some((id) => String(id) === topicIdString)
 
-    // If not already accessed today and not finished, check limit and add to list
     if (!alreadyAccessedToday && !isFinished) {
       if (!canAccessMoreTopicsToday(user)) {
         const topicsAccessedCount = getTopicsAccessedToday(user)
+        
+        // ✅ SEND NOTIFICATION WHEN LIMIT REACHED
+        await notifyGrammarLimitReached(userId)
+        
         throw new ApiError(
           429,
           `You can only access 2 grammar topics per day. You've accessed ${topicsAccessedCount} already. Come back tomorrow at 00:01.`,
@@ -273,28 +274,27 @@ const markTopicAsFinished = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found")
   }
 
-  // Reset daily topics if new day
   resetDailyTopicsIfNewDay(user)
 
   const topicIdString = String(topicId)
   const alreadyAccessedToday = user.grammarDailyTopics.topicIds.some((id) => String(id) === topicIdString)
-
-  // Check if already finished
   const alreadyFinished = user.grammarFinished.some((id) => String(id) === topicIdString)
 
   if (!alreadyAccessedToday && !alreadyFinished) {
     if (!canAccessMoreTopicsToday(user)) {
       const topicsAccessedCount = getTopicsAccessedToday(user)
+      
+      // ✅ SEND NOTIFICATION WHEN LIMIT REACHED
+      await notifyGrammarLimitReached(userId)
+      
       throw new ApiError(
         429,
         `You can only finish 2 grammar topics per day. You've accessed ${topicsAccessedCount} already. Come back tomorrow at 00:01.`,
       )
     }
-    // Add to accessed topics when finishing
     user.grammarDailyTopics.topicIds.push(topicId)
   }
 
-  // Add to finished list if not already there
   if (!alreadyFinished) {
     user.grammarFinished.push(topicId)
   }
@@ -334,7 +334,7 @@ const getDailyLimitStatus = asyncHandler(async (req, res) => {
   }
 
   resetDailyTopicsIfNewDay(user)
-  await user.save() // Save in case we reset
+  await user.save()
 
   const topicsAccessedToday = getTopicsAccessedToday(user)
   const accessedTopicIds = getAccessedTopicIdsToday(user)
