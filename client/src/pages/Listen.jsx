@@ -694,7 +694,7 @@ const Listen = () => {
 
         {loading ? (
           <div className="flex items-center justify-center min-h-96">
-            <div className="animate-spin rounded-full h-10 w-10 border-3 border-emerald-500 border-t-transparent" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 flex-1 overflow-y-auto">

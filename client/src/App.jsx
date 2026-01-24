@@ -103,6 +103,7 @@ const AppContent = () => {
                       <Route path="/race" element={<Race />} />
                       <Route path="/academies" element={<Academy />} />
                       <Route path="/dialogue" element={<Dialogue />} /> 
+                      
                     </Routes>
                   </SubscriptionGate>
                 }

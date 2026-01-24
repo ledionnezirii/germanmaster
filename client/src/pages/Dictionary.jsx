@@ -513,9 +513,8 @@ const Dictionary = () => {
         {loading ? (
           <div className="flex items-center justify-center min-h-[300px]">
             <div className="text-center space-y-3">
-              <div className="relative w-12 h-12 mx-auto">
-                <div className="absolute inset-0 border-4 border-emerald-200 rounded-full"></div>
-                <div className="absolute inset-0 border-4 border-emerald-600 rounded-full border-t-transparent animate-spin"></div>
+              <div className="flex items-center justify-center min-h-96">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
               </div>
               <p className="text-gray-500 font-medium text-sm">Po ngarkohet...</p>
             </div>

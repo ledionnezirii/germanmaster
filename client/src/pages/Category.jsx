@@ -611,13 +611,13 @@ const Category = () => {
         {/* Categories Grid */}
         {loading ? (
           <div className="flex items-center justify-center min-h-96">
-            <div className="animate-spin rounded-full h-10 w-10 border-3 border-emerald-500 border-t-transparent" />
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
           </div>
         ) : categories.length > 0 ? (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 flex-1 overflow-y-auto">
               {categories.slice(0, visibleCategories).map((category, index) => {
-                const IconComponent = iconMap[category.icon] || iconMap.default
+                const IconComponent = iconMap[category.icon] || FolderOpen
                 const categoryIdStr = String(category._id?._id || category._id)
                 const isCompleted = finishedCategoryIds.includes(categoryIdStr)
                 const style = getTypeStyle(category.type)

@@ -410,7 +410,9 @@ const Phrase = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] via-white to-[#CCFBF1] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-gray-200 border-t-[#14B8A6] rounded-full mx-auto mb-4 animate-spin" />
+          <div className="flex items-center justify-center min-h-96">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+          </div>
           <p className="text-gray-600 font-medium text-sm sm:text-base" style={{ fontFamily: fonts.inter }}>
             Duke u ngarkuar frazat...
           </p>

@@ -396,8 +396,8 @@ export default function PlanPage() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center px-4">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center mb-6">
-            <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-4 border-gray-200 border-t-emerald-500"></div>
+          <div className="flex items-center justify-center min-h-96">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
           </div>
           <p className="text-gray-600 font-medium text-base sm:text-lg">
             Po ngarkohet plani për nivelin {selectedLevel}...

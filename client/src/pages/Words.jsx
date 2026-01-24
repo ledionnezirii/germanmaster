@@ -278,14 +278,8 @@ export default function Words() {
 
   if (!user) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 text-center">
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <BookOpen size={24} className="text-purple-500" />
-          </div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Ju lutem identifikohuni</h2>
-          <p className="text-gray-500 text-sm">Duhet të jeni të identifikuar për të parë fjalët tuaja të mësuara</p>
-        </div>
+      <div className="flex items-center justify-center min-h-96">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
       </div>
     )
   }

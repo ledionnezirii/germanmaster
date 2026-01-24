@@ -211,7 +211,9 @@ export default function Quizes() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 flex items-center justify-center">
         {NotificationElement}
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+          <div className="flex items-center justify-center min-h-96">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+          </div>
           <p className="text-slate-600 font-medium">Duke ngarkuar kuizet...</p>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api";
+const API_BASE_URL = "/api";
 export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com";
 
 export const getAbsoluteImageUrl = (path) => {
@@ -784,5 +784,26 @@ export const activityService = {
   getTodayActivity: () => api.get("/activity/today"),
   getStats: () => api.get("/activity/stats"),
 };
+
+
+export const notificationService = {
+  // Get all notifications with pagination
+  getNotifications: (params = {}) => api.get("/notifications", { params }),
+
+  // Get unread notification count
+  getUnreadCount: () => api.get("/notifications/unread-count"),
+
+  // Mark a single notification as read
+  markAsRead: (notificationId) =>
+    api.put(`/notifications/${notificationId}/read`),
+
+  // Mark all notifications as read
+  markAllAsRead: () => api.put("/notifications/read-all"),
+
+  // Delete a notification
+  deleteNotification: (notificationId) =>
+    api.delete(`/notifications/${notificationId}`),
+};
+
 
 export default api;

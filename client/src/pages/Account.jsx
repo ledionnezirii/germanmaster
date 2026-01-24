@@ -489,7 +489,9 @@ const Account = () => {
 
         {loadingCertificates || issuingCertificate ? (
           <div className="text-center py-8">
-            <div className="h-8 w-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+            <div className="flex items-center justify-center min-h-96">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+          </div>
             <p className="text-gray-600 text-sm font-medium">
               {issuingCertificate ? "Duke krijuar certifikatën tuaj..." : "Duke ngarkuar certifikatat..."}
             </p>
