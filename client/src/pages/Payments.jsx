@@ -68,30 +68,30 @@ const Payment = () => {
 
   // Initialize Paddle
   useEffect(() => {
-    console.log("🔍 Paddle Token:", PADDLE_CLIENT_TOKEN ? "EXISTS" : "MISSING")
+    // console.log("🔍 Paddle Token:", PADDLE_CLIENT_TOKEN ? "EXISTS" : "MISSING")
 
     const initPaddle = () => {
       if (!PADDLE_CLIENT_TOKEN) {
-        console.error("❌ PADDLE_CLIENT_TOKEN is missing")
+        // console.error("❌ PADDLE_CLIENT_TOKEN is missing")
         setError("Token i Paddle (VITE_PADDLE_CLIENT_TOKEN_TEST) mungon në skedarin .env.")
         return
       }
 
       if (!window.Paddle) {
-        console.error("❌ window.Paddle is missing")
+        // console.error("❌ window.Paddle is missing")
         setError("Paddle nuk u ngarkua")
         return
       }
 
-      console.log("✅ Initializing Paddle with token:", PADDLE_CLIENT_TOKEN)
+      // console.log("✅ Initializing Paddle with token:", PADDLE_CLIENT_TOKEN)
 
       try {
         window.Paddle.Initialize({
           token: PADDLE_CLIENT_TOKEN,
           eventCallback: (data) => {
-            console.log("📢 Paddle event:", data)
+            // console.log("📢 Paddle event:", data)
             if (data.type === "checkout.completed") {
-              console.log("✅ Payment completed! Refreshing user data...")
+              // console.log("✅ Payment completed! Refreshing user data...")
               
               // Wait a moment for webhook to process
               setTimeout(async () => {
@@ -116,14 +116,14 @@ const Payment = () => {
                     setSubscriptionStatus(status)
                   }
                 } catch (err) {
-                  console.error("Failed to refresh user data:", err)
+                  // console.error("Failed to refresh user data:", err)
                   alert("✅ Pagesa u krye me sukses! Ju lutem rifreskoni faqen për të parë ndryshimet.")
                   setTimeout(() => window.location.reload(), 2000)
                 }
               }, 2000)
             }
             if (data.type === "checkout.error") {
-              console.error("❌ Payment error:", data)
+              // console.error("❌ Payment error:", data)
               setError(
                 "❌ Pagesa dështoi. Ju lutem provoni përsëri. NUK është tërhequr asnjë pagesë nga llogaria juaj.",
               )
@@ -133,10 +133,10 @@ const Payment = () => {
 
         window.Paddle.Environment.set("sandbox")
 
-        console.log("✅ Paddle initialized successfully!")
+        // console.log("✅ Paddle initialized successfully!")
         setPaddleInitialized(true)
       } catch (err) {
-        console.error("❌ Paddle initialization error:", err)
+        // console.error("❌ Paddle initialization error:", err)
         setError("Paddle initialization failed: " + err.message)
       }
     }
@@ -154,7 +154,7 @@ const Payment = () => {
       setTimeout(() => {
         clearInterval(check)
         if (!window.Paddle) {
-          console.error("❌ Paddle failed to load after 10 seconds")
+          // console.error("❌ Paddle failed to load after 10 seconds")
           setError("Sistemi i pagesave dështoi të ngarkohet")
         }
       }, 10000)
@@ -179,11 +179,11 @@ const Payment = () => {
           setUser(userData)
 
           const status = await subscriptionService.checkStatus()
-          console.log("🔍 Subscription status:", status)
+          // console.log("🔍 Subscription status:", status)
           setSubscriptionStatus(status)
         }
       } catch (err) {
-        console.error("❌ Error fetching data:", err)
+        // console.error("❌ Error fetching data:", err)
         setError("Dështoi ngarkimi i të dhënave")
       } finally {
         setLoading(false)
@@ -195,8 +195,8 @@ const Payment = () => {
   }, [])
 
   const openCheckout = async (priceId) => {
-    console.log("\n==================== OPENING CHECKOUT ====================")
-    console.log("Selected price ID:", priceId)
+    // console.log("\n==================== OPENING CHECKOUT ====================")
+    // console.log("Selected price ID:", priceId)
 
     if (!paddleInitialized) {
       return alert("Sistemi i pagesave nuk është gati. Ju lutem prisni...")
@@ -215,11 +215,11 @@ const Payment = () => {
     }
 
     try {
-      console.log("🔍 Checking for existing active subscription before checkout...")
+      // console.log("🔍 Checking for existing active subscription before checkout...")
       const checkResponse = await paymentService.createCheckoutSession(user.id, priceId)
 
       if (!checkResponse.success && checkResponse.code === "ALREADY_SUBSCRIBED") {
-        console.log("⚠️ User already has active subscription")
+        // console.log("⚠️ User already has active subscription")
         const data = checkResponse.data
         alert(
           `✅ Ju tashmë keni një abonim aktiv (${data.subscriptionType})!\n\n` +
@@ -240,7 +240,7 @@ const Payment = () => {
         )
         return
       }
-      console.error("❌ Error checking subscription:", err)
+      // console.error("❌ Error checking subscription:", err)
     }
 
     const checkoutConfig = {
@@ -259,10 +259,10 @@ const Payment = () => {
     }
 
     try {
-      console.log("🚀 Opening Paddle checkout...")
+      // console.log("🚀 Opening Paddle checkout...")
       window.Paddle.Checkout.open(checkoutConfig)
     } catch (err) {
-      console.error("❌ Checkout failed:", err)
+      // console.error("❌ Checkout failed:", err)
       setError("❌ Dështoi hapja e checkout. NUK është tërhequr asnjë pagesë. Ju lutem provoni përsëri.")
     }
   }
@@ -277,7 +277,7 @@ const Payment = () => {
 
     try {
       const response = await paymentService.cancelSubscription(user.id)
-      console.log("✅ Cancellation response:", response)
+      // console.log("✅ Cancellation response:", response)
       
       // Refresh user data to get updated subscription status
       const profileResponse = await authService.getProfile()
@@ -300,7 +300,7 @@ const Payment = () => {
           "Abonimi u anulua me sukses. Do të keni qasje të plotë deri në fund të periudhës së faturimit.",
       )
     } catch (err) {
-      console.error("Gabim në anulimin e abonimit:", err)
+      // console.error("Gabim në anulimin e abonimit:", err)
       setError("Dështoi anulimi i abonimit. Ju lutem kontaktoni mbështetjen.")
     }
   }

@@ -28,12 +28,12 @@ api.interceptors.request.use((config) => {
   }
 
   if (config.url?.includes("puzzle")) {
-    console.log(
-      "[v0] REQUEST INTERCEPTOR - Full URL:",
-      config.baseURL + config.url
-    );
-    console.log("[v0] REQUEST INTERCEPTOR - Method:", config.method);
-    console.log("[v0] REQUEST INTERCEPTOR - Data:", config.data);
+    // console.log(
+    //   "[v0] REQUEST INTERCEPTOR - Full URL:",
+    //   config.baseURL + config.url
+    // );
+    // console.log("[v0] REQUEST INTERCEPTOR - Method:", config.method);
+    // console.log("[v0] REQUEST INTERCEPTOR - Data:", config.data);
   }
 
   return config;
@@ -42,18 +42,18 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => {
     if (response.config.url?.includes("completed-pronunciation-packages")) {
-      console.log(
-        "[v0] API Response interceptor - Original response.data:",
-        response.data
-      );
-      console.log(
-        "[v0] API Response interceptor - response.data.data:",
-        response.data.data
-      );
-      console.log(
-        "[v0] API Response interceptor - Final data will be:",
-        response.data.data || response.data
-      );
+      // console.log(
+      //   "[v0] API Response interceptor - Original response.data:",
+      //   response.data
+      // );
+      // console.log(
+      //   "[v0] API Response interceptor - response.data.data:",
+      //   response.data.data
+      // );
+      // console.log(
+      //   "[v0] API Response interceptor - Final data will be:",
+      //   response.data.data || response.data
+      // );
     }
 
     return {
@@ -67,7 +67,7 @@ api.interceptors.response.use(
       error.response?.status === 403 &&
       error.response?.data?.code === "SUBSCRIPTION_EXPIRED"
     ) {
-      console.log("[v0] Subscription expired, redirecting to payment page");
+      // console.log("[v0] Subscription expired, redirecting to payment page");
       localStorage.setItem("subscription_expired", "true");
       window.location.href = "/payments";
       return Promise.reject(error);
@@ -100,7 +100,7 @@ export const authService = {
           },
         };
       } catch (error) {
-        console.error("[v0] Streak update failed (non-critical):", error);
+        // console.error("[v0] Streak update failed (non-critical):", error);
       }
     }
     return response;
@@ -137,9 +137,9 @@ export const authService = {
 
 export const generateDicebearUrl = (userId, avatarStyle = "adventurer") => {
   if (!userId) {
-    console.warn(
-      "[v0] generateDicebearUrl called with no userId, using placeholder"
-    );
+    // console.warn(
+    //   "[v0] generateDicebearUrl called with no userId, using placeholder"
+    // );
     return "/placeholder.svg?height=100&width=100";
   }
 
@@ -150,16 +150,16 @@ export const generateDicebearUrl = (userId, avatarStyle = "adventurer") => {
     numericLastPart && /^\d+$/.test(numericLastPart) ? baseStyle : avatarStyle;
 
   const url = `https://api.dicebear.com/9.x/${cleanStyle}/svg?seed=${userId}`;
-  console.log(
-    "[v0] Generated DiceBear URL:",
-    url,
-    "for user:",
-    userId,
-    "original style:",
-    avatarStyle,
-    "clean style:",
-    cleanStyle
-  );
+  // console.log(
+  //   "[v0] Generated DiceBear URL:",
+  //   url,
+  //   "for user:",
+  //   userId,
+  //   "original style:",
+  //   avatarStyle,
+  //   "clean style:",
+  //   cleanStyle
+  // );
   return url;
 };
 
@@ -331,7 +331,7 @@ export const testService = {
 
 export const pronunciationService = {
   getWords: (params = {}) => {
-    console.log("[v0] Getting pronunciation words...");
+    // console.log("[v0] Getting pronunciation words...");
     return api.get("/pronunciation", { params });
   },
   addPackage: (packageData) => api.post("/pronunciation", packageData),
@@ -384,24 +384,24 @@ export const achievementsService = {
 
 export const puzzleService = {
   getTodayPuzzle: () => {
-    console.log("[v0] Calling getTodayPuzzle API...");
+    // console.log("[v0] Calling getTodayPuzzle API...");
     return api.get("/puzzle/today").then((response) => {
-      console.log("[v0] getTodayPuzzle - Raw axios response:", response);
-      console.log("[v0] getTodayPuzzle - response.data:", response.data);
-      console.log(
-        "[v0] getTodayPuzzle - response.data._id:",
-        response.data?._id
-      );
+      // console.log("[v0] getTodayPuzzle - Raw axios response:", response);
+      // console.log("[v0] getTodayPuzzle - response.data:", response.data);
+      // console.log(
+      //   "[v0] getTodayPuzzle - response.data._id:",
+      //   response.data?._id
+      // );
       return response.data;
     });
   },
   submitAnswer: (puzzleId, currentGuess) => {
-    console.log(
-      "[v0] submitAnswer called with puzzleId:",
-      puzzleId,
-      "currentGuess:",
-      currentGuess
-    );
+    // console.log(
+    //   "[v0] submitAnswer called with puzzleId:",
+    //   puzzleId,
+    //   "currentGuess:",
+    //   currentGuess
+    // );
     const url = `/puzzle/${puzzleId}/submit`;
     return api
       .post(url, { guess: currentGuess })
@@ -623,36 +623,36 @@ export const paymentService = {
 
 export const subscriptionService = {
   checkStatus: async () => {
-    console.log("[Subscription] Checking subscription status from backend...");
+    // console.log("[Subscription] Checking subscription status from backend...");
 
     try {
       // Fetch fresh user data from backend
       const response = await authService.getProfile();
       const user = response.data?.user || response.data;
       
-      console.log("[Subscription] Fresh user data from backend:", user);
+      // console.log("[Subscription] Fresh user data from backend:", user);
 
       if (!user) {
-        console.log("[Subscription] No user found from backend");
+        // console.log("[Subscription] No user found from backend");
         return { active: false, expired: true, daysRemaining: 0 };
       }
 
       // Update localStorage with fresh data from backend
       localStorage.setItem("user", JSON.stringify(user));
-      console.log("[Subscription] Updated localStorage with fresh user data");
+      // console.log("[Subscription] Updated localStorage with fresh user data");
 
       // Check if subscription object exists
       if (!user.subscription) {
-        console.log("[Subscription] No subscription object found");
+        // console.log("[Subscription] No subscription object found");
         return { active: false, expired: true, daysRemaining: 0 };
       }
 
       const now = new Date();
       const expiresAt = new Date(user.subscription.expiresAt);
 
-      console.log("[Subscription] Now:", now);
-      console.log("[Subscription] Expires at:", expiresAt);
-      console.log("[Subscription] Time difference (ms):", expiresAt - now);
+      // console.log("[Subscription] Now:", now);
+      // console.log("[Subscription] Expires at:", expiresAt);
+      // console.log("[Subscription] Time difference (ms):", expiresAt - now);
 
       // Check if subscription has expired
       const isExpired = expiresAt <= now;
@@ -668,10 +668,10 @@ export const subscriptionService = {
       const isCancelled = user.subscriptionCancelled || user.subscription.cancelled || false;
       const isActive = user.isPaid && !isExpired;
 
-      console.log("[Subscription] Days remaining:", daysRemaining);
-      console.log("[Subscription] Is expired:", isExpired);
-      console.log("[Subscription] Is active:", isActive);
-      console.log("[Subscription] Is cancelled:", isCancelled);
+      // console.log("[Subscription] Days remaining:", daysRemaining);
+      // console.log("[Subscription] Is expired:", isExpired);
+      // console.log("[Subscription] Is active:", isActive);
+      // console.log("[Subscription] Is cancelled:", isCancelled);
 
       const status = {
         active: isActive,
@@ -683,10 +683,10 @@ export const subscriptionService = {
         cancelled: isCancelled,
       };
 
-      console.log("[Subscription] Final status:", status);
+      // console.log("[Subscription] Final status:", status);
       return status;
     } catch (error) {
-      console.error("[Subscription] Error fetching fresh subscription data:", error);
+      // console.error("[Subscription] Error fetching fresh subscription data:", error);
       return { active: false, expired: true, daysRemaining: 0 };
     }
   },

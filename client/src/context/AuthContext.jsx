@@ -17,17 +17,17 @@ export const AuthProvider = ({ children }) => {
     try {
       const storedUser = localStorage.getItem("user")
       const parsedUser = storedUser ? JSON.parse(storedUser) : null
-      console.log("AuthContext: useState init - Stored user:", parsedUser ? JSON.stringify(parsedUser, null, 2) : null)
+      // console.log("AuthContext: useState init - Stored user:", parsedUser ? JSON.stringify(parsedUser, null, 2) : null)
       return parsedUser
     } catch (error) {
-      console.error("AuthContext: useState init - Failed to parse user from localStorage:", error)
+      // console.error("AuthContext: useState init - Failed to parse user from localStorage:", error)
       localStorage.removeItem("user") // Clear corrupted data
       return null
     }
   })
 
   const setUser = useCallback((newValue) => {
-    console.log("AuthContext: setUser called with:", newValue ? JSON.stringify(newValue, null, 2) : null)
+    // console.log("AuthContext: setUser called with:", newValue ? JSON.stringify(newValue, null, 2) : null)
     setUserState(newValue)
   }, [])
 
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
           // If session is invalid (401), log out the user
           if (error.response?.status === 401) {
-            console.log("AuthContext: Session invalidated by server. Logging out.")
+            // console.log("AuthContext: Session invalidated by server. Logging out.")
             localStorage.removeItem("authToken")
             localStorage.removeItem("user")
             setToken(null)
@@ -63,21 +63,21 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initAuth = async () => {
       const savedToken = localStorage.getItem("authToken")
-      console.log("AuthContext: initAuth called. Saved token:", savedToken ? "Exists" : "Does not exist")
+      // console.log("AuthContext: initAuth called. Saved token:", savedToken ? "Exists" : "Does not exist")
 
       if (savedToken) {
         try {
           const response = await authService.getProfile()
-          console.log(
-            "AuthContext: getProfile response data:",
-            response.data ? JSON.stringify(response.data, null, 2) : null,
-          )
+          // console.log(
+          //   "AuthContext: getProfile response data:",
+          //   response.data ? JSON.stringify(response.data, null, 2) : null,
+          // )
 
           // Access the nested 'user' object from response.data
           const userDataFromResponse = response.data?.user
 
           if (!userDataFromResponse || Object.keys(userDataFromResponse).length === 0) {
-            console.warn("AuthContext: getProfile returned no user data or empty object. Clearing auth.")
+            // console.warn("AuthContext: getProfile returned no user data or empty object. Clearing auth.")
             localStorage.removeItem("authToken")
             localStorage.removeItem("user")
             setToken(null)
@@ -106,13 +106,13 @@ export const AuthProvider = ({ children }) => {
               daysRemaining: 0,
             },
           }
-          console.log("AuthContext: Fetched user data (before setting state):", JSON.stringify(fetchedUser, null, 2))
+          // console.log("AuthContext: Fetched user data (before setting state):", JSON.stringify(fetchedUser, null, 2))
           setUser(fetchedUser)
           // Store the fetched user data in localStorage
           localStorage.setItem("user", JSON.stringify(fetchedUser))
           setToken(savedToken)
         } catch (error) {
-          console.error("AuthContext: Auth initialization error during getProfile:", error)
+          // console.error("AuthContext: Auth initialization error during getProfile:", error)
           // If profile fetch fails, clear both token and user from storage
           localStorage.removeItem("authToken")
           localStorage.removeItem("user")
@@ -121,12 +121,12 @@ export const AuthProvider = ({ children }) => {
         }
       } else {
         // If no token, ensure no user data is lingering in localStorage
-        console.log("AuthContext: No saved token found. Clearing user from localStorage.")
+        // console.log("AuthContext: No saved token found. Clearing user from localStorage.")
         localStorage.removeItem("user")
         setUser(null)
       }
       setLoading(false)
-      console.log("AuthContext: initAuth finished. Loading set to false.")
+      // console.log("AuthContext: initAuth finished. Loading set to false.")
     }
     initAuth()
   }, []) // Runs only once on mount
@@ -136,13 +136,13 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.login(credentials)
       // The login response already destructures 'user' correctly, so this part is fine.
       const { token: newToken, user: userData } = response.data
-      console.log(
-        "AuthContext: Login successful. Response data:",
-        response.data ? JSON.stringify(response.data, null, 2) : null,
-      )
+      // console.log(
+      //   "AuthContext: Login successful. Response data:",
+      //   response.data ? JSON.stringify(response.data, null, 2) : null,
+      // )
 
       if (!userData || Object.keys(userData).length === 0) {
-        console.error("AuthContext: Login response did not contain user data or was empty.")
+        // console.error("AuthContext: Login response did not contain user data or was empty.")
         throw new Error("Login failed: No user data received.")
       }
 
@@ -168,14 +168,14 @@ export const AuthProvider = ({ children }) => {
           daysRemaining: 0,
         },
       }
-      console.log("AuthContext: User data to store after login:", JSON.stringify(userToStore, null, 2))
+      // console.log("AuthContext: User data to store after login:", JSON.stringify(userToStore, null, 2))
       // Store the full user data in localStorage upon login
       localStorage.setItem("user", JSON.stringify(userToStore))
       setToken(newToken)
       setUser(userToStore)
       return response
     } catch (error) {
-      console.error("AuthContext: Login error:", error)
+      // console.error("AuthContext: Login error:", error)
       throw error
     }
   }, [])
@@ -183,11 +183,11 @@ export const AuthProvider = ({ children }) => {
   const updateUser = useCallback((updatedData) => {
     setUser((prev) => {
       if (!prev) {
-        console.warn("AuthContext: updateUser called but no previous user state exists.")
+        // console.warn("AuthContext: updateUser called but no previous user state exists.")
         return null
       }
       const newUser = { ...prev, ...updatedData }
-      console.log("AuthContext: setUser called in updateUser with:", JSON.stringify(newUser, null, 2))
+      // console.log("AuthContext: setUser called in updateUser with:", JSON.stringify(newUser, null, 2))
       // Persist updated user data to localStorage
       localStorage.setItem("user", JSON.stringify(newUser))
       return newUser
@@ -202,18 +202,18 @@ export const AuthProvider = ({ children }) => {
     register: useCallback(async (userData) => {
       try {
         const response = await authService.register(userData)
-        console.log(
-          "AuthContext: Register successful. Response data:",
-          response.data ? JSON.stringify(response.data, null, 2) : null,
-        )
+        // console.log(
+        //   "AuthContext: Register successful. Response data:",
+        //   response.data ? JSON.stringify(response.data, null, 2) : null,
+        // )
         return response
       } catch (error) {
-        console.error("AuthContext: Register error:", error)
+        // console.error("AuthContext: Register error:", error)
         throw error
       }
     }, []),
     logout: useCallback(() => {
-      console.log("AuthContext: Logging out. Clearing localStorage.")
+      // console.log("AuthContext: Logging out. Clearing localStorage.")
       localStorage.removeItem("authToken")
       localStorage.removeItem("user") // Clear user data from localStorage on logout
       setToken(null)

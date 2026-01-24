@@ -37,7 +37,7 @@ const Home = () => {
       const favoriteWords = Array.isArray(response.data) ? response.data : response.data.favorites || []
       setFavoriteCount(favoriteWords.length)
     } catch (error) {
-      console.error("Error fetching favorite count:", error)
+      // console.error("Error fetching favorite count:", error)
       setFavoriteCount(0)
     }
   }

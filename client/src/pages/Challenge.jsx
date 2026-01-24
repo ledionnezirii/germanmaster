@@ -91,7 +91,7 @@ const Challenge = () => {
         });
         setUserXp(totalXp);
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        // console.error("Error fetching user data:", error);
         if (error.response?.status === 401) {
           localStorage.removeItem("authToken");
           window.location.href = "/signin";

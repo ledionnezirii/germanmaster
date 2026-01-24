@@ -21,12 +21,12 @@ const useActivityTracking = () => {
         // Only track if user has been active (less than 5 minutes since last activity)
         if (timeSinceLastActivity < 5 * 60 * 1000) {
           await activityService.addTime(1) // Add 1 minute
-          console.log("✅ Tracked 1 minute of learning time")
+          // console.log("✅ Tracked 1 minute of learning time")
         }
 
         lastActivityRef.current = now
       } catch (error) {
-        console.error("Failed to track time:", error)
+        // console.error("Failed to track time:", error)
       }
     }, 60000) // Every 60 seconds = 1 minute
 

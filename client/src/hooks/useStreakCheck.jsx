@@ -11,9 +11,9 @@ export const useStreakCheck = () => {
 
       try {
         const response = await authService.updateStreak();
-        console.log("[v0] Streak check result:", response.data);
+        // console.log("[v0] Streak check result:", response.data);
       } catch (error) {
-        console.error("[v0] Streak check error:", error);
+        // console.error("[v0] Streak check error:", error);
       }
     };
 

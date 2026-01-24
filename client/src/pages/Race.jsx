@@ -176,7 +176,7 @@ export default function RaceGame() {
       const response = await authService.getProfile()
       setUser(response.data)
     } catch (error) {
-      console.error("Failed to load user:", error)
+      // console.error("Failed to load user:", error)
     }
   }
 
@@ -186,7 +186,7 @@ export default function RaceGame() {
       const roomsData = response.data?.rooms || response.data
       setRooms(Array.isArray(roomsData) ? roomsData : [])
     } catch (error) {
-      console.error("Failed to load rooms:", error)
+      // console.error("Failed to load rooms:", error)
       setRooms([])
     }
   }
@@ -201,29 +201,29 @@ export default function RaceGame() {
     })
 
     newSocket.on("connect", () => {
-      console.log("Connected to race server")
+      // console.log("Connected to race server")
     })
 
     newSocket.on("playerJoined", (data) => {
-      console.log("Player joined:", data)
+      // console.log("Player joined:", data)
       if (currentRoom) {
         setGameState((prev) => (prev ? { ...prev, players: data.players } : null))
       }
     })
 
     newSocket.on("playerReady", (data) => {
-      console.log("Player ready:", data)
+      // console.log("Player ready:", data)
       if (currentRoom) {
         setGameState((prev) => (prev ? { ...prev, players: data.players } : null))
       }
     })
 
     newSocket.on("gameStarting", (data) => {
-      console.log("Game starting countdown:", data)
+      // console.log("Game starting countdown:", data)
     })
 
     newSocket.on("gameStarted", (data) => {
-      console.log("Game started:", data)
+      // console.log("Game started:", data)
       setGameState({
         status: "playing",
         currentQuestion: data.question,
@@ -235,7 +235,7 @@ export default function RaceGame() {
     })
 
     newSocket.on("nextQuestion", (data) => {
-      console.log("Next question:", data)
+      // console.log("Next question:", data)
       setGameState({
         status: "playing",
         currentQuestion: data.question,
@@ -248,11 +248,11 @@ export default function RaceGame() {
     })
 
     newSocket.on("playerAnswered", (data) => {
-      console.log("Player answered:", data)
+      // console.log("Player answered:", data)
     })
 
     newSocket.on("gameFinished", (data) => {
-      console.log("Game finished:", data)
+      // console.log("Game finished:", data)
       setGameState({
         status: "finished",
         players: data.leaderboard,
@@ -261,14 +261,14 @@ export default function RaceGame() {
     })
 
     newSocket.on("playerLeft", (data) => {
-      console.log("Player left:", data)
+      // console.log("Player left:", data)
       if (currentRoom) {
         setGameState((prev) => (prev ? { ...prev, players: data.players } : null))
       }
     })
 
     newSocket.on("raceError", (error) => {
-      console.error("Race error:", error)
+      // console.error("Race error:", error)
       alert(error.message)
     })
 
@@ -282,7 +282,7 @@ export default function RaceGame() {
       const quizzes = response.data || response
       setAvailableQuizzes(Array.isArray(quizzes) ? quizzes : [])
     } catch (error) {
-      console.error("Failed to load quizzes:", error)
+      // console.error("Failed to load quizzes:", error)
       alert("Failed to load quizzes")
       setAvailableQuizzes([])
     } finally {

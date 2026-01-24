@@ -48,7 +48,7 @@ export default function Puzzle() {
         )
       }
     } catch (error) {
-      console.error("Error fetching puzzle:", error)
+      // console.error("Error fetching puzzle:", error)
       setMessage(error.response?.data?.message || "Dështoi ngarkimi i enigmës së sotme")
     } finally {
       setLoading(false)
@@ -60,7 +60,7 @@ export default function Puzzle() {
       const response = await puzzleService.getUserProgress()
       setStats(response)
     } catch (error) {
-      console.error("Error fetching stats:", error)
+      // console.error("Error fetching stats:", error)
     }
   }
 

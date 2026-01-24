@@ -102,7 +102,7 @@ const Dictionary = () => {
       const calculatedPages = Math.ceil(totalCount / wordsPerPage)
       setTotalPages(calculatedPages)
     } catch (error) {
-      console.error("Error fetching words:", error)
+      // console.error("Error fetching words:", error)
       setWords([])
     } finally {
       setLoading(false)
@@ -115,7 +115,7 @@ const Dictionary = () => {
       const favoriteWords = response.data.favorites || response.data || []
       setFavorites(favoriteWords.map((fav) => fav.wordId || fav))
     } catch (error) {
-      console.error("Error fetching favorites:", error)
+      // console.error("Error fetching favorites:", error)
       setFavorites([])
     }
   }
@@ -125,7 +125,7 @@ const Dictionary = () => {
       const response = await dictionaryService.getUnlockStats()
       setUnlockStats(response.data || response)
     } catch (error) {
-      console.error("Error fetching unlock stats:", error)
+      // console.error("Error fetching unlock stats:", error)
     }
   }
 
@@ -150,7 +150,7 @@ const Dictionary = () => {
       await fetchUnlockStats()
 
     } catch (error) {
-      console.error("Error unlocking word:", error)
+      // console.error("Error unlocking word:", error)
       alert(error.response?.data?.message || "Gabim gjatë zhbllokimit të fjalës")
     } finally {
       setUnlocking(null)
@@ -169,7 +169,7 @@ const Dictionary = () => {
         setFavorites([...favorites, word])
       }
     } catch (error) {
-      console.error("Error toggling favorite:", error)
+      // console.error("Error toggling favorite:", error)
     }
   }
 

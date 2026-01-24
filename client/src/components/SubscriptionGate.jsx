@@ -20,12 +20,12 @@ const SubscriptionGate = ({ children }) => {
 
     const checkSubscription = async () => {
       try {
-        console.log("[SubscriptionGate] Checking subscription status...")
+        // console.log("[SubscriptionGate] Checking subscription status...")
         const status = await subscriptionService.checkStatus()
-        console.log("[SubscriptionGate] Status received:", status)
+        // console.log("[SubscriptionGate] Status received:", status)
         setSubscriptionStatus(status)
       } catch (error) {
-        console.error("[SubscriptionGate] Failed to check subscription status:", error)
+        // console.error("[SubscriptionGate] Failed to check subscription status:", error)
       } finally {
         setLoading(false)
       }
@@ -57,7 +57,7 @@ const SubscriptionGate = ({ children }) => {
     return children
   }
 
-  // Show warning if subscription will expire soon (3 days or less) and NOT cancelled
+  /* Show warning if subscription will expire soon (3 days or less) and NOT cancelled
   if (subscriptionStatus?.active && subscriptionStatus?.daysRemaining <= 3 && !subscriptionStatus?.cancelled) {
     return (
       <div>
@@ -85,7 +85,7 @@ const SubscriptionGate = ({ children }) => {
       </div>
     )
   }
-
+*/
   // Show expired screen if subscription is expired
   if (subscriptionStatus?.expired) {
     return (
