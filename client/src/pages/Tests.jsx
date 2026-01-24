@@ -24,6 +24,8 @@ const Tests = () => {
   const [testSessionId, setTestSessionId] = useState(null)
   const [securityViolation, setSecurityViolation] = useState(null)
   const [showSecurityWarning, setShowSecurityWarning] = useState(false)
+  const [showUnansweredModal, setShowUnansweredModal] = useState(false)
+  const [unansweredInfo, setUnansweredInfo] = useState({ count: 0, numbers: '' })
   const timerIntervalRef = useRef(null)
   const isSubmittingRef = useRef(false)
   const testActiveRef = useRef(false)
@@ -135,7 +137,7 @@ const Tests = () => {
     setTimeRemaining(null)
     setTestStartTime(null)
     setShowSecurityWarning(true)
-    
+
     // Refresh availability after violation
     fetchTestAvailability()
 
@@ -178,9 +180,9 @@ const Tests = () => {
 
       // Prevent common shortcuts
       if (
-        (e.ctrlKey || e.metaKey) && 
-        (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'a' || 
-         e.key === 'p' || e.key === 's' || e.key === 'f' || e.key === 'u')
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'a' ||
+          e.key === 'p' || e.key === 's' || e.key === 'f' || e.key === 'u')
       ) {
         e.preventDefault()
         return false
@@ -253,12 +255,12 @@ const Tests = () => {
       if (elapsed >= totalTime) {
         // Test expired while away - this is a violation (left the test)
         console.log("[Security] Test was abandoned - time expired while away")
-        
+
         const handleAbandonedTest = async () => {
           try {
             const response = await testService.getTestById(activeTestId)
             const test = response.data
-            
+
             await testService.submitTestViolation(test._id, {
               answers: Object.entries(JSON.parse(savedAnswers)).map(([questionId, answer]) => ({
                 questionId,
@@ -271,13 +273,13 @@ const Tests = () => {
           } catch (error) {
             console.error("[Security] Error handling abandoned test:", error)
           }
-          
+
           clearTestState()
           fetchTestAvailability()
           setShowSecurityWarning(true)
           setSecurityViolation("test_abandoned")
         }
-        
+
         if (userId) {
           handleAbandonedTest()
         } else {
@@ -433,6 +435,44 @@ const Tests = () => {
     }
   }
 
+  // Unanswered Questions Modal
+  const UnansweredQuestionsModal = ({ unansweredCount, unansweredNumbers, onClose }) => {
+    return (
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-3">
+        <div className="w-full max-w-sm mx-auto bg-white rounded-lg shadow-xl border-2 border-orange-200">
+          <div className="p-5 text-center space-y-4">
+            <div className="mx-auto w-14 h-14 bg-orange-100 rounded-full flex items-center justify-center">
+              <AlertCircle className="w-7 h-7 text-orange-600" />
+            </div>
+            
+            <div className="space-y-2">
+              <h2 className="text-lg font-bold text-orange-600">Pyetje të Papërgjigjura!</h2>
+              <p className="text-gray-700 text-sm">
+                Ju lutemi përgjigjuni të gjitha pyetjeve para se të dorëzoni testin.
+              </p>
+            </div>
+
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 space-y-2">
+              <p className="text-orange-800 font-semibold text-sm">
+                Pyetje të papërgjigjura: {unansweredCount}
+              </p>
+              <p className="text-orange-700 text-xs">
+                Numrat e pyetjeve: <strong>{unansweredNumbers}</strong>
+              </p>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium transition-colors text-sm"
+            >
+              Kthehu te Testi
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // Security Warning Modal
   const SecurityWarningModal = ({ violation, onClose }) => {
     const getViolationMessage = () => {
@@ -457,7 +497,7 @@ const Tests = () => {
             <div className="mx-auto w-14 h-14 bg-red-100 rounded-full flex items-center justify-center">
               <ShieldAlert className="w-7 h-7 text-red-600" />
             </div>
-            
+
             <div className="space-y-2">
               <h2 className="text-lg font-bold text-red-600">Shkelje e Sigurisë!</h2>
               <p className="text-gray-700 text-sm">{getViolationMessage()}</p>
@@ -539,9 +579,8 @@ const Tests = () => {
 
             <button
               onClick={onClose}
-              className={`w-full px-2.5 py-1.5 rounded-md font-medium transition-colors text-xs ${
-                isPassed ? "bg-gray-800 hover:bg-gray-900 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
-              }`}
+              className={`w-full px-2.5 py-1.5 rounded-md font-medium transition-colors text-xs ${isPassed ? "bg-gray-800 hover:bg-gray-900 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                }`}
             >
               {isPassed ? "Vazhdo" : "Kthehu te Nivelet"}
             </button>
@@ -636,6 +675,12 @@ const Tests = () => {
                   <span className="font-semibold text-gray-800 shrink-0">4.</span>
                   <p>
                     Nevojitet <strong>85% ose më shumë</strong> për të kaluar testin.
+                  </p>
+                </div>
+                <div className="flex items-start gap-1.5">
+                  <span className="font-semibold text-gray-800 shrink-0">5.</span>
+                  <p>
+                    <strong>DUHET</strong> t'i përgjigjeni të gjitha pyetjeve para dorëzimit.
                   </p>
                 </div>
               </div>
@@ -746,6 +791,25 @@ const Tests = () => {
 
     const submitTest = async () => {
       if (isSubmittingRef.current) return
+
+      // Check if all questions are answered
+      const totalQuestions = test.questions?.length || 0
+      const answeredQuestions = Object.keys(userAnswers).length
+      const unansweredCount = totalQuestions - answeredQuestions
+
+      if (unansweredCount > 0) {
+        // Find unanswered question numbers
+        const unansweredNumbers = test.questions
+          .filter(q => !userAnswers[q._id])
+          .map(q => q.questionNumber)
+          .join(', ')
+
+        // Show custom modal instead of alert
+        setUnansweredInfo({ count: unansweredCount, numbers: unansweredNumbers })
+        setShowUnansweredModal(true)
+        return
+      }
+
       isSubmittingRef.current = true
 
       try {
@@ -762,7 +826,7 @@ const Tests = () => {
         "• Do të jeni të KYÇUR për 2 JAVË\n\n" +
         "Jeni absolutisht të sigurt?"
       )
-      
+
       if (confirmed) {
         if (isSubmittingRef.current) return
         isSubmittingRef.current = true
@@ -795,7 +859,7 @@ const Tests = () => {
         setSecurityViolation("test_cancelled")
         setShowSecurityWarning(true)
         fetchTestAvailability()
-        
+
         isSubmittingRef.current = false
       }
     }
@@ -814,7 +878,7 @@ const Tests = () => {
     return (
       <div
         className="min-h-screen bg-gray-50 p-3 select-none"
-        style={{ 
+        style={{
           userSelect: 'none',
           WebkitUserSelect: 'none',
           MozUserSelect: 'none',
@@ -827,6 +891,15 @@ const Tests = () => {
         onDragStart={(e) => e.preventDefault()}
         onSelectStart={(e) => e.preventDefault()}
       >
+        {/* Unanswered Questions Modal */}
+        {showUnansweredModal && (
+          <UnansweredQuestionsModal
+            unansweredCount={unansweredInfo.count}
+            unansweredNumbers={unansweredInfo.numbers}
+            onClose={() => setShowUnansweredModal(false)}
+          />
+        )}
+
         {/* Security indicator */}
         <div className="fixed top-2 right-2 z-50 bg-green-100 border border-green-300 rounded-lg px-2 py-1 flex items-center gap-1.5">
           <Eye className="w-3.5 h-3.5 text-green-600" />
@@ -840,7 +913,7 @@ const Tests = () => {
                 className="text-xs font-semibold text-blue-600 uppercase tracking-wide"
                 style={{ fontFamily: "Inter, sans-serif" }}
               >
-                TEST YOUR GERMAN SKILLS
+                Testoni Njohurite tuaja
               </p>
               <h1 className="text-xl font-bold text-gray-900 mt-1.5" style={{ fontFamily: "Poppins, sans-serif" }}>
                 {test.title}
@@ -931,19 +1004,26 @@ const Tests = () => {
 
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
             <div className="p-3 text-center space-y-1.5">
-              <div className="text-xs text-gray-600" style={{ fontFamily: "Inter, sans-serif" }}>
+              <div className={`text-xs ${answeredQuestions === totalQuestions ? "text-green-600 font-medium" : "text-orange-600"}`} style={{ fontFamily: "Inter, sans-serif" }}>
                 {answeredQuestions === totalQuestions
-                  ? "Të gjitha pyetjet u përgjigjën! Gati për dorëzim."
-                  : `${totalQuestions - answeredQuestions} pyetje të mbetura`}
+                  ? "✓ Të gjitha pyetjet u përgjigjën! Gati për dorëzim."
+                  : `⚠ ${totalQuestions - answeredQuestions} pyetje të mbetura - Ju duhet t'i përgjigjeni të gjitha para dorëzimit`}
               </div>
               <div className="flex gap-2 justify-center">
                 <button
                   onClick={submitTest}
-                  disabled={answeredQuestions === 0 || isSubmittingRef.current}
-                  className="px-2.5 py-1.5 bg-gray-800 hover:bg-gray-900 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-md font-medium transition-colors text-xs"
+                  disabled={isSubmittingRef.current}
+                  className={`px-2.5 py-1.5 text-white rounded-md font-medium transition-colors text-xs ${answeredQuestions === totalQuestions
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-gray-800 hover:bg-gray-900"
+                    } disabled:bg-gray-300 disabled:cursor-not-allowed`}
                   style={{ fontFamily: "Poppins, sans-serif" }}
                 >
-                  {isSubmittingRef.current ? "Duke dorëzuar..." : "Dorëzo Testin"}
+                  {isSubmittingRef.current
+                    ? "Duke dorëzuar..."
+                    : answeredQuestions === totalQuestions
+                      ? "Dorëzo Testin ✓"
+                      : `Dorëzo Testin (${answeredQuestions}/${totalQuestions})`}
                 </button>
                 <button
                   className="px-2.5 py-1.5 rounded-md bg-red-50 text-red-700 hover:bg-red-100 transition-colors border border-red-200 font-medium text-xs"
@@ -1131,9 +1211,8 @@ const Tests = () => {
               return (
                 <div
                   key={level.code}
-                  className={`relative overflow-hidden rounded-xl shadow-sm border-2 transition-all duration-200 ${level.color} ${
-                    isAvailable && !isLocked ? "hover:shadow-lg cursor-pointer" : "opacity-70 cursor-not-allowed"
-                  }`}
+                  className={`relative overflow-hidden rounded-xl shadow-sm border-2 transition-all duration-200 ${level.color} ${isAvailable && !isLocked ? "hover:shadow-lg cursor-pointer" : "opacity-70 cursor-not-allowed"
+                    }`}
                   onClick={isAvailable && !isLocked ? () => handleLevelSelect(level.code) : undefined}
                 >
                   <div className="absolute top-3 left-3">
@@ -1182,9 +1261,8 @@ const Tests = () => {
                       </div>
                       <div className="w-full bg-white/40 rounded-full h-1.5">
                         <div
-                          className={`h-1.5 rounded-full transition-all ${
-                            availability.reason === "passed" ? "bg-green-500 w-full" : "bg-gray-300 w-0"
-                          }`}
+                          className={`h-1.5 rounded-full transition-all ${availability.reason === "passed" ? "bg-green-500 w-full" : "bg-gray-300 w-0"
+                            }`}
                         ></div>
                       </div>
                     </div>
@@ -1203,13 +1281,12 @@ const Tests = () => {
                     )}
 
                     <button
-                      className={`w-full py-2 px-3 rounded-lg font-semibold transition-all duration-200 text-xs flex items-center justify-center gap-1.5 ${
-                        isAvailable && !isLocked
+                      className={`w-full py-2 px-3 rounded-lg font-semibold transition-all duration-200 text-xs flex items-center justify-center gap-1.5 ${isAvailable && !isLocked
                           ? `${level.buttonColor} text-white shadow-md hover:shadow-lg`
-                          : isViolationLocked 
+                          : isViolationLocked
                             ? "bg-red-100 text-red-600 cursor-not-allowed"
                             : "bg-gray-200 text-gray-500 cursor-not-allowed"
-                      }`}
+                        }`}
                       style={{ fontFamily: "Poppins, sans-serif" }}
                       disabled={!isAvailable || isLocked}
                     >
