@@ -57,7 +57,7 @@ const SubscriptionGate = ({ children }) => {
     return children
   }
 
-  /* Show warning if subscription will expire soon (3 days or less) and NOT cancelled
+  // Show warning if subscription will expire soon (3 days or less) and NOT cancelled
   if (subscriptionStatus?.active && subscriptionStatus?.daysRemaining <= 3 && !subscriptionStatus?.cancelled) {
     return (
       <div>
@@ -67,9 +67,9 @@ const SubscriptionGate = ({ children }) => {
               <Clock className="h-6 w-6 text-amber-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-semibold text-slate-900">Periudha provuese po mbaron</h4>
+              <h4 className="text-sm font-semibold text-slate-900">Abonimi juaj po mbaron</h4>
               <p className="mt-0.5 text-sm text-slate-600">
-                Ju kanë mbetur <span className="font-bold text-amber-600">{subscriptionStatus.daysRemaining} ditë</span> të provës falas
+                Ju kanë mbetur <span className="font-bold text-amber-600">{subscriptionStatus.daysRemaining} ditë</span> të abonimit tuaj
               </p>
             </div>
             <button
@@ -85,7 +85,7 @@ const SubscriptionGate = ({ children }) => {
       </div>
     )
   }
-*/
+
   // Show expired screen if subscription is expired
   if (subscriptionStatus?.expired) {
     return (
