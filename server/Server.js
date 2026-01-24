@@ -52,6 +52,7 @@ const raceRoutes = require("./routes/raceRoutes");
 const dialoguesRoutes = require("./routes/dialogueRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const sentenceRoutes = require("./routes/sentenceRoutes");
 
 
 const { errorHandler, notFound } = require("./middleware/errorMiddleware");
@@ -308,6 +309,7 @@ app.use("/api/race", raceRoutes);
 app.use("/api/dialogue", dialoguesRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/sentences", sentenceRoutes);
 
 
 app.use(notFound);

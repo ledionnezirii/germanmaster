@@ -805,5 +805,21 @@ export const notificationService = {
     api.delete(`/notifications/${notificationId}`),
 };
 
+// Add this to your services/api.js file
+
+export const sentenceService = {
+  getAllSentences: (params = {}) => api.get("/sentences", { params }),
+  getSentencesByLevel: (level) => api.get(`/sentences/level/${level}`),
+  getSentenceById: (id) => api.get(`/sentences/${id}`),
+  submitSentence: (id, answers) => api.post(`/sentences/${id}/submit`, { answers }),
+  getCompletedSentences: () => api.get("/sentences/completed"),
+  getFinishedSentences: () => api.get("/sentences/finished"),
+  // Admin
+  createSentence: (data) => api.post("/sentences", data),
+  createBulkSentences: (sentences) => api.post("/sentences/bulk", { sentences }),
+  updateSentence: (id, data) => api.put(`/sentences/${id}`, data),
+  deleteSentence: (id) => api.delete(`/sentences/${id}`),
+};
+
 
 export default api;

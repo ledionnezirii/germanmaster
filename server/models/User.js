@@ -266,6 +266,12 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    finishedSentences: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Sentence",
+  },
+],
     finishedDialogues: [
       {
         type: mongoose.Schema.Types.ObjectId,
