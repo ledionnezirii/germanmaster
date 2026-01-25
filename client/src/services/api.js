@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api";
+const API_BASE_URL = "/api";
 export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com";
 
 export const getAbsoluteImageUrl = (path) => {
@@ -641,21 +641,23 @@ export const subscriptionService = {
       localStorage.setItem("user", JSON.stringify(user));
       // console.log("[Subscription] Updated localStorage with fresh user data");
 
-      // Check if subscription object exists
-      if (!user.subscription) {
-        // console.log("[Subscription] No subscription object found");
-        return { active: false, expired: true, daysRemaining: 0 };
-      }
-
+      // Check subscription expiration using the correct field path
       const now = new Date();
-      const expiresAt = new Date(user.subscription.expiresAt);
+      let expiresAt = null;
+      
+      // Try to get expiration date from the correct location
+      if (user.subscriptionExpiresAt) {
+        expiresAt = new Date(user.subscriptionExpiresAt);
+      } else if (user.subscription && user.subscription.expiresAt) {
+        expiresAt = new Date(user.subscription.expiresAt);
+      }
 
       // console.log("[Subscription] Now:", now);
       // console.log("[Subscription] Expires at:", expiresAt);
-      // console.log("[Subscription] Time difference (ms):", expiresAt - now);
+      // console.log("[Subscription] Time difference (ms):", expiresAt ? expiresAt - now : 'N/A');
 
       // Check if subscription has expired
-      const isExpired = expiresAt <= now;
+      const isExpired = !expiresAt || expiresAt <= now;
       
       // CRITICAL FIX: Only calculate days remaining if NOT expired
       let daysRemaining = 0;
@@ -677,9 +679,9 @@ export const subscriptionService = {
         active: isActive,
         expired: isExpired,
         daysRemaining: daysRemaining,
-        type: user.subscriptionType || user.subscription.type,
-        expiresAt: user.subscription.expiresAt,
-        trialStartedAt: user.subscription.trialStartedAt || user.trialStartedAt,
+        type: user.subscriptionType || user.subscription?.type,
+        expiresAt: expiresAt ? expiresAt.toISOString() : null,
+        trialStartedAt: user.subscription?.trialStartedAt || user.trialStartedAt,
         cancelled: isCancelled,
       };
 
