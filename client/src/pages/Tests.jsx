@@ -1095,6 +1095,17 @@ const Tests = () => {
   }
 
   const getLevelAvailability = (levelCode) => {
+    // Always lock C1 and C2 levels
+    if (levelCode === "C1" || levelCode === "C2") {
+      return {
+        available: false,
+        reason: "progression_locked",
+        locked: true,
+        requiresLevel: "B2",
+        message: "Nivelet C1 dhe C2 janë të kyçura për momentin"
+      }
+    }
+    
     const availability = testAvailability[levelCode]
     if (!availability) return { available: true, reason: "not_taken", locked: false }
     return availability
