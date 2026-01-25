@@ -359,7 +359,7 @@ export function SentenceQuiz({ quizId, quizTitle, selectedLevel, onComplete, onB
             </div>
 
             {/* Detailed Results */}
-            {/* <div className="space-y-3 mb-6">
+             <div className="space-y-3 mb-6">
               <h3 className="text-lg font-semibold text-gray-900">Rezultatet e Detajuara:</h3>
               {results.results?.map((result, index) => (
                 <motion.div
@@ -399,7 +399,7 @@ export function SentenceQuiz({ quizId, quizTitle, selectedLevel, onComplete, onB
                   </div>
                 </motion.div>
               ))}
-            </div> */}
+            </div> 
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
