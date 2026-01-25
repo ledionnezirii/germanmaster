@@ -21,7 +21,7 @@ const Dictionary = () => {
   // Unlock state
   const [unlockStats, setUnlockStats] = useState({
     todayUnlocks: 0,
-    remainingUnlocks: 15,
+    remainingUnlocks: 20,
     canUnlock: true,
     nextResetTime: null
   })
@@ -131,7 +131,7 @@ const Dictionary = () => {
 
   const handleUnlockWord = async (wordId) => {
     if (!unlockStats.canUnlock) {
-      alert(`Keni arritur limitin ditor prej 15 fjalëve. Provoni sërish më vonë.`)
+      alert(`Keni arritur limitin ditor prej 20 fjalëve. Provoni sërish më vonë.`)
       return
     }
 
@@ -224,14 +224,14 @@ const Dictionary = () => {
       // Filter only unlocked words for quiz
       const unlockedWords = levelWords.filter(w => w.isUnlocked)
 
-      if (unlockedWords.length < 19) {
-        alert(`Nevojiten të paktën 19 fjalë të zhbllokkuara për nivelin ${selectedLevel}. Ju keni ${unlockedWords.length} fjalë të zhbllokkuara.`)
+      if (unlockedWords.length < 15) {
+        alert(`Nevojiten të paktën 15 fjalë të zhbllokkuara për nivelin ${selectedLevel}. Ju keni ${unlockedWords.length} fjalë të zhbllokkuara.`)
         setQuizLoading(false)
         return
       }
 
       const shuffled = [...unlockedWords].sort(() => Math.random() - 0.5)
-      const selectedWords = shuffled.slice(0, 19)
+      const selectedWords = shuffled.slice(0, 15)
       setQuizWords(unlockedWords)
 
       const questions = selectedWords.map((word) => {
@@ -293,7 +293,7 @@ const Dictionary = () => {
   const finishQuiz = async () => {
     setShowResult(true)
 
-    const passed = correctAnswers >= 12
+    const passed = correctAnswers >= 9
 
     if (passed && !xpAwarded) {
       try {
@@ -408,7 +408,7 @@ const Dictionary = () => {
                 Fjalor Gjermanisht
               </h1>
               <p className="text-gray-600 text-xs md:text-sm lg:text-base leading-tight">
-                Zhbllokoni dhe mësoni fjalë të reja - 15 fjalë në ditë
+                Zhbllokoni dhe mësoni fjalë të reja - 20 fjalë në ditë
               </p>
             </div>
           </div>
@@ -423,7 +423,7 @@ const Dictionary = () => {
               </div>
               <div>
                 <p className="text-sm md:text-base font-bold text-gray-900">
-                  Zhbllokimet e sotme: {unlockStats.todayUnlocks} / 15
+                  Zhbllokimet e sotme: {unlockStats.todayUnlocks} / 20
                 </p>
                 <p className="text-xs text-gray-600">
                   {unlockStats.remainingUnlocks} fjalë të mbetura për sot
@@ -810,11 +810,11 @@ const Dictionary = () => {
                 </>
               ) : (
                 <div className="text-center py-6">
-                  <div className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center ${correctAnswers >= 12
+                  <div className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center ${correctAnswers >= 9
                       ? "bg-gradient-to-br from-emerald-400 to-teal-500"
                       : "bg-gradient-to-br from-orange-400 to-red-500"
                     }`}>
-                    {correctAnswers >= 12 ? (
+                    {correctAnswers >= 9 ? (
                       <Trophy className="w-10 h-10 text-white" />
                     ) : (
                       <XCircle className="w-10 h-10 text-white" />
@@ -822,7 +822,7 @@ const Dictionary = () => {
                   </div>
 
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                    {correctAnswers >= 12 ? "Urime! 🎉" : "Provoni përsëri!"}
+                    {correctAnswers >= 9 ? "Urime! 🎉" : "Provoni përsëri!"}
                   </h3>
 
                   <p className="text-gray-600 mb-4">
@@ -836,7 +836,7 @@ const Dictionary = () => {
                     </div>
                   </div>
 
-                  {correctAnswers >= 12 && xpAwarded && (
+                  {correctAnswers >= 9 && xpAwarded && (
                     <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 mb-6 border border-emerald-200">
                       <div className="flex items-center justify-center gap-2 text-emerald-700">
                         <Trophy className="w-5 h-5" />
@@ -845,9 +845,9 @@ const Dictionary = () => {
                     </div>
                   )}
 
-                  {correctAnswers < 12 && (
+                  {correctAnswers < 9 && (
                     <p className="text-sm text-gray-500 mb-6">
-                      Ju nevojiten të paktën 12 përgjigje të sakta (60%) për të fituar XP.
+                      Ju nevojiten të paktën 9 përgjigje të sakta (60%) për të fituar XP.
                     </p>
                   )}
 
