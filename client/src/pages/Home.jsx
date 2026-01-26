@@ -4,6 +4,7 @@ import { Link } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useState, useEffect, useRef } from "react"
 import { favoritesService } from "../services/api"
+import SEO from "../components/SEO"
 import {
   BookOpen,
   Headphones,
@@ -131,7 +132,15 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <>
+      <SEO 
+        title="Gjuha Gjermane - Mësoni Gjuhën Gjermane Online | Kursa Interaktive"
+        description="Mësoni gjuhën gjermane online me kursa interaktive, ushtrime, teste dhe më shumë. Përshtat për të gjitha nivelet nga A1 deri C1. Filloi sot!"
+        keywords="gjuha gjermane, mesimi gjermanishtes, kursa gjermane, gjermanisht online, learn german, deutsche sprache, A1 B1 C1, gjermane për fillestar"
+        ogImage="/images/home-og.jpg"
+        canonicalUrl="https://gjuhagjermane.com/"
+      />
+      <div className="min-h-screen bg-white">
       <div className="bg-gradient-to-r from-white to-gray-50 border-b border-gray-200 relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-64 pointer-events-none opacity-30 hidden lg:block">
           <div className="relative h-full flex items-end justify-center pb-8">
@@ -400,6 +409,7 @@ const Home = () => {
         </div>
       </div>
     </div>
+    </>
   )
 }
 

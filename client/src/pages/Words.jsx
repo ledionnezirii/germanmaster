@@ -53,6 +53,93 @@ export default function Words() {
 
   const newWordInputRef = useRef(null)
 
+  // SEO Effect
+  useEffect(() => {
+    // Update page title
+    document.title = "Fjalët Gjermane - Mësoni dhe Praktikoni Fjalorin | Kuize dhe Përkthime"
+    
+    // Update or create meta description
+    let metaDescription = document.querySelector('meta[name="description"]')
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta')
+      metaDescription.name = 'description'
+      document.head.appendChild(metaDescription)
+    }
+    metaDescription.content = "Mësoni fjalët gjermane me kuize interaktive dhe përkthime. Shtoni fjalë të reja, praktikoni dhe fitoni XP. Fillo sot!"
+    
+    // Update or create meta keywords
+    let metaKeywords = document.querySelector('meta[name="keywords"]')
+    if (!metaKeywords) {
+      metaKeywords = document.createElement('meta')
+      metaKeywords.name = 'keywords'
+      document.head.appendChild(metaKeywords)
+    }
+    metaKeywords.content = "fjalët gjermane, vokabular gjermanisht, deutsche wörter, mësim fjalësh, fjalori gjermanisht, kuize fjalësh, përkthim fjalësh"
+    
+    // Update canonical URL
+    let canonicalLink = document.querySelector('link[rel="canonical"]')
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link')
+      canonicalLink.rel = 'canonical'
+      document.head.appendChild(canonicalLink)
+    }
+    canonicalLink.href = `${window.location.origin}/words`
+    
+    // Update Open Graph meta tags
+    updateMetaTag('og:title', 'Fjalët Gjermane - Mësoni dhe Praktikoni Fjalorin')
+    updateMetaTag('og:description', 'Mësoni fjalët gjermane me kuize interaktive dhe përkthime. Shtoni fjalë të reja, praktikoni dhe fitoni XP.')
+    updateMetaTag('og:url', `${window.location.origin}/words`)
+    updateMetaTag('og:type', 'website')
+    
+    // Update Twitter meta tags
+    updateMetaTag('twitter:title', 'Fjalët Gjermane - Mësoni dhe Praktikoni Fjalorin')
+    updateMetaTag('twitter:description', 'Mësoni fjalët gjermane me kuize interaktive dhe përkthime. Shtoni fjalë të reja, praktikoni dhe fitoni XP.')
+    
+    // Add structured data for words page
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "LearningResource",
+      "name": "Fjalët Gjermane",
+      "description": "Mësoni dhe praktikoni fjalët gjermane me kuize interaktive, përkthime dhe menaxhim fjalorish",
+      "url": `${window.location.origin}/words`,
+      "educationalLevel": ["Beginner", "Intermediate", "Advanced"],
+      "inLanguage": ["de", "sq"],
+      "learningResourceType": "Vocabulary Builder",
+      "offers": {
+        "@type": "Offer",
+        "category": "Educational Services"
+      }
+    }
+    
+    let structuredDataScript = document.querySelector('script[type="application/ld+json"][data-words]')
+    if (!structuredDataScript) {
+      structuredDataScript = document.createElement('script')
+      structuredDataScript.type = 'application/ld+json'
+      structuredDataScript.setAttribute('data-words', 'true')
+      document.head.appendChild(structuredDataScript)
+    }
+    structuredDataScript.textContent = JSON.stringify(structuredData)
+    
+    // Cleanup function
+    return () => {
+      // Remove the structured data script when component unmounts
+      const script = document.querySelector('script[type="application/ld+json"][data-words]')
+      if (script) script.remove()
+    }
+  }, [])
+  
+  // Helper function to update meta tags
+  const updateMetaTag = (property, content) => {
+    let metaTag = document.querySelector(`meta[property="${property}"]`) || 
+                  document.querySelector(`meta[name="${property}"]`)
+    if (!metaTag) {
+      metaTag = document.createElement('meta')
+      metaTag.setAttribute(property.startsWith('og:') ? 'property' : 'name', property)
+      document.head.appendChild(metaTag)
+    }
+    metaTag.content = content
+  }
+
   const insertUmlaut = (char) => {
     const input = newWordInputRef.current
     if (!input) return

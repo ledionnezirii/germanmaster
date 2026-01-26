@@ -231,6 +231,93 @@ const Grammar = () => {
   const [dailyLimit, setDailyLimit] = useState(null)
   const [showMoreInfo, setShowMoreInfo] = useState(false)
 
+  // SEO Effect
+  useEffect(() => {
+    // Update page title
+    document.title = "Gramatikë Gjermane - Mësoni Gramatikën Gjermane Online | Kursa Interaktive"
+    
+    // Update or create meta description
+    let metaDescription = document.querySelector('meta[name="description"]')
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta')
+      metaDescription.name = 'description'
+      document.head.appendChild(metaDescription)
+    }
+    metaDescription.content = "Mësoni gramatikën gjermane online me leksione interaktive, ushtrime dhe shembuj. Përshtat për të gjitha nivelet nga A1 deri C2. Fillo sot!"
+    
+    // Update or create meta keywords
+    let metaKeywords = document.querySelector('meta[name="keywords"]')
+    if (!metaKeywords) {
+      metaKeywords = document.createElement('meta')
+      metaKeywords.name = 'keywords'
+      document.head.appendChild(metaKeywords)
+    }
+    metaKeywords.content = "gramatikë gjermane, gramatika gjermane, mësim gramatike, deutsche grammatik, gramatikë A1 A2 B1 B2 C1 C2, ushtrime gramatikore"
+    
+    // Update canonical URL
+    let canonicalLink = document.querySelector('link[rel="canonical"]')
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link')
+      canonicalLink.rel = 'canonical'
+      document.head.appendChild(canonicalLink)
+    }
+    canonicalLink.href = `${window.location.origin}/grammar`
+    
+    // Update Open Graph meta tags
+    updateMetaTag('og:title', 'Gramatikë Gjermane - Mësoni Gramatikën Gjermane Online')
+    updateMetaTag('og:description', 'Mësoni gramatikën gjermane online me leksione interaktive. Përshtat për të gjitha nivelet.')
+    updateMetaTag('og:url', `${window.location.origin}/grammar`)
+    updateMetaTag('og:type', 'website')
+    
+    // Update Twitter meta tags
+    updateMetaTag('twitter:title', 'Gramatikë Gjermane - Mësoni Gramatikën Gjermane Online')
+    updateMetaTag('twitter:description', 'Mësoni gramatikën gjermane online me leksione interaktive. Përshtat për të gjitha nivelet.')
+    
+    // Add structured data for grammar page
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "LearningResource",
+      "name": "Gramatikë Gjermane",
+      "description": "Mësoni gramatikën gjermane online me leksione interaktive, ushtrime dhe shembuj",
+      "url": `${window.location.origin}/grammar`,
+      "educationalLevel": ["Beginner", "Intermediate", "Advanced"],
+      "inLanguage": ["de", "sq"],
+      "learningResourceType": "Grammar Lesson",
+      "offers": {
+        "@type": "Offer",
+        "category": "Educational Services"
+      }
+    }
+    
+    let structuredDataScript = document.querySelector('script[type="application/ld+json"][data-grammar]')
+    if (!structuredDataScript) {
+      structuredDataScript = document.createElement('script')
+      structuredDataScript.type = 'application/ld+json'
+      structuredDataScript.setAttribute('data-grammar', 'true')
+      document.head.appendChild(structuredDataScript)
+    }
+    structuredDataScript.textContent = JSON.stringify(structuredData)
+    
+    // Cleanup function
+    return () => {
+      // Remove the structured data script when component unmounts
+      const script = document.querySelector('script[type="application/ld+json"][data-grammar]')
+      if (script) script.remove()
+    }
+  }, [])
+  
+  // Helper function to update meta tags
+  const updateMetaTag = (property, content) => {
+    let metaTag = document.querySelector(`meta[property="${property}"]`) || 
+                  document.querySelector(`meta[name="${property}"]`)
+    if (!metaTag) {
+      metaTag = document.createElement('meta')
+      metaTag.setAttribute(property.startsWith('og:') ? 'property' : 'name', property)
+      document.head.appendChild(metaTag)
+    }
+    metaTag.content = content
+  }
+
   useEffect(() => {
     fetchTopics()
     fetchFinishedTopics()

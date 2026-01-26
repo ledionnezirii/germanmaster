@@ -34,6 +34,93 @@ const Tests = () => {
   const { user } = useAuth()
   const userId = user?.id
 
+  // SEO Effect
+  useEffect(() => {
+    // Update page title
+    document.title = "Teste Gjermanisht - Vlerëso Nivelin Tuaj | Teste A1-C2 me Siguri"
+    
+    // Update or create meta description
+    let metaDescription = document.querySelector('meta[name="description"]')
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta')
+      metaDescription.name = 'description'
+      document.head.appendChild(metaDescription)
+    }
+    metaDescription.content = "Bëni teste gjermanisht për të vlerësuar nivelin tuaj nga A1 deri C2. Teste të sigurta me 85% për kalim. Fillo testin tuaj sot!"
+    
+    // Update or create meta keywords
+    let metaKeywords = document.querySelector('meta[name="keywords"]')
+    if (!metaKeywords) {
+      metaKeywords = document.createElement('meta')
+      metaKeywords.name = 'keywords'
+      document.head.appendChild(metaKeywords)
+    }
+    metaKeywords.content = "teste gjermanisht, test gjermane, german test, prüfung deutsch, vlerësim nivel, A1 A2 B1 B2 C1 C2, test certifikim"
+    
+    // Update canonical URL
+    let canonicalLink = document.querySelector('link[rel="canonical"]')
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link')
+      canonicalLink.rel = 'canonical'
+      document.head.appendChild(canonicalLink)
+    }
+    canonicalLink.href = `${window.location.origin}/tests`
+    
+    // Update Open Graph meta tags
+    updateMetaTag('og:title', 'Teste Gjermanisht - Vlerëso Nivelin Tuaj')
+    updateMetaTag('og:description', 'Bëni teste gjermanisht për të vlerësuar nivelin tuaj nga A1 deri C2. Teste të sigurta dhe të vlerësuara.')
+    updateMetaTag('og:url', `${window.location.origin}/tests`)
+    updateMetaTag('og:type', 'website')
+    
+    // Update Twitter meta tags
+    updateMetaTag('twitter:title', 'Teste Gjermanisht - Vlerëso Nivelin Tuaj')
+    updateMetaTag('twitter:description', 'Bëni teste gjermanisht për të vlerësuar nivelin tuaj nga A1 deri C2. Teste të sigurta.')
+    
+    // Add structured data for tests page
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "Quiz",
+      "name": "Teste Gjermanisht",
+      "description": "Vlerësoni nivelin tuaj të gjuhës gjermane me teste nga A1 deri C2",
+      "url": `${window.location.origin}/tests`,
+      "educationalLevel": ["Beginner", "Intermediate", "Advanced"],
+      "inLanguage": ["de", "sq"],
+      "learningResourceType": "Assessment",
+      "offers": {
+        "@type": "Offer",
+        "category": "Educational Services"
+      }
+    }
+    
+    let structuredDataScript = document.querySelector('script[type="application/ld+json"][data-tests]')
+    if (!structuredDataScript) {
+      structuredDataScript = document.createElement('script')
+      structuredDataScript.type = 'application/ld+json'
+      structuredDataScript.setAttribute('data-tests', 'true')
+      document.head.appendChild(structuredDataScript)
+    }
+    structuredDataScript.textContent = JSON.stringify(structuredData)
+    
+    // Cleanup function
+    return () => {
+      // Remove the structured data script when component unmounts
+      const script = document.querySelector('script[type="application/ld+json"][data-tests]')
+      if (script) script.remove()
+    }
+  }, [])
+  
+  // Helper function to update meta tags
+  const updateMetaTag = (property, content) => {
+    let metaTag = document.querySelector(`meta[property="${property}"]`) || 
+                  document.querySelector(`meta[name="${property}"]`)
+    if (!metaTag) {
+      metaTag = document.createElement('meta')
+      metaTag.setAttribute(property.startsWith('og:') ? 'property' : 'name', property)
+      document.head.appendChild(metaTag)
+    }
+    metaTag.content = content
+  }
+
   const germanLevels = [
     {
       code: "A1",

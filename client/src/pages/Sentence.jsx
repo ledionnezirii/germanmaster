@@ -13,6 +13,93 @@ export default function SentencePage() {
 
   const levels = ["all", "A1", "A2", "B1", "B2", "C1", "C2"];
 
+  // SEO Effect
+  useEffect(() => {
+    // Update page title
+    document.title = "Ndërto Fjali Gjermanisht - Praktiko Strukturën e Fjalive | Ushtrime Interaktive"
+    
+    // Update or create meta description
+    let metaDescription = document.querySelector('meta[name="description"]')
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta')
+      metaDescription.name = 'description'
+      document.head.appendChild(metaDescription)
+    }
+    metaDescription.content = "Praktiko ndërtimin e fjalive gjermane duke rregulluar fjalët në rendin e saktë. Përmirësoni sintaksën nga A1 deri C2. Fillo sot!"
+    
+    // Update or create meta keywords
+    let metaKeywords = document.querySelector('meta[name="keywords"]')
+    if (!metaKeywords) {
+      metaKeywords = document.createElement('meta')
+      metaKeywords.name = 'keywords'
+      document.head.appendChild(metaKeywords)
+    }
+    metaKeywords.content = "ndërto fjali, fjali gjermanisht, sentence building, satzbau deutsch, strukturë fjali, sintaksë gjermane, ushtrime fjali"
+    
+    // Update canonical URL
+    let canonicalLink = document.querySelector('link[rel="canonical"]')
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link')
+      canonicalLink.rel = 'canonical'
+      document.head.appendChild(canonicalLink)
+    }
+    canonicalLink.href = `${window.location.origin}/sentences`
+    
+    // Update Open Graph meta tags
+    updateMetaTag('og:title', 'Ndërto Fjali Gjermanisht - Praktiko Strukturën e Fjalive')
+    updateMetaTag('og:description', 'Praktiko ndërtimin e fjalive gjermane duke rregulluar fjalët në rendin e saktë. Përshtat për të gjitha nivelet.')
+    updateMetaTag('og:url', `${window.location.origin}/sentences`)
+    updateMetaTag('og:type', 'website')
+    
+    // Update Twitter meta tags
+    updateMetaTag('twitter:title', 'Ndërto Fjali Gjermanisht - Praktiko Strukturën e Fjalive')
+    updateMetaTag('twitter:description', 'Praktiko ndërtimin e fjalive gjermane duke rregulluar fjalët në rendin e saktë. Përshtat për të gjitha nivelet.')
+    
+    // Add structured data for sentence page
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "LearningResource",
+      "name": "Ndërto Fjali Gjermanisht",
+      "description": "Praktiko ndërtimin e fjalive gjermane duke rregulluar fjalët në rendin e saktë",
+      "url": `${window.location.origin}/sentences`,
+      "educationalLevel": ["Beginner", "Intermediate", "Advanced"],
+      "inLanguage": ["de", "sq"],
+      "learningResourceType": "Interactive Exercise",
+      "offers": {
+        "@type": "Offer",
+        "category": "Educational Services"
+      }
+    }
+    
+    let structuredDataScript = document.querySelector('script[type="application/ld+json"][data-sentence]')
+    if (!structuredDataScript) {
+      structuredDataScript = document.createElement('script')
+      structuredDataScript.type = 'application/ld+json'
+      structuredDataScript.setAttribute('data-sentence', 'true')
+      document.head.appendChild(structuredDataScript)
+    }
+    structuredDataScript.textContent = JSON.stringify(structuredData)
+    
+    // Cleanup function
+    return () => {
+      // Remove the structured data script when component unmounts
+      const script = document.querySelector('script[type="application/ld+json"][data-sentence]')
+      if (script) script.remove()
+    }
+  }, [])
+  
+  // Helper function to update meta tags
+  const updateMetaTag = (property, content) => {
+    let metaTag = document.querySelector(`meta[property="${property}"]`) || 
+                  document.querySelector(`meta[name="${property}"]`)
+    if (!metaTag) {
+      metaTag = document.createElement('meta')
+      metaTag.setAttribute(property.startsWith('og:') ? 'property' : 'name', property)
+      document.head.appendChild(metaTag)
+    }
+    metaTag.content = content
+  }
+
   const getLevelColor = (level) => {
     switch (level) {
       case "A1":

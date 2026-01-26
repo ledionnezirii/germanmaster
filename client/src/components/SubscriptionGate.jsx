@@ -105,10 +105,10 @@ const SubscriptionGate = ({ children }) => {
               </div>
               
               <h2 className="text-2xl font-bold text-slate-900 mb-3 text-balance">
-                Periudha juaj falas ka përfunduar
+                Ju nuk keni nje abonim aktiv
               </h2>
               <p className="text-slate-500 leading-relaxed max-w-sm mx-auto">
-                Faleminderit që provuat platformën tonë! Abonohuni për të vazhduar mësimin e gjermanishtes.
+                  Abonohuni për të vazhduar mësimin e gjermanishtes.
               </p>
             </div>
 
@@ -147,12 +147,7 @@ const SubscriptionGate = ({ children }) => {
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-0.5" />
               </button>
 
-              <button
-                onClick={() => navigate("/")}
-                className="w-full py-3.5 px-6 rounded-2xl text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
-              >
-                Kthehu në faqen kryesore
-              </button>
+             
             </div>
 
             {/* Footer */}

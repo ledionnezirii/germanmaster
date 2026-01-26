@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { dictionaryService, favoritesService, ttsService, wordsService } from "../services/api"
+import SEO from "../components/SEO"
 import { BookOpen, Volume2, Heart, ChevronLeft, ChevronRight, Play, X, CheckCircle, XCircle, Trophy, Lock, Unlock } from 'lucide-react'
 
 const Dictionary = () => {
@@ -392,12 +393,20 @@ const Dictionary = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
-      <div className="max-w-7xl mx-auto p-2 md:p-4 space-y-4">
-        {/* Header */}
-        <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-3 md:p-4">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-emerald-100/30 to-teal-100/30 rounded-full blur-3xl -z-10" />
-          <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-cyan-100/20 to-blue-100/20 rounded-full blur-3xl -z-10" />
+    <>
+      <SEO 
+        title="Fjalor Gjermanisht-Shqip | Mësoni Fjalë Gjermane"
+        description="Fjalor i plotë gjermanisht-shqip me audio, shqipime dhe ushtrime. Mësoni fjalë gjermane me shqipime dhe shembuj."
+        keywords="fjalor gjermanisht, fjale gjermane, german dictionary, learn german words, fjalor gjermanisht shqip"
+        ogImage="/images/dictionary-og.jpg"
+        canonicalUrl="https://gjuhagjermane.com/dictionary"
+      />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20">
+        <div className="max-w-7xl mx-auto p-2 md:p-4 space-y-4">
+          {/* Header */}
+          <div className="relative overflow-hidden bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-3 md:p-4">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-emerald-100/30 to-teal-100/30 rounded-full blur-3xl -z-10" />
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-cyan-100/20 to-blue-100/20 rounded-full blur-3xl -z-10" />
 
           <div className="flex items-start gap-2 md:gap-3">
             <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg md:rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
@@ -875,7 +884,8 @@ const Dictionary = () => {
         </div>
       )}
     </div>
-  )
-}
+  </>
 
+)
+}
 export default Dictionary

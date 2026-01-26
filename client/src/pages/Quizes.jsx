@@ -36,6 +36,93 @@ export default function Quizes() {
 
   const itemsPerPage = 20
 
+  // SEO Effect
+  useEffect(() => {
+    // Update page title
+    document.title = "Kuizet Gjermanisht - Testo Njohuritë Tuaja | Pyetje dhe Përgjigje Interaktive"
+    
+    // Update or create meta description
+    let metaDescription = document.querySelector('meta[name="description"]')
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta')
+      metaDescription.name = 'description'
+      document.head.appendChild(metaDescription)
+    }
+    metaDescription.content = "Bëni kuize interaktive gjermane për të testuar njohuritë tuaja. Pyetje të shumëfishta dhe përgjigje me XP. Fillo sot!"
+    
+    // Update or create meta keywords
+    let metaKeywords = document.querySelector('meta[name="keywords"]')
+    if (!metaKeywords) {
+      metaKeywords = document.createElement('meta')
+      metaKeywords.name = 'keywords'
+      document.head.appendChild(metaKeywords)
+    }
+    metaKeywords.content = "kuizet gjermanisht, quiz gjermanisht, test njohurish, wissensquiz deutsch, pyetje gjermane, mësim interaktiviv, A1 A2 B1 B2 C1 C2"
+    
+    // Update canonical URL
+    let canonicalLink = document.querySelector('link[rel="canonical"]')
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link')
+      canonicalLink.rel = 'canonical'
+      document.head.appendChild(canonicalLink)
+    }
+    canonicalLink.href = `${window.location.origin}/quizes`
+    
+    // Update Open Graph meta tags
+    updateMetaTag('og:title', 'Kuizet Gjermanisht - Testo Njohuritë Tuaja')
+    updateMetaTag('og:description', 'Bëni kuize interaktive gjermane për të testuar njohuritë tuaja. Pyetje të shumëfishta dhe përgjigje me XP.')
+    updateMetaTag('og:url', `${window.location.origin}/quizes`)
+    updateMetaTag('og:type', 'website')
+    
+    // Update Twitter meta tags
+    updateMetaTag('twitter:title', 'Kuizet Gjermanisht - Testo Njohuritë Tuaja')
+    updateMetaTag('twitter:description', 'Bëni kuize interaktive gjermane për të testuar njohuritë tuaja. Pyetje të shumëfishta dhe përgjigje me XP.')
+    
+    // Add structured data for quizzes page
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "Quiz",
+      "name": "Kuizet Gjermanisht",
+      "description": "Testoni njohuritë tuaja të gjuhës gjermane me kuize interaktive dhe pyetje të shumëfishta",
+      "url": `${window.location.origin}/quizes`,
+      "educationalLevel": ["Beginner", "Intermediate", "Advanced"],
+      "inLanguage": ["de", "sq"],
+      "learningResourceType": "Quiz",
+      "offers": {
+        "@type": "Offer",
+        "category": "Educational Services"
+      }
+    }
+    
+    let structuredDataScript = document.querySelector('script[type="application/ld+json"][data-quizes]')
+    if (!structuredDataScript) {
+      structuredDataScript = document.createElement('script')
+      structuredDataScript.type = 'application/ld+json'
+      structuredDataScript.setAttribute('data-quizes', 'true')
+      document.head.appendChild(structuredDataScript)
+    }
+    structuredDataScript.textContent = JSON.stringify(structuredData)
+    
+    // Cleanup function
+    return () => {
+      // Remove the structured data script when component unmounts
+      const script = document.querySelector('script[type="application/ld+json"][data-quizes]')
+      if (script) script.remove()
+    }
+  }, [])
+  
+  // Helper function to update meta tags
+  const updateMetaTag = (property, content) => {
+    let metaTag = document.querySelector(`meta[property="${property}"]`) || 
+                  document.querySelector(`meta[name="${property}"]`)
+    if (!metaTag) {
+      metaTag = document.createElement('meta')
+      metaTag.setAttribute(property.startsWith('og:') ? 'property' : 'name', property)
+      document.head.appendChild(metaTag)
+    }
+    metaTag.content = content
+  }
+
   const getLevelColor = (level) => {
     switch (level) {
       case "A1":

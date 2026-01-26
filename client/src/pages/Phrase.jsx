@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react"
 import { phraseService, ttsService } from "../services/api"
 import { useAuth } from "../context/AuthContext"
 import { Volume2, BookOpen, ChevronLeft, ChevronRight, LockIcon, Plus, Eye, EyeOff, Clock, Sparkles, Check } from "lucide-react"
+import SEO from "../components/SEO"
 
 const Phrase = () => {
   const fonts = {
@@ -446,7 +447,13 @@ const Phrase = () => {
   // Quiz Mode
   if (quizMode) {
     return (
-<div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] via-white to-[#CCFBF1] p-3 sm:p-6">
+      <>
+        <SEO 
+          title="Kuiz Fraza Gjermane - Testoni Dijen tuaja"
+          description="Testoni djenë tuaj të frazave gjermane me kuiz interaktiv. Përshtatni gjermanishten me shqipën dhe fitoni XP."
+          keywords="kuiz gjermanisht, test frazash, mesimi gjermanishtes, perkthim gjermanisht shqip"
+        />
+        <div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] via-white to-[#CCFBF1] p-3 sm:p-6">
         <div className="max-w-[700px] mx-auto">
           {quizComplete ? (
             <div className="bg-white rounded-2xl p-6 sm:p-10 text-center shadow-2xl">
@@ -611,12 +618,19 @@ const Phrase = () => {
           )}
         </div>
       </div>
+      </>
     )
   }
 
   // Main Phrase List View
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] via-white to-[#CCFBF1]">
+    <>
+      <SEO 
+        title="Fraza Gjermane - Mësoni Fraza të Përditshme"
+        description="Mësoni fraza të përditshme në gjuhën gjermane me përkthim në shqip. Ushtroni shqiptimin dhe merrni vlerësime automatike."
+        keywords="fraza gjermane, mesimi gjermanishtes, perkthim gjermanisht shqip, shqiptim gjermanisht"
+      />
+      <div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] via-white to-[#CCFBF1]">
       {/* Limit Warning */}
       {showLimitWarning && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-red-500 text-white px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl shadow-2xl animate-pulse">
@@ -891,6 +905,7 @@ const Phrase = () => {
         )}
       </div>
     </div>
+    </>
   )
 }
 

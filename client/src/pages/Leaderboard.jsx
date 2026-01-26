@@ -6,6 +6,7 @@ import { io } from "socket.io-client"
 import { motion } from "framer-motion"
 import api, { SOCKET_URL, generateDicebearUrl } from "../services/api"
 import { Flame } from "lucide-react"
+import SEO from "../components/SEO"
 
 const Leaderboard = () => {
   const [leaderboardData, setLeaderboardData] = useState([])
@@ -67,7 +68,15 @@ const Leaderboard = () => {
   const remainingUsers = leaderboardData.slice(3)
 
   return (
-    <div className="w-full space-y-4 p-3 sm:p-6 md:space-y-6">
+    <>
+      <SEO 
+        title="Tabela e Renditjes - Gjuha Gjermane"
+        description="Shiko renditjen më të mirë të nxënësve të gjuhës gjermane. Konkurroni me të tjerët dhe ngjitni në renditje."
+        keywords="tabela e renditjes, konkurrim, pikë xp, gjuha gjermane, mësimi gjermanishtes, renditja"
+        ogImage="/og-leaderboard.jpg"
+        type="website"
+      />
+      <div className="w-full space-y-4 p-3 sm:p-6 md:space-y-6">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -295,6 +304,7 @@ const Leaderboard = () => {
         </div>
       </div>
     </div>
+    </>
   )
 }
 

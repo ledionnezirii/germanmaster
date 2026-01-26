@@ -12,6 +12,7 @@ import {
   X, Languages, Hash, Palette, MessageCircle, Timer,
   Volume2, VolumeX, Loader2, Play, Pause, Star, Zap, TrendingUp, LogOut
 } from 'lucide-react'
+import SEO from "../components/SEO"
 
 const iconMap = {
   default: FolderOpen,

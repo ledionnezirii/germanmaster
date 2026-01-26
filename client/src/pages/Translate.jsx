@@ -20,6 +20,93 @@ const Translate = () => {
 
   const levels = ["all", "A1", "A2", "B1", "B2", "C1", "C2"]
 
+  // SEO Effect
+  useEffect(() => {
+    // Update page title
+    document.title = "Praktika e Përkthimit Gjermanisht - Përmirësoni Leximin dhe Kuptimin | Tekste dhe Pyetje"
+    
+    // Update or create meta description
+    let metaDescription = document.querySelector('meta[name="description"]')
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta')
+      metaDescription.name = 'description'
+      document.head.appendChild(metaDescription)
+    }
+    metaDescription.content = "Praktikoni përkthimin dhe kuptimin e teksteve gjermane me ushtrime interaktive. Përmirësoni aftësitë e leximit nga A1 deri C2. Fillo sot!"
+    
+    // Update or create meta keywords
+    let metaKeywords = document.querySelector('meta[name="keywords"]')
+    if (!metaKeywords) {
+      metaKeywords = document.createElement('meta')
+      metaKeywords.name = 'keywords'
+      document.head.appendChild(metaKeywords)
+    }
+    metaKeywords.content = "përkthim gjermanisht, praktikë përkthimi, lesen verstehen, reading comprehension german, tekst gjermanisht, ushtrime leximi, pyetje përkthimi"
+    
+    // Update canonical URL
+    let canonicalLink = document.querySelector('link[rel="canonical"]')
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link')
+      canonicalLink.rel = 'canonical'
+      document.head.appendChild(canonicalLink)
+    }
+    canonicalLink.href = `${window.location.origin}/translate`
+    
+    // Update Open Graph meta tags
+    updateMetaTag('og:title', 'Praktika e Përkthimit Gjermanisht - Përmirësoni Leximin dhe Kuptimin')
+    updateMetaTag('og:description', 'Praktikoni përkthimin dhe kuptimin e teksteve gjermane me ushtrime interaktive. Përshtat për të gjitha nivelet.')
+    updateMetaTag('og:url', `${window.location.origin}/translate`)
+    updateMetaTag('og:type', 'website')
+    
+    // Update Twitter meta tags
+    updateMetaTag('twitter:title', 'Praktika e Përkthimit Gjermanisht - Përmirësoni Leximin dhe Kuptimin')
+    updateMetaTag('twitter:description', 'Praktikoni përkthimin dhe kuptimin e teksteve gjermane me ushtrime interaktive. Përshtat për të gjitha nivelet.')
+    
+    // Add structured data for translate page
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "LearningResource",
+      "name": "Praktika e Përkthimit Gjermanisht",
+      "description": "Praktikoni përkthimin dhe kuptimin e teksteve gjermane me ushtrime interaktive dhe pyetje",
+      "url": `${window.location.origin}/translate`,
+      "educationalLevel": ["Beginner", "Intermediate", "Advanced"],
+      "inLanguage": ["de", "sq"],
+      "learningResourceType": "Reading Exercise",
+      "offers": {
+        "@type": "Offer",
+        "category": "Educational Services"
+      }
+    }
+    
+    let structuredDataScript = document.querySelector('script[type="application/ld+json"][data-translate]')
+    if (!structuredDataScript) {
+      structuredDataScript = document.createElement('script')
+      structuredDataScript.type = 'application/ld+json'
+      structuredDataScript.setAttribute('data-translate', 'true')
+      document.head.appendChild(structuredDataScript)
+    }
+    structuredDataScript.textContent = JSON.stringify(structuredData)
+    
+    // Cleanup function
+    return () => {
+      // Remove the structured data script when component unmounts
+      const script = document.querySelector('script[type="application/ld+json"][data-translate]')
+      if (script) script.remove()
+    }
+  }, [])
+  
+  // Helper function to update meta tags
+  const updateMetaTag = (property, content) => {
+    let metaTag = document.querySelector(`meta[property="${property}"]`) || 
+                  document.querySelector(`meta[name="${property}"]`)
+    if (!metaTag) {
+      metaTag = document.createElement('meta')
+      metaTag.setAttribute(property.startsWith('og:') ? 'property' : 'name', property)
+      document.head.appendChild(metaTag)
+    }
+    metaTag.content = content
+  }
+
   useEffect(() => {
     fetchTexts()
     fetchUserProgress()

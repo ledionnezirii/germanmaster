@@ -23,6 +23,93 @@ const Listen = () => {
 
   const audioRef = useRef(null)
 
+  // SEO Effect
+  useEffect(() => {
+    // Update page title
+    document.title = "Praktikë Dëgjimi Gjermanisht - Përmirësoni Aftësitë e Dëgjimit | Teste Audio"
+    
+    // Update or create meta description
+    let metaDescription = document.querySelector('meta[name="description"]')
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta')
+      metaDescription.name = 'description'
+      document.head.appendChild(metaDescription)
+    }
+    metaDescription.content = "Praktikoni dëgjimin në gjuhën gjermane me teste audio interaktive. Përmirësoni aftësitë tuaja të dëgjimit me ushtrime nga A1 deri C2. Fillo sot!"
+    
+    // Update or create meta keywords
+    let metaKeywords = document.querySelector('meta[name="keywords"]')
+    if (!metaKeywords) {
+      metaKeywords = document.createElement('meta')
+      metaKeywords.name = 'keywords'
+      document.head.appendChild(metaKeywords)
+    }
+    metaKeywords.content = "dëgjim gjermanisht, praktikë dëgjimi, hören verstehen, listening comprehension german, audio gjermanisht, teste dëgjimi, ushtrime dëgjimi"
+    
+    // Update canonical URL
+    let canonicalLink = document.querySelector('link[rel="canonical"]')
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link')
+      canonicalLink.rel = 'canonical'
+      document.head.appendChild(canonicalLink)
+    }
+    canonicalLink.href = `${window.location.origin}/listen`
+    
+    // Update Open Graph meta tags
+    updateMetaTag('og:title', 'Praktikë Dëgjimi Gjermanisht - Përmirësoni Aftësitë e Dëgjimit')
+    updateMetaTag('og:description', 'Praktikoni dëgjimin në gjuhën gjermane me teste audio interaktive. Përshtat për të gjitha nivelet.')
+    updateMetaTag('og:url', `${window.location.origin}/listen`)
+    updateMetaTag('og:type', 'website')
+    
+    // Update Twitter meta tags
+    updateMetaTag('twitter:title', 'Praktikë Dëgjimi Gjermanisht - Përmirësoni Aftësitë e Dëgjimit')
+    updateMetaTag('twitter:description', 'Praktikoni dëgjimin në gjuhën gjermane me teste audio interaktive. Përshtat për të gjitha nivelet.')
+    
+    // Add structured data for listening page
+    const structuredData = {
+      "@context": "https://schema.org",
+      "@type": "LearningResource",
+      "name": "Praktikë Dëgjimi Gjermanisht",
+      "description": "Praktikoni dëgjimin në gjuhën gjermane me teste audio interaktive dhe ushtrime",
+      "url": `${window.location.origin}/listen`,
+      "educationalLevel": ["Beginner", "Intermediate", "Advanced"],
+      "inLanguage": ["de", "sq"],
+      "learningResourceType": "Audio Exercise",
+      "offers": {
+        "@type": "Offer",
+        "category": "Educational Services"
+      }
+    }
+    
+    let structuredDataScript = document.querySelector('script[type="application/ld+json"][data-listen]')
+    if (!structuredDataScript) {
+      structuredDataScript = document.createElement('script')
+      structuredDataScript.type = 'application/ld+json'
+      structuredDataScript.setAttribute('data-listen', 'true')
+      document.head.appendChild(structuredDataScript)
+    }
+    structuredDataScript.textContent = JSON.stringify(structuredData)
+    
+    // Cleanup function
+    return () => {
+      // Remove the structured data script when component unmounts
+      const script = document.querySelector('script[type="application/ld+json"][data-listen]')
+      if (script) script.remove()
+    }
+  }, [])
+  
+  // Helper function to update meta tags
+  const updateMetaTag = (property, content) => {
+    let metaTag = document.querySelector(`meta[property="${property}"]`) || 
+                  document.querySelector(`meta[name="${property}"]`)
+    if (!metaTag) {
+      metaTag = document.createElement('meta')
+      metaTag.setAttribute(property.startsWith('og:') ? 'property' : 'name', property)
+      document.head.appendChild(metaTag)
+    }
+    metaTag.content = content
+  }
+
   useEffect(() => {
     fetchTests()
     fetchUserProgress()

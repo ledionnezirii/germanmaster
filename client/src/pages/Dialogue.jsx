@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { dialogueService, authService, ttsService } from "../services/api"
+import SEO from "../components/SEO"
 import {
   Play,
   Check,
@@ -863,94 +864,103 @@ export default function Dialogue() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-2xl flex items-center justify-center text-white">
-              <MessageCircle className="w-6 h-6" />
+    <>
+      <SEO 
+        title="Dialogje Gjermane | Praktikë Bisedash në Gjuhën Gjermane"
+        description="Praktikoni biseda në gjuhën gjermane me dialogje interaktive. Përshtat për të gjitha nivelet nga A1 deri C2 me audio dhe përkthime."
+        keywords="dialogje gjermane, biseda gjermanisht, german dialogues, practice german speaking, gjermanisht bisedim"
+        ogImage="/images/dialogue-og.jpg"
+        canonicalUrl="https://gjuhagjermane.com/dialogue"
+      />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-teal-50/30">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-2xl flex items-center justify-center text-white">
+                <MessageCircle className="w-6 h-6" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Dialogues</h1>
+                <p className="text-gray-500">Practice conversations in German</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Dialogues</h1>
-              <p className="text-gray-500">Practice conversations in German</p>
-            </div>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        <AnimatePresence mode="wait">
-          {view === "list" && (
-            <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <LevelTabs />
-              <ProgressSummary />
+          <AnimatePresence mode="wait">
+            {view === "list" && (
+              <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <LevelTabs />
+                <ProgressSummary />
 
-              {loading ? (
-                <DialogueSkeleton />
-              ) : filteredDialogues.length > 0 ? (
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredDialogues.map((dialogue) => {
-                    const isCompleted = finishedDialogues.includes(dialogue._id)
-                    console.log(`Rendering dialogue ${dialogue.title} (${dialogue._id}): ${isCompleted ? 'COMPLETED ✅' : 'NOT completed ❌'}`)
-                    return (
-                      <DialogueCard
-                        key={dialogue._id}
-                        dialogue={dialogue}
-                        isCompleted={isCompleted}
-                        onClick={() => handleSelectDialogue(dialogue)}
-                      />
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="text-center py-16">
-                  <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                    <MessageCircle className="w-10 h-10 text-gray-400" />
+                {loading ? (
+                  <DialogueSkeleton />
+                ) : filteredDialogues.length > 0 ? (
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {filteredDialogues.map((dialogue) => {
+                      const isCompleted = finishedDialogues.includes(dialogue._id)
+                      console.log(`Rendering dialogue ${dialogue.title} (${dialogue._id}): ${isCompleted ? 'COMPLETED ✅' : 'NOT completed ❌'}`)
+                      return (
+                        <DialogueCard
+                          key={dialogue._id}
+                          dialogue={dialogue}
+                          isCompleted={isCompleted}
+                          onClick={() => handleSelectDialogue(dialogue)}
+                        />
+                      )
+                    })}
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No dialogues yet</h3>
-                  <p className="text-gray-500">Check back later for new dialogues at this level.</p>
-                </div>
-              )}
-            </motion.div>
-          )}
+                ) : (
+                  <div className="text-center py-16">
+                    <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                      <MessageCircle className="w-10 h-10 text-gray-400" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No dialogues yet</h3>
+                    <p className="text-gray-500">Check back later for new dialogues at this level.</p>
+                  </div>
+                )}
+              </motion.div>
+            )}
 
-          {view === "dialogue" && selectedDialogue && (
-            <motion.div
-              key="dialogue"
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-            >
-              <DialogueViewer dialogue={selectedDialogue} onContinue={handleStartQuiz} onBack={handleBackToList} />
-            </motion.div>
-          )}
+            {view === "dialogue" && selectedDialogue && (
+              <motion.div
+                key="dialogue"
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+              >
+                <DialogueViewer dialogue={selectedDialogue} onContinue={handleStartQuiz} onBack={handleBackToList} />
+              </motion.div>
+            )}
 
-          {view === "quiz" && selectedDialogue && (
-            <motion.div
-              key="quiz"
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -50 }}
-            >
-              <DialogueQuiz dialogue={selectedDialogue} onComplete={handleQuizComplete} onBack={handleBackToDialogue} />
-            </motion.div>
-          )}
+            {view === "quiz" && selectedDialogue && (
+              <motion.div
+                key="quiz"
+                initial={{ opacity: 0, x: 50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+              >
+                <DialogueQuiz dialogue={selectedDialogue} onComplete={handleQuizComplete} onBack={handleBackToDialogue} />
+              </motion.div>
+            )}
 
-          {view === "results" && selectedDialogue && quizResult && (
-            <motion.div
-              key="results"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-            >
-              <QuizResults
-                result={quizResult}
-                dialogue={selectedDialogue}
-                onRetry={handleRetry}
-                onBack={handleBackToList}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+            {view === "results" && selectedDialogue && quizResult && (
+              <motion.div
+                key="results"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+              >
+                <QuizResults
+                  result={quizResult}
+                  dialogue={selectedDialogue}
+                  onRetry={handleRetry}
+                  onBack={handleBackToList}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
-    </div>
+    </> // Added closing JSX fragment tag
   )
 }
