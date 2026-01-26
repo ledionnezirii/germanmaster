@@ -464,7 +464,7 @@ const Translate = () => {
                       </>
                     ) : (
                       <div className="flex items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600"></div>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
                       </div>
                     )}
                   </div>
@@ -525,7 +525,7 @@ const Translate = () => {
 
         {loading ? (
           <div className="flex items-center justify-center min-h-96">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#14B8A6]"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 flex-1 overflow-y-auto">

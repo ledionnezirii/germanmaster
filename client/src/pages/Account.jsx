@@ -249,7 +249,7 @@ const Account = () => {
     return (
       <div className="flex items-center justify-center min-h-96">
         <div className="text-center">
-          <div className="h-8 w-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
           <p className="text-gray-600">Duke ngarkuar profilin tuaj...</p>
         </div>
       </div>
@@ -290,7 +290,7 @@ const Account = () => {
               </div>
               {updating && (
                 <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
-                  <div className="h-8 w-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
                 </div>
               )}
             </div>
@@ -535,7 +535,7 @@ const Account = () => {
                     >
                       {downloadingCert === certificate._id ? (
                         <>
-                          <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                          <div className="w-4 h-4 animate-spin rounded-full border-b-2 border-current"></div>
                           <span>Duke shkarkuar...</span>
                         </>
                       ) : (

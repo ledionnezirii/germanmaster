@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { categoriesService, ttsService } from "../services/api"
-import { motion, AnimatePresence } from "framer-motion"
 import { 
   FolderOpen, ArrowLeft, BookOpen, Calendar, Check, 
   Grid, Globe, Leaf, Briefcase, Coffee, Film, Guitar, 
@@ -10,7 +9,7 @@ import {
   Snowflake, Users, Sparkles, UtensilsCrossed, Home, 
   Shirt, ShoppingBag, Hand, Plane, Mountain, PawPrint, 
   X, Languages, Hash, Palette, MessageCircle, Timer,
-  Volume2, VolumeX, Loader2, Play, Pause, Star, Zap, TrendingUp, LogOut
+  Volume2, VolumeX, Play, Pause, Star, Zap, TrendingUp, LogOut
 } from 'lucide-react'
 import SEO from "../components/SEO"
 
@@ -227,7 +226,6 @@ const Category = () => {
     try {
       setLoadingAudioIndex(index)
       
-      // Backend returns { url: signedUrl }, not a Blob
       const response = await ttsService.getCategoryAudio(
         selectedCategory.id,
         index,
@@ -235,7 +233,6 @@ const Category = () => {
         selectedCategory.level || "A1"
       )
       
-      // Extract the URL from the response
       const audioUrl = response.url || response.data?.url || response
       
       setAudioCache(prev => ({
@@ -300,92 +297,56 @@ const Category = () => {
 
   const getTypeStyle = (type) => typeStyles[type] || typeStyles.default
 
-  // XP Animation Component (from Listen design)
-  const XpAnimationOverlay = (
-    <AnimatePresence>
-      {showXpAnimation && (
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.5, y: -50 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.5, y: -50 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
-        >
-          <motion.div 
-            className="bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 px-8 py-6 rounded-2xl shadow-2xl border-2 border-emerald-500"
-            animate={{ 
-              boxShadow: [
-                "0 0 20px rgba(16, 185, 129, 0.3)",
-                "0 0 40px rgba(16, 185, 129, 0.5)",
-                "0 0 20px rgba(16, 185, 129, 0.3)"
-              ]
-            }}
-            transition={{ duration: 1, repeat: Infinity }}
-          >
-            <div className="flex items-center gap-3">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, ease: "easeInOut" }}
-              >
-                <Star className="h-10 w-10 text-emerald-600" />
-              </motion.div>
-              <div>
-                <div className="text-3xl font-bold">+{xpGained} XP</div>
-                <div className="text-sm font-medium">Urime!</div>
-              </div>
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 0.5, repeat: Infinity }}
-              >
-                <Zap className="h-10 w-10 text-emerald-600" />
-              </motion.div>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+  // XP Animation Component - CSS only
+  const XpAnimationOverlay = showXpAnimation && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none animate-fade-in">
+      <div className="bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 px-8 py-6 rounded-2xl shadow-2xl border-2 border-emerald-500 animate-bounce-in">
+        <div className="flex items-center gap-3">
+          <Star className="h-10 w-10 text-emerald-600 animate-spin-slow" />
+          <div>
+            <div className="text-3xl font-bold">+{xpGained} XP</div>
+            <div className="text-sm font-medium">Urime!</div>
+          </div>
+          <Zap className="h-10 w-10 text-emerald-600 animate-pulse" />
+        </div>
+      </div>
+    </div>
   )
 
-  // Notification Toast
-  const NotificationToast = (
-    <AnimatePresence>
-      {notification && (
-        <motion.div
-          initial={{ opacity: 0, y: 20, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 20, scale: 0.95 }}
-          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg backdrop-blur-sm ${
-            notification.type === "success" 
-              ? "bg-emerald-500/95 text-white" 
-              : "bg-red-500/95 text-white"
-          }`}
-        >
-          {notification.type === "success" ? <Check size={18} /> : <X size={18} />}
-          <span className="text-sm font-medium">{notification.message}</span>
-        </motion.div>
-      )}
-    </AnimatePresence>
+  // Notification Toast - CSS only
+  const NotificationToast = notification && (
+    <div
+      className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg backdrop-blur-sm animate-slide-up ${
+        notification.type === "success" 
+          ? "bg-emerald-500/95 text-white" 
+          : "bg-red-500/95 text-white"
+      }`}
+    >
+      {notification.type === "success" ? <Check size={18} /> : <X size={18} />}
+      <span className="text-sm font-medium">{notification.message}</span>
+    </div>
   )
 
-  // Congrats Screen (styled like Listen)
+  // Congrats Screen
   if (showCongrats) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 flex items-center justify-center p-6">
+        <style>{`
+          @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes bounce-in { 0% { transform: scale(0.9); opacity: 0; } 50% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
+          @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          .animate-fade-in { animation: fade-in 0.3s ease-out; }
+          .animate-bounce-in { animation: bounce-in 0.4s ease-out; }
+          .animate-slide-up { animation: slide-up 0.3s ease-out; }
+          .animate-spin-slow { animation: spin-slow 1s linear infinite; }
+        `}</style>
         {NotificationToast}
         {XpAnimationOverlay}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-2xl shadow-xl border-2 border-emerald-200 p-8 max-w-sm w-full text-center"
-        >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg"
-          >
+        <div className="bg-white rounded-2xl shadow-xl border-2 border-emerald-200 p-8 max-w-sm w-full text-center animate-bounce-in">
+          <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg">
             <Trophy className="w-8 h-8 text-white" />
-          </motion.div>
+          </div>
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Urime!</h2>
           <p className="text-slate-600 text-sm mb-6">
             Përfunduat <span className="font-semibold text-slate-900">{selectedCategory?.name}</span>
@@ -394,20 +355,18 @@ const Category = () => {
             <p className="text-emerald-100 text-xs font-medium mb-1">XP e fituar</p>
             <p className="text-3xl font-bold text-white">+{xpGained}</p>
           </div>
-          <motion.button
+          <button
             onClick={() => { setShowCongrats(false); setSelectedCategory(null) }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-emerald-500/30"
+            className="w-full py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-sm font-semibold rounded-xl transition-all shadow-lg shadow-emerald-500/30 active:scale-95"
           >
             Vazhdo
-          </motion.button>
-        </motion.div>
+          </button>
+        </div>
       </div>
     )
   }
 
-  // Category Detail View (styled like Listen)
+  // Category Detail View
   if (selectedCategory) {
     const categoryIdStr = String(selectedCategory.id?._id || selectedCategory.id)
     const isCategoryFinished = finishedCategoryIds.includes(categoryIdStr)
@@ -415,17 +374,24 @@ const Category = () => {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 p-2 sm:p-4">
+        <style>{`
+          @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+          @keyframes bounce-in { 0% { transform: scale(0.9); opacity: 0; } 50% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
+          @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          @keyframes stagger-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+          .animate-fade-in { animation: fade-in 0.3s ease-out; }
+          .animate-bounce-in { animation: bounce-in 0.4s ease-out; }
+          .animate-slide-up { animation: slide-up 0.3s ease-out; }
+          .animate-spin-slow { animation: spin-slow 1s linear infinite; }
+          .animate-stagger-in { animation: stagger-in 0.3s ease-out backwards; }
+        `}</style>
         {NotificationToast}
         {XpAnimationOverlay}
         
         <div className="max-w-6xl mx-auto">
-          {/* Header Card (styled like Listen) */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="bg-white rounded-xl shadow-lg border-2 border-emerald-200 p-4 sm:p-6 mb-4"
-          >
+          {/* Header Card */}
+          <div className="bg-white rounded-xl shadow-lg border-2 border-emerald-200 p-4 sm:p-6 mb-4 animate-slide-up">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <button
@@ -453,32 +419,30 @@ const Category = () => {
                   </span>
                 </div>
                 
-                <motion.button
+                <button
                   onClick={handleFinishCategory}
                   disabled={finishingCategory || isCategoryFinished}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95 ${
                     isCategoryFinished
                       ? "bg-slate-100 text-slate-400 cursor-not-allowed"
                       : "bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/30"
                   }`}
                 >
                   {finishingCategory ? (
-                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
                     <Check className="w-4 h-4" />
                   )}
                   <span className="hidden sm:inline">{isCategoryFinished ? "E përfunduar" : "Përfundo"}</span>
-                </motion.button>
+                </button>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Words Grid */}
           {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-10 w-10 border-3 border-emerald-500 border-t-transparent" />
+            <div className="flex items-center justify-center min-h-96">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
             </div>
           ) : selectedCategory.words?.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -487,12 +451,10 @@ const Category = () => {
                 const isLoading = loadingAudioIndex === index
                 
                 return (
-                  <motion.div
+                  <div
                     key={index}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.03 }}
-                    className="bg-white rounded-xl p-4 border-2 border-emerald-200 hover:border-emerald-300 hover:shadow-md transition-all"
+                    className="bg-white rounded-xl p-4 border-2 border-emerald-200 hover:border-emerald-300 hover:shadow-md transition-all animate-stagger-in"
+                    style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
@@ -503,16 +465,14 @@ const Category = () => {
                         )}
                       </div>
                       
-                      {/* Audio Button (styled like Listen) */}
-                      <motion.button
+                      {/* Audio Button */}
+                      <button
                         onClick={(e) => {
                           e.stopPropagation()
                           playWordAudio(wordObj, index)
                         }}
                         disabled={isLoading}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
-                        className={`flex-shrink-0 p-2.5 rounded-xl transition-all ${
+                        className={`flex-shrink-0 p-2.5 rounded-xl transition-all active:scale-90 ${
                           isPlaying 
                             ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30" 
                             : isLoading
@@ -521,39 +481,14 @@ const Category = () => {
                         }`}
                         title={isPlaying ? "Ndalo" : "Dëgjo"}
                       >
-                        <AnimatePresence mode="wait">
-                          {isLoading ? (
-                            <motion.div
-                              key="loading"
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              exit={{ scale: 0 }}
-                            >
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            </motion.div>
-                          ) : isPlaying ? (
-                            <motion.div
-                              key="pause"
-                              initial={{ scale: 0, rotate: -180 }}
-                              animate={{ scale: 1, rotate: 0 }}
-                              exit={{ scale: 0, rotate: 180 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <Pause className="w-4 h-4" />
-                            </motion.div>
-                          ) : (
-                            <motion.div
-                              key="play"
-                              initial={{ scale: 0, rotate: 180 }}
-                              animate={{ scale: 1, rotate: 0 }}
-                              exit={{ scale: 0, rotate: -180 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <Volume2 className="w-4 h-4" />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </motion.button>
+                        {isLoading ? (
+                          <div className="w-4 h-4 animate-spin rounded-full border-b-2 border-current"></div>
+                        ) : isPlaying ? (
+                          <Pause className="w-4 h-4" />
+                        ) : (
+                          <Volume2 className="w-4 h-4" />
+                        )}
+                      </button>
                     </div>
                     {wordObj.examples?.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-emerald-100">
@@ -563,7 +498,7 @@ const Category = () => {
                         ))}
                       </div>
                     )}
-                  </motion.div>
+                  </div>
                 )
               })}
             </div>
@@ -578,7 +513,7 @@ const Category = () => {
     )
   }
 
-  // Main Categories View (styled like Listen)
+  // Main Categories View
   return (
     <>
       <SEO 
@@ -586,13 +521,23 @@ const Category = () => {
         description="Eksploro kategori të ndryshme të fjalëve gjermane. Mësoni fjalë të përditshme, profesionale dhe specifike."
         keywords="kategori fjalësh, fjalë gjermane, fjalor gjermanisht, mesimi fjalëve, perkthim fjalësh"
       />
+      <style>{`
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes bounce-in { 0% { transform: scale(0.9); opacity: 0; } 50% { transform: scale(1.05); } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes stagger-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fade-in 0.3s ease-out; }
+        .animate-bounce-in { animation: bounce-in 0.4s ease-out; }
+        .animate-slide-up { animation: slide-up 0.3s ease-out; }
+        .animate-stagger-in { animation: stagger-in 0.3s ease-out backwards; }
+      `}</style>
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 p-4 flex flex-col">
         {NotificationToast}
         
         <div className="max-w-6xl mx-auto w-full">
-          {/* Header (styled like Listen) */}
+          {/* Header */}
           <header className="mb-4 flex-shrink-0">
-            <div className="bg-white rounded-2xl shadow-xl border-2 border-emerald-200 p-6 overflow-hidden relative">
+            <div className="bg-white rounded-2xl shadow-xl border-2 border-emerald-200 p-6 overflow-hidden relative animate-slide-up">
               <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full transform translate-x-16 -translate-y-16 opacity-50" />
               <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-teal-100 to-emerald-100 rounded-full transform -translate-x-8 translate-y-8 opacity-50" />
               <div className="relative z-10">
@@ -612,8 +557,8 @@ const Category = () => {
 
           {/* Loading State */}
           {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="animate-spin rounded-full h-10 w-10 border-3 border-emerald-500 border-t-transparent" />
+            <div className="flex items-center justify-center min-h-96">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
             </div>
           ) : categories.length > 0 ? (
             <>
@@ -625,17 +570,15 @@ const Category = () => {
                   const style = getTypeStyle(category.type)
 
                   return (
-                    <motion.div
+                    <div
                       key={category._id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.02 }}
                       onClick={() => fetchCategoryDetails(category._id, category.category)}
-                      className={`group bg-white rounded-xl p-4 border-2 cursor-pointer transition-all relative hover:-translate-y-1 ${
+                      className={`group bg-white rounded-xl p-4 border-2 cursor-pointer transition-all relative hover:-translate-y-1 animate-stagger-in ${
                         isCompleted
                           ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-amber-300 hover:border-amber-400"
                           : "border-emerald-200 hover:border-emerald-300 hover:shadow-lg"
                       }`}
+                      style={{ animationDelay: `${Math.min(index * 20, 400)}ms` }}
                     >
                       {isCompleted && (
                         <div className="absolute top-3 right-3">
@@ -673,7 +616,7 @@ const Category = () => {
                           {isCompleted ? "✓ Kryer" : "Hap"}
                         </span>
                       </div>
-                    </motion.div>
+                    </div>
                   )
                 })}
               </div>
@@ -681,16 +624,14 @@ const Category = () => {
               {categories.length > visibleCategories && (
                 <div id="load-more-sentinel" className="mt-8 flex justify-center">
                   {loadingMore ? (
-                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-6 h-6 border-2 border-emerald-200 border-t-emerald-600 rounded-full" />
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
                   ) : (
-                    <motion.button
+                    <button
                       onClick={loadMoreCategories}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/30"
+                      className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/30 active:scale-95"
                     >
                       Shfaq më shumë ({categories.length - visibleCategories})
-                    </motion.button>
+                    </button>
                   )}
                 </div>
               )}

@@ -187,8 +187,9 @@ export default function Puzzle() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-slate-950 dark:via-indigo-950 dark:to-purple-950">
         <div className="text-center">
-          <div className="mb-6 inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-indigo-400 border-r-transparent shadow-2xl"></div>
-          <p className="text-base font-medium text-slate-600 dark:text-slate-300">Duke ngarkuar...</p>
+          <div className="flex items-center justify-center min-h-96">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+        </div>
         </div>
       </div>
     )

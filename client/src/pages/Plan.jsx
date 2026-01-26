@@ -53,7 +53,7 @@ function ConfirmationDialog({ isOpen, onClose, onConfirm, weekNumber, loading })
           >
             {loading ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-2 border-white border-t-transparent"></div>
+                <div className="animate-spin rounded-full h-4 w-4 sm:h-5 sm:w-5 border-b-2 border-current"></div>
                 <span>Duke filluar...</span>
               </>
             ) : (
@@ -702,7 +702,7 @@ export default function PlanPage() {
                       >
                         {isSubmitting ? (
                           <div className="flex items-center justify-center gap-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
                             <span>Duke ruajtur...</span>
                           </div>
                         ) : (

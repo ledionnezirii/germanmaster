@@ -123,7 +123,7 @@ const ForgotPassword = () => {
             >
               {loading ? (
                 <>
-                  <div className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  <div className="inline-block w-4 h-4 border-b-2 border-current rounded-full animate-spin mr-2"></div>
                   Duke dërguar...
                 </>
               ) : (

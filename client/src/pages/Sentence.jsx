@@ -294,7 +294,7 @@ export function SentenceQuiz({ quizId, quizTitle, selectedLevel, onComplete, onB
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]" style={{ backgroundColor: '#FFF8F0' }}>
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-t-transparent" style={{ borderColor: '#F97316', borderTopColor: 'transparent' }}></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
       </div>
     );
   }
@@ -704,7 +704,7 @@ export function SentenceList({ level, onSelectQuiz }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
-        <div className="animate-spin rounded-full h-10 w-10 border-4 border-t-transparent" style={{ borderColor: '#F97316', borderTopColor: 'transparent' }}></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
       </div>
     );
   }

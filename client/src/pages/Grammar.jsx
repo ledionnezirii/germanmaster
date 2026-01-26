@@ -615,9 +615,8 @@ const Grammar = () => {
           </button>
 
           {topicLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-2 border-blue-200 border-t-blue-600"></div>
-              <span className="ml-3 text-gray-600 text-sm">Duke ngarkuar...</span>
+            <div className="flex items-center justify-center min-h-96">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
             </div>
           ) : (
             <>
@@ -1299,9 +1298,8 @@ const Grammar = () => {
       )}
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center min-h-60 bg-white rounded-lg border border-gray-200">
-          <div className="animate-spin rounded-full h-6 w-6 border-2 border-teal-200 border-t-teal-600 mb-2"></div>
-          <p className="text-gray-600 text-sm">Duke ngarkuar...</p>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">

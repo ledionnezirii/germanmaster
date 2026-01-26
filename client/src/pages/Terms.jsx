@@ -8,10 +8,8 @@ const Terms = () => {
 
   // SEO Meta Tags
   useEffect(() => {
-    // Set page title
     document.title = "Kushtet e Përdorimit dhe Politika e Privatësisë | gjuhagjermane.com"
     
-    // Meta description
     const metaDescription = document.querySelector('meta[name="description"]')
     if (metaDescription) {
       metaDescription.setAttribute("content", "Lexoni kushtet e përdorimit, politikën e privatësisë dhe politikën e rimbursimit për gjuhagjermane.com. Mësoni gjuhën gjermane online me kurse profesionale.")
@@ -22,7 +20,6 @@ const Terms = () => {
       document.head.appendChild(meta)
     }
 
-    // Keywords
     const metaKeywords = document.querySelector('meta[name="keywords"]')
     if (metaKeywords) {
       metaKeywords.setAttribute("content", "kushtet e përdorimit, politika e privatësisë, gjuha gjermane, kurse online, mësim gjermanisht, rimbursim, aboniment")
@@ -33,7 +30,6 @@ const Terms = () => {
       document.head.appendChild(meta)
     }
 
-    // Open Graph tags
     const ogTitle = document.querySelector('meta[property="og:title"]')
     if (ogTitle) {
       ogTitle.setAttribute("content", "Kushtet e Përdorimit dhe Politika e Privatësisë | gjuhagjermane.com")
@@ -54,10 +50,8 @@ const Terms = () => {
       document.head.appendChild(meta)
     }
 
-    // Language
     document.documentElement.lang = "sq"
 
-    // Canonical URL
     const canonical = document.querySelector('link[rel="canonical"]')
     if (!canonical) {
       const link = document.createElement('link')
@@ -67,7 +61,6 @@ const Terms = () => {
     }
   }, [])
 
-  // JSON-LD Schema for Breadcrumbs and Organization
   const schemaData = {
     "@context": "https://schema.org",
     "@graph": [
@@ -78,7 +71,7 @@ const Terms = () => {
         "name": "Kushtet e Përdorimit dhe Politika e Privatësisë",
         "description": "Kushtet e përdorimit, politika e privatësisë dhe politika e rimbursimit për gjuhagjermane.com",
         "inLanguage": "sq",
-        "dateModified": "2026-01-21",
+        "dateModified": "2026-01-26",
         "publisher": {
           "@type": "Organization",
           "name": "gjuhagjermane.com",
@@ -107,7 +100,6 @@ const Terms = () => {
 
   return (
     <>
-      {/* JSON-LD Schema */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }}
@@ -115,7 +107,6 @@ const Terms = () => {
 
       <article className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
         <div className="max-w-4xl mx-auto bg-white shadow-2xl rounded-2xl p-8 md:p-12">
-          {/* Header with proper heading hierarchy */}
           <header className="text-center mb-10">
             <h1 className="text-4xl md:text-5xl font-extrabold mb-4 text-gray-900 border-b-4 border-amber-600 inline-block pb-2">
               Kushtet e Përdorimit dhe Politikat e Privatësisë & Rimbursimit
@@ -135,9 +126,7 @@ const Terms = () => {
                 Pranimi i Kushteve
               </h2>
               <p className="text-gray-700 leading-relaxed">
-                Duke përdorur platformën tonë <strong>gjuhagjermane.com</strong>, ju pranoni dhe pajtoheni me këto kushte
-                përdorimi. Këto kushte përbëjnë një marrëveshje ligjore detyruese midis jush si përdorues dhe
-                platformës. Nëse nuk jeni dakord me to, ju lutemi mos përdorni shërbimin.
+                Duke përdorur platformën tonë <strong>gjuhagjermane.com</strong> (operuar nga <strong>gjuhagjermane.com</strong>), ju pranoni dhe pajtoheni me këto kushte përdorimi. Këto kushte përbëjnë një marrëveshje ligjore detyruese midis jush si përdorues dhe platformës. Nëse nuk jeni dakord me to, ju lutemi mos përdorni shërbimin.
               </p>
             </section>
 
@@ -181,7 +170,7 @@ const Terms = () => {
               </div>
             </section>
 
-            {/* Section 4 */}
+            {/* Section 4 - UPDATED */}
             <section className="bg-gray-50 p-6 rounded-xl border-l-4 border-purple-500" aria-labelledby="section4">
               <h2 id="section4" className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
                 <span className="bg-purple-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm" aria-hidden="true">
@@ -190,57 +179,52 @@ const Terms = () => {
                 Pagesat dhe Rimbursimet
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                Të gjitha pagesat përpunohen në mënyrë të sigurt nga <strong>Paddle.com Market Ltd</strong>, e cila vepron
-                si shitësi zyrtar ("Merchant of Record"). Paddle është përgjegjëse për përpunimin e pagesave, faturimin dhe
-                çdo kërkesë për rimbursim. Asnjë informacion i kartës së kreditit nuk ruhet në serverat tanë.
+                Të gjitha pagesat përpunohen në mënyrë të sigurt nga <strong>Paddle.com Market Ltd</strong>, e cila vepron si shitësi zyrtar ("Merchant of Record") për <strong>gjuhagjermane.com</strong>. Paddle është përgjegjëse për përpunimin e pagesave, faturimin dhe çdo kërkesë për rimbursim. Asnjë informacion i kartës së kreditit nuk ruhet në serverat tanë.
               </p>
+
+              <h3 className="text-xl font-semibold text-gray-700 mb-2 mt-4">Politika e Rimbursimit</h3>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                Ne ofrojmë një periudhë rimbursimi prej <strong>30 ditësh</strong> nga data e blerjes për të gjitha produktet dhe abonimet. Nëse nuk jeni të kënaqur me blerjen tuaj për çfarëdo arsye, mund të kërkoni rimbursim të plotë brenda kësaj periudhe.
+              </p>
+
+              <h3 className="text-xl font-semibold text-gray-700 mb-2 mt-4">Si të kërkoni rimbursim:</h3>
               <p className="text-gray-700 leading-relaxed">
-                Në përputhje me politikat e Paddle dhe natyrën e produkteve tona dixhitale, ne ofrojmë një periudhë rimbursimi prej{" "}
-                <strong>14 ditësh</strong> nga data e blerjes. Rimbursimi nuk aplikohet nëse përdoruesi ka shkarkuar, parë një sasi të konsiderueshme të materialit, ose ka përfunduar modulet e para të kursit. Kërkesat e rimbursimit shqyrtohen rast pas rasti.
+                Për të kërkuar rimbursim, ju lutemi kontaktoni ekipin tonë të mbështetjes në <strong>support@gjuhagjermane.com</strong> brenda 30 ditëve nga data e pagesës, duke përfshirë numrin e faturës. Kërkesat për rimbursim përpunohen nga Paddle dhe zakonisht përfundojnë brenda 5-7 ditëve pune.
               </p>
-              <h3 className="text-xl font-semibold text-gray-700 mb-2 mt-4">Rastet e rimbursimit:</h3>
-              <ul className="list-disc list-inside space-y-2 text-gray-700 mt-3">
-                <li>Pamundësi absolute për të hyrë në materialet e blera për arsye teknike, që nuk mund të zgjidhen nga mbështetja teknike.</li>
-                <li>Gabim teknik në pagesë ose tarifim i dyfishtë.</li>
-                <li>Produkti nuk përputhet me përshkrimin bazë të dhënë në faqen e shitjes.</li>
-              </ul>
-              <p className="text-gray-700 leading-relaxed mt-3">
-                Për çdo kërkesë rimbursimi, ju lutemi kontaktoni <strong>support@gjuhagjermane.com</strong> brenda 14
-                ditëve nga data e pagesës, duke përfshirë numrin e faturës.
-              </p>
-              <p className="text-gray-700 mt-3">
-                Për më shumë informacion mbi politikat e Paddle, vizitoni{" "}
+
+              <p className="text-gray-700 mt-4">
+                Për më shumë informacion mbi politikat e Paddle për pagesat dhe rimbursimet, vizitoni{" "}
                 <a
-                  href="https://www.paddle.com/legal"
+                  href="https://www.paddle.com/legal/terms"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-amber-600 hover:text-amber-700 underline"
                 >
-                  https://www.paddle.com/legal
+                  https://www.paddle.com/legal/terms
                 </a>
                 .
               </p>
             </section>
 
-            {/* Section 5 */}
+            {/* Section 5 - UPDATED */}
             <section className="bg-gray-50 p-6 rounded-xl border-l-4 border-orange-500" aria-labelledby="section5">
               <h2 id="section5" className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
                 <span className="bg-orange-500 text-white rounded-full w-8 h-8 flex items-center justify-center mr-3 text-sm" aria-hidden="true">
                   5
                 </span>
-                Politika e Abonimit dhe Pagesave
+                Politika e Abonimit
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">
-                Të gjitha abonimet janë <strong>jo të rimbursueshme</strong>. Përdoruesit janë përgjegjës për të menaxhuar dhe anuluar abonimet para rinovimit.
+                Abonimet mund të anulohen në çdo kohë përmes cilësimeve të llogarisë tuaj ose duke kontaktuar mbështetjen tonë. Pasi të anuloni abonimin, do të vazhdoni të keni akses deri në fund të periudhës së paguar.
+              </p>
+              <p className="text-gray-700 leading-relaxed mb-4">
+                Nëse dëshironi të kërkoni rimbursim për një aboniment aktiv, ju lutemi referojuni politikës së rimbursimit më sipër (30 ditë nga data e blerjes).
               </p>
               <div className="bg-orange-50 p-4 rounded-lg mb-4">
                 <p className="text-orange-800 text-sm font-medium">
-                  ⚠️ Në rast të një <strong>dispute ose chargeback</strong>, aksesimi në platformë mund të <strong>ndalohet menjëherë</strong> dhe llogaria mund të <strong>pezullohet ose bllokohet për përdorim të mëtejshëm</strong>.
+                  ⚠️ Ju lutemi kontrolloni datën e rinovimit dhe anuloni abonimin nëse nuk dëshironi ta vazhdoni. Në rast të një <strong>dispute ose chargeback</strong>, aksesimi në platformë mund të ndalohet menjëherë dhe llogaria mund të pezullohet.
                 </p>
               </div>
-              <p className="text-gray-700 leading-relaxed">
-                Ju lutemi, kontrolloni datën e rinovimit dhe anuloni abonimin nëse nuk dëshironi ta vazhdoni.
-              </p>
             </section>
 
             {/* Section 6 */}
@@ -265,8 +249,7 @@ const Terms = () => {
                 Ndryshimet në Kushte dhe Politika
               </h2>
               <p className="text-gray-700 leading-relaxed">
-                Ne rezervojmë të drejtën për të ndryshuar këto kushte ose politikat në çdo kohë. Ndryshimet do të
-                publikohen në këtë faqe dhe do të hyjnë në fuqi menjëherë pas publikimit. Përdorimi i vazhdueshëm i shërbimit pas publikimit të ndryshimeve nënkupton pranimin e tyre nga ana juaj.
+                Ne rezervojmë të drejtën për të ndryshuar këto kushte ose politikat në çdo kohë. Ndryshimet do të publikohen në këtë faqe dhe do të hyjnë në fuqi menjëherë pas publikimit. Përdorimi i vazhdueshëm i shërbimit pas publikimit të ndryshimeve nënkupton pranimin e tyre nga ana juaj.
               </p>
             </section>
 
@@ -279,11 +262,13 @@ const Terms = () => {
                 Kontakt
               </h2>
               <p className="text-gray-700 leading-relaxed">
-                Për çdo pyetje, koment, ose kërkesë për mbështetje në lidhje me këto Kushte Përdorimi ose Politikat, ju mund të na kontaktoni drejtpërdrejt në adresën e mëposhtme:{" "}
+                Për çdo pyetje, koment, ose kërkesë për mbështetje në lidhje me këto Kushte Përdorimi ose Politikat, ju mund të na kontaktoni drejtpërdrejt në adresën e mëposhtme:
+                <br /><br />
+                <strong>Emri Ligjor i Biznesit:</strong> gjuhagjermane.com
                 <br />
-                <strong>Email: info@gjuhagjermane.com</strong>
+                <strong>Email:</strong> info@gjuhagjermane.com 
                 <br />
-                <strong>Instagram: gjuhagjermanee</strong>
+                <strong>Instagram:</strong> gjuhagjermanee
               </p>
             </section>
 
@@ -296,10 +281,7 @@ const Terms = () => {
                 Gjendja e Platformës
               </h2>
               <p className="text-gray-700 leading-relaxed">
-                Faqja është në zhvillim të vazhdueshëm dhe, si çdo platformë digjitale, mund
-                të ketë gabime teknike (bugs), ndërprerje ose probleme funksionale. Nëse
-                hasni ndonjë problem ose paqartësi, ju lutemi të na kontaktoni që ta
-                përmirësojmë shërbimin.
+                Faqja është në zhvillim të vazhdueshëm dhe, si çdo platformë digjitale, mund të ketë gabime teknike (bugs), ndërprerje ose probleme funksionale. Nëse hasni ndonjë problem ose paqartësi, ju lutemi të na kontaktoni që ta përmirësojmë shërbimin.
               </p>
             </section>
 
@@ -312,26 +294,19 @@ const Terms = () => {
                 Përgjegjësia dhe Saktësia e Përmbajtjes
               </h2>
               <p className="text-gray-700 leading-relaxed">
-                Përmbajtja e ofruar në këtë faqe interneti është krijuar për qëllime
-                edukative dhe informuese. Ne përpiqemi që të gjitha informacionet, tekstet
-                dhe ushtrimet të jenë sa më të sakta dhe të përditësuara, megjithatë nuk
-                garantojmë që çdo informacion është 100% i saktë ose pa gabime.
+                Përmbajtja e ofruar në këtë faqe interneti është krijuar për qëllime edukative dhe informuese. Ne përpiqemi që të gjitha informacionet, tekstet dhe ushtrimet të jenë sa më të sakta dhe të përditësuara, megjithatë nuk garantojmë që çdo informacion është 100% i saktë ose pa gabime.
                 <br /><br />
-                Disa të dhëna ose materiale mund të jenë marrë nga burime të ndryshme dhe,
-                pavarësisht përpjekjeve tona, mund të përmbajnë gabime gramatikore,
-                përkthimore ose teknike. Ne nuk mbajmë përgjegjësi për ndonjë pasojë që mund
-                të vijë nga përdorimi i këtij informacioni.
+                Disa të dhëna ose materiale mund të jenë marrë nga burime të ndryshme dhe, pavarësisht përpjekjeve tona, mund të përmbajnë gabime gramatikore, përkthimore ose teknike. Ne nuk mbajmë përgjegjësi për ndonjë pasojë që mund të vijë nga përdorimi i këtij informacioni.
               </p>
             </section>
           </div>
 
-          {/* Footer */}
           <footer className="mt-10 pt-8 border-t-2 border-gray-200">
             <p className="text-center text-gray-600 leading-relaxed">
               Duke përdorur këtë faqe, ju pranoni këto kushte dhe politikat e përfshira më sipër.
             </p>
             <p className="text-center text-sm text-gray-500 mt-4">
-              Data e përditësimit të fundit: <time dateTime="2026-01-21">{lastUpdatedDate}</time>
+              Data e përditësimit të fundit: <time dateTime="2026-01-26">{lastUpdatedDate}</time>
             </p>
           </footer>
         </div>

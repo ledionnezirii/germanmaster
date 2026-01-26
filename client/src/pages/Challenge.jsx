@@ -443,7 +443,7 @@ const Challenge = () => {
   const getStatusIcon = () => {
     switch (gameState) {
       case "waiting":
-        return <Loader className="animate-spin h-5 w-5" />;
+        return <div className="w-5 h-5 animate-spin rounded-full border-b-2 border-current"></div>;
       case "playing":
         return <Zap className="h-5 w-5" />;
       case "finished":

@@ -512,9 +512,8 @@ export default function RaceGame() {
             </CardHeader>
             <CardContent>
               {loadingQuizzes ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-4 text-gray-600">Loading quizzes...</p>
+                <div className="flex items-center justify-center min-h-96">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
                 </div>
               ) : availableQuizzes.length === 0 ? (
                 <div className="text-center py-8">

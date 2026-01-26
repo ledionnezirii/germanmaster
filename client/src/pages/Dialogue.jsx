@@ -14,7 +14,6 @@ import {
   Volume2,
   BookOpen,
   Sparkles,
-  Loader,
   Users,
   RefreshCw,
   MessageCircle,
@@ -36,26 +35,6 @@ const LEVEL_COLORS = {
   C1: { gradient: "from-purple-400 to-pink-500", light: "bg-purple-50", text: "text-purple-600" },
   C2: { gradient: "from-pink-400 to-rose-500", light: "bg-pink-50", text: "text-pink-600" },
 }
-
-// Loading Skeleton Component
-const DialogueSkeleton = () => (
-  <div className="animate-pulse">
-    <div className="h-8 bg-gray-200 rounded-lg w-1/3 mb-6"></div>
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-          <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
-          <div className="h-4 bg-gray-100 rounded w-1/2 mb-3"></div>
-          <div className="flex gap-2 mb-4">
-            <div className="h-6 w-16 bg-gray-100 rounded-full"></div>
-            <div className="h-6 w-20 bg-gray-100 rounded-full"></div>
-          </div>
-          <div className="h-10 bg-gray-100 rounded-xl"></div>
-        </div>
-      ))}
-    </div>
-  </div>
-)
 
 // Progress Ring Component
 const ProgressRing = ({ progress, size = 60, strokeWidth = 4 }) => {
@@ -319,7 +298,7 @@ const DialogueViewer = ({ dialogue, onContinue, onBack }) => {
           <>
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                {isLoading && <Loader className="text-purple-600 animate-spin w-5 h-5" />}
+                {isLoading && <div className="w-5 h-5 animate-spin rounded-full border-b-2 border-purple-600"></div>}
                 {isPlaying && !isLoading && (
                   <motion.div
                     animate={{ scale: [1, 1.2, 1] }}
@@ -614,7 +593,7 @@ const DialogueQuiz = ({ dialogue, onComplete, onBack }) => {
         >
           {isSubmitting ? (
             <span className="flex items-center justify-center gap-2">
-              <Loader className="w-5 h-5 animate-spin" />
+              <div className="w-5 h-5 animate-spin rounded-full border-b-2 border-current"></div>
               Submitting...
             </span>
           ) : (
@@ -893,7 +872,9 @@ export default function Dialogue() {
                 <ProgressSummary />
 
                 {loading ? (
-                  <DialogueSkeleton />
+                  <div className="flex items-center justify-center min-h-96">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+                  </div>
                 ) : filteredDialogues.length > 0 ? (
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {filteredDialogues.map((dialogue) => {

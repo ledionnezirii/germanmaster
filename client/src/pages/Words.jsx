@@ -836,7 +836,7 @@ export default function Words() {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">Fjala Gjermane</label>
                         <input
-                          ref__={newWordInputRef}
+                          ref={newWordInputRef}
                           type="text"
                           value={newWord}
                           onChange={(e) => setNewWord(e.target.value)}

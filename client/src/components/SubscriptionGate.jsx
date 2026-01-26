@@ -42,12 +42,8 @@ const SubscriptionGate = ({ children }) => {
   if (loading && isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
-        <div className="text-center">
-          <div className="relative w-12 h-12 mx-auto">
-            <div className="absolute inset-0 rounded-full border-4 border-slate-200"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div>
-          </div>
-          <p className="mt-4 text-sm font-medium text-slate-600">Duke ngarkuar...</p>
+        <div className="flex items-center justify-center min-h-96">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
         </div>
       </div>
     )
