@@ -580,128 +580,130 @@ const Category = () => {
 
   // Main Categories View (styled like Listen)
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 p-4 flex flex-col">
-      {NotificationToast}
-      
-      <div className="max-w-6xl mx-auto w-full">
-        {/* Header (styled like Listen) */}
-        <header className="mb-4 flex-shrink-0">
-          <div className="bg-white rounded-2xl shadow-xl border-2 border-emerald-200 p-6 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full transform translate-x-16 -translate-y-16 opacity-50" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-teal-100 to-emerald-100 rounded-full transform -translate-x-8 translate-y-8 opacity-50" />
-            <div className="relative z-10">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg shadow-lg shadow-emerald-500/30">
-                      <Languages className="w-5 h-5 text-white" />
-                    </div>
-                    <h1 className="text-2xl font-bold text-gray-900">Kategoritë</h1>
+    <>
+      <SEO 
+        title="Kategori Fjalësh - Mësoni Fjalët Gjermane"
+        description="Eksploro kategori të ndryshme të fjalëve gjermane. Mësoni fjalë të përditshme, profesionale dhe specifike."
+        keywords="kategori fjalësh, fjalë gjermane, fjalor gjermanisht, mesimi fjalëve, perkthim fjalësh"
+      />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 p-4 flex flex-col">
+        {NotificationToast}
+        
+        <div className="max-w-6xl mx-auto w-full">
+          {/* Header (styled like Listen) */}
+          <header className="mb-4 flex-shrink-0">
+            <div className="bg-white rounded-2xl shadow-xl border-2 border-emerald-200 p-6 overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full transform translate-x-16 -translate-y-16 opacity-50" />
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-teal-100 to-emerald-100 rounded-full transform -translate-x-8 translate-y-8 opacity-50" />
+              <div className="relative z-10">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">Kategori Fjalësh</h1>
+                    <p className="text-slate-600 text-sm">Eksploro kategori të ndryshme të fjalëve gjermane</p>
                   </div>
-                  <p className="text-gray-600">Mësoni fjalë të reja dhe zgjeroni fjalorin tuaj</p>
-                </div>
-                <div className="hidden sm:flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-2 rounded-xl border border-emerald-200">
-                  <Check className="w-4 h-4 text-emerald-600" />
-                  <span className="text-sm font-bold text-emerald-700">{finishedCategoryIds.length} përfunduar</span>
+                  <div className="flex items-center gap-2">
+                    <Languages className="w-6 h-6 text-emerald-600" />
+                    <span className="text-sm font-semibold text-emerald-700">{categories.length} kategori</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </header>
+          </header>
 
-        {/* Categories Grid */}
-        {loading ? (
-          <div className="flex items-center justify-center min-h-96">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
-          </div>
-        ) : categories.length > 0 ? (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 flex-1 overflow-y-auto">
-              {categories.slice(0, visibleCategories).map((category, index) => {
-                const IconComponent = iconMap[category.icon] || FolderOpen
-                const categoryIdStr = String(category._id?._id || category._id)
-                const isCompleted = finishedCategoryIds.includes(categoryIdStr)
-                const style = getTypeStyle(category.type)
+          {/* Loading State */}
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="animate-spin rounded-full h-10 w-10 border-3 border-emerald-500 border-t-transparent" />
+            </div>
+          ) : categories.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 flex-1 overflow-y-auto">
+                {categories.slice(0, visibleCategories).map((category, index) => {
+                  const IconComponent = iconMap[category.icon] || FolderOpen
+                  const categoryIdStr = String(category._id?._id || category._id)
+                  const isCompleted = finishedCategoryIds.includes(categoryIdStr)
+                  const style = getTypeStyle(category.type)
 
-                return (
-                  <motion.div
-                    key={category._id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.02 }}
-                    onClick={() => fetchCategoryDetails(category._id, category.category)}
-                    className={`group bg-white rounded-xl p-4 border-2 cursor-pointer transition-all relative hover:-translate-y-1 ${
-                      isCompleted
-                        ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-amber-300 hover:border-amber-400"
-                        : "border-emerald-200 hover:border-emerald-300 hover:shadow-lg"
-                    }`}
-                  >
-                    {isCompleted && (
-                      <div className="absolute top-3 right-3">
-                        <div className="w-5 h-5 bg-gradient-to-r from-amber-400 to-orange-400 rounded-full flex items-center justify-center shadow-sm">
-                          <Check className="w-3 h-3 text-white" />
+                  return (
+                    <motion.div
+                      key={category._id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.02 }}
+                      onClick={() => fetchCategoryDetails(category._id, category.category)}
+                      className={`group bg-white rounded-xl p-4 border-2 cursor-pointer transition-all relative hover:-translate-y-1 ${
+                        isCompleted
+                          ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-amber-300 hover:border-amber-400"
+                          : "border-emerald-200 hover:border-emerald-300 hover:shadow-lg"
+                      }`}
+                    >
+                      {isCompleted && (
+                        <div className="absolute top-3 right-3">
+                          <div className="w-5 h-5 bg-gradient-to-r from-amber-400 to-orange-400 rounded-full flex items-center justify-center shadow-sm">
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    
-                    <div className={`w-10 h-10 rounded-lg ${style.bg} flex items-center justify-center mb-3 group-hover:scale-105 transition-transform border ${style.border}`}>
-                      <IconComponent className={`w-5 h-5 ${style.text}`} />
-                    </div>
-                    
-                    <h3 className={`text-sm font-semibold line-clamp-2 mb-2 min-h-[2.5rem] ${
-                      isCompleted
-                        ? "text-amber-700 group-hover:text-amber-800"
-                        : "text-gray-800 group-hover:text-emerald-700"
-                    }`}>
-                      {category.category}
-                    </h3>
-                    
-                    <div className="flex items-center justify-between">
-                      {category.type && (
-                        <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-md ${style.bg} ${style.text}`}>
-                          {category.type}
-                        </span>
                       )}
-                      <span
-                        className={`text-xs px-3 py-1 rounded-full font-semibold shadow-sm ${
-                          isCompleted
-                            ? "bg-gradient-to-r from-amber-400 to-orange-400 text-white"
-                            : "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
-                        }`}
-                      >
-                        {isCompleted ? "✓ Kryer" : "Hap"}
-                      </span>
-                    </div>
-                  </motion.div>
-                )
-              })}
-            </div>
-
-            {categories.length > visibleCategories && (
-              <div id="load-more-sentinel" className="mt-8 flex justify-center">
-                {loadingMore ? (
-                  <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-6 h-6 border-2 border-emerald-200 border-t-emerald-600 rounded-full" />
-                ) : (
-                  <motion.button
-                    onClick={loadMoreCategories}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/30"
-                  >
-                    Shfaq më shumë ({categories.length - visibleCategories})
-                  </motion.button>
-                )}
+                      
+                      <div className={`w-10 h-10 rounded-lg ${style.bg} flex items-center justify-center mb-3 group-hover:scale-105 transition-transform border ${style.border}`}>
+                        <IconComponent className={`w-5 h-5 ${style.text}`} />
+                      </div>
+                      
+                      <h3 className={`text-sm font-semibold line-clamp-2 mb-2 min-h-[2.5rem] ${
+                        isCompleted
+                          ? "text-amber-700 group-hover:text-amber-800"
+                          : "text-gray-800 group-hover:text-emerald-700"
+                      }`}>
+                        {category.category}
+                      </h3>
+                      
+                      <div className="flex items-center justify-between">
+                        {category.type && (
+                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-md ${style.bg} ${style.text}`}>
+                            {category.type}
+                          </span>
+                        )}
+                        <span
+                          className={`text-xs px-3 py-1 rounded-full font-semibold shadow-sm ${
+                            isCompleted
+                              ? "bg-gradient-to-r from-amber-400 to-orange-400 text-white"
+                              : "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
+                          }`}
+                        >
+                          {isCompleted ? "✓ Kryer" : "Hap"}
+                        </span>
+                      </div>
+                    </motion.div>
+                  )
+                })}
               </div>
-            )}
-          </>
-        ) : (
-          <div className="text-center py-20 bg-white rounded-xl border-2 border-emerald-200">
-            <Grid className="w-10 h-10 text-emerald-300 mx-auto mb-3" />
-            <p className="text-slate-500 text-sm">Nuk ka kategori të disponueshme</p>
-          </div>
-        )}
+
+              {categories.length > visibleCategories && (
+                <div id="load-more-sentinel" className="mt-8 flex justify-center">
+                  {loadingMore ? (
+                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }} className="w-6 h-6 border-2 border-emerald-200 border-t-emerald-600 rounded-full" />
+                  ) : (
+                    <motion.button
+                      onClick={loadMoreCategories}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 rounded-xl hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/30"
+                    >
+                      Shfaq më shumë ({categories.length - visibleCategories})
+                    </motion.button>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-center py-20 bg-white rounded-xl border-2 border-emerald-200">
+              <Grid className="w-10 h-10 text-emerald-300 mx-auto mb-3" />
+              <p className="text-slate-500 text-sm">Nuk ka kategori të disponueshme</p>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 
