@@ -231,8 +231,8 @@ const unlockWord = asyncHandler(async (req, res) => {
 
   console.log("[v0] Daily unlocks count:", dailyUnlocks)
 
-  if (dailyUnlocks >= 2000) {
-    throw new ApiError(429, `Keni arritur limitin ditor prej 15 fjalëve. Provoni përsëri pas 24 orësh.`)
+  if (dailyUnlocks >= 20) {
+    throw new ApiError(429, `Keni arritur limitin ditor prej 20 fjalëve. Provoni përsëri pas 24 orësh.`)
   }
 
   // Add unlock to Dictionary word
@@ -265,7 +265,7 @@ const unlockWord = asyncHandler(async (req, res) => {
       201,
       {
         word: wordWithStatus[0],
-        remainingUnlocks: 15 - dailyUnlocks - 1,
+        remainingUnlocks: 20 - dailyUnlocks - 1,
         unlockedAt: new Date(),
       },
       "Fjala u zhbllokua me sukses!",
@@ -319,10 +319,10 @@ const getUnlockStats = asyncHandler(async (req, res) => {
     new ApiResponse(200, {
       todayUnlocks: dailyUnlocks,
       totalUnlocks,
-      remainingUnlocks: Math.max(0, 2000 - dailyUnlocks),
-      dailyLimit: 2000,
+      remainingUnlocks: Math.max(0, 20 - dailyUnlocks),
+      dailyLimit: 20,
       nextResetTime,
-      canUnlock: dailyUnlocks < 2000,
+      canUnlock: dailyUnlocks < 20,
     }),
   )
 })

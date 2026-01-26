@@ -15,7 +15,7 @@ const getAllSentences = asyncHandler(async (req, res) => {
   const sentences = await Sentence.find(query)
     .skip((page - 1) * limit)
     .limit(parseInt(limit))
-    .sort({ createdAt: -1 });
+    .sort({ createdAt: 1 });
 
   const total = await Sentence.countDocuments(query);
 
