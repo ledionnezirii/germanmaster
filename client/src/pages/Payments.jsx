@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { paymentService, subscriptionService, authService } from "../services/api"
 import { useAuth } from "../context/AuthContext"
+import "@paddle/paddle-js"
 
 const Payment = () => {
   const { updateUser } = useAuth()
@@ -21,6 +22,13 @@ const Payment = () => {
     quarterly: import.meta.env.VITE_PADDLE_PRICE_QUARTERLY,
     yearly: import.meta.env.VITE_PADDLE_PRICE_YEARLY,
   }
+
+  console.log("[Payments] Environment variables loaded:")
+  console.log("- PADDLE_CLIENT_TOKEN:", PADDLE_CLIENT_TOKEN ? "✅ Present" : "❌ Missing")
+  console.log("- PRICES.daily:", PRICES.daily ? "✅ Present" : "❌ Missing")
+  console.log("- PRICES.monthly:", PRICES.monthly ? "✅ Present" : "❌ Missing")
+  console.log("- PRICES.quarterly:", PRICES.quarterly ? "✅ Present" : "❌ Missing")
+  console.log("- PRICES.yearly:", PRICES.yearly ? "✅ Present" : "❌ Missing")
 
   const PLANS = [
     {
@@ -234,10 +242,12 @@ const Payment = () => {
     }
 
     try {
+      console.log("[Payments] Opening checkout with config:", checkoutConfig)
       window.Paddle.Checkout.open(checkoutConfig)
       setProcessingPlan(null)
     } catch (err) {
-      setError("❌ Dështoi hapja e checkout. NUK është tërhequr asnjë pagesë. Ju lutem provoni përsëri.")
+      console.error("[Payments] Checkout error:", err)
+      setError("❌ Dështoi hapja e checkout: " + err.message + ". NUK është tërhequr asnjë pagesë. Ju lutem provoni përsëri.")
       setProcessingPlan(null)
     }
   }

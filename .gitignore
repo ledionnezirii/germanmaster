@@ -14,5 +14,12 @@ server/.env
 # Log files
 *.log
 
+audios/
+
+
 # Google Cloud TTS credentials
-server/gjuhagjermaneTTS.json
+
+
+gcs-key.json
+
+/public/certificates
