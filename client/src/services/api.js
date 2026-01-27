@@ -623,23 +623,23 @@ export const paymentService = {
 
 export const subscriptionService = {
   checkStatus: async () => {
-    // console.log("[Subscription] Checking subscription status from backend...");
+    console.log("[Subscription] Checking subscription status from backend...");
 
     try {
       // Fetch fresh user data from backend
       const response = await authService.getProfile();
       const user = response.data?.user || response.data;
       
-      // console.log("[Subscription] Fresh user data from backend:", user);
+      console.log("[Subscription] Fresh user data from backend:", user);
 
       if (!user) {
-        // console.log("[Subscription] No user found from backend");
+        console.log("[Subscription] No user found from backend");
         return { active: false, expired: true, daysRemaining: 0 };
       }
 
       // Update localStorage with fresh data from backend
       localStorage.setItem("user", JSON.stringify(user));
-      // console.log("[Subscription] Updated localStorage with fresh user data");
+      console.log("[Subscription] Updated localStorage with fresh user data");
 
       // Check subscription expiration using the correct field path
       const now = new Date();
@@ -652,43 +652,45 @@ export const subscriptionService = {
         expiresAt = new Date(user.subscription.expiresAt);
       }
 
-      // console.log("[Subscription] Now:", now);
-      // console.log("[Subscription] Expires at:", expiresAt);
-      // console.log("[Subscription] Time difference (ms):", expiresAt ? expiresAt - now : 'N/A');
+      console.log("[Subscription] Now:", now.toISOString());
+      console.log("[Subscription] Expires at:", expiresAt ? expiresAt.toISOString() : null);
 
-      // Check if subscription has expired
-      const isExpired = !expiresAt || expiresAt <= now;
+      // CRITICAL FIX: Subscription is expired if current time is AFTER (greater than or equal to) expiration time
+      // This means: at 11:58:00, if expires at 11:58:00, it's expired (time's up)
+      const isExpired = !expiresAt || now >= expiresAt;
       
-      // CRITICAL FIX: Only calculate days remaining if NOT expired
+      // Calculate days remaining ONLY if not expired
       let daysRemaining = 0;
-      if (!isExpired) {
+      if (!isExpired && expiresAt) {
         const diffMs = expiresAt - now;
         daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
       }
       
-      // If cancelled AND expired, subscription is NOT active
-      const isCancelled = user.subscriptionCancelled || user.subscription.cancelled || false;
+      // User has active subscription if:
+      // 1. isPaid is true AND
+      // 2. Current time is BEFORE expiration time (now < expiresAt)
+      const isCancelled = user.subscriptionCancelled || (user.subscription && user.subscription.cancelled) || false;
       const isActive = user.isPaid && !isExpired;
 
-      // console.log("[Subscription] Days remaining:", daysRemaining);
-      // console.log("[Subscription] Is expired:", isExpired);
-      // console.log("[Subscription] Is active:", isActive);
-      // console.log("[Subscription] Is cancelled:", isCancelled);
+      console.log("[Subscription] Days remaining:", daysRemaining);
+      console.log("[Subscription] Is expired:", isExpired);
+      console.log("[Subscription] Is active:", isActive);
+      console.log("[Subscription] Is cancelled:", isCancelled);
 
       const status = {
         active: isActive,
         expired: isExpired,
         daysRemaining: daysRemaining,
-        type: user.subscriptionType || user.subscription?.type,
+        type: user.subscriptionType || (user.subscription && user.subscription.type),
         expiresAt: expiresAt ? expiresAt.toISOString() : null,
-        trialStartedAt: user.subscription?.trialStartedAt || user.trialStartedAt,
+        trialStartedAt: (user.subscription && user.subscription.trialStartedAt) || user.trialStartedAt,
         cancelled: isCancelled,
       };
 
-      // console.log("[Subscription] Final status:", status);
+      console.log("[Subscription] Final status:", status);
       return status;
     } catch (error) {
-      // console.error("[Subscription] Error fetching fresh subscription data:", error);
+      console.error("[Subscription] Error fetching fresh subscription data:", error);
       return { active: false, expired: true, daysRemaining: 0 };
     }
   },
