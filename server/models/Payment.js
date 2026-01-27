@@ -28,7 +28,7 @@ const paymentSchema = new mongoose.Schema(
     },
    subscriptionType: {
   type: String,
-  enum: ["1_day", "1_month", "3_months", "1_year"],  // Added 1_day
+  enum: ["1_day", "1_month", "3_months", "1_year"],
   required: true,
 },
     status: {

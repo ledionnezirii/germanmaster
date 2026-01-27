@@ -6,8 +6,8 @@ const crypto = require("crypto")
 let paddleClient = null
 try {
   const { Paddle, Environment } = require("@paddle/paddle-node-sdk")
-  paddleClient = new Paddle(process.env.PADDLE_API_KEY_TEST, {
-    environment: Environment.sandbox,
+  paddleClient = new Paddle(process.env.PADDLE_API_KEY, {
+    environment: Environment.live,
   })
   console.log("[v0] ✅ Paddle Client initialized for subscription management")
 } catch (err) {
