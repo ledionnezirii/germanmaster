@@ -13,13 +13,13 @@ const Payment = () => {
   const [error, setError] = useState(null)
   const [processingPlan, setProcessingPlan] = useState(null)
 
-  const PADDLE_CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN_TEST
+  const PADDLE_CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN
   
   const PRICES = {
-    daily: import.meta.env.VITE_PADDLE_PRICE_DAILY_TEST,
-    monthly: import.meta.env.VITE_PADDLE_PRICE_MONTHLY_TEST,
-    quarterly: import.meta.env.VITE_PADDLE_PRICE_QUARTERLY_TEST,
-    yearly: import.meta.env.VITE_PADDLE_PRICE_YEARLY_TEST,
+    daily: import.meta.env.VITE_PADDLE_PRICE_DAILY,
+    monthly: import.meta.env.VITE_PADDLE_PRICE_MONTHLY,
+    quarterly: import.meta.env.VITE_PADDLE_PRICE_QUARTERLY,
+    yearly: import.meta.env.VITE_PADDLE_PRICE_YEARLY,
   }
 
   const PLANS = [
@@ -44,10 +44,10 @@ const Payment = () => {
     {
       id: "quarterly",
       name: "3-Mujor",
-      price: "€25.00",
+      price: "€30.00",
       period: "për 3 muaj",
       originalPrice: "€36.00",
-      savings: "Kurse 30%",
+      savings: "Kurse 16%",
       description: "Vlera më e mirë",
       priceId: PRICES.quarterly,
       popular: false,
@@ -68,7 +68,7 @@ const Payment = () => {
   useEffect(() => {
     const initPaddle = () => {
       if (!PADDLE_CLIENT_TOKEN) {
-        setError("Token i Paddle (VITE_PADDLE_CLIENT_TOKEN_TEST) mungon në skedarin .env.")
+        setError("Token i Paddle (VITE_PADDLE_CLIENT_TOKEN) mungon në skedarin .env.")
         return
       }
 
@@ -115,7 +115,7 @@ const Payment = () => {
           },
         })
 
-        window.Paddle.Environment.set("sandbox")
+        window.Paddle.Environment.set("live")
         setPaddleInitialized(true)
       } catch (err) {
         setError("Paddle initialization failed: " + err.message)
