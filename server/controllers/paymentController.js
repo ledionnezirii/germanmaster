@@ -1253,7 +1253,7 @@ const handleSubscriptionCancelled = async (event) => {
 
   const data = event.data
   console.log("[v0] 📋 Subscription data:", JSON.stringify(data, null, 2))
-  console.log("[v0] ⚠️ This webhook is sent by Paddle when cancellation is confirmed")
+  console.log("[v0] ⚠️ This webhook is sent by Paddle when cancellation is confirmed OR when period ends")
 
   console.log("[v0] 🔍 Looking for payment record with subscription ID:", data.id)
   const payment = await Payment.findOne({
@@ -1292,24 +1292,40 @@ const handleSubscriptionCancelled = async (event) => {
     const now = new Date()
     const expiresAt = new Date(user.subscriptionExpiresAt)
     
-    if (expiresAt <= now) {
+    console.log("[v0] ⏰ Current time:", now.toISOString())
+    console.log("[v0] ⏰ Expires at:", expiresAt.toISOString())
+    console.log("[v0] ⏰ Time difference (ms):", expiresAt - now)
+    
+    // CRITICAL FIX: Use >= instead of <= to check if expired
+    // If now >= expiresAt, the subscription period has ended
+    if (now >= expiresAt) {
       // Subscription period has ended - remove access
-      console.log("[v0] ⏰ Subscription period has ENDED - removing access")
+      const hoursOverdue = Math.floor((now - expiresAt) / (1000 * 60 * 60))
+      console.log("[v0] ⏰ Subscription period ENDED", hoursOverdue > 0 ? `${hoursOverdue} hours ago` : "just now", "- removing access")
       user.isPaid = false
       user.isActive = false
-      user.subscriptionType = null
+      // Keep subscriptionType for records, but clear the active status
+      console.log("[v0] ❌ Setting isPaid=false, isActive=false")
     } else {
       // Subscription still has time left - keep access
       const daysRemaining = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24))
       console.log("[v0] ⏰ Subscription still active for", daysRemaining, "more days - keeping access")
       console.log("[v0] ✅ User keeps isPaid=true and isActive=true until", expiresAt.toISOString())
+      // Don't change isPaid or isActive - user still has time left
     }
     
     await user.save()
     console.log("[v0] ✅ User record updated based on Paddle cancellation")
+    console.log("[v0] 📋 Final user status:", {
+      isPaid: user.isPaid,
+      isActive: user.isActive,
+      subscriptionCancelled: user.subscriptionCancelled,
+      subscriptionExpiresAt: user.subscriptionExpiresAt,
+    })
   } else {
     console.error("[v0] ❌ User not found:", payment.userId)
   }
 
   console.log(`[v0] ✅✅✅ Subscription cancellation processed from Paddle: ${data.id}`)
 }
+

@@ -16,7 +16,7 @@ const checkSubscription = async (req, res, next) => {
     const expiresAt = user.subscriptionExpiresAt ? new Date(user.subscriptionExpiresAt) : null;
 
     // Check if subscription has expired
-    if (expiresAt && expiresAt <= now) {
+    if (expiresAt && expiresAt < now) {
       console.log(`[Subscription Check] User ${user._id} subscription expired at ${expiresAt}`);
       
       // If user was paid but subscription expired, revoke access
@@ -32,7 +32,7 @@ const checkSubscription = async (req, res, next) => {
     // Attach fresh subscription status to request
     req.subscriptionStatus = {
       active: user.isPaid && expiresAt && expiresAt > now,
-      expired: !expiresAt || expiresAt <= now,
+      expired: !expiresAt || expiresAt < now,
       expiresAt: expiresAt,
       cancelled: user.subscriptionCancelled || false,
     };

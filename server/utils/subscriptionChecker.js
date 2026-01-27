@@ -7,20 +7,20 @@ const Payment = require("../models/Payment");
  */
 const checkExpiredSubscriptions = async () => {
   try {
-    console.log("[Subscription Checker] 🔍 Starting expired subscription check...");
+    console.log("[Subscription Checker] Starting expired subscription check...");
     
     const now = new Date();
     
     // Find all users who have isPaid = true BUT subscriptionExpiresAt has passed
     const expiredUsers = await User.find({
       isPaid: true,
-      subscriptionExpiresAt: { $lte: now }
+      subscriptionExpiresAt: { $lt: now }
     });
 
-    console.log(`[Subscription Checker] ⚠️ Found ${expiredUsers.length} expired subscriptions`);
+    console.log(`[Subscription Checker] Found ${expiredUsers.length} expired subscriptions`);
 
     for (const user of expiredUsers) {
-      console.log(`[Subscription Checker] ❌ Revoking access for user ${user._id} (${user.email})`);
+      console.log(`[Subscription Checker] Revoking access for user ${user._id} (${user.email})`);
       console.log(`[Subscription Checker] - Expired at: ${user.subscriptionExpiresAt}`);
       
       // Revoke access

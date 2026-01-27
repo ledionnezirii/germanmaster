@@ -52,7 +52,7 @@ const protect = asyncHandler(async (req, res, next) => {
     const expiresAt = req.user.subscriptionExpiresAt ? new Date(req.user.subscriptionExpiresAt) : null
 
     // If subscription expired and user still has paid status, revoke access
-    if (expiresAt && expiresAt <= now && req.user.isPaid) {
+    if (expiresAt && expiresAt < now && req.user.isPaid) {
       console.log(`[Auth] User ${req.user._id} subscription expired at ${expiresAt}, revoking access`)
       req.user.isPaid = false
       req.user.isActive = false
