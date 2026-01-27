@@ -86,9 +86,13 @@ const Payment = () => {
       }
 
       try {
+        console.log("[Payments] Initializing Paddle with token:", PADDLE_CLIENT_TOKEN.substring(0, 10) + "...")
+        
         window.Paddle.Initialize({
           token: PADDLE_CLIENT_TOKEN,
+          environment: "production",
           eventCallback: (data) => {
+            console.log("[Payments] Paddle event:", data)
             if (data.type === "checkout.completed") {
               setTimeout(async () => {
                 try {
@@ -116,6 +120,7 @@ const Payment = () => {
               }, 2000)
             }
             if (data.type === "checkout.error") {
+              console.error("[Payments] Checkout error event:", data)
               setError(
                 "❌ Pagesa dështoi. Ju lutem provoni përsëri. NUK është tërhequr asnjë pagesë nga llogaria juaj.",
               )
@@ -123,9 +128,10 @@ const Payment = () => {
           },
         })
 
-        window.Paddle.Environment.set("live")
+        console.log("[Payments] Paddle initialized successfully")
         setPaddleInitialized(true)
       } catch (err) {
+        console.error("[Payments] Paddle initialization error:", err)
         setError("Paddle initialization failed: " + err.message)
       }
     }
