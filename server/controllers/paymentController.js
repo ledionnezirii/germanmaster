@@ -105,7 +105,7 @@ exports.handleWebhook = async (req, res) => {
 
   try {
     const signature = req.headers["paddle-signature"]
-    const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET_TEST
+    const webhookSecret = process.env.PADDLE_WEBHOOK_SECRET
 
     console.log("[v0] 📋 Webhook Headers:", JSON.stringify(req.headers, null, 2))
     console.log("[v0] 🔑 Signature present:", !!signature)
@@ -424,10 +424,10 @@ const handleTransactionCompleted = async (event) => {
     }
 
     if (!matched) {
-      const PRICE_DAILY = process.env.PADDLE_PRICE_DAILY_TEST
-      const PRICE_MONTHLY = process.env.PADDLE_PRICE_MONTHLY_TEST
-      const PRICE_QUARTERLY = process.env.PADDLE_PRICE_QUARTERLY_TEST
-      const PRICE_YEARLY = process.env.PADDLE_PRICE_YEARLY_TEST
+      const PRICE_DAILY = process.env.PADDLE_PRICE_DAILY
+      const PRICE_MONTHLY = process.env.PADDLE_PRICE_MONTHLY
+      const PRICE_QUARTERLY = process.env.PADDLE_PRICE_QUARTERLY
+      const PRICE_YEARLY = process.env.PADDLE_PRICE_YEARLY
 
       console.log("[v0] 🔍 Determining subscription type from price ID...")
       console.log("[v0] 🔍 Price IDs from env:", {
