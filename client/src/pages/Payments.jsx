@@ -235,24 +235,30 @@ const Payment = () => {
       }
     }
 
-    const checkoutConfig = {
-      items: [
-        {
-          priceId: priceId,
-          quantity: 1,
-        },
-      ],
-      customer: {
-        email: user.email,
-      },
-      customData: {
-        userId: user.id,
-      },
-    }
-
     try {
-      console.log("[Payments] Opening checkout with config:", checkoutConfig)
-      window.Paddle.Checkout.open(checkoutConfig)
+      console.log("[Payments] Opening checkout for priceId:", priceId)
+      
+      // FIX: Use proper Paddle.Checkout.open() structure
+      window.Paddle.Checkout.open({
+        settings: {
+          displayMode: "overlay",
+          theme: "light",
+          locale: "en",
+        },
+        items: [
+          {
+            priceId: priceId,
+            quantity: 1,
+          },
+        ],
+        customer: {
+          email: user.email,
+        },
+        customData: {
+          userId: user.id,
+        },
+      })
+      
       setProcessingPlan(null)
     } catch (err) {
       console.error("[Payments] Checkout error:", err)
