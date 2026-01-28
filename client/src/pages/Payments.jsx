@@ -103,6 +103,7 @@ const Payment = () => {
                       isPaid: true,
                       subscriptionType: userData.subscriptionType,
                       subscriptionExpiresAt: userData.subscriptionExpiresAt,
+                      subscriptionCancelled: false,
                     })
                     
                     alert("✅ Pagesa u krye me sukses! Abonimi juaj është aktiv MENJËHERË!")
@@ -173,6 +174,7 @@ const Payment = () => {
           setUser(userData)
 
           const status = await subscriptionService.checkStatus()
+          console.log("[Payments] Initial subscription status:", status)
           setSubscriptionStatus(status)
         }
       } catch (err) {
@@ -270,17 +272,29 @@ const Payment = () => {
     try {
       const response = await paymentService.cancelSubscription(user.id)
       
+      // Fetch fresh user data from backend to ensure state is synchronized
       const profileResponse = await authService.getProfile()
-      const userData = profileResponse.data?.user
+      const userData = profileResponse.data?.user || profileResponse.data
+      
+      console.log("[Payments] User data after cancellation:", userData)
       
       if (userData) {
+        // Update user context with fresh data
         updateUser({
           subscription: userData.subscription,
           subscriptionCancelled: true,
+          isPaid: userData.isPaid,
+          isActive: userData.isActive,
+          subscriptionExpiresAt: userData.subscriptionExpiresAt,
         })
         
+        // Refresh subscription status
         const status = await subscriptionService.checkStatus()
+        console.log("[Payments] Subscription status after cancellation:", status)
         setSubscriptionStatus(status)
+        
+        // Update local user state
+        setUser(userData)
       }
       
       alert(
@@ -288,6 +302,7 @@ const Payment = () => {
           "Abonimi u anulua me sukses. Do të keni qasje të plotë deri në fund të periudhës së faturimit.",
       )
     } catch (err) {
+      console.error("[Payments] Cancellation error:", err)
       setError("Dështoi anulimi i abonimit. Ju lutem kontaktoni mbështetjen.")
     }
   }
@@ -299,13 +314,27 @@ const Payment = () => {
       </div>
     )
 
+  // IMPROVED SUBSCRIPTION STATE CHECKS
   const subscriptionActive = subscriptionStatus?.active && subscriptionStatus?.type !== "free_trial"
   const isFreeTrial = subscriptionStatus?.type === "free_trial" && subscriptionStatus?.active
-  const isCancelled = subscriptionStatus?.cancelled && subscriptionStatus?.daysRemaining > 0
+  // FIX: Check if cancelled AND still active (has time remaining)
+  const isCancelled = subscriptionStatus?.cancelled && subscriptionStatus?.active
   const isExpired = !subscriptionStatus?.active
 
-  const shouldShowBuyButton = isExpired || isFreeTrial
+  // FIX: Show buy buttons if expired, free trial, OR cancelled (so they can renew)
+  const shouldShowBuyButton = isExpired || isFreeTrial || isCancelled
+  // Only show cancel button if active subscription that's NOT already cancelled
   const shouldShowCancelButton = subscriptionActive && !isCancelled
+
+  console.log("[Payments] Display state:", {
+    subscriptionActive,
+    isFreeTrial,
+    isCancelled,
+    isExpired,
+    shouldShowBuyButton,
+    shouldShowCancelButton,
+    subscriptionStatus,
+  })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50" style={{ fontFamily: 'Inter, sans-serif' }}>
@@ -339,6 +368,7 @@ const Payment = () => {
           </div>
         )}
 
+        {/* IMPROVED: Show cancelled banner when subscription is cancelled but still active */}
         {isCancelled && (
           <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-5 shadow-lg text-white mb-6 animate-slide-up">
             <div className="flex items-start gap-3">
@@ -362,6 +392,9 @@ const Payment = () => {
                     </p>
                   </div>
                 )}
+                <p className="text-orange-100 text-sm mt-3">
+                  💡 Mund të rinovosh abonimin tënd në çdo kohë duke zgjedhur një plan më poshtë.
+                </p>
               </div>
             </div>
           </div>
@@ -414,8 +447,15 @@ const Payment = () => {
         {shouldShowBuyButton && (
           <div className="mb-8">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>Zgjidh Planin Tënd</h2>
-              <p className="text-gray-600">Kliko në një plan për të filluar pagesen menjëherë</p>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                {isCancelled ? "Rinovo Abonimin Tënd" : "Zgjidh Planin Tënd"}
+              </h2>
+              <p className="text-gray-600">
+                {isCancelled 
+                  ? "Zgjidh një plan për të vazhduar me qasje të plotë pas përfundimit të periudhës aktuale"
+                  : "Kliko në një plan për të filluar pagesen menjëherë"
+                }
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -460,7 +500,7 @@ const Payment = () => {
                       </div>
                     ) : (
                       <div className="py-2 px-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg text-center font-semibold">
-                        💳 Kliko për të paguar
+                        💳 {isCancelled ? "Rinovo Tani" : "Kliko për të paguar"}
                       </div>
                     )}
                   </div>
