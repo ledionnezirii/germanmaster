@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { paymentService, subscriptionService, authService } from "../services/api"
 import { useAuth } from "../context/AuthContext"
-import "@paddle/paddle-js"
 
 const Payment = () => {
   const { updateUser } = useAuth()
@@ -90,6 +89,7 @@ const Payment = () => {
         
         window.Paddle.Initialize({
           token: PADDLE_CLIENT_TOKEN,
+          environment: "production",
           eventCallback: (data) => {
             console.log("[Payments] Paddle event:", data)
             if (data.type === "checkout.completed") {
@@ -126,9 +126,6 @@ const Payment = () => {
             }
           },
         })
-
-        // Set environment separately after initialization
-        window.Paddle.Environment.set("production")
 
         console.log("[Payments] Paddle initialized successfully")
         setPaddleInitialized(true)
