@@ -333,17 +333,30 @@ const handleTransactionCompleted = async (event) => {
     console.log("[v0] 💵 Transaction amount:", amount, currency)
     console.log("[v0] 🔗 Subscription ID:", subscriptionId)
 
-    // ============ CHECK IF SUBSCRIPTION WAS CANCELLED - Prevent renewal after scheduled cancellation ============
+    // ============ IMPROVED CANCELLATION CHECK ============
     if (subscriptionId) {
       const existingPayment = await Payment.findOne({
         paddleSubscriptionId: subscriptionId,
       }).sort({ createdAt: -1 })
 
       if (existingPayment && existingPayment.status === 'cancelled') {
-        console.log("[v0] ⚠️⚠️⚠️ Subscription was CANCELLED in Paddle - ignoring renewal transaction")
-        console.log("[v0] ⚠️ This transaction came AFTER the scheduled cancellation date")
-        console.log("[v0] ⚠️ User should not be charged again")
-        return
+        const now = new Date()
+        const expiresAt = new Date(existingPayment.expiresAt)
+        
+        console.log("[v0] 🔍 Found cancelled subscription payment record")
+        console.log("[v0] 🔍 Current time:", now.toISOString())
+        console.log("[v0] 🔍 Subscription expires at:", expiresAt.toISOString())
+        
+        // Only block renewal if cancellation period has ended
+        if (now >= expiresAt) {
+          console.log("[v0] ⚠️⚠️⚠️ Subscription was CANCELLED and period has ended - blocking renewal")
+          console.log("[v0] ⚠️ This transaction came AFTER the scheduled cancellation date")
+          console.log("[v0] ⚠️ User should not be charged again")
+          return
+        } else {
+          console.log("[v0] ℹ️ Subscription is cancelled but period hasn't ended yet")
+          console.log("[v0] ℹ️ This might be a payment before cancellation - processing normally")
+        }
       }
     }
     // ============ END OF CANCELLATION CHECK ============
@@ -493,7 +506,7 @@ const handleTransactionCompleted = async (event) => {
       duration: durationDays + " days",
     })
 
-    // ============ ALWAYS USE PADDLE'S EXACT TIMESTAMPS - THIS FIXES TIMEZONE ISSUES ============
+    // ============ ALWAYS USE PADDLE'S EXACT TIMESTAMPS ============
     let expiresAt
     let nextBillingDate
 
@@ -1028,47 +1041,57 @@ exports.cancelSubscription = async (req, res) => {
     console.log("[v0] ✅ Payment record found:", payment._id)
     console.log("[v0] 🔗 Paddle subscription ID:", payment.paddleSubscriptionId)
 
+    // ============ CALL PADDLE API TO SCHEDULE CANCELLATION ============
     if (payment.paddleSubscriptionId && paddleClient) {
       console.log("[v0] 📞 Calling Paddle API to schedule cancellation...")
       try {
-        // ============ SCHEDULED CANCELLATION - User keeps access until end of billing period ============
+        // Schedule cancellation - user keeps access until end of billing period
         await paddleClient.subscriptions.cancel(payment.paddleSubscriptionId, {
-          effectiveFrom: "next_billing_period",  // This schedules cancellation, doesn't cancel immediately
+          effectiveFrom: "next_billing_period",
         })
         console.log(`[v0] ✅ Paddle subscription SCHEDULED for cancellation: ${payment.paddleSubscriptionId}`)
         console.log(`[v0] ✅ User will keep access until: ${payment.expiresAt}`)
         console.log(`[v0] ✅ After that date, Paddle will NOT charge the user again`)
-        // ============ END OF SCHEDULED CANCELLATION ============
       } catch (paddleError) {
         console.error("[v0] ❌ Paddle API error:", paddleError)
         console.error("[v0] Error message:", paddleError.message)
         console.error("[v0] Error stack:", paddleError.stack)
+        
+        // Continue with local cancellation even if Paddle fails
+        console.log("[v0] ⚠️ Continuing with local cancellation despite Paddle API error")
       }
     } else {
       console.log("[v0] ⚠️ No Paddle subscription ID or Paddle client not available")
     }
+    // ============ END OF PADDLE API CALL ============
 
-    // DON'T update payment status to 'cancelled' yet - wait for Paddle webhook
-    // Just mark that cancellation was requested
-    console.log("[v0] 💾 Marking subscription as scheduled for cancellation...")
+    // ============ UPDATE PAYMENT RECORD - MARK AS CANCELLED ============
+    console.log("[v0] 💾 Updating payment record to 'cancelled' status...")
+    payment.status = 'cancelled'
+    payment.cancelledAt = new Date()
+    payment.scheduledCancellationDate = new Date(payment.expiresAt)
+    payment.cancelledBy = 'user'
     payment.webhookEvents.push({
       eventType: "cancellation_requested",
       eventId: `cancel_req_${Date.now()}`,
       receivedAt: new Date(),
-      data: { userId, requestedAt: new Date() },
+      data: { userId, requestedAt: new Date(), cancelledBy: 'user' },
     })
     await payment.save()
-    console.log("[v0] ✅ Cancellation request recorded")
+    console.log("[v0] ✅ Payment status updated to 'cancelled'")
+    console.log("[v0] ✅ Cancellation scheduled for:", payment.scheduledCancellationDate)
+    // ============ END OF PAYMENT UPDATE ============
 
+    // ============ UPDATE USER RECORD ============
     console.log("[v0] 🔍 Looking up user:", userId)
     const user = await User.findById(userId)
     if (user) {
       console.log("[v0] ✅ User found, marking subscription as scheduled for cancellation")
 
-      // Mark as cancelled but DON'T remove access
+      // Mark as cancelled but DON'T remove access yet
       user.subscriptionCancelled = true
       // Keep isPaid = true and isActive = true until expiration date
-      // Paddle will send webhook when subscription actually expires
+      // The webhook will handle removing access when the period actually ends
 
       await user.save()
 
@@ -1080,18 +1103,29 @@ exports.cancelSubscription = async (req, res) => {
       console.log("[v0] ✅ User KEEPS full access until:", user.subscriptionExpiresAt)
       console.log("[v0] ✅ Days remaining:", daysRemaining)
       console.log("[v0] ✅ After expiration, Paddle will NOT renew automatically")
+      
+      console.log("[v0] 📋 User final state:", {
+        isPaid: user.isPaid,
+        isActive: user.isActive,
+        subscriptionCancelled: user.subscriptionCancelled,
+        subscriptionExpiresAt: user.subscriptionExpiresAt,
+      })
     } else {
       console.error("[v0] ❌ User not found:", userId)
     }
+    // ============ END OF USER UPDATE ============
 
-    console.log("[v0] ✅✅✅ Subscription scheduled for cancellation - user keeps access until end of period")
+    console.log("[v0] ✅✅✅ Subscription cancellation completed successfully")
     res.status(200).json({
       success: true,
       message: "Abonimi u anulua me sukses. Do të vazhdosh të kesh qasje të plotë deri në fund të periudhës së faturimit. Nuk do të faturohesh përsëri.",
       data: {
         paddleSubscriptionId: payment.paddleSubscriptionId,
         expiresAt: user?.subscriptionExpiresAt,
+        scheduledCancellationDate: payment.scheduledCancellationDate,
         daysRemaining: user ? Math.max(0, Math.ceil((new Date(user.subscriptionExpiresAt) - new Date()) / (1000 * 60 * 60 * 24))) : 0,
+        status: 'cancelled',
+        keepAccessUntil: user?.subscriptionExpiresAt,
       },
     })
   } catch (error) {
@@ -1266,10 +1300,16 @@ const handleSubscriptionCancelled = async (event) => {
   }
 
   console.log("[v0] ✅ Payment record found:", payment._id)
+  console.log("[v0] 📋 Current payment status:", payment.status)
 
   // Mark payment as cancelled in our database to match Paddle's state
   payment.status = "cancelled"
-  payment.cancelledAt = new Date()
+  if (!payment.cancelledAt) {
+    payment.cancelledAt = new Date()
+  }
+  if (!payment.cancelledBy) {
+    payment.cancelledBy = 'paddle'
+  }
   payment.webhookEvents.push({
     eventType: event.event_type,
     eventId: event.event_id,
@@ -1288,28 +1328,27 @@ const handleSubscriptionCancelled = async (event) => {
     // Mark as cancelled in user record
     user.subscriptionCancelled = true
     
-    // Check if subscription has expired
+    // Check if subscription period has expired
     const now = new Date()
     const expiresAt = new Date(user.subscriptionExpiresAt)
     
     console.log("[v0] ⏰ Current time:", now.toISOString())
-    console.log("[v0] ⏰ Expires at:", expiresAt.toISOString())
+    console.log("[v0] ⏰ Subscription expires at:", expiresAt.toISOString())
     console.log("[v0] ⏰ Time difference (ms):", expiresAt - now)
     
-    // CRITICAL FIX: Use >= instead of <= to check if expired
-    // If now >= expiresAt, the subscription period has ended
+    // CRITICAL: Subscription is expired if current time >= expiration time
+    // This means: if now >= expiresAt, the subscription period has ended
     if (now >= expiresAt) {
       // Subscription period has ended - remove access
       const hoursOverdue = Math.floor((now - expiresAt) / (1000 * 60 * 60))
-      console.log("[v0] ⏰ Subscription period ENDED", hoursOverdue > 0 ? `${hoursOverdue} hours ago` : "just now", "- removing access")
+      console.log("[v0] ⏰ Subscription period has ENDED", hoursOverdue > 0 ? `${hoursOverdue} hours ago` : "just now", "- removing access")
       user.isPaid = false
       user.isActive = false
-      // Keep subscriptionType for records, but clear the active status
       console.log("[v0] ❌ Setting isPaid=false, isActive=false")
     } else {
       // Subscription still has time left - keep access
       const daysRemaining = Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24))
-      console.log("[v0] ⏰ Subscription still active for", daysRemaining, "more days - keeping access")
+      console.log("[v0] ⏰ Subscription still has", daysRemaining, "days remaining - keeping access")
       console.log("[v0] ✅ User keeps isPaid=true and isActive=true until", expiresAt.toISOString())
       // Don't change isPaid or isActive - user still has time left
     }
@@ -1328,4 +1367,3 @@ const handleSubscriptionCancelled = async (event) => {
 
   console.log(`[v0] ✅✅✅ Subscription cancellation processed from Paddle: ${data.id}`)
 }
-

@@ -26,11 +26,11 @@ const paymentSchema = new mongoose.Schema(
     productId: {
       type: String,
     },
-   subscriptionType: {
-  type: String,
-  enum: ["1_day", "1_month", "3_months", "1_year"],
-  required: true,
-},
+    subscriptionType: {
+      type: String,
+      enum: ["1_day", "1_month", "3_months", "1_year"],
+      required: true,
+    },
     status: {
       type: String,
       enum: ["active", "past_due", "paused", "cancelled", "trialing", "completed"],
@@ -46,7 +46,7 @@ const paymentSchema = new mongoose.Schema(
     },
     billingCycle: {
       type: String,
-      enum: ["monthly", "quarterly", "yearly","daily"],
+      enum: ["monthly", "quarterly", "yearly", "daily"],
       required: true,
     },
     nextBillingDate: Date,
@@ -56,6 +56,16 @@ const paymentSchema = new mongoose.Schema(
     expiresAt: {
       type: Date,
       required: true,
+    },
+    // NEW FIELDS FOR BETTER CANCELLATION TRACKING
+    cancelledBy: {
+      type: String,
+      enum: ['user', 'admin', 'paddle', 'payment_failed'],
+      // Only set when subscription is cancelled
+    },
+    scheduledCancellationDate: {
+      type: Date,
+      // When the cancellation will take effect (usually same as expiresAt)
     },
     webhookEvents: [
       {
@@ -73,11 +83,14 @@ const paymentSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
+// Indexes for performance
 paymentSchema.index({ userId: 1, status: 1 })
 paymentSchema.index(
   { paddleSubscriptionId: 1 },
   { unique: true, sparse: true }
 )
 paymentSchema.index({ expiresAt: 1 })
+paymentSchema.index({ status: 1 })
+paymentSchema.index({ scheduledCancellationDate: 1 })
 
 module.exports = mongoose.model("Payment", paymentSchema)
