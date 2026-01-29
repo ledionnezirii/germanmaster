@@ -120,16 +120,16 @@ const Challenge = () => {
 
     newSocket.on("connect", () => {
       setIsConnected(true);
-      console.log("Connected to server");
+      // console.log("Connected to server");
     });
 
     newSocket.on("disconnect", () => {
       setIsConnected(false);
-      console.log("Disconnected from server");
+      // console.log("Disconnected from server");
     });
 
     newSocket.on("connected", (data) => {
-      console.log("Server confirmation:", data.message);
+      // console.log("Server confirmation:", data.message);
     });
 
     newSocket.on("waitingForOpponent", (data) => {
@@ -200,14 +200,14 @@ const Challenge = () => {
     });
 
     newSocket.on("leftChallenge", (data) => {
-      console.log("Successfully left challenge:", data.message);
+      // console.log("Successfully left challenge:", data.message);
       setMessage(data.message);
       setIsJoiningChallenge(false);
       resetGameState();
     });
 
     newSocket.on("error", (data) => {
-      console.error("Socket error:", data.message);
+      // console.error("Socket error:", data.message);
       setMessage(`Error: ${data.message}`);
       setIsJoiningChallenge(false);
     });
@@ -274,11 +274,11 @@ const Challenge = () => {
 
   const addXpToProfile = async (xpAmount, reason) => {
     try {
-      console.log(`Adding ${xpAmount} XP for: ${reason}`);
+      // console.log(`Adding ${xpAmount} XP for: ${reason}`);
       await authService.addXp(xpAmount, reason);
       setUserXp((prev) => prev + xpAmount);
     } catch (error) {
-      console.error("Error adding XP:", error);
+      // console.error("Error adding XP:", error);
     }
   };
 
@@ -333,15 +333,15 @@ const Challenge = () => {
 
   const handleJoinChallenge = () => {
     if (!user || !socket || !isConnected) {
-      console.log("Cannot join challenge - missing requirements");
+      // console.log("Cannot join challenge - missing requirements");
       return;
     }
-    console.log(
-      "Joining challenge with username:",
-      user.name,
-      "gameType:",
-      gameType,
-    );
+    // console.log(
+      //   "Joining challenge with username:",
+      //   user.name,
+      //   "gameType:",
+      //   gameType,
+      // );
     setMessage("Connecting to challenge...");
     setIsJoiningChallenge(true);
     socket.emit("joinChallenge", {
@@ -353,15 +353,15 @@ const Challenge = () => {
 
   const handleLeaveChallenge = () => {
     if (!socket) {
-      console.log("No socket connection available");
+      // console.log("No socket connection available");
       return;
     }
-    console.log(
-      "Leaving challenge - current state:",
-      gameState,
-      "roomId:",
-      roomId,
-    );
+    // console.log(
+      //   "Leaving challenge - current state:",
+      //   gameState,
+      //   "roomId:",
+      //   roomId,
+      // );
     setMessage("Leaving challenge...");
     socket.emit("leaveChallenge");
   };
@@ -425,12 +425,12 @@ const Challenge = () => {
   };
 
   const handleNewChallenge = () => {
-    console.log("Starting new challenge");
+    // console.log("Starting new challenge");
     resetGameState();
   };
 
   const handleReturnHome = () => {
-    console.log("Returning to home");
+    // console.log("Returning to home");
     resetGameState();
   };
 

@@ -28,9 +28,9 @@ const Academy = () => {
         const user = JSON.parse(userStr)
         setUserRole(user.role || "user")
         setUserId(user._id || user.id)
-        console.log("User loaded:", { role: user.role, id: user._id })
+        // console.log("User loaded:", { role: user.role, id: user._id })
       } catch (e) {
-        console.error("Error parsing user:", e)
+        // console.error("Error parsing user:", e)
         setUserRole("user")
       }
     }
@@ -41,10 +41,10 @@ const Academy = () => {
     try {
       setLoading(true)
       const response = await academyService.getAllAcademies()
-      console.log("Academies response:", response)
+      // console.log("Academies response:", response)
       setAcademies(response.data || response || [])
     } catch (error) {
-      console.error("Error fetching academies:", error)
+      // console.error("Error fetching academies:", error)
       alert("Failed to fetch academies: " + (error.response?.data?.message || error.message))
     } finally {
       setLoading(false)
@@ -59,7 +59,7 @@ const Academy = () => {
       await fetchAcademies()
       alert("Academy created successfully!")
     } catch (error) {
-      console.error("Create academy error:", error)
+      // console.error("Create academy error:", error)
       alert(error.response?.data?.message || "Error creating academy")
     }
   }
@@ -72,7 +72,7 @@ const Academy = () => {
       await fetchAcademies()
       alert("Group created successfully!")
     } catch (error) {
-      console.error("Create group error:", error)
+      // console.error("Create group error:", error)
       alert(error.response?.data?.message || "Error creating group")
     }
   }
@@ -89,7 +89,7 @@ const Academy = () => {
       await fetchAcademies()
       alert("Invitation sent successfully! Share the invite link with the student.")
     } catch (error) {
-      console.error("Invite error:", error)
+      // console.error("Invite error:", error)
       alert(error.response?.data?.message || "Error sending invitation")
     }
   }
@@ -100,7 +100,7 @@ const Academy = () => {
       await fetchAcademies()
       alert("Joined group successfully!")
     } catch (error) {
-      console.error("Accept invitation error:", error)
+      // console.error("Accept invitation error:", error)
       alert(error.response?.data?.message || "Error joining group")
     }
   }
@@ -113,7 +113,7 @@ const Academy = () => {
       await fetchAcademies()
       alert("Task created successfully!")
     } catch (error) {
-      console.error("Create task error:", error)
+      // console.error("Create task error:", error)
       alert(error.response?.data?.message || "Error creating task")
     }
   }
@@ -124,7 +124,7 @@ const Academy = () => {
       await fetchAcademies()
       alert(response.message || "Task completed successfully!")
     } catch (error) {
-      console.error("Complete task error:", error)
+      // console.error("Complete task error:", error)
       alert(error.response?.data?.message || "Error completing task")
     }
   }
@@ -134,7 +134,7 @@ const Academy = () => {
       const response = await academyService.getGroupLeaderboard(selectedAcademy._id, selectedGroup._id)
       setLeaderboard(response.data || response || [])
     } catch (error) {
-      console.error("Error fetching leaderboard:", error)
+      // console.error("Error fetching leaderboard:", error)
     }
   }
 

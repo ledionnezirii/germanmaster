@@ -58,7 +58,6 @@ export const AuthProvider = ({ children }) => {
 
     return () => clearInterval(interval)
   }, [user, setUser])
-  // </CHANGE>
 
   useEffect(() => {
     const initAuth = async () => {

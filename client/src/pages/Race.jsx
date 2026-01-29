@@ -404,16 +404,16 @@ export default function RaceGame() {
     e.preventDefault()
     setLoading(true)
     try {
-      console.log("[v0] Looking up room with code:", roomCodeInput.toUpperCase())
+      // console.log("[v0] Looking up room with code:", roomCodeInput.toUpperCase())
       const response = await raceService.getRoomByCode(roomCodeInput.toUpperCase())
-      console.log("[v0] getRoomByCode response:", response)
+      // console.log("[v0] getRoomByCode response:", response)
 
       const roomData = response.data?.room || response.data
 
       if (roomData) {
-        console.log("[v0] Room found:", roomData)
-        console.log("[v0] Room MongoDB ID:", roomData._id)
-        console.log("[v0] Room status:", roomData.status)
+        // console.log("[v0] Room found:", roomData)
+        // console.log("[v0] Room MongoDB ID:", roomData._id)
+        // console.log("[v0] Room status:", roomData.status)
 
         // Check if room is still accepting players
         if (roomData.status !== "waiting") {
@@ -424,7 +424,7 @@ export default function RaceGame() {
 
         // Use MongoDB _id for joining, not the roomId (which is the room code)
         const joinResponse = await raceService.joinRoom(roomData._id)
-        console.log("[v0] Join room response:", joinResponse)
+        // console.log("[v0] Join room response:", joinResponse)
 
         if (socketRef.current) {
           socketRef.current.emit("joinRace", {
@@ -445,8 +445,8 @@ export default function RaceGame() {
         }
       }
     } catch (error) {
-      console.error("[v0] Failed to join room:", error)
-      console.error("[v0] Error response:", error.response?.data)
+      // console.error("[v0] Failed to join room:", error)
+      // console.error("[v0] Error response:", error.response?.data)
       const errorMsg = error.response?.data?.message || "Room not found or already started"
       alert(errorMsg)
     } finally {

@@ -16,29 +16,12 @@ const Payment = () => {
   const PADDLE_CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN
   
   const PRICES = {
-    daily: import.meta.env.VITE_PADDLE_PRICE_DAILY,
     monthly: import.meta.env.VITE_PADDLE_PRICE_MONTHLY,
     quarterly: import.meta.env.VITE_PADDLE_PRICE_QUARTERLY,
     yearly: import.meta.env.VITE_PADDLE_PRICE_YEARLY,
   }
 
-  console.log("[Payments] Environment variables loaded:")
-  console.log("- PADDLE_CLIENT_TOKEN:", PADDLE_CLIENT_TOKEN ? "✅ Present" : "❌ Missing")
-  console.log("- PRICES.daily:", PRICES.daily ? "✅ Present" : "❌ Missing")
-  console.log("- PRICES.monthly:", PRICES.monthly ? "✅ Present" : "❌ Missing")
-  console.log("- PRICES.quarterly:", PRICES.quarterly ? "✅ Present" : "❌ Missing")
-  console.log("- PRICES.yearly:", PRICES.yearly ? "✅ Present" : "❌ Missing")
-
   const PLANS = [
-    {
-      id: "daily",
-      name: "Ditor",
-      price: "€1.00",
-      period: "për ditë",
-      description: "Ideal për të provuar",
-      priceId: PRICES.daily,
-      popular: false,
-    },
     {
       id: "monthly",
       name: "Mujor",
@@ -85,12 +68,9 @@ const Payment = () => {
       }
 
       try {
-        console.log("[Payments] Initializing Paddle with token:", PADDLE_CLIENT_TOKEN.substring(0, 10) + "...")
-        
         window.Paddle.Initialize({
           token: PADDLE_CLIENT_TOKEN,
           eventCallback: (data) => {
-            console.log("[Payments] Paddle event:", data)
             if (data.type === "checkout.completed") {
               setTimeout(async () => {
                 try {
@@ -119,7 +99,6 @@ const Payment = () => {
               }, 2000)
             }
             if (data.type === "checkout.error") {
-              console.error("[Payments] Checkout error event:", data)
               setError(
                 "❌ Pagesa dështoi. Ju lutem provoni përsëri. NUK është tërhequr asnjë pagesë nga llogaria juaj.",
               )
@@ -127,13 +106,10 @@ const Payment = () => {
           },
         })
 
-        // Set environment separately after initialization
         window.Paddle.Environment.set("production")
 
-        console.log("[Payments] Paddle initialized successfully")
         setPaddleInitialized(true)
       } catch (err) {
-        console.error("[Payments] Paddle initialization error:", err)
         setError("Paddle initialization failed: " + err.message)
       }
     }
@@ -174,7 +150,6 @@ const Payment = () => {
           setUser(userData)
 
           const status = await subscriptionService.checkStatus()
-          console.log("[Payments] Initial subscription status:", status)
           setSubscriptionStatus(status)
         }
       } catch (err) {
@@ -236,9 +211,6 @@ const Payment = () => {
     }
 
     try {
-      console.log("[Payments] Opening checkout for priceId:", priceId)
-      
-      // FIX: Use proper Paddle.Checkout.open() structure
       window.Paddle.Checkout.open({
         settings: {
           displayMode: "overlay",
@@ -261,7 +233,6 @@ const Payment = () => {
       
       setProcessingPlan(null)
     } catch (err) {
-      console.error("[Payments] Checkout error:", err)
       setError("❌ Dështoi hapja e checkout: " + err.message + ". NUK është tërhequr asnjë pagesë. Ju lutem provoni përsëri.")
       setProcessingPlan(null)
     }
@@ -278,14 +249,10 @@ const Payment = () => {
     try {
       const response = await paymentService.cancelSubscription(user.id)
       
-      // Fetch fresh user data from backend to ensure state is synchronized
       const profileResponse = await authService.getProfile()
       const userData = profileResponse.data?.user || profileResponse.data
       
-      console.log("[Payments] User data after cancellation:", userData)
-      
       if (userData) {
-        // Update user context with fresh data
         updateUser({
           subscription: userData.subscription,
           subscriptionCancelled: true,
@@ -294,12 +261,9 @@ const Payment = () => {
           subscriptionExpiresAt: userData.subscriptionExpiresAt,
         })
         
-        // Refresh subscription status
         const status = await subscriptionService.checkStatus()
-        console.log("[Payments] Subscription status after cancellation:", status)
         setSubscriptionStatus(status)
         
-        // Update local user state
         setUser(userData)
       }
       
@@ -308,7 +272,6 @@ const Payment = () => {
           "Abonimi u anulua me sukses. Do të keni qasje të plotë deri në fund të periudhës së faturimit.",
       )
     } catch (err) {
-      console.error("[Payments] Cancellation error:", err)
       setError("Dështoi anulimi i abonimit. Ju lutem kontaktoni mbështetjen.")
     }
   }
@@ -320,33 +283,30 @@ const Payment = () => {
       </div>
     )
 
-  // IMPROVED SUBSCRIPTION STATE CHECKS
   const subscriptionActive = subscriptionStatus?.active && subscriptionStatus?.type !== "free_trial"
   const isFreeTrial = subscriptionStatus?.type === "free_trial" && subscriptionStatus?.active
-  // FIX: Check if cancelled AND still active (has time remaining)
   const isCancelled = subscriptionStatus?.cancelled && subscriptionStatus?.active
   const isExpired = !subscriptionStatus?.active
 
-  // FIX: Show buy buttons if expired, free trial, OR cancelled (so they can renew)
   const shouldShowBuyButton = isExpired || isFreeTrial || isCancelled
-  // Only show cancel button if active subscription that's NOT already cancelled
   const shouldShowCancelButton = subscriptionActive && !isCancelled
-
-  console.log("[Payments] Display state:", {
-    subscriptionActive,
-    isFreeTrial,
-    isCancelled,
-    isExpired,
-    shouldShowBuyButton,
-    shouldShowCancelButton,
-    subscriptionStatus,
-  })
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50" style={{ fontFamily: 'Inter, sans-serif' }}>
       <style>{`
-        @keyframes slide-up { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-slide-up { animation: slide-up 0.3s ease-out; }
+        @keyframes slide-up {
+          from { 
+            opacity: 0; 
+            transform: translateY(20px); 
+          }
+          to { 
+            opacity: 1; 
+            transform: translateY(0); 
+          }
+        }
+        .animate-slide-up { 
+          animation: slide-up 0.3s ease-out; 
+        }
       `}</style>
       
       <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white py-8 px-4 shadow-lg rounded-3xl">
@@ -374,7 +334,6 @@ const Payment = () => {
           </div>
         )}
 
-        {/* IMPROVED: Show cancelled banner when subscription is cancelled but still active */}
         {isCancelled && (
           <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-5 shadow-lg text-white mb-6 animate-slide-up">
             <div className="flex items-start gap-3">
@@ -452,6 +411,58 @@ const Payment = () => {
 
         {shouldShowBuyButton && (
           <div className="mb-8">
+            {/* IBAN Payment Notice */}
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-6 mb-8 shadow-md">
+              <div className="flex items-start gap-4">
+                <div className="bg-amber-100 rounded-full p-3 flex-shrink-0">
+                  <span className="text-3xl">🏦</span>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-amber-900 mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                    Pagesa me Transfer Bankar (IBAN)
+                  </h3>
+                  <p className="text-amber-800 mb-4">
+                    Aktualisht pranojmë vetëm pagesa me <strong>transfer bankar IBAN</strong>. 
+                    Pagesat online me kartë (Paddle) do të jenë të disponueshme së shpejti.
+                  </p>
+                  <div className="bg-white rounded-xl p-4 border border-amber-200">
+                    <h4 className="font-semibold text-gray-900 mb-3" style={{ fontFamily: 'Poppins, sans-serif' }}>
+                      📋 Detajet Bankare për Pagesë:
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                        <span className="text-gray-500 font-medium min-w-[120px]">Emri i Llogarisë:</span>
+                        <span className="text-gray-900 font-semibold">[Emri i Kompanisë]</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                        <span className="text-gray-500 font-medium min-w-[120px]">IBAN:</span>
+                        <span className="text-gray-900 font-mono font-semibold bg-gray-100 px-2 py-1 rounded">
+                          [IBAN Number Here]
+                        </span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                        <span className="text-gray-500 font-medium min-w-[120px]">BIC/SWIFT:</span>
+                        <span className="text-gray-900 font-mono font-semibold">[BIC Code]</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                        <span className="text-gray-500 font-medium min-w-[120px]">Banka:</span>
+                        <span className="text-gray-900 font-semibold">[Emri i Bankës]</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <p className="text-blue-800 text-sm">
+                        <strong>📝 Përshkrimi i Pagesës:</strong> Shkruani email-in tuaj ({user?.email || 'email juaj'}) në përshkrimin e transferit për të aktivizuar abonimin automatikisht gjithashtu duhet te dergohet nje screenshot e pagese tuaj.
+                        Per me shume Informacione na kontaktoni ne faqen tone ne instagram gjuhagjermanee 
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-amber-700 text-sm mt-4">
+                    💡 Pas kryerjes së transferit, abonimi juaj do të aktivizohet brenda 24 orëve pune.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
                 {isCancelled ? "Rinovo Abonimin Tënd" : "Zgjidh Planin Tënd"}
@@ -459,21 +470,17 @@ const Payment = () => {
               <p className="text-gray-600">
                 {isCancelled 
                   ? "Zgjidh një plan për të vazhduar me qasje të plotë pas përfundimit të periudhës aktuale"
-                  : "Kliko në një plan për të filluar pagesen menjëherë"
+                  : "Shiko çmimet më poshtë dhe kryeni pagesën me transfer bankar"
                 }
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {PLANS.map((plan) => (
-                <button
+                <div
                   key={plan.id}
-                  onClick={() => openCheckout(plan.priceId, plan.id)}
-                  disabled={!paddleInitialized || processingPlan === plan.id}
-                  className={`relative bg-white rounded-2xl shadow-lg overflow-hidden transition-all active:scale-95 text-left ${
-                    paddleInitialized && processingPlan !== plan.id
-                      ? "hover:shadow-2xl hover:-translate-y-1 cursor-pointer"
-                      : "opacity-75 cursor-not-allowed"
+                  className={`relative bg-white rounded-2xl shadow-lg overflow-hidden transition-all text-left ${
+                    plan.popular ? "ring-2 ring-red-500" : ""
                   }`}
                 >
                   {plan.popular && (
@@ -499,18 +506,11 @@ const Payment = () => {
                       <span className="text-gray-500 text-sm ml-1 block mt-1">{plan.period}</span>
                     </div>
 
-                    {processingPlan === plan.id ? (
-                      <div className="flex items-center justify-center gap-2 py-2 px-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span className="text-sm font-semibold">Duke hapur...</span>
-                      </div>
-                    ) : (
-                      <div className="py-2 px-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg text-center font-semibold">
-                        💳 {isCancelled ? "Rinovo Tani" : "Kliko për të paguar"}
-                      </div>
-                    )}
+                    <div className="py-2 px-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-lg text-center font-semibold">
+                      🏦 Paguaj me IBAN
+                    </div>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
 
@@ -519,7 +519,7 @@ const Payment = () => {
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-green-500 text-xl">✓</span>
-                  <span>Qasje MENJËHERË pas pagesës</span>
+                  <span>Qasje pas verifikimit të pagesës</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-green-500 text-xl">✓</span>
@@ -545,8 +545,8 @@ const Payment = () => {
             </div>
 
             <p className="text-center text-xs text-gray-500 mt-4">
-              🔒 Pagesë e sigurt me Paddle. Anulo në çdo kohë.
-              <br />⚡ <strong>Nuk paguani nëse transakti dështon.</strong>
+              🔒 Pagesë e sigurt me Transfer Bankar. Anulo në çdo kohë.
+              <br />⚡ <strong>Abonimi aktivizohet brenda 24-48 orëve pas transferit.</strong>
             </p>
           </div>
         )}

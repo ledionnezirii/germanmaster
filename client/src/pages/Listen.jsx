@@ -156,14 +156,14 @@ const Listen = () => {
       if (selectedLevel !== "all") {
         params.level = selectedLevel
       }
-      console.log("[v0] Fetching tests with params:", params)
+      // console.log("[v0] Fetching tests with params:", params)
       const response = await listenService.getAllTests(params)
-      console.log("[v0] Raw API response:", response)
-      console.log("Fetched tests:", response.data)
-      console.log("Total tests received:", response.data?.tests?.length || response.data?.length || 0)
+      // console.log("[v0] Raw API response:", response)
+      // console.log("Fetched tests:", response.data)
+      // console.log("Total tests received:", response.data?.tests?.length || response.data?.length || 0)
 
       if (response.data) {
-        console.log("[v0] Response data structure:", Object.keys(response.data))
+        // console.log("[v0] Response data structure:", Object.keys(response.data))
       }
 
       setTests(response.data.tests || response.data || [])
@@ -179,38 +179,38 @@ const Listen = () => {
     try {
       const response = await listenService.getUserProgress()
       const progressData = response.data
-      console.log("Full progress data from backend:", progressData)
+      // console.log("Full progress data from backend:", progressData)
       const completedTests = new Set()
       if (progressData.recentTests && Array.isArray(progressData.recentTests)) {
-        console.log("Recent tests:", progressData.recentTests)
+        // console.log("Recent tests:", progressData.recentTests)
         progressData.recentTests.forEach((test) => {
           completedTests.add(test._id)
         })
       }
       if (progressData.completedTestIds && Array.isArray(progressData.completedTestIds)) {
-        console.log("Completed test IDs:", progressData.completedTestIds)
+        // console.log("Completed test IDs:", progressData.completedTestIds)
         progressData.completedTestIds.forEach((testId) => {
           completedTests.add(testId)
         })
       }
       if (progressData.allCompletedTests && Array.isArray(progressData.allCompletedTests)) {
-        console.log("All completed tests:", progressData.allCompletedTests)
+        // console.log("All completed tests:", progressData.allCompletedTests)
         progressData.allCompletedTests.forEach((test) => {
           completedTests.add(test._id)
         })
       }
       if (progressData.completedFromTests && Array.isArray(progressData.completedFromTests)) {
-        console.log("Completed from tests:", progressData.completedFromTests)
+        // console.log("Completed from tests:", progressData.completedFromTests)
         progressData.completedFromTests.forEach((testId) => {
           completedTests.add(testId)
         })
       }
-      console.log("Final completed tests set:", Array.from(completedTests))
+      // console.log("Final completed tests set:", Array.from(completedTests))
       setTotalXp(progressData.xp || 0)
       setUserProgress({ completedTests })
     } catch (error) {
       console.error("Error fetching user progress:", error)
-      console.log("Setting empty completed tests due to error")
+      // console.log("Setting empty completed tests due to error")
       setUserProgress({ completedTests: new Set() })
     }
   }
@@ -224,10 +224,10 @@ const Listen = () => {
         const payload = JSON.parse(atob(token.split(".")[1]))
         userId = payload.userId || payload.id || payload.sub
       } catch (e) {
-        console.error("Could not decode token:", e)
+        // console.error("Could not decode token:", e)
         return
       }
-      console.log("Current user ID:", userId)
+      // console.log("Current user ID:", userId)
       const completedTests = new Set()
       tests.forEach((test) => {
         if (
@@ -239,7 +239,7 @@ const Listen = () => {
           completedTests.add(test._id)
         }
       })
-      console.log("Completed tests from test data:", Array.from(completedTests))
+      // console.log("Completed tests from test data:", Array.from(completedTests))
       if (completedTests.size > 0) {
         setUserProgress((prev) => ({
           ...prev,
@@ -268,12 +268,12 @@ const Listen = () => {
     try {
       setIsPlaying(true)
 
-      console.log("[TTS] Requesting audio for test:", selectedTest._id)
+      // console.log("[TTS] Requesting audio for test:", selectedTest._id)
 
       // Get the signed URL from GCS (no longer a blob)
       const audioUrl = await ttsService.getAudio(selectedTest._id, selectedTest.text, selectedTest.level)
 
-      console.log("[TTS] Audio URL received:", audioUrl)
+      // console.log("[TTS] Audio URL received:", audioUrl)
 
       if (!audioRef.current) {
         audioRef.current = new Audio()
@@ -283,19 +283,19 @@ const Listen = () => {
       audioRef.current.src = audioUrl
 
       audioRef.current.onended = () => {
-        console.log("[TTS] Audio playback ended")
+        // console.log("[TTS] Audio playback ended")
         setIsPlaying(false)
       }
 
       audioRef.current.onerror = (e) => {
-        console.error("[TTS] Audio element error:", e)
+        // console.error("[TTS] Audio element error:", e)
         setIsPlaying(false)
       }
 
       await audioRef.current.play()
-      console.log("[TTS] Audio playback started")
+      // console.log("[TTS] Audio playback started")
     } catch (error) {
-      console.error("[TTS] Error:", error)
+      // console.error("[TTS] Error:", error)
       setIsPlaying(false)
       alert("Gabim në luajtjen e audios. Provoni përsëri.")
     }
@@ -304,12 +304,12 @@ const Listen = () => {
     if (!userAnswer.trim()) return
     try {
       const response = await listenService.checkAnswer(selectedTest._id, userAnswer)
-      console.log("Check answer response:", response.data)
+      // console.log("Check answer response:", response.data)
       setResult(response.data)
       setShowResult(true)
 
       if (response.data.correct || response.data.score >= 80) {
-        console.log("Test completed successfully, updating local state")
+        // console.log("Test completed successfully, updating local state")
         const earnedXP = response.data.xpAwarded || 0
         setXpGained(earnedXP)
         setTotalXp((prev) => prev + earnedXP)
@@ -321,7 +321,7 @@ const Listen = () => {
           completedTests: new Set([...(prev.completedTests || []), selectedTest._id]),
         }))
         setTimeout(() => {
-          console.log("Refreshing progress data after completion")
+          // console.log("Refreshing progress data after completion")
           fetchUserProgress()
           fetchTests()
         }, 1000)

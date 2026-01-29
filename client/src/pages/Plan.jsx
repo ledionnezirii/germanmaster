@@ -231,12 +231,12 @@ export default function PlanPage() {
         setError(null)
 
         const xpResponse = await authService.getProfile()
-        console.log("[PlanPage] XP Response:", xpResponse)
+        // console.log("[PlanPage] XP Response:", xpResponse)
         const xpValue = xpResponse.data?.xp || xpResponse.xp || xpResponse.user?.xp || 0
         setUserXp(xpValue)
 
         const planResponse = await planService.getPlanByLevel(selectedLevel)
-        console.log("[PlanPage] Plan Response:", planResponse)
+        // console.log("[PlanPage] Plan Response:", planResponse)
         const planData = planResponse.data || planResponse
         setPlan(planData)
         setLockStatus(planData.lockStatus)
@@ -275,21 +275,21 @@ export default function PlanPage() {
 
   const handleConfirmStartWeek = async () => {
     const weekNumber = confirmDialog.weekNumber
-    console.log("[PlanPage] Starting week:", weekNumber, "for level:", selectedLevel)
+    // console.log("[PlanPage] Starting week:", weekNumber, "for level:", selectedLevel)
 
     try {
       setStartingWeek(true)
-      console.log("[PlanPage] Calling API to start week...")
+      // console.log("[PlanPage] Calling API to start week...")
 
       const response = await planService.startWeek(selectedLevel, weekNumber)
-      console.log("[PlanPage] Start week API response:", response)
+      // console.log("[PlanPage] Start week API response:", response)
 
       const responseData = response.data || response
       if (responseData && responseData.weekNumber) {
-        console.log("[PlanPage] Week started successfully, fetching updated plan...")
+        // console.log("[PlanPage] Week started successfully, fetching updated plan...")
 
         const planResponse = await planService.getPlanByLevel(selectedLevel)
-        console.log("[PlanPage] Updated plan response:", planResponse)
+        // console.log("[PlanPage] Updated plan response:", planResponse)
 
         const planData = planResponse.data || planResponse
         setPlan(planData)
@@ -298,15 +298,15 @@ export default function PlanPage() {
         setConfirmDialog({ isOpen: false, weekNumber: null })
 
         setTimeout(() => {
-          console.log("[PlanPage] Navigating to week:", weekNumber)
+          // console.log("[PlanPage] Navigating to week:", weekNumber)
           setSelectedWeek(weekNumber)
         }, 100)
       } else {
         throw new Error("Invalid response from server")
       }
     } catch (err) {
-      console.error("[PlanPage] Failed to start week:", err)
-      console.error("[PlanPage] Error response:", err.response?.data)
+      // console.error("[PlanPage] Failed to start week:", err)
+      // console.error("[PlanPage] Error response:", err.response?.data)
 
       if (err.response?.data?.message) {
         setError(err.response.data.message)
@@ -345,7 +345,7 @@ export default function PlanPage() {
 
     try {
       const response = await planService.markTopicAsCompleted(plan._id, topicId)
-      console.log("[PlanPage] Mark topic completed response:", response)
+      // console.log("[PlanPage] Mark topic completed response:", response)
 
       const responseData = response.data || response
       if (responseData && (responseData.success || responseData.data)) {
@@ -545,10 +545,10 @@ export default function PlanPage() {
 
   // Week Topics View
   if (selectedWeek) {
-    console.log("[PlanPage] Rendering week content for week:", selectedWeek)
+    // console.log("[PlanPage] Rendering week content for week:", selectedWeek)
     const currentWeek = plan.weeks.find((w) => w.weekNumber === selectedWeek)
 
-    console.log("[PlanPage] Current week data:", currentWeek)
+    // console.log("[PlanPage] Current week data:", currentWeek)
 
     if (!currentWeek) {
       return (

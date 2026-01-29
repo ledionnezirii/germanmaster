@@ -195,7 +195,7 @@ const Tests = () => {
     visibilityViolationRef.current = true
     isSubmittingRef.current = true
 
-    console.log("[Security] Violation detected:", violationType)
+    // console.log("[Security] Violation detected:", violationType)
     setSecurityViolation(violationType)
 
     try {
@@ -210,7 +210,7 @@ const Tests = () => {
         forceFailure: true,
       })
     } catch (error) {
-      console.error("[Security] Error submitting violation:", error)
+      // console.error("[Security] Error submitting violation:", error)
     }
 
     // Clear test state
@@ -237,14 +237,14 @@ const Tests = () => {
 
     const handleVisibilityChange = () => {
       if (document.hidden && testActiveRef.current && !visibilityViolationRef.current) {
-        console.log("[Security] Tab switched or window hidden - VIOLATION")
+        // console.log("[Security] Tab switched or window hidden - VIOLATION")
         handleSecurityViolation("tab_switch", selectedTest, userAnswers)
       }
     }
 
     const handleWindowBlur = () => {
       if (testActiveRef.current && !visibilityViolationRef.current) {
-        console.log("[Security] Window lost focus - VIOLATION")
+        // console.log("[Security] Window lost focus - VIOLATION")
         handleSecurityViolation("window_blur", selectedTest, userAnswers)
       }
     }
@@ -341,7 +341,7 @@ const Tests = () => {
 
       if (elapsed >= totalTime) {
         // Test expired while away - this is a violation (left the test)
-        console.log("[Security] Test was abandoned - time expired while away")
+        // console.log("[Security] Test was abandoned - time expired while away")
 
         const handleAbandonedTest = async () => {
           try {
@@ -358,7 +358,7 @@ const Tests = () => {
               forceFailure: true,
             })
           } catch (error) {
-            console.error("[Security] Error handling abandoned test:", error)
+            // console.error("[Security] Error handling abandoned test:", error)
           }
 
           clearTestState()
@@ -396,7 +396,7 @@ const Tests = () => {
             }, 100)
           }
         } catch (error) {
-          console.error("Error restoring test:", error)
+          // console.error("Error restoring test:", error)
           clearTestState()
         }
       }
@@ -472,7 +472,7 @@ const Tests = () => {
     }
 
     try {
-      console.log("[v0] Starting test submission...")
+      // console.log("[v0] Starting test submission...")
       const answersArray = Object.entries(answers).map(([questionId, answer]) => ({
         questionId,
         answer,
@@ -500,7 +500,7 @@ const Tests = () => {
         alert(response?.message || "Gabim në dorëzimin e testit")
       }
     } catch (error) {
-      console.log("[v0] Caught error:", error)
+      // console.log("[v0] Caught error:", error)
 
       if (error.response) {
         const status = error.response.status
