@@ -414,54 +414,29 @@ const Payment = () => {
             {/* IBAN Payment Notice */}
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-6 mb-8 shadow-md">
               <div className="flex items-start gap-4">
-                <div className="bg-amber-100 rounded-full p-3 flex-shrink-0">
-                  <span className="text-3xl">🏦</span>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-amber-900 mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                    Pagesa me Transfer Bankar (IBAN)
-                  </h3>
-                  <p className="text-amber-800 mb-4">
-                    Aktualisht pranojmë vetëm pagesa me <strong>transfer bankar IBAN</strong>. 
-                    Pagesat online me kartë (Paddle) do të jenë të disponueshme së shpejti.
-                  </p>
-                  <div className="bg-white rounded-xl p-4 border border-amber-200">
-                    <h4 className="font-semibold text-gray-900 mb-3" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                      📋 Detajet Bankare për Pagesë:
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
-                        <span className="text-gray-500 font-medium min-w-[120px]">Emri i Llogarisë:</span>
-                        <span className="text-gray-900 font-semibold">[Emri i Kompanisë]</span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
-                        <span className="text-gray-500 font-medium min-w-[120px]">IBAN:</span>
-                        <span className="text-gray-900 font-mono font-semibold bg-gray-100 px-2 py-1 rounded">
-                          [IBAN Number Here]
-                        </span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
-                        <span className="text-gray-500 font-medium min-w-[120px]">BIC/SWIFT:</span>
-                        <span className="text-gray-900 font-mono font-semibold">[BIC Code]</span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
-                        <span className="text-gray-500 font-medium min-w-[120px]">Banka:</span>
-                        <span className="text-gray-900 font-semibold">[Emri i Bankës]</span>
-                      </div>
-                    </div>
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-blue-800 text-sm">
-                        <strong>📝 Përshkrimi i Pagesës:</strong> Shkruani email-in tuaj ({user?.email || 'email juaj'}) në përshkrimin e transferit për të aktivizuar abonimin automatikisht gjithashtu duhet te dergohet nje screenshot e pagese tuaj.
-                        Per me shume Informacione na kontaktoni ne faqen tone ne instagram gjuhagjermanee 
-                      </p>
-                    </div>
+              
+                
+                   
+                   <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+  <p className="text-blue-800 text-sm leading-relaxed">
+    <strong>📝 Njoftim për Pagesat</strong>
+    <br />
+    Shumë shpejt do të integrojmë pagesat online përmes <strong>Paddle</strong>. 
+    Aktualisht jemi në fazën përfundimtare të integrimit, ndaj informacionet për pagesën nuk janë të disponueshme direkt në website.
+    <br /><br />
+    Për të marrë udhëzime rreth mënyrës së pagesës dhe për çdo informacion shtesë, 
+    ju lutemi na kontaktoni në Instagram:
+    <span className="ml-2 font-bold text-yellow-500">@gjuhagjermanee</span>
+  </p>
+</div>
+
                   </div>
                   <p className="text-amber-700 text-sm mt-4">
                     💡 Pas kryerjes së transferit, abonimi juaj do të aktivizohet brenda 24 orëve pune.
                   </p>
                 </div>
-              </div>
-            </div>
+           
+          
 
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
@@ -507,7 +482,7 @@ const Payment = () => {
                     </div>
 
                     <div className="py-2 px-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-lg text-center font-semibold">
-                      🏦 Paguaj me IBAN
+                      Se shpejti
                     </div>
                   </div>
                 </div>
@@ -546,7 +521,7 @@ const Payment = () => {
 
             <p className="text-center text-xs text-gray-500 mt-4">
               🔒 Pagesë e sigurt me Transfer Bankar. Anulo në çdo kohë.
-              <br />⚡ <strong>Abonimi aktivizohet brenda 24-48 orëve pas transferit.</strong>
+              <br />⚡ <strong>Abonimi aktivizohet brenda 24 orëve pas transferit.</strong>
             </p>
           </div>
         )}
