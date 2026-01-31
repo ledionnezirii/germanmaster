@@ -404,3 +404,82 @@ exports.getPronunciationAudio = async (req, res) => {
     return res.status(500).json({ error: "Failed to get/generate pronunciation audio" })
   }
 }
+
+exports.getStructureAudio = async (req, res) => {
+  try {
+    const { structureId, itemIndex } = req.params
+    const { text, level } = req.body
+
+    if (!structureId) {
+      return res.status(400).json({ error: "Structure ID is required" })
+    }
+
+    const audioId = `${structureId}_${itemIndex}`
+    const filePath = getAudioFilePath(audioId, level, "structures")
+
+    if (await audioExists(audioId, level, "structures")) {
+      console.log(`[TTS] Serving cached structure audio from GCS: ${filePath}`)
+      const url = await getSignedUrl(filePath)
+      return res.json({ url })
+    }
+
+    if (!text) {
+      return res.status(404).json({ error: "Audio not found and no text provided to generate" })
+    }
+
+    console.log(`[TTS] Generating new structure audio for: ${audioId}`)
+    await generateAudio(text, audioId, level, "structures")
+
+    const url = await getSignedUrl(filePath)
+    return res.json({ url })
+  } catch (error) {
+    console.error("[TTS] Structure controller error:", error)
+    return res.status(500).json({ error: "Failed to get/generate structure audio" })
+  }
+}
+
+exports.preGenerateStructureAudio = async (req, res) => {
+  try {
+    const { structureId, items, level } = req.body
+
+    if (!structureId || !items || !Array.isArray(items)) {
+      return res.status(400).json({ error: "Structure ID and items array are required" })
+    }
+
+    const results = []
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      const audioId = `${structureId}_${i}`
+      // Use the German word for TTS
+      const textToSpeak = item.german || item.word || item.text
+
+      if (!textToSpeak) {
+        results.push({ index: i, status: "skipped", audioId, reason: "No German text found" })
+        continue
+      }
+
+      if (await audioExists(audioId, level, "structures")) {
+        results.push({ index: i, status: "exists", audioId, word: textToSpeak })
+      } else {
+        try {
+          await generateAudio(textToSpeak, audioId, level, "structures")
+          results.push({ index: i, status: "generated", audioId, word: textToSpeak })
+        } catch (error) {
+          results.push({ index: i, status: "error", audioId, word: textToSpeak, error: error.message })
+        }
+      }
+    }
+
+    return res.json({
+      message: "Structure audio processing complete",
+      structureId,
+      level,
+      totalItems: items.length,
+      results,
+    })
+  } catch (error) {
+    console.error("[TTS] Pre-generate structure error:", error)
+    return res.status(500).json({ error: "Failed to pre-generate structure audio" })
+  }
+}

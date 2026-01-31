@@ -174,6 +174,10 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    completedStructures: [{
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'Structure'
+}],
     practiceCompleted: [
       {
         practiceId: {

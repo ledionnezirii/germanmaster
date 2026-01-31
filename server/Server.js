@@ -53,7 +53,7 @@ const dialoguesRoutes = require("./routes/dialogueRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const sentenceRoutes = require("./routes/sentenceRoutes");
-
+const structureRoutes = require("./routes/structureRoutes")
 
 const { errorHandler, notFound } = require("./middleware/errorMiddleware");
 const { requestLogger } = require("./middleware/loggerMiddleware");
@@ -310,6 +310,7 @@ app.use("/api/dialogue", dialoguesRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/sentences", sentenceRoutes);
+app.use("/api/structures",structureRoutes)
 
 
 app.use(notFound);

@@ -26,5 +26,14 @@ router.post('/pre-generate', protect, ttsController.preGenerateAudio);
 router.post('/category/pre-generate', ttsController.preGenerateCategoryAudio);
 router.post('/pronunciation/:wordId', protect, ttsController.getPronunciationAudio);
 
+// Structure audio - NEW
+router.post('/structure/:structureId/:itemIndex', protect, ttsController.getStructureAudio);
+router.post('/structure/pre-generate', protect, ttsController.preGenerateStructureAudio);
+
+// Check if audio exists (generic)
+router.get('/check/:id', protect, ttsController.checkAudio);
+
+// Pre-generate audio (admin)
+router.post('/pre-generate', protect, ttsController.preGenerateAudio);
 
 module.exports = router;
