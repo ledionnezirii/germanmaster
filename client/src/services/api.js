@@ -481,7 +481,20 @@ export const ttsService = {
     api
       .post(`/tts/dialogue/${dialogueId}/${lineIndex}`, { text, level })
       .then((res) => res.data.url),
+      
+  
+  getStructureAudio: (structureId, itemIndex, text, level) =>
+    api
+      .post(`/tts/structure/${structureId}/${itemIndex}`, { text, level })
+      .then((res) => res.data.url),
 
+  // Pre-generate structure audio (admin)
+  preGenerateStructureAudio: (structureId, items, level) =>
+    api.post("/tts/structure/pre-generate", {
+      structureId,
+      items,
+      level,
+    }),
   getCategoryAudio: (categoryId, wordIndex, text, level) =>
     api
       .post(`/tts/category/${categoryId}/${wordIndex}`, { text, level })
@@ -825,5 +838,33 @@ export const sentenceService = {
   deleteSentence: (id) => api.delete(`/sentences/${id}`),
 };
 
+
+
+export const structureService = {
+  getAllStructures: async (level = null, type = null) => {
+    const params = {};
+    if (level) params.level = level;
+    if (type) params.type = type;
+    return api.get('/structures', { params });
+  },
+  getStructureById: async (id) => {
+    return api.get(`/structures/${id}`);
+  },
+  createStructure: async (data) => {
+    return api.post('/structures', data);
+  },
+  updateStructure: async (id, data) => {
+    return api.put(`/structures/${id}`, data);
+  },
+  deleteStructure: async (id) => {
+    return api.delete(`/structures/${id}`);
+  },
+  submitQuiz: async (structureId, score) => {
+    return api.post('/structures/quiz/submit', { structureId, score });
+  },
+  getUserProgress: async () => {
+    return api.get('/structures/progress/me');
+  },
+};
 
 export default api;

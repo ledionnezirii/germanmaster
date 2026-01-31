@@ -29,6 +29,8 @@ import {
   BookAlertIcon,
   BookHeartIcon,
   UserRoundPen,
+  Infinity,
+  Star,
 } from "lucide-react"
 import { MicrophoneIcon } from "@heroicons/react/24/outline"
 
@@ -67,6 +69,7 @@ const Sidebar = () => {
     { icon: BookUser, label: "Fjalori", path: "/dictionary" },
     { icon: InfinityIcon, label: "Baza Gjuhësore", path: "/category" },
 
+    { icon: Star, label: "Strukturat e gjuhes", path: "/structure" },
 
     /*{
       icon: FileTerminal,
