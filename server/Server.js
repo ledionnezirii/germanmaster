@@ -65,23 +65,20 @@ const server = createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin:
-      process.env.NODE_ENV === "production"
-        ? process.env.FRONTEND_URL
-        : [
-            "http://localhost:3000",
-            "http://localhost:3001",
-            "http://localhost:5173",
-            "http://192.168.1.48:3000",
-            "http://192.168.1.48:3001",
-            "http://192.168.1.48:5173",
-            "https://gjuhagjermane.com",
-          ],
+    origin: [
+      "https://gjuhagjermane.com",
+      "https://www.gjuhagjermane.com",
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:5173",
+    ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   },
   transports: ["websocket", "polling"],
 });
+
+
 
 io.use(async (socket, next) => {
   try {
@@ -219,18 +216,13 @@ app.use(compression());
 
 app.use(
   cors({
-    origin:
-      process.env.NODE_ENV === "production"
-        ? process.env.FRONTEND_URL
-        : [
-            "http://localhost:3000",
-            "http://localhost:3001",
-            "http://localhost:5173",
-            "http://192.168.1.48:3000",
-            "http://192.168.1.48:3001",
-            "http://192.168.1.48:5173",
-            "https://gjuhagjermane.com",
-          ],
+    origin: [
+      "https://gjuhagjermane.com",
+      "https://www.gjuhagjermane.com",
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:5173",
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "paddle-signature"],
