@@ -1,28 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { structureService, ttsService } from '../services/api';
-import { useAuth } from '../context/AuthContext';
-import { BookOpen, Trophy, Award, ChevronLeft, ChevronRight, CheckCircle, XCircle, Edit3, List, Volume2, Loader2 } from 'lucide-react';
+'use client';
 
-const Structure = () => {
+import React, { useState, useEffect } from "react";
+import { BookOpen, Trophy, Award, ChevronLeft, ChevronRight, Check, X, Edit3, List, Volume2, Loader2, Star, Zap, LogOut } from "lucide-react";
+import { structureService, ttsService } from "../services/api";
+import { useAuth } from "../context/AuthContext";
+
+export default function StructurePage() {
   const { user, updateUser } = useAuth();
-  const [selectedLevel, setSelectedLevel] = useState('A1');
+  const [selectedLevel, setSelectedLevel] = useState('all');
   const [structures, setStructures] = useState([]);
   const [selectedStructure, setSelectedStructure] = useState(null);
   const [completedStructures, setCompletedStructures] = useState([]);
   const [showQuiz, setShowQuiz] = useState(false);
-  const [quizMode, setQuizMode] = useState('write'); // 'write' or 'options'
-  const [quizAnswers, setQuizAnswers] = useState({});
-  const [quizResult, setQuizResult] = useState(null);
+  const [quizMode, setQuizMode] = useState('write');
   const [loading, setLoading] = useState(false);
-  const [playingAudio, setPlayingAudio] = useState(null);
-  
-  // Pagination states
-  const [currentStructurePage, setCurrentStructurePage] = useState(1);
-  const [currentItemPage, setCurrentItemPage] = useState(1);
-  const structuresPerPage = 40;
-  const itemsPerPage = 40;
 
-  const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+  const levels = ['all', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
   useEffect(() => {
     fetchStructures();
@@ -33,10 +26,10 @@ const Structure = () => {
     try {
       setLoading(true);
       const response = await structureService.getAllStructures(selectedLevel);
-      setStructures(response.data);
-      setCurrentStructurePage(1);
+      setStructures(Array.isArray(response.data) ? response.data : []);
     } catch (error) {
       console.error('Error fetching structures:', error);
+      setStructures([]);
     } finally {
       setLoading(false);
     }
@@ -45,36 +38,225 @@ const Structure = () => {
   const fetchUserProgress = async () => {
     try {
       const response = await structureService.getUserProgress();
-      setCompletedStructures(response.data.completedStructures.map(s => s._id || s));
+      const completed = response.data.completedStructures || [];
+      setCompletedStructures(completed.map(s => s._id || s));
     } catch (error) {
       console.error('Error fetching progress:', error);
     }
   };
 
-  const handleBoxClick = async (structure) => {
-    setSelectedStructure(structure);
-    setShowQuiz(false);
-    setQuizResult(null);
-    setQuizAnswers({});
-    setCurrentItemPage(1);
+  const getLevelColor = (level) => {
+    switch (level) {
+      case "A1": return "bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 border-emerald-200";
+      case "A2": return "bg-gradient-to-br from-blue-50 to-cyan-50 text-blue-600 border-blue-200";
+      case "B1": return "bg-gradient-to-br from-violet-50 to-purple-50 text-violet-600 border-violet-200";
+      case "B2": return "bg-gradient-to-br from-amber-50 to-orange-50 text-amber-600 border-amber-200";
+      case "C1": return "bg-gradient-to-br from-rose-50 to-pink-50 text-rose-600 border-rose-200";
+      case "C2": return "bg-gradient-to-br from-indigo-50 to-blue-50 text-indigo-600 border-indigo-200";
+      default: return "bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 border-emerald-200";
+    }
   };
+
+  const typeIcons = {
+    verbs: '📝', sentences: '💬', nouns: '📦', adjectives: '🎨', phrases: '💡', grammar: '📚'
+  };
+
+  const isCompleted = (structureId) => completedStructures.includes(structureId);
 
   const handleStartQuiz = (mode) => {
     setQuizMode(mode);
     setShowQuiz(true);
-    setQuizAnswers({});
-    setQuizResult(null);
   };
 
-  const playAudio = async (structureId, itemIndex, germanWord, level) => {
+  // Quiz View
+  if (selectedStructure && showQuiz) {
+    return (
+      <StructureQuiz
+        structure={selectedStructure}
+        quizMode={quizMode}
+        onBack={() => setShowQuiz(false)}
+        onComplete={(result) => {
+          if (result?.completed) {
+            fetchUserProgress();
+            if (result.xpAwarded > 0) {
+              updateUser({ xp: (user?.xp || 0) + result.xpAwarded });
+            }
+          }
+          setShowQuiz(false);
+        }}
+        isCompleted={isCompleted(selectedStructure._id)}
+      />
+    );
+  }
+
+  // Detail View
+  if (selectedStructure) {
+    return (
+      <StructureDetail
+        structure={selectedStructure}
+        typeIcons={typeIcons}
+        isCompleted={isCompleted(selectedStructure._id)}
+        onBack={() => setSelectedStructure(null)}
+        onStartQuiz={handleStartQuiz}
+      />
+    );
+  }
+
+  // List View
+  return (
+    <div className="min-h-screen p-4 flex flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="max-w-6xl mx-auto w-full">
+        {/* Header */}
+        <header className="mb-4 flex-shrink-0">
+          <div className="bg-white rounded-2xl shadow-xl border border-indigo-100 p-6 overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full transform translate-x-16 -translate-y-16 opacity-50" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-purple-100 to-indigo-100 rounded-full transform -translate-x-8 translate-y-8 opacity-50" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2.5 rounded-xl shadow-lg">
+                    <BookOpen className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-900">Struktura e Gjuhës</h1>
+                    <p className="text-gray-600 text-sm">Mëso gjermanishten hap pas hapi</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200">
+                    <Trophy className="w-4 h-4 text-amber-600" />
+                    <span className="font-bold text-amber-700 text-sm">{user?.xp || 0} XP</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 bg-green-50 px-3 py-1.5 rounded-full border border-green-200">
+                    <Award className="w-4 h-4 text-green-600" />
+                    <span className="font-semibold text-green-700 text-sm">{completedStructures.length}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Level Filter */}
+        <div className="bg-white border border-indigo-100 p-4 rounded-2xl mb-4 shadow-lg flex-shrink-0">
+          <div className="flex items-center gap-2 mb-3">
+            <h2 className="text-sm font-semibold text-gray-800">Filtro sipas Nivelit</h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {levels.map((level) => (
+              <button
+                key={level}
+                onClick={() => setSelectedLevel(level)}
+                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border shadow-sm hover:shadow-md hover:scale-105 active:scale-95 ${
+                  selectedLevel === level
+                    ? level === "all"
+                      ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-indigo-500 shadow-indigo-500/30"
+                      : getLevelColor(level) + " border-2"
+                    : "bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200"
+                }`}
+              >
+                {level === "all" ? "Të gjitha" : level}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Structure List */}
+        {loading ? (
+          <div className="flex items-center justify-center min-h-[200px]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+          </div>
+        ) : structures.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">📚</div>
+            <p className="text-lg text-gray-600">Asnjë temë nuk është e disponueshme</p>
+            <p className="text-sm mt-2 text-gray-400">Kontrollo më vonë për tema të reja</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {structures.map((structure) => {
+              const isFinished = isCompleted(structure._id);
+              return (
+                <div
+                  key={structure._id}
+                  onClick={() => setSelectedStructure(structure)}
+                  className={`p-4 rounded-2xl shadow-lg border-2 transition-all duration-200 cursor-pointer overflow-hidden relative group h-fit hover:-translate-y-1 ${
+                    isFinished
+                      ? "bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 border-green-300 hover:border-green-400"
+                      : "bg-white border-gray-100 hover:border-indigo-300"
+                  }`}
+                >
+                  <div className={`absolute top-3 right-3 ${getLevelColor(structure.level)} px-2 py-1 rounded-lg text-xs font-bold shadow-sm border`}>
+                    {structure.level}
+                  </div>
+                  
+                  {isFinished && (
+                    <div className="absolute top-3 left-3 bg-green-500 text-white rounded-full p-1">
+                      <Check className="w-3 h-3" />
+                    </div>
+                  )}
+
+                  <div className="relative z-10">
+                    <div className="text-3xl mb-2">{typeIcons[structure.type] || '📖'}</div>
+                    <span className="inline-block px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold mb-1">
+                      {structure.type?.toUpperCase()}
+                    </span>
+                    <h3 className={`text-sm font-bold mb-1 pr-10 truncate ${
+                      isFinished ? "text-green-700 group-hover:text-green-800" : "text-gray-800 group-hover:text-indigo-700"
+                    }`}>
+                      {structure.title}
+                    </h3>
+                    {structure.description && (
+                      <p className="text-xs text-gray-500 truncate">{structure.description}</p>
+                    )}
+                    <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
+                      <span className={`text-xs font-medium ${isFinished ? "text-green-500" : "text-gray-400"}`}>
+                        {structure.items?.length || 0} artikuj
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 px-2 py-1 rounded-full font-bold flex items-center gap-1 shadow-sm border border-indigo-200">
+                          <Star className="h-3 w-3" />
+                          {structure.xp}
+                        </span>
+                        <span className={`text-xs px-2 py-1 rounded-full font-semibold shadow-sm ${
+                          isFinished
+                            ? "bg-gradient-to-r from-green-400 to-emerald-400 text-white"
+                            : "bg-gradient-to-r from-indigo-500 to-purple-500 text-white"
+                        }`}>
+                          {isFinished ? "✓" : "Fillo"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Structure Detail Component
+function StructureDetail({ structure, typeIcons, isCompleted, onBack, onStartQuiz }) {
+  const [playingAudio, setPlayingAudio] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
+
+  const items = structure.items || [];
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = items.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(items.length / itemsPerPage);
+
+  const playAudio = async (itemIndex, germanWord) => {
     try {
-      setPlayingAudio(`${itemIndex}`);
-      const audioUrl = await ttsService.getStructureAudio(structureId, itemIndex, germanWord, level);
+      setPlayingAudio(itemIndex);
+      const audioUrl = await ttsService.getStructureAudio(structure._id, itemIndex, germanWord, structure.level);
       const audio = new Audio(audioUrl);
-      
       audio.onended = () => setPlayingAudio(null);
       audio.onerror = () => setPlayingAudio(null);
-      
       await audio.play();
     } catch (error) {
       console.error('Error playing audio:', error);
@@ -82,466 +264,456 @@ const Structure = () => {
     }
   };
 
-  const generateQuizOptions = (correctAnswer, allItems) => {
-    const options = [correctAnswer];
-    const otherItems = allItems.filter(item => item.german !== correctAnswer);
-    
-    while (options.length < 4 && otherItems.length > 0) {
-      const randomIndex = Math.floor(Math.random() * otherItems.length);
-      const randomOption = otherItems[randomIndex].german;
-      if (!options.includes(randomOption)) {
-        options.push(randomOption);
-      }
-      otherItems.splice(randomIndex, 1);
-    }
-    
-    return options.sort(() => Math.random() - 0.5);
-  };
+  return (
+    <div className="min-h-screen p-4 flex flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="max-w-6xl mx-auto w-full">
+        {/* Header */}
+        <header className="mb-4 flex-shrink-0">
+          <div className="bg-white rounded-2xl shadow-xl border border-indigo-100 p-6 overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full transform translate-x-16 -translate-y-16 opacity-50" />
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-purple-100 to-indigo-100 rounded-full transform -translate-x-8 translate-y-8 opacity-50" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <button onClick={onBack} className="p-2 hover:bg-indigo-50 rounded-lg transition-colors">
+                    <ChevronLeft className="w-5 h-5 text-indigo-600" />
+                  </button>
+                  <div className="text-3xl">{typeIcons[structure.type] || '📖'}</div>
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-900">{structure.title}</h1>
+                    {structure.description && <p className="text-gray-600 text-sm">{structure.description}</p>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-bold">
+                    {structure.level}
+                  </span>
+                  <span className="text-sm bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 px-3 py-1 rounded-full font-bold flex items-center gap-1 border border-indigo-200">
+                    <Star className="h-4 w-4" />
+                    +{structure.xp} XP
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
 
-  const handleQuizAnswer = (index, answer) => {
-    setQuizAnswers(prev => ({
-      ...prev,
-      [index]: answer
-    }));
-  };
+        {/* Quiz Buttons */}
+        <div className="bg-white border border-indigo-100 p-4 rounded-2xl mb-4 shadow-lg">
+          {isCompleted && (
+            <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-3 flex items-center gap-2">
+              <Check className="w-4 h-4 text-green-600" />
+              <span className="text-green-700 text-sm font-medium">Kjo temë është përfunduar! Mund ta riprovosh kuizin.</span>
+            </div>
+          )}
+          <div className="flex gap-3">
+            <button
+              onClick={() => onStartQuiz('write')}
+              className="flex-1 py-2.5 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl font-semibold text-sm hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+            >
+              <Edit3 className="w-4 h-4" />
+              {isCompleted ? 'Riprovo - Shkruaj' : 'Kuiz - Shkruaj'}
+            </button>
+            <button
+              onClick={() => onStartQuiz('options')}
+              className="flex-1 py-2.5 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl font-semibold text-sm hover:from-purple-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+            >
+              <List className="w-4 h-4" />
+              {isCompleted ? 'Riprovo - Zgjedh' : 'Kuiz - Zgjedh'}
+            </button>
+          </div>
+        </div>
 
-  const handleSubmitQuiz = async () => {
-    if (!selectedStructure) return;
+        {/* Content */}
+        <div className="bg-white border border-indigo-100 p-4 rounded-2xl shadow-lg">
+          <h3 className="text-sm font-bold text-gray-900 mb-4">Përmbajtja ({items.length} artikuj)</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {currentItems.map((item, index) => {
+              const actualIndex = indexOfFirstItem + index;
+              return (
+                <div key={actualIndex} className="bg-gradient-to-br from-gray-50 to-indigo-50 rounded-xl p-3 border border-gray-200 hover:shadow-md transition-all">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex-1">
+                      <div className="text-xs font-semibold text-indigo-600 mb-0.5">GJERMANISHT</div>
+                      <p className="text-sm font-bold text-gray-900">{item.german}</p>
+                    </div>
+                    <button
+                      onClick={() => playAudio(actualIndex, item.german)}
+                      disabled={playingAudio === actualIndex}
+                      className="p-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 transition-colors disabled:opacity-50"
+                    >
+                      {playingAudio === actualIndex ? (
+                        <Loader2 className="w-3.5 h-3.5 text-indigo-600 animate-spin" />
+                      ) : (
+                        <Volume2 className="w-3.5 h-3.5 text-indigo-600" />
+                      )}
+                    </button>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500 mb-0.5">SHQIP</div>
+                    <p className="text-sm font-semibold text-gray-700">{item.albanian}</p>
+                  </div>
+                  {item.example && (
+                    <p className="text-xs text-gray-500 italic mt-2 pt-2 border-t border-gray-200">{item.example}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
 
-    let correct = 0;
-    selectedStructure.items.forEach((item, index) => {
-      const userAnswer = quizAnswers[index]?.toLowerCase().trim();
-      const correctAnswer = item.german.toLowerCase().trim();
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-indigo-100 text-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-sm text-gray-600">{currentPage} / {totalPages}</span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors bg-indigo-100 text-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Quiz Component - One question at a time with auto-advance
+function StructureQuiz({ structure, quizMode, onBack, onComplete, isCompleted }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [results, setResults] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showXpAnimation, setShowXpAnimation] = useState(false);
+  const [xpGained, setXpGained] = useState(0);
+  const [shuffledOptions, setShuffledOptions] = useState([]);
+
+  const items = structure.items || [];
+  const totalQuestions = items.length;
+  const currentItem = items[currentIndex];
+
+  // Generate options for current question
+  useEffect(() => {
+    if (quizMode === 'options' && currentItem) {
+      const correctAnswer = currentItem.german;
+      const options = [correctAnswer];
+      const otherItems = items.filter(item => item.german !== correctAnswer);
       
-      if (userAnswer === correctAnswer) {
-        correct++;
+      while (options.length < 4 && otherItems.length > 0) {
+        const randomIndex = Math.floor(Math.random() * otherItems.length);
+        const randomOption = otherItems[randomIndex].german;
+        if (!options.includes(randomOption)) {
+          options.push(randomOption);
+        }
+        otherItems.splice(randomIndex, 1);
       }
+      
+      setShuffledOptions(options.sort(() => Math.random() - 0.5));
+    }
+  }, [currentIndex, quizMode, currentItem, items]);
+
+  const handleAnswer = (answer) => {
+    const newAnswers = { ...answers, [currentIndex]: answer };
+    setAnswers(newAnswers);
+    
+    // Auto-advance to next question
+    setTimeout(() => {
+      if (currentIndex < totalQuestions - 1) {
+        setCurrentIndex(currentIndex + 1);
+      } else {
+        handleSubmit(newAnswers);
+      }
+    }, 300);
+  };
+
+  const handleWriteSubmit = () => {
+    if (!answers[currentIndex]) return;
+    
+    if (currentIndex < totalQuestions - 1) {
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      handleSubmit(answers);
+    }
+  };
+
+  const handleSubmit = async (finalAnswers) => {
+    setIsSubmitting(true);
+    
+    let correct = 0;
+    const detailedResults = items.map((item, index) => {
+      const userAnswer = (finalAnswers[index] || '').toLowerCase().trim();
+      const correctAnswer = item.german.toLowerCase().trim();
+      const isCorrect = userAnswer === correctAnswer;
+      if (isCorrect) correct++;
+      
+      return {
+        question: item.albanian,
+        userAnswer: finalAnswers[index] || '',
+        correctAnswer: item.german,
+        isCorrect
+      };
     });
 
-    const score = Math.round((correct / selectedStructure.items.length) * 100);
+    const score = Math.round((correct / totalQuestions) * 100);
 
     try {
-      const response = await structureService.submitQuiz(selectedStructure._id, score);
-      setQuizResult(response.data);
+      const response = await structureService.submitQuiz(structure._id, score);
+      const result = {
+        ...response.data,
+        correctCount: correct,
+        accuracy: score,
+        results: detailedResults
+      };
+      setResults(result);
 
-      if (response.data.success && response.data.completed) {
-        updateUser({ xp: response.data.totalXp });
-        fetchUserProgress();
+      if (result.completed && result.xpAwarded > 0) {
+        setXpGained(result.xpAwarded);
+        setShowXpAnimation(true);
+        setTimeout(() => setShowXpAnimation(false), 3000);
       }
     } catch (error) {
       console.error('Error submitting quiz:', error);
+      // Show results even if API fails
+      setResults({
+        correctCount: correct,
+        accuracy: score,
+        results: detailedResults,
+        completed: score >= 70,
+        xpAwarded: 0
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const isCompleted = (structureId) => {
-    return completedStructures.includes(structureId);
+  const handleRetry = () => {
+    setCurrentIndex(0);
+    setAnswers({});
+    setResults(null);
   };
 
-  // Pagination logic for structures
-  const indexOfLastStructure = currentStructurePage * structuresPerPage;
-  const indexOfFirstStructure = indexOfLastStructure - structuresPerPage;
-  const currentStructures = structures.slice(indexOfFirstStructure, indexOfLastStructure);
-  const totalStructurePages = Math.ceil(structures.length / structuresPerPage);
+  // Results View
+  if (results) {
+    const incorrectCount = totalQuestions - results.correctCount;
 
-  // Pagination logic for items
-  const indexOfLastItem = currentItemPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = selectedStructure ? selectedStructure.items.slice(indexOfFirstItem, indexOfLastItem) : [];
-  const totalItemPages = selectedStructure ? Math.ceil(selectedStructure.items.length / itemsPerPage) : 0;
-
-  const typeIcons = {
-    verbs: '📝',
-    sentences: '💬',
-    nouns: '📦',
-    adjectives: '🎨',
-    phrases: '💡',
-    grammar: '📚'
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      {/* Header */}
-      <header className="bg-white shadow-md border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-3 rounded-2xl shadow-lg">
-                <BookOpen className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 font-poppins">Struktura e Gjuhës</h1>
-                <p className="text-gray-600 font-inter mt-1">Mëso gjermanishten hap pas hapi</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2 bg-amber-100 px-4 py-2 rounded-full">
-                <Trophy className="w-5 h-5 text-amber-600" />
-                <span className="font-bold text-amber-900 font-inter">{user?.xp || 0} XP</span>
-              </div>
-              <div className="flex items-center gap-2 bg-green-100 px-4 py-2 rounded-full">
-                <Award className="w-5 h-5 text-green-600" />
-                <span className="font-semibold text-green-900 font-inter">{completedStructures.length} Përfunduar</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Level Filter */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4 font-poppins">Zgjidhni nivelin:</h2>
-          <div className="flex flex-wrap gap-3">
-            {levels.map((level) => (
-              <button
-                key={level}
-                onClick={() => {
-                  setSelectedLevel(level);
-                  setSelectedStructure(null);
-                  setCurrentStructurePage(1);
-                }}
-                className={`px-5 py-2.5 rounded-lg font-semibold font-inter transition-all duration-300 ${
-                  selectedLevel === level
-                    ? 'bg-indigo-600 text-white shadow-lg scale-105'
-                    : 'bg-white text-gray-700 hover:bg-indigo-50 border border-gray-300 shadow-sm'
-                }`}
-              >
-                {level}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Main Structure Boxes */}
-        {!selectedStructure && (
-          <>
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 font-poppins mb-2">Temat për nivel {selectedLevel}</h2>
-              <p className="text-gray-600 font-inter">Zgjidhni një temë për të filluar mësimin</p>
-            </div>
-
-            {loading ? (
-              <div className="text-center py-20">
-                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600 mx-auto"></div>
-                <p className="text-gray-500 mt-4 font-inter">Duke ngarkuar...</p>
-              </div>
-            ) : structures.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-2xl shadow-sm">
-                <p className="text-gray-500 text-lg font-inter">Asnjë temë e disponueshme për këtë nivel</p>
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {currentStructures.map((structure) => (
-                    <div
-                      key={structure._id}
-                      onClick={() => handleBoxClick(structure)}
-                      className={`relative bg-white rounded-xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer border-2 ${
-                        isCompleted(structure._id)
-                          ? 'border-green-400 bg-green-50'
-                          : 'border-gray-200 hover:border-indigo-400'
-                      }`}
-                    >
-                      {isCompleted(structure._id) && (
-                        <div className="absolute top-3 right-3 bg-green-500 text-white rounded-full p-1.5">
-                          <CheckCircle className="w-4 h-4" />
-                        </div>
-                      )}
-                      <div className="text-4xl mb-3">{typeIcons[structure.type] || '📖'}</div>
-                      <div className="mb-3">
-                        <span className="inline-block px-2.5 py-1 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold mb-2 font-inter">
-                          {structure.type.toUpperCase()}
-                        </span>
-                        <h3 className="text-lg font-bold text-gray-900 mb-1 font-poppins line-clamp-2">{structure.title}</h3>
-                        {structure.description && (
-                          <p className="text-gray-600 text-sm font-inter line-clamp-2">{structure.description}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between text-sm mt-4 pt-3 border-t border-gray-200">
-                        <span className="text-gray-500 font-inter">{structure.items.length} artikuj</span>
-                        <span className="font-bold text-indigo-600 font-inter">+{structure.xp} XP</span>
-                      </div>
-                    </div>
-                  ))}
+    return (
+      <div className="min-h-screen p-4 flex flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        {/* XP Animation */}
+        {showXpAnimation && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 text-indigo-700 px-8 py-6 rounded-2xl shadow-2xl border-2 border-indigo-500 animate-bounce">
+              <div className="flex items-center gap-3">
+                <Star className="h-10 w-10 text-indigo-600 animate-spin" />
+                <div>
+                  <div className="text-3xl font-bold">+{xpGained} XP</div>
+                  <div className="text-sm font-medium">Urime!</div>
                 </div>
-
-                {/* Pagination for structures */}
-                {totalStructurePages > 1 && (
-                  <div className="flex items-center justify-center gap-3 mt-8">
-                    <button
-                      onClick={() => setCurrentStructurePage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentStructurePage === 1}
-                      className="p-2 rounded-lg bg-white border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <span className="text-gray-700 font-inter font-medium">
-                      Faqja {currentStructurePage} nga {totalStructurePages}
-                    </span>
-                    <button
-                      onClick={() => setCurrentStructurePage(prev => Math.min(prev + 1, totalStructurePages))}
-                      disabled={currentStructurePage === totalStructurePages}
-                      className="p-2 rounded-lg bg-white border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                    >
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-          </>
+                <Zap className="h-10 w-10 text-indigo-600" />
+              </div>
+            </div>
+          </div>
         )}
 
-        {/* Structure Detail View */}
-        {selectedStructure && !showQuiz && (
-          <>
-            <button
-              onClick={() => {
-                setSelectedStructure(null);
-                setCurrentItemPage(1);
-              }}
-              className="mb-6 text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-2 font-inter"
-            >
-              <ChevronLeft className="w-5 h-5" />
-              Kthehu te temat
-            </button>
-
-            <div className="bg-white rounded-2xl shadow-md p-6 mb-8">
-              <div className="flex items-start justify-between mb-6">
+        <div className="max-w-2xl mx-auto w-full">
+          {/* Header */}
+          <header className="mb-4">
+            <div className="bg-white rounded-2xl shadow-xl border border-indigo-100 p-6 overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full transform translate-x-16 -translate-y-16 opacity-50" />
+              <div className="relative z-10 flex items-center justify-between">
                 <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="text-4xl">{typeIcons[selectedStructure.type] || '📖'}</span>
-                    <div>
-                      <h2 className="text-3xl font-bold text-gray-900 font-poppins">{selectedStructure.title}</h2>
-                      {selectedStructure.description && (
-                        <p className="text-gray-600 font-inter mt-1">{selectedStructure.description}</p>
+                  <h1 className="text-xl font-bold text-gray-900">{structure.title}</h1>
+                  <p className="text-gray-600 text-sm">Rezultatet e kuizit</p>
+                </div>
+                <button onClick={() => onComplete(results)} className="text-indigo-600 hover:text-indigo-700 p-1 transition-colors">
+                  <LogOut className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          </header>
+
+          {/* Results Card */}
+          <div className="bg-white rounded-2xl shadow-xl border border-indigo-100 p-6">
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4">{results.completed ? "🎉" : "💪"}</div>
+              <h2 className="text-2xl font-bold mb-2 text-gray-900">
+                {results.completed ? "Shkëlqyeshëm!" : "Vazhdo të Praktikosh!"}
+              </h2>
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+              <div className="rounded-xl p-3 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200">
+                <div className="flex items-center justify-center gap-1">
+                  <Check className="w-4 h-4 text-green-600" />
+                  <div className="text-xl font-bold text-green-600">{results.correctCount}</div>
+                </div>
+                <div className="text-xs text-gray-600 text-center">Saktë</div>
+              </div>
+              <div className="rounded-xl p-3 bg-gradient-to-br from-red-50 to-rose-50 border border-red-200">
+                <div className="flex items-center justify-center gap-1">
+                  <X className="w-4 h-4 text-red-600" />
+                  <div className="text-xl font-bold text-red-600">{incorrectCount}</div>
+                </div>
+                <div className="text-xs text-gray-600 text-center">Gabim</div>
+              </div>
+              <div className="rounded-xl p-3 bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200">
+                <div className="text-xl font-bold text-blue-600 text-center">{results.accuracy}%</div>
+                <div className="text-xs text-gray-600 text-center">Saktësia</div>
+              </div>
+              <div className="rounded-xl p-3 bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200">
+                <div className="flex items-center justify-center gap-1">
+                  <Star className="w-4 h-4 text-indigo-600" />
+                  <div className="text-xl font-bold text-indigo-600">+{results.xpAwarded || 0}</div>
+                </div>
+                <div className="text-xs text-gray-600 text-center">XP Fituar</div>
+              </div>
+            </div>
+
+            {/* Detailed Results */}
+            <div className="space-y-2 mb-6 max-h-64 overflow-y-auto">
+              {results.results?.map((result, index) => (
+                <div
+                  key={index}
+                  className={`p-3 rounded-xl border ${
+                    result.isCorrect 
+                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' 
+                      : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-200'
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    <div className={`p-1 rounded-full ${result.isCorrect ? 'bg-green-100' : 'bg-red-100'}`}>
+                      {result.isCorrect ? <Check className="w-3 h-3 text-green-600" /> : <X className="w-3 h-3 text-red-600" />}
+                    </div>
+                    <div className="flex-1 text-sm">
+                      <div className="font-medium text-gray-900">{result.question}</div>
+                      <div className="text-xs mt-1">
+                        <span className="text-gray-500">Përgjigja: </span>
+                        <span className={result.isCorrect ? 'text-green-700' : 'text-red-700'}>{result.userAnswer || "(bosh)"}</span>
+                      </div>
+                      {!result.isCorrect && (
+                        <div className="text-xs">
+                          <span className="text-gray-500">Saktë: </span>
+                          <span className="text-green-700 font-medium">{result.correctAnswer}</span>
+                        </div>
                       )}
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-2xl font-bold text-indigo-600 font-poppins">+{selectedStructure.xp} XP</div>
-                  <div className="text-sm text-gray-500 font-inter">{selectedStructure.items.length} artikuj gjithsej</div>
-                </div>
-              </div>
+              ))}
+            </div>
 
-              {/* Quiz buttons - Now always visible, even if completed */}
-              <div className="flex gap-4 mb-6">
-                <button
-                  onClick={() => handleStartQuiz('write')}
-                  className="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold font-inter hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                >
-                  <Edit3 className="w-5 h-5" />
-                  {isCompleted(selectedStructure._id) ? 'Riprovo Kuizin - Shkruaj' : 'Fillo Kuizin - Shkruaj'}
-                </button>
-                <button
-                  onClick={() => handleStartQuiz('options')}
-                  className="flex-1 py-3 bg-purple-600 text-white rounded-xl font-bold font-inter hover:bg-purple-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
-                >
-                  <List className="w-5 h-5" />
-                  {isCompleted(selectedStructure._id) ? 'Riprovo Kuizin - Zgjedh' : 'Fillo Kuizin - Zgjedh'}
-                </button>
-              </div>
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={handleRetry}
+                className="flex-1 px-4 py-2.5 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg hover:from-indigo-600 hover:to-purple-700 transition-all text-sm"
+              >
+                Provo Përsëri
+              </button>
+              <button
+                onClick={() => onComplete(results)}
+                className="flex-1 px-4 py-2.5 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all border border-gray-200 text-sm"
+              >
+                Kthehu
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-              {isCompleted(selectedStructure._id) && (
-                <div className="bg-green-50 border-2 border-green-400 rounded-xl p-4 mb-6 flex items-center gap-3">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
-                  <span className="text-green-900 font-semibold font-inter">Kjo temë është përfunduar! Mund ta riprovosh kuizin për të praktikuar ✓</span>
-                </div>
+  // Quiz View - One question at a time
+  return (
+    <div className="min-h-screen p-4 flex flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="max-w-xl mx-auto w-full">
+        {/* Header with progress */}
+        <div className="flex items-center justify-between mb-6">
+          <button onClick={onBack} className="p-2 text-gray-600 hover:bg-white rounded-lg transition-colors">
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="flex-1 mx-4">
+            <div className="h-2 rounded-full overflow-hidden bg-gray-200">
+              <div
+                className="h-full transition-all duration-300 bg-gradient-to-r from-indigo-500 to-purple-600"
+                style={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }}
+              />
+            </div>
+          </div>
+          <div className="text-sm text-gray-600 font-medium">{currentIndex + 1} / {totalQuestions}</div>
+        </div>
+
+        {/* Quiz Info */}
+        <div className="text-center mb-6">
+          <h1 className="text-lg font-bold text-gray-900 mb-2">{structure.title}</h1>
+          <div className="flex items-center justify-center gap-3 text-xs">
+            <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 font-medium">Niveli: {structure.level}</span>
+            <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-700 font-medium flex items-center gap-1">
+              <Star className="h-3 w-3" /> +{structure.xp} XP
+            </span>
+          </div>
+        </div>
+
+        {/* Question Card */}
+        {currentItem && (
+          <>
+            <div className="bg-white rounded-2xl p-6 mb-6 shadow-xl border border-indigo-100">
+              <p className="text-xs text-gray-500 mb-2">Shkruaj në gjermanisht:</p>
+              <h2 className="text-xl font-bold text-gray-900">{currentItem.albanian}</h2>
+              {currentItem.example && (
+                <p className="text-sm text-gray-500 mt-2 italic">Shembull: {currentItem.example}</p>
               )}
             </div>
 
-            <div className="mb-6">
-              <h3 className="text-xl font-bold text-gray-900 font-poppins mb-4">Përmbajtja</h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {currentItems.map((item, index) => {
-                const actualIndex = indexOfFirstItem + index;
-                return (
-                  <div key={actualIndex} className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-all">
-                    <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-3 mb-3 relative">
-                      <div className="text-xs font-semibold text-indigo-600 mb-1 font-inter">GJERMANISHT</div>
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-base font-bold text-gray-900 font-poppins flex-1">{item.german}</p>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            playAudio(selectedStructure._id, actualIndex, item.german, selectedStructure.level);
-                          }}
-                          disabled={playingAudio === `${actualIndex}`}
-                          className="p-2 rounded-lg bg-indigo-100 hover:bg-indigo-200 transition-colors disabled:opacity-50"
-                          title="Dëgjo shqiptimin"
-                        >
-                          {playingAudio === `${actualIndex}` ? (
-                            <Loader2 className="w-4 h-4 text-indigo-600 animate-spin" />
-                          ) : (
-                            <Volume2 className="w-4 h-4 text-indigo-600" />
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <div className="text-xs font-semibold text-gray-600 mb-1 font-inter">SHQIP</div>
-                      <p className="text-base font-semibold text-gray-800 font-poppins">{item.albanian}</p>
-                    </div>
-                    {item.example && (
-                      <div className="mt-3 pt-3 border-t border-gray-200">
-                        <p className="text-xs text-gray-600 italic font-inter">{item.example}</p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Pagination for items */}
-            {totalItemPages > 1 && (
-              <div className="flex items-center justify-center gap-3 mt-8">
+            {/* Answer Area */}
+            {quizMode === 'write' ? (
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  value={answers[currentIndex] || ''}
+                  onChange={(e) => setAnswers({ ...answers, [currentIndex]: e.target.value })}
+                  placeholder="Shkruaj përgjigjen këtu..."
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-indigo-500 focus:outline-none text-lg"
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleWriteSubmit()}
+                />
                 <button
-                  onClick={() => setCurrentItemPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentItemPage === 1}
-                  className="p-2 rounded-lg bg-white border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                  onClick={handleWriteSubmit}
+                  disabled={!answers[currentIndex] || isSubmitting}
+                  className="w-full py-3 rounded-xl font-bold text-lg transition-colors bg-gradient-to-r from-indigo-500 to-purple-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <ChevronLeft className="w-5 h-5" />
+                  {isSubmitting ? "Duke dërguar..." : currentIndex === totalQuestions - 1 ? "Përfundo" : "Vazhdo"}
                 </button>
-                <span className="text-gray-700 font-inter font-medium">
-                  Faqja {currentItemPage} nga {totalItemPages}
-                </span>
-                <button
-                  onClick={() => setCurrentItemPage(prev => Math.min(prev + 1, totalItemPages))}
-                  disabled={currentItemPage === totalItemPages}
-                  className="p-2 rounded-lg bg-white border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {shuffledOptions.map((option, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleAnswer(option)}
+                    className={`p-4 rounded-xl font-medium text-sm transition-all border-2 ${
+                      answers[currentIndex] === option
+                        ? 'bg-indigo-500 text-white border-indigo-500'
+                        : 'bg-white text-gray-800 border-gray-200 hover:border-indigo-300 hover:bg-indigo-50'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
               </div>
             )}
           </>
-        )}
-
-        {/* Quiz View */}
-        {selectedStructure && showQuiz && (
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <button
-              onClick={() => setShowQuiz(false)}
-              className="mb-6 text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-2 font-inter"
-            >
-              <ChevronLeft className="w-5 h-5" />
-              Kthehu te përmbajtja
-            </button>
-
-            <div className="mb-8">
-              <div className="flex items-center gap-3 mb-3">
-                {quizMode === 'write' ? <Edit3 className="w-8 h-8 text-indigo-600" /> : <List className="w-8 h-8 text-purple-600" />}
-                <div>
-                  <h2 className="text-3xl font-bold text-gray-900 font-poppins">Kuizi: {selectedStructure.title}</h2>
-                  <p className="text-gray-600 font-inter mt-1">
-                    {quizMode === 'write' ? 'Shkruaj fjalën në gjermanisht' : 'Zgjedh përgjigjën e saktë'} (Duhet 70% për të kaluar)
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {!quizResult ? (
-              <>
-                <div className="space-y-6 mb-8">
-                  {selectedStructure.items.map((item, index) => (
-                    <div key={index} className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border-2 border-gray-200">
-                      <div className="flex items-start gap-4">
-                        <div className="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold font-inter flex-shrink-0">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1">
-                          <div className="bg-purple-100 rounded-lg p-4 mb-4">
-                            <div className="text-sm font-semibold text-purple-700 mb-1 font-inter">SHQIP</div>
-                            <p className="text-xl font-bold text-purple-900 font-poppins">{item.albanian}</p>
-                          </div>
-
-                          {quizMode === 'write' ? (
-                            <input
-                              type="text"
-                              placeholder="Shkruaj përkthimin në gjermanisht..."
-                              value={quizAnswers[index] || ''}
-                              onChange={(e) => handleQuizAnswer(index, e.target.value)}
-                              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none font-inter"
-                            />
-                          ) : (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              {generateQuizOptions(item.german, selectedStructure.items).map((option, optIndex) => (
-                                <button
-                                  key={optIndex}
-                                  onClick={() => handleQuizAnswer(index, option)}
-                                  className={`p-3 rounded-lg border-2 text-left font-inter transition-all ${
-                                    quizAnswers[index] === option
-                                      ? 'border-indigo-500 bg-indigo-50 font-semibold'
-                                      : 'border-gray-300 hover:border-indigo-300 hover:bg-gray-50'
-                                  }`}
-                                >
-                                  {option}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <button
-                  onClick={handleSubmitQuiz}
-                  className="w-full py-4 bg-indigo-600 text-white rounded-xl font-bold text-lg font-poppins hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl"
-                >
-                  Dërgo Kuizin
-                </button>
-              </>
-            ) : (
-              <div className={`p-10 rounded-2xl text-center ${
-                quizResult.success ? 'bg-green-50 border-4 border-green-400' : 'bg-red-50 border-4 border-red-400'
-              }`}>
-                <div className="text-7xl mb-6">
-                  {quizResult.success ? '🎉' : '😔'}
-                </div>
-                <h3 className={`text-3xl font-bold mb-3 font-poppins ${quizResult.success ? 'text-green-900' : 'text-red-900'}`}>
-                  {quizResult.message}
-                </h3>
-                {quizResult.xpAwarded > 0 && (
-                  <div className="bg-amber-100 border-2 border-amber-400 rounded-xl p-4 mb-6 inline-block">
-                    <p className="text-2xl text-amber-900 font-bold font-poppins">
-                      +{quizResult.xpAwarded} XP fituar!
-                    </p>
-                  </div>
-                )}
-                <div className="flex gap-4 justify-center mt-6">
-                  <button
-                    onClick={() => {
-                      setShowQuiz(false);
-                      setQuizAnswers({});
-                      setQuizResult(null);
-                    }}
-                    className="px-8 py-3 bg-indigo-600 text-white rounded-xl font-bold font-poppins hover:bg-indigo-700 transition-all shadow-lg"
-                  >
-                    Riprovo Kuizin
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowQuiz(false);
-                      setSelectedStructure(null);
-                      fetchStructures();
-                    }}
-                    className="px-8 py-3 bg-gray-600 text-white rounded-xl font-bold font-poppins hover:bg-gray-700 transition-all shadow-lg"
-                  >
-                    Kthehu te Temat
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
         )}
       </div>
     </div>
   );
-};
-
-export default Structure;
+}
