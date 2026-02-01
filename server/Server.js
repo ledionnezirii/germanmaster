@@ -67,7 +67,9 @@ const io = new Server(server, {
   cors: {
     origin: [
       "https://gjuhagjermane.com",
+      "https://gjuhagjermane.com/",
       "https://www.gjuhagjermane.com",
+      "https://www.gjuhagjermane.com/",
       "http://localhost:3000",
       "http://localhost:3001",
       "http://localhost:5173",
@@ -218,7 +220,9 @@ app.use(
   cors({
     origin: [
       "https://gjuhagjermane.com",
+      "https://gjuhagjermane.com/",
       "https://www.gjuhagjermane.com",
+      "https://www.gjuhagjermane.com/",
       "http://localhost:3000",
       "http://localhost:3001",
       "http://localhost:5173",
