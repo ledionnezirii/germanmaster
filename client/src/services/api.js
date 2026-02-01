@@ -1,7 +1,11 @@
 import axios from "axios";
 
-const API_BASE_URL = "https://gjuhagjermaneserver.onrender.com/api";
-export const SOCKET_URL = "https://gjuhagjermaneserver.onrender.com";
+// Backend API for HTTP requests
+const API_BASE_URL = "http://164.90.216.71:5000/api";
+
+// Backend URL for Socket connections
+export const SOCKET_URL = "http://164.90.216.71:5000";
+
 
 export const getAbsoluteImageUrl = (path) => {
   if (!path) return "/placeholder.svg?height=40&width=40";
