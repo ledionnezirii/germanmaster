@@ -1,10 +1,11 @@
 import axios from "axios";
 
-// Backend API for HTTP requests
-const API_BASE_URL = "http://164.90.216.71:5000/api";
+// URL për kërkesat API
+const API_BASE_URL = "https://gjuhagjermane.com/api";
 
-// Backend URL for Socket connections
-export const SOCKET_URL = "http://164.90.216.71:5000";
+// URL për socket.io
+export const SOCKET_URL = "https://gjuhagjermane.com";
+
 
 
 export const getAbsoluteImageUrl = (path) => {
