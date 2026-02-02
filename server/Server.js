@@ -65,32 +65,13 @@ const server = createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: function (origin, callback) {
-      const allowedOrigins = [
-        "https://gjuhagjermane.com",
-        "https://gjuhagjermane.com/",
-        "https://www.gjuhagjermane.com",
-        "https://www.gjuhagjermane.com/",
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:5173",
-      ];
-      
-      if (!origin) return callback(null, true);
-      
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      } else {
-        if (process.env.NODE_ENV === 'production') {
-          const normalizedOrigin = origin.replace(/\/$/, '');
-          const normalizedAllowed = allowedOrigins.map(o => o.replace(/\/$/, ''));
-          if (normalizedAllowed.includes(normalizedOrigin)) {
-            return callback(null, true);
-          }
-        }
-        return callback(new Error('Not allowed by CORS'));
-      }
-    },
+    origin: [
+      "https://gjuhagjermane.com",
+      "https://www.gjuhagjermane.com",
+      "http://localhost:3000",
+      "http://localhost:3001",
+      "http://localhost:5173",
+    ],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   },
@@ -233,51 +214,22 @@ app.use(
 );
 app.use(compression());
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    const allowedOrigins = [
+app.use(
+  cors({
+    origin: [
       "https://gjuhagjermane.com",
-      "https://gjuhagjermane.com/",
       "https://www.gjuhagjermane.com",
-      "https://www.gjuhagjermane.com/",
       "http://localhost:3000",
       "http://localhost:3001",
       "http://localhost:5173",
-    ];
-    
-    console.log(`[CORS] Request origin: "${origin}"`);
-    
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      console.log(`[CORS] Allowed origin (exact match): "${origin}"`);
-      return callback(null, true);
-    } else {
-      // For production, be more flexible with the exact match
-      if (process.env.NODE_ENV === 'production') {
-        // Remove trailing slash for comparison
-        const normalizedOrigin = origin.replace(/\/$/, '');
-        const normalizedAllowed = allowedOrigins.map(o => o.replace(/\/$/, ''));
-        console.log(`[CORS] Normalized origin: "${normalizedOrigin}"`);
-        console.log(`[CORS] Normalized allowed:`, normalizedAllowed);
-        if (normalizedAllowed.includes(normalizedOrigin)) {
-          console.log(`[CORS] Allowed origin (normalized match): "${normalizedOrigin}"`);
-          return callback(null, true);
-        }
-      }
-      console.log(`[CORS] Blocked origin: "${origin}"`);
-      return callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization", "paddle-signature"],
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-};
-
-app.use(cors(corsOptions));
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "paddle-signature"],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  })
+);
 
 // JSON parser for all other routes - AFTER webhook
 app.use(express.json({ limit: "10mb" }));
@@ -290,13 +242,11 @@ app.use("/uploads", (req, res, next) => {
     process.env.NODE_ENV === "production"
       ? [process.env.FRONTEND_URL]
       : [
-          "http://localhost:3000",
-          "http://localhost:3001",
-          "http://localhost:5173",
-          "https://gjuhagjermane.com",
-      "https://gjuhagjermane.com/",
-      "https://www.gjuhagjermane.com",
-      "https://www.gjuhagjermane.com/"
+ "http://localhost:3000",
+    "http://localhost:3001", 
+    "http://localhost:5173",
+    "https://gjuhagjermane.com",
+    "https://www.gjuhagjermane.com"
         ];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
