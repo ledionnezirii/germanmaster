@@ -245,10 +245,13 @@ const corsOptions = {
       "http://localhost:5173",
     ];
     
+    console.log(`[CORS] Request origin: "${origin}"`);
+    
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.includes(origin)) {
+      console.log(`[CORS] Allowed origin (exact match): "${origin}"`);
       return callback(null, true);
     } else {
       // For production, be more flexible with the exact match
@@ -256,10 +259,14 @@ const corsOptions = {
         // Remove trailing slash for comparison
         const normalizedOrigin = origin.replace(/\/$/, '');
         const normalizedAllowed = allowedOrigins.map(o => o.replace(/\/$/, ''));
+        console.log(`[CORS] Normalized origin: "${normalizedOrigin}"`);
+        console.log(`[CORS] Normalized allowed:`, normalizedAllowed);
         if (normalizedAllowed.includes(normalizedOrigin)) {
+          console.log(`[CORS] Allowed origin (normalized match): "${normalizedOrigin}"`);
           return callback(null, true);
         }
       }
+      console.log(`[CORS] Blocked origin: "${origin}"`);
       return callback(new Error('Not allowed by CORS'));
     }
   },
