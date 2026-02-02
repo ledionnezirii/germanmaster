@@ -287,6 +287,9 @@ app.use("/uploads", (req, res, next) => {
           "http://localhost:3001",
           "http://localhost:5173",
           "https://gjuhagjermane.com",
+      "https://gjuhagjermane.com/",
+      "https://www.gjuhagjermane.com",
+      "https://www.gjuhagjermane.com/"
         ];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
