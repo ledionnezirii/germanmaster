@@ -158,10 +158,7 @@ const login = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Kredenciale të pavlefshme")
   }
 
-  // REMOVED: Email verification check - users can login without verification
-  // if (!user.isVerified) {
-  //   throw new ApiError(401, "Ju lutem verifikoni email-in tuaj para se të hyni")
-  // }
+ 
 
   const isMatch = await user.comparePassword(password)
   if (!isMatch) {
