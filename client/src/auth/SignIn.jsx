@@ -49,8 +49,6 @@ const SignIn = () => {
         err.response?.status === 403
       ) {
         setError("Jeni të kyçur në 2 pajisje. Ju lutemi dilni nga një pajisje për të vazhduar.")
-      } else if (errorMessage.toLowerCase().includes("verify")) {
-        setError("Ju lutemi verifikoni email-in tuaj para se të hyni.")
       } else if (
         errorMessage.toLowerCase().includes("password") ||
         errorMessage.toLowerCase().includes("invalid") ||
@@ -61,7 +59,7 @@ const SignIn = () => {
         errorMessage.toLowerCase().includes("email") ||
         errorMessage.toLowerCase().includes("user not found")
       ) {
-        setError("Email-i nuk u gjet. Ju lutemi kontrolloni email-in tuaj.")
+        setError("Email-i nuk u gjet. Ju lutemi kontrolloni email-in tuaj Duhet te verifikoni emailin shikoni ne spam ose junk.")
       } else {
         setError(errorMessage || "Email ose fjalëkalim i pasaktë. Ju lutemi provoni përsëri.")
       }
@@ -161,6 +159,8 @@ const SignIn = () => {
             >
               Keni harruar fjalëkalimin?
             </Link>
+          </div> <div className="flex justify-end">
+           <p>Verifikoni emailin para se te hyni</p>
           </div>
 
           <button

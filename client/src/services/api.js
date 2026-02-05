@@ -124,7 +124,8 @@ export const authService = {
   resetPassword: (token, newPassword) =>
     api.post(`/auth/reset-password/${token}`, { newPassword }),
   verifyEmail: (token) => api.get(`/auth/verify/${token}`),
-
+ 
+  requestVerification: () => api.post("/auth/request-verification"),
   getProfile: () => api.get("/auth/me"),
   updateProfile: (data) =>
     api.put("/users/profile", {

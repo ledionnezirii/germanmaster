@@ -17,7 +17,6 @@ const SignUp = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [success, setSuccess] = useState(false)
 
   const { register } = useAuth()
   const navigate = useNavigate()
@@ -44,7 +43,8 @@ const SignUp = () => {
 
     try {
       await register(formData)
-      setSuccess(true)
+      // Redirect directly to login page after successful registration
+      navigate("/signin")
     } catch (err) {
       const errorMessage = err.response?.data?.message || ""
       if (errorMessage.toLowerCase().includes("email") && errorMessage.toLowerCase().includes("exists")) {
@@ -59,45 +59,6 @@ const SignUp = () => {
     } finally {
       setLoading(false)
     }
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 sm:p-6">
-        <div className="bg-white/95 backdrop-blur-lg rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 w-full max-w-md shadow-2xl border border-white/20 text-center">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] rounded-full flex items-center justify-center mx-auto mb-6 sm:mb-8 text-xl sm:text-2xl">
-            ✉️
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-700 mb-3 sm:mb-4 leading-tight">
-            Kontrolloni email-in tuaj
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 leading-relaxed">
-            Ne kemi dërguar një link verifikimi në <strong className="break-all">{formData.email}</strong>. Ju lutemi
-            klikoni në link për të aktivizuar llogarinë tuaj.
-          </p>
-          <div className="bg-teal-50 border border-teal-500 rounded-lg p-3 sm:p-4 mb-6 sm:mb-8">
-            <p className="text-teal-600 text-xs sm:text-sm m-0">
-              💡 Nuk e gjeni email-in? Kontrolloni dosjen "Spam" ose "Junk".
-            </p>
-          </div>
-          <button
-            onClick={() => navigate("/signin")}
-            className="w-full bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] hover:from-[#0F9D8E] hover:to-[#0891B2] text-white border-none rounded-lg py-3 sm:py-3.5 px-4 text-sm sm:text-base font-medium cursor-pointer transition-all duration-200 mb-4"
-          >
-            Shkoni te Hyrja
-          </button>
-          <p className="text-gray-600 text-xs sm:text-sm m-0">
-            Nuk keni marrë email-in?{" "}
-            <button
-              onClick={() => setSuccess(false)}
-              className="bg-none border-none text-cyan-600 underline cursor-pointer text-xs sm:text-sm hover:text-cyan-700"
-            >
-              Provoni përsëri
-            </button>
-          </p>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -199,7 +160,7 @@ const SignUp = () => {
               <span className="ml-2.5 sm:ml-3 text-xs sm:text-sm text-gray-700 leading-relaxed">
                 Unë pranoj{" "}
                 <a
-                  href="/terms"
+                  href__="/terms"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-teal-500 hover:text-teal-600 underline font-medium"
