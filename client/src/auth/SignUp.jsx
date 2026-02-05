@@ -43,7 +43,6 @@ const SignUp = () => {
 
     try {
       await register(formData)
-      // Redirect directly to login page after successful registration
       navigate("/signin")
     } catch (err) {
       const errorMessage = err.response?.data?.message || ""
@@ -160,7 +159,7 @@ const SignUp = () => {
               <span className="ml-2.5 sm:ml-3 text-xs sm:text-sm text-gray-700 leading-relaxed">
                 Unë pranoj{" "}
                 <a
-                  href__="/terms"
+                  href="/terms"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-teal-500 hover:text-teal-600 underline font-medium"
@@ -202,6 +201,22 @@ const SignUp = () => {
                 Hyni këtu
               </button>
             </p>
+          </div>
+
+          {/* Contact support section */}
+          <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+            <p className="text-gray-500 text-xs sm:text-sm">Keni probleme me regjistrimin? Na kontaktoni:</p>
+            <div className="mt-2 flex flex-col items-center gap-1 text-xs sm:text-sm">
+              <a href="https://instagram.com/gjuhagjermanee" target="_blank" rel="noopener noreferrer" className="text-yellow-600 font-bold hover:text-cyan-700 transition-colors">
+              Instagram: @gjuhagjermanee
+            </a>
+            <a href="https://tiktok.com/@gjuhagjermanee" target="_blank" rel="noopener noreferrer" className="text-yellow-600 font-bold hover:text-cyan-700 transition-colors">
+              TikTok: @gjuhagjermanee
+            </a>
+            <a href="mailto:info@gjuhagjermane.com" className="text-yellow-600 font-bold hover:text-cyan-700 transition-colors">
+              Email:info@gjuhagjermane.com
+            </a>
+            </div>
           </div>
         </form>
       </div>

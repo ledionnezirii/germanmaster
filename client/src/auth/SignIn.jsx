@@ -192,6 +192,23 @@ const SignIn = () => {
             </Link>
           </p>
         </div>
+
+        <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+          <p className="text-gray-500 text-sm">
+            Keni probleme me kyçjen? Na kontaktoni:
+          </p>
+          <div className="mt-2 flex flex-col items-center gap-1 text-sm">
+             <a href="https://instagram.com/gjuhagjermanee" target="_blank" rel="noopener noreferrer" className="text-yellow-600 font-bold hover:text-cyan-700 transition-colors">
+              Instagram: @gjuhagjermanee
+            </a>
+            <a href="https://tiktok.com/@gjuhagjermanee" target="_blank" rel="noopener noreferrer" className="text-yellow-600 font-bold hover:text-cyan-700 transition-colors">
+              TikTok: @gjuhagjermanee
+            </a>
+            <a href="mailto:info@gjuhagjermane.com" className="text-yellow-600 font-bold hover:text-cyan-700 transition-colors">
+              Email:info@gjuhagjermane.com
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   )
