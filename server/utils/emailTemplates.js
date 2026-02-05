@@ -8,29 +8,23 @@ const getEmailTemplate = (content, buttonText, buttonUrl) => {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <!--[if mso]>
-    <style type="text/css">
-        table {border-collapse: collapse !important;}
-    </style>
-    <![endif]-->
 </head>
-<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f4f4f4;">
-    <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f4f4f4;" cellpadding="0" cellspacing="0">
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f4; padding: 20px 0;">
         <tr>
-            <td align="center" style="padding: 40px 0;">
-                <!-- Main Container -->
-                <table role="presentation" style="width: 600px; max-width: 100%; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; overflow: hidden;" cellpadding="0" cellspacing="0">
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px;">
                     
                     <!-- Header -->
                     <tr>
-                        <td style="padding: 40px 30px; text-align: center; background-color: #F97316;">
-                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">
+                        <td style="padding: 40px 30px; text-align: center; background-color: #F97316; border-radius: 8px 8px 0 0;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: bold;">
                                 ${content.title}
                             </h1>
                         </td>
                     </tr>
                     
-                    <!-- Body Content -->
+                    <!-- Body -->
                     <tr>
                         <td style="padding: 40px 30px;">
                             <p style="margin: 0 0 20px 0; color: #333333; font-size: 16px; line-height: 1.6;">
@@ -42,25 +36,31 @@ const getEmailTemplate = (content, buttonText, buttonUrl) => {
                         </td>
                     </tr>
                     
-                    <!-- Button Section -->
+                    <!-- Button - SIMPLIFIED for iPhone -->
                     ${buttonUrl ? `
                     <tr>
-                        <td style="padding: 0 30px 40px 30px; text-align: center;">
-                            <!-- Button as table for better compatibility -->
-                            <table role="presentation" style="margin: 0 auto; border-collapse: collapse;" cellpadding="0" cellspacing="0">
-                                <tr>
-                                    <td style="border-radius: 6px; background-color: #F97316;">
-                                        <a href="${buttonUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 16px 40px; color: #ffffff; text-decoration: none; font-size: 16px; font-weight: bold; border-radius: 6px;">
-                                            ${buttonText}
-                                        </a>
-                                    </td>
-                                </tr>
-                            </table>
-                            
-                            <!-- Fallback text link -->
-                            <p style="margin: 25px 0 0 0; color: #999999; font-size: 14px; line-height: 1.5;">
-                                Nëse butoni nuk funksionon, kopjoni dhe ngjisni këtë lidhje në shfletues:<br>
-                                <a href="${buttonUrl}" target="_blank" rel="noopener noreferrer" style="color: #F97316; word-break: break-all;">
+                        <td style="padding: 0 30px 20px 30px; text-align: center;">
+                            <a href="${buttonUrl}" style="display: inline-block; background-color: #F97316; color: #ffffff; text-decoration: none; padding: 15px 40px; font-size: 16px; font-weight: bold; border-radius: 6px; text-align: center;">
+                                ${buttonText}
+                            </a>
+                        </td>
+                    </tr>
+                    
+                    <!-- Divider -->
+                    <tr>
+                        <td style="padding: 20px 30px;">
+                            <div style="border-top: 1px solid #eeeeee;"></div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Text Link - ALWAYS VISIBLE -->
+                    <tr>
+                        <td style="padding: 0 30px 40px 30px;">
+                            <p style="margin: 0 0 10px 0; color: #666666; font-size: 14px; text-align: center;">
+                                Ose kopjoni dhe ngjisni këtë lidhje:
+                            </p>
+                            <p style="margin: 0; text-align: center;">
+                                <a href="${buttonUrl}" style="color: #F97316; font-size: 14px; word-break: break-all; text-decoration: underline;">
                                     ${buttonUrl}
                                 </a>
                             </p>
@@ -70,12 +70,9 @@ const getEmailTemplate = (content, buttonText, buttonUrl) => {
                     
                     <!-- Footer -->
                     <tr>
-                        <td style="padding: 30px; background-color: #f9f9f9; border-top: 1px solid #eeeeee; text-align: center;">
-                            <p style="margin: 0 0 10px 0; color: #999999; font-size: 13px; line-height: 1.5;">
+                        <td style="padding: 30px; background-color: #f9f9f9; border-top: 1px solid #eeeeee; text-align: center; border-radius: 0 0 8px 8px;">
+                            <p style="margin: 0 0 10px 0; color: #999999; font-size: 13px;">
                                 Ky email u dërgua nga <strong>gjuhagjermane</strong>
-                            </p>
-                            <p style="margin: 0 0 15px 0; color: #999999; font-size: 13px; line-height: 1.5;">
-                                Nëse nuk e keni kërkuar këtë email, ju lutemi injoroni.
                             </p>
                             <p style="margin: 0; color: #cccccc; font-size: 12px;">
                                 © ${new Date().getFullYear()} gjuhagjermane. Të gjitha të drejtat e rezervuara.
@@ -105,10 +102,9 @@ ${content.message}
   if (buttonUrl) {
     text += `
 
-Klikoni këtu për të vazhduar:
+Klikoni në këtë lidhje për të vazhduar:
 ${buttonUrl}
 
-Nëse lidhja nuk funksionon, kopjoni dhe ngjisni URL-në e mësipërme në shfletuesin tuaj.
 `;
   }
 
@@ -116,7 +112,6 @@ Nëse lidhja nuk funksionon, kopjoni dhe ngjisni URL-në e mësipërme në shfle
 
 ---
 Ky email u dërgua nga gjuhagjermane.
-Nëse nuk e keni kërkuar këtë email, ju lutemi injoroni.
 
 © ${new Date().getFullYear()} gjuhagjermane. Të gjitha të drejtat e rezervuara.
   `;
