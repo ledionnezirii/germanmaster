@@ -131,13 +131,17 @@ const signup = asyncHandler(async (req, res) => {
     user.lastLogin = new Date()
     await user.save({ validateBeforeSave: false })
 
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`
-    const message = `
-      <h1>Verifikimi i Email-it</h1>
-      <p>Përshëndetje ${user.emri},</p>
-      <p>Ju lutem verifikoni email-in tuaj duke klikuar në lidhjen më poshtë:</p>
-      <a href="${verificationUrl}" target="_blank">Verifiko Email-in</a>
-    `
+   const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`
+
+const message = `
+  <h1>Verifikimi i Email-it</h1>
+  <p>Përshëndetje ${user.emri},</p>
+  <p>Ju lutem verifikoni email-in tuaj duke klikuar në lidhjen më poshtë:</p>
+  <a href="${verificationUrl}" target="_blank" style="display:inline-block;padding:10px 20px;background:#007bff;color:#fff;text-decoration:none;border-radius:5px;">Verifiko Email-in</a>
+  <p>Nëse butoni nuk funksionon, kopjoni dhe vendosni këtë link në shfletuesin tuaj:</p>
+  <p>${verificationUrl}</p>
+`;
+
     await sendEmail({
       to: user.email,
       subject: "Verifikoni email-in tuaj",
