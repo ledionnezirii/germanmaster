@@ -1,29 +1,34 @@
 "use client"
 
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link } from "react-router-dom"
 import { authService } from "../services/api"
-import webLogo from "../../public/logo.png"
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
-  const navigate = useNavigate()
+  const [error, setError] = useState("")
+  const [message, setMessage] = useState("")
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
+    setMessage("")
     setError("")
 
     try {
-      await authService.forgotPassword(email)
-      setSuccess(true)
+      const response = await authService.forgotPassword(email)
+
+      if (response.status === 200) {
+        setMessage("Email i dërguar me sukses! Kontrollo email-in tënd për udhëzimet.")
+        setEmail("")
+        setSuccess(true)
+      } else {
+        setError("Ndodhi një gabim. Provo përsëri.")
+      }
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Ndodhi një gabim. Ju lutemi provoni përsëri."
-      )
+      setError(err.response?.data?.message || "Ndodhi një gabim. Provo përsëri.")
     } finally {
       setLoading(false)
     }
@@ -31,110 +36,108 @@ const ForgotPassword = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 sm:p-6">
-        <div className="bg-white/95 backdrop-blur-lg rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 w-full max-w-md shadow-2xl border border-white/20 text-center">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] rounded-full flex items-center justify-center mx-auto mb-6 sm:mb-8 text-xl sm:text-2xl">
-            ✉️
+      <div className="flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-2xl p-12 text-center">
+          <div className="w-16 h-16 bg-cyan-600 rounded-full flex items-center justify-center mx-auto mb-8 text-2xl">
+            📧
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-700 mb-3 sm:mb-4 leading-tight">
-            Kontrolloni email-in tuaj
-          </h2>
-          <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 leading-relaxed">
-            Ne kemi dërguar një kod rivendosjeje 6-shifror në{" "}
-            <strong className="break-all">{email}</strong>. Ju lutemi shkruani kodin për të
-            rivendosur fjalëkalimin tuaj.
+          <h2 className="text-3xl font-bold text-gray-700 mb-4 leading-tight">Email-i u dërgua</h2>
+          <p className="text-gray-500 mb-8 leading-relaxed">
+            Ne kemi dërguar një link për rivendosjen e fjalëkalimit në <strong>{email}</strong>. Ju lutemi kontrolloni
+            email-in tuaj dhe ndiqni udhëzimet.
           </p>
-          <button
-            onClick={() => navigate(`/reset-password?email=${encodeURIComponent(email)}`)}
-            className="w-full bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] hover:from-[#0F9D8E] hover:to-[#0891B2] text-white border-none rounded-lg py-3 sm:py-3.5 px-4 text-sm sm:text-base font-medium cursor-pointer transition-all duration-200 mb-4"
-          >
-            Shkruani Kodin
-          </button>
-          <p className="text-gray-600 text-xs sm:text-sm m-0">
-            Nuk keni marrë email-in?{" "}
+          <div className="bg-green-50 border border-green-400 rounded-lg p-4 mb-8">
+            <p className="text-green-600 text-sm m-0">
+              💡 Link-u do të jetë i vlefshëm për 1 orë. Nuk e gjeni email-in? Kontrolloni dosjen "Spam".
+            </p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <Link
+              to="/signin"
+              className="bg-amber-600 text-white no-underline rounded-lg px-4 py-3 text-base font-medium text-center transition-all hover:bg-amber-700"
+            >
+              Kthehuni te Hyrja
+            </Link>
             <button
               onClick={() => setSuccess(false)}
-              className="bg-none border-none text-cyan-600 underline cursor-pointer text-xs sm:text-sm hover:text-cyan-700"
+              className="bg-transparent text-gray-500 border-none text-sm cursor-pointer underline hover:text-gray-700"
             >
-              Provoni përsëri
+              Dërgoni email-in përsëri
             </button>
-          </p>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6">
-      <div className="bg-white/95 backdrop-blur-lg rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-10 w-full max-w-md shadow-2xl border border-white/20">
-        <div className="text-center mb-6 sm:mb-8">
-          <img
-            src={webLogo || "/placeholder.svg"}
-            alt="Logo"
-            className="w-16 h-16 sm:w-20 sm:h-20 mb-3 sm:mb-4 rounded-full shadow-lg mx-auto object-cover"
-          />
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-700 mb-2">
-            Keni harruar fjalëkalimin?
-          </h1>
-          <p className="text-gray-600 text-sm sm:text-base">
-            Shkruani email-in tuaj për të marrë një kod rivendosjeje
+    <div className="min-h-screen bg-gradient-to-br from-yellow-50 to-white flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
+        <div className="text-center mb-8">
+          <div className="w-12 h-12 bg-cyan-600 rounded-xl flex items-center justify-center mx-auto mb-6 text-xl">
+            🔑
+          </div>
+          <h2 className="text-3xl font-bold text-gray-700 mb-2">Keni harruar fjalëkalimin?</h2>
+          <p className="text-gray-500 text-sm leading-relaxed">
+            Shkruani email-in tuaj dhe ne do t'ju dërgojmë një link për të rivendosur fjalëkalimin.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 flex items-start gap-2 sm:gap-3">
-              <span className="text-red-500 text-lg sm:text-xl shrink-0">⚠️</span>
-              <p className="text-red-600 text-xs sm:text-sm m-0 leading-relaxed">{error}</p>
-            </div>
-          )}
-
-          <div className="mb-6 sm:mb-8">
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5 sm:mb-2">
-              Adresa e email-it
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Shkruani email-in tuaj"
-              className="w-full p-2.5 sm:p-3 border border-gray-300 rounded-lg text-sm sm:text-base bg-gray-50 outline-none transition-all duration-200 focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full ${
-              loading
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] hover:from-[#0F9D8E] hover:to-[#0891B2] cursor-pointer"
-            } text-white border-none rounded-lg py-3 sm:py-4 px-4 text-sm sm:text-base font-semibold transition-all duration-200 flex items-center justify-center`}
-          >
-            {loading ? (
-              <>
-                <div className="inline-block w-4 h-4 border-b-2 border-current rounded-full animate-spin mr-2"></div>
-                Duke dërguar...
-              </>
-            ) : (
-              "Dërgo kodin"
+        <div className="bg-white rounded-2xl shadow-2xl p-8">
+          <form onSubmit={handleSubmit}>
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start">
+                <span className="text-red-500 mr-3 text-xl">⚠️</span>
+                <p className="text-red-600 text-sm m-0">{error}</p>
+              </div>
             )}
-          </button>
 
-          <div className="mt-6 text-center">
-            <p className="text-gray-600 text-sm sm:text-base">
-              Kujtuat fjalëkalimin?{" "}
-              <button
-                type="button"
-                onClick={() => navigate("/signin")}
-                className="bg-none border-none text-teal-500 hover:text-teal-600 underline cursor-pointer text-sm sm:text-base font-medium"
-              >
-                Hyni këtu
-              </button>
-            </p>
-          </div>
-        </form>
+            {message && (
+              <div className="bg-green-50 border border-green-400 rounded-lg p-4 mb-6 flex items-start">
+                <span className="text-green-600 mr-3 text-xl">✅</span>
+                <p className="text-green-600 text-sm m-0">{message}</p>
+              </div>
+            )}
+
+            <div className="mb-8">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Adresa e email-it</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-xl">📧</span>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Shkruani email-in tuaj"
+                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg text-base bg-gray-50 outline-none transition-all focus:border-cyan-600 focus:ring-4 focus:ring-cyan-100"
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full ${
+                loading ? "bg-gray-400 cursor-not-allowed" : "bg-cyan-600 hover:bg-cyan-700"
+              } text-white border-none rounded-lg py-3.5 px-4 text-base font-semibold transition-all flex items-center justify-center mb-4`}
+            >
+              {loading ? (
+                <>
+                  <div className="inline-block w-4 h-4 border-b-2 border-current rounded-full animate-spin mr-2"></div>
+                  Duke dërguar...
+                </>
+              ) : (
+                "Dërgo email-in"
+              )}
+            </button>
+
+            <div className="text-center">
+              <Link to="/signin" className="text-gray-500 no-underline text-sm hover:text-gray-700">
+                 Kthehuni te hyrja
+              </Link>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )

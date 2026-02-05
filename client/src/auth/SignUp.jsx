@@ -72,14 +72,19 @@ const SignUp = () => {
             Kontrolloni email-in tuaj
           </h2>
           <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8 leading-relaxed">
-            Ne kemi dërguar një kod verifikimi 6-shifror në <strong className="break-all">{formData.email}</strong>. Ju lutemi
-            shkruani kodin për të aktivizuar llogarinë tuaj.
+            Ne kemi dërguar një link verifikimi në <strong className="break-all">{formData.email}</strong>. Ju lutemi
+            klikoni në link për të aktivizuar llogarinë tuaj.
           </p>
+          <div className="bg-teal-50 border border-teal-500 rounded-lg p-3 sm:p-4 mb-6 sm:mb-8">
+            <p className="text-teal-600 text-xs sm:text-sm m-0">
+              💡 Nuk e gjeni email-in? Kontrolloni dosjen "Spam" ose "Junk".
+            </p>
+          </div>
           <button
-            onClick={() => navigate(`/verify?email=${encodeURIComponent(formData.email)}`)}
+            onClick={() => navigate("/signin")}
             className="w-full bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] hover:from-[#0F9D8E] hover:to-[#0891B2] text-white border-none rounded-lg py-3 sm:py-3.5 px-4 text-sm sm:text-base font-medium cursor-pointer transition-all duration-200 mb-4"
           >
-            Shkruani Kodin
+            Shkoni te Hyrja
           </button>
           <p className="text-gray-600 text-xs sm:text-sm m-0">
             Nuk keni marrë email-in?{" "}
