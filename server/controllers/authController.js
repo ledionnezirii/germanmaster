@@ -98,13 +98,23 @@ const normalizeGmailAddress = (email) => {
 // @route   POST /api/auth/signup
 // @access  Public
 const signup = asyncHandler(async (req, res) => {
+  console.log('[DEBUG SIGNUP] ========== SIGNUP STARTED ==========');
+  console.log('[DEBUG SIGNUP] Request body:', JSON.stringify(req.body, null, 2));
+  
   const { emri, mbiemri, email, password, termsAccepted } = req.body
+
+  console.log('[DEBUG SIGNUP] Extracted fields:');
+  console.log('[DEBUG SIGNUP] - emri:', emri);
+  console.log('[DEBUG SIGNUP] - mbiemri:', mbiemri);
+  console.log('[DEBUG SIGNUP] - email:', email);
+  console.log('[DEBUG SIGNUP] - termsAccepted:', termsAccepted);
 
   if (!termsAccepted) {
     throw new ApiError(400, "Ju duhet të pranoni Kushtet dhe Afatet për t'u regjistruar")
   }
 
   const normalizedEmail = normalizeGmailAddress(email)
+  console.log('[DEBUG SIGNUP] Normalized email:', normalizedEmail);
 
   // Check if user exists with normalized email
   const userExists = await User.findOne({ email: normalizedEmail })
@@ -132,6 +142,9 @@ const signup = asyncHandler(async (req, res) => {
     termsAcceptedAt: now,
   })
 
+  console.log('[DEBUG SIGNUP] User created:', user._id);
+  console.log('[DEBUG SIGNUP] User emri after create:', user.emri);
+
   if (user) {
     // Generate email verification token
     const verificationToken = crypto.randomBytes(32).toString("hex")
@@ -142,9 +155,17 @@ const signup = asyncHandler(async (req, res) => {
     user.lastLogin = new Date()
     await user.save({ validateBeforeSave: false })
 
-const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
+    console.log('[DEBUG SIGNUP] Verification token generated:', verificationToken);
+    console.log('[DEBUG SIGNUP] FRONTEND_URL env:', process.env.FRONTEND_URL);
 
-const message = `
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
+    console.log('[DEBUG SIGNUP] Full verification URL:', verificationUrl);
+
+    const escapedName = escapeHtml(user.emri);
+    console.log('[DEBUG SIGNUP] Original name:', user.emri);
+    console.log('[DEBUG SIGNUP] Escaped name:', escapedName);
+
+    const message = `
 <html>
 <body style="font-family:Arial,sans-serif;margin:0;padding:20px;background:#f4f4f4;">
   <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;">
@@ -152,7 +173,8 @@ const message = `
       <h1 style="color:#fff;margin:0;">Verifikimi i Email-it</h1>
     </div>
     <div style="padding:30px;">
-<p style="font-size:16px;color:#333;margin:0 0 20px;">Përshëndetje <strong>${escapeHtml(user.emri)}</strong>,</p>      <p style="font-size:16px;color:#333;margin:0 0 30px;">Faleminderit që u regjistruat! Klikoni butonin për të verifikuar email-in:</p>
+      <p style="font-size:16px;color:#333;margin:0 0 20px;">Përshëndetje <strong>${escapedName}</strong>,</p>
+      <p style="font-size:16px;color:#333;margin:0 0 30px;">Faleminderit që u regjistruat! Klikoni butonin për të verifikuar email-in:</p>
       <div style="text-align:center;margin:30px 0;">
         <a href="${verificationUrl}" style="background:#007bff;color:#fff;padding:15px 40px;text-decoration:none;border-radius:5px;display:inline-block;font-weight:bold;">Verifiko Email-in</a>
       </div>
@@ -170,11 +192,24 @@ const message = `
 </html>
 `;
 
-await sendEmail({
-  to: user.email,
-  subject: "Verifikoni email-in tuaj - Gjuha Gjermane",
-  htmlContent: message,
-});
+    console.log('[DEBUG SIGNUP] Email HTML message length:', message.length);
+    console.log('[DEBUG SIGNUP] Email HTML first 500 chars:', message.substring(0, 500));
+    console.log('[DEBUG SIGNUP] Email HTML last 500 chars:', message.substring(message.length - 500));
+    console.log('[DEBUG SIGNUP] Sending email to:', user.email);
+
+    try {
+      await sendEmail({
+        to: user.email,
+        subject: "Verifikoni email-in tuaj - Gjuha Gjermane",
+        htmlContent: message,
+      });
+      console.log('[DEBUG SIGNUP] Email sent successfully!');
+    } catch (emailError) {
+      console.log('[DEBUG SIGNUP] EMAIL ERROR:', emailError);
+      console.log('[DEBUG SIGNUP] EMAIL ERROR message:', emailError.message);
+      console.log('[DEBUG SIGNUP] EMAIL ERROR stack:', emailError.stack);
+    }
+
     // Respond without token yet, user must verify first
     res
       .status(201)
