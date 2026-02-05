@@ -6,7 +6,7 @@ const { ApiResponse } = require("../utils/ApiResponse")
 const { asyncHandler } = require("../utils/asyncHandler")
 const crypto = require("crypto")
 const sendEmail = require("../utils/sendEmail")
-const { getEmailTemplate, getPlainTextVersion, getVerificationCodeTemplate, getVerificationCodeTextVersion } = require("../utils/emailTemplates");
+
 
 // Helper function to calculate subscription status (FIXED VERSION)
 const calculateSubscriptionStatus = (user) => {
@@ -122,31 +122,27 @@ const signup = asyncHandler(async (req, res) => {
   })
 
   if (user) {
-    // Generate 6-digit verification code
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    user.verificationCode = verificationCode;
-    user.verificationCodeExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+    // Generate email verification token
+    const verificationToken = crypto.randomBytes(32).toString("hex")
+    user.verificationToken = verificationToken
+    user.verificationTokenExpires = Date.now() + 60 * 60 * 1000 // 1 hour
 
     user.streakCount = 1
     user.lastLogin = new Date()
     await user.save({ validateBeforeSave: false })
 
-const emailContent = {
-  title: "Verifikimi i Email-it",
-  userName: user.emri,
-  message: "Ju lutem shkruani kodin e mëposhtëm për të verifikuar email-in tuaj.",
-  verificationCode: verificationCode,
-};
-
-const htmlContent = getVerificationCodeTemplate(emailContent);
-const textContent = getVerificationCodeTextVersion(emailContent);
-
-await sendEmail({
-  to: user.email,
-  subject: "Verifikoni email-in tuaj",
-  htmlContent,
-  textContent,
-});
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`
+    const message = `
+      <h1>Verifikimi i Email-it</h1>
+      <p>Përshëndetje ${user.emri},</p>
+      <p>Ju lutem verifikoni email-in tuaj duke klikuar në lidhjen më poshtë:</p>
+      <a href="${verificationUrl}" target="_blank">Verifiko Email-in</a>
+    `
+    await sendEmail({
+      to: user.email,
+      subject: "Verifikoni email-in tuaj",
+      htmlContent: message,
+    })
 
     // Respond without token yet, user must verify first
     res
@@ -401,31 +397,28 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   if (!user) throw new ApiError(404, "Përdoruesi nuk u gjet")
 
-  // Generate 6-digit reset code
-  const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-  user.resetPasswordCode = resetCode;
-  user.resetPasswordCodeExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
+  // Generate reset token
+  const resetToken = crypto.randomBytes(32).toString("hex")
+  user.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex")
+  user.resetPasswordExpires = Date.now() + 60 * 60 * 1000 // 1 hour
   await user.save({ validateBeforeSave: false })
 
-  console.log("RESET CODE:", resetCode)
+  console.log("RESET TOKEN:", resetToken)
 
-  // Send reset email with code
-const emailContent = {
-  title: "Rivendosja e Fjalëkalimit",
-  userName: user.emri,
-  message: "Keni kërkuar rivendosjen e fjalëkalimit. Shkruani kodin e mëposhtëm për të vendosur një fjalëkalim të ri.",
-  verificationCode: resetCode,
-};
+  // Send reset email
+  const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`
+  const message = `
+    <h1>Rivendosja e Fjalëkalimit</h1>
+    <p>Përshëndetje ${user.emri},</p>
+    <p>Keni kërkuar rivendosjen e fjalëkalimit. Klikoni në lidhjen më poshtë për të vendosur një fjalëkalim të ri:</p>
+    <a href="${resetUrl}" target="_blank">Rivendos Fjalëkalimin</a>
+  `
 
-const htmlContent = getVerificationCodeTemplate(emailContent);
-const textContent = getVerificationCodeTextVersion(emailContent);
-
-await sendEmail({
-  to: user.email,
-  subject: "Kërkesa për rivendosjen e fjalëkalimit",
-  htmlContent,
-  textContent,
-});
+  await sendEmail({
+    to: user.email,
+    subject: "Kërkesa për rivendosjen e fjalëkalimit",
+    htmlContent: message,
+  })
 
   res.json(new ApiResponse(200, {}, "Email për rivendosjen e fjalëkalimit dërguar"))
 })
@@ -453,67 +446,17 @@ const resetPassword = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, {}, "Fjalëkalimi u rivendos me sukses"))
 })
 
-const resetPasswordWithCode = asyncHandler(async (req, res) => {
-  const { code, newPassword } = req.body
+const verifyEmail = asyncHandler(async (req, res) => {
+  const { token } = req.params
 
-  const user = await User.findOne({
-    resetPasswordCode: code,
-    resetPasswordCodeExpires: { $gt: Date.now() },
-  })
+  const user = await User.findOne({ verificationToken: token })
+  if (!user) throw new ApiError(400, "Token verifikimi i pavlefshëm ose ka skaduar")
 
-  if (!user) throw new ApiError(400, "Kodi i rivendosjes së fjalëkalimit është i pavlefshëm ose ka skaduar")
-
-  user.password = newPassword
-  user.resetPasswordCode = undefined
-  user.resetPasswordCodeExpires = undefined
+  user.isVerified = true
+  user.verificationToken = undefined
   await user.save()
 
-  await Session.updateMany({ userId: user._id }, { isActive: false })
-
-  res.json(new ApiResponse(200, {}, "Fjalëkalimi u rivendos me sukses"))
-})
-
-const verifyEmail = asyncHandler(async (req, res) => {
-  // Support both POST (code) and GET (token) methods
-  const { code } = req.body;
-  const { token } = req.params;
-
-  let user;
-
-  if (code) {
-    // New method: POST with code
-    user = await User.findOne({
-      verificationCode: code,
-      verificationCodeExpires: { $gt: Date.now() },
-    });
-    
-    if (!user) {
-      throw new ApiError(400, "Kodi verifikimi i pavlefshëm ose ka skaduar");
-    }
-
-    user.isVerified = true;
-    user.verificationCode = undefined;
-    user.verificationCodeExpires = undefined;
-  } else if (token) {
-    // Old method: GET with token (for backward compatibility)
-    user = await User.findOne({
-      verificationToken: token,
-      verificationTokenExpires: { $gt: Date.now() },
-    });
-    
-    if (!user) {
-      throw new ApiError(400, "Token verifikimi i pavlefshëm ose ka skaduar");
-    }
-
-    user.isVerified = true;
-    user.verificationToken = undefined;
-    user.verificationTokenExpires = undefined;
-  } else {
-    throw new ApiError(400, "Kodi ose token verifikimi i nevojshëm");
-  }
-
-  await user.save();
-  res.json(new ApiResponse(200, {}, "Email-i u verifikua me sukses"));
+  res.json(new ApiResponse(200, {}, "Email-i u verifikua me sukses"))
 })
 
 module.exports = {
@@ -525,6 +468,5 @@ module.exports = {
   getMe,
   forgotPassword,
   resetPassword,
-  resetPasswordWithCode,
   verifyEmail,
 }
