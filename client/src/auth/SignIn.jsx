@@ -55,12 +55,12 @@ const SignIn = () => {
         errorMessage.toLowerCase().includes("kredenciale")
       ) {
         setError("Fjalëkalimi është i pasaktë. Ju lutemi provoni përsëri.")
-      } else if (
-        errorMessage.toLowerCase().includes("email") ||
-        errorMessage.toLowerCase().includes("user not found")
-      ) {
-        setError("Email-i nuk u gjet. Ju lutemi kontrolloni email-in tuaj.Duhet ta verifikoni emailin tuaj kontrolloni spam ose junk folder")
-      } else {
+      }else if (
+  errorMessage.toLowerCase().includes("email") ||
+  errorMessage.toLowerCase().includes("user not found")
+) {
+  setError("Email-i nuk u gjet. Ju lutemi kontrolloni email-in tuaj.")
+} else {
         setError(errorMessage || "Email ose fjalëkalim i pasaktë. Ju lutemi provoni përsëri.")
       }
     } finally {
