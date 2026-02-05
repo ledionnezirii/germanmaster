@@ -123,7 +123,10 @@ export const authService = {
   forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
   resetPassword: (token, newPassword) =>
     api.post(`/auth/reset-password/${token}`, { newPassword }),
-  verifyEmail: (token) => api.get(`/auth/verify/${token}`),
+  resetPasswordWithCode: (code, newPassword) =>
+    api.post("/auth/reset-password", { code, newPassword }),
+  verifyEmail: (code) => api.post("/auth/verify", { code }),
+  verifyEmailToken: (token) => api.get(`/auth/verify/${token}`),
 
   getProfile: () => api.get("/auth/me"),
   updateProfile: (data) =>
