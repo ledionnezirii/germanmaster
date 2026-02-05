@@ -246,10 +246,25 @@ const userSchema = new mongoose.Schema(
     verificationToken: {
       type: String,
     },
+    verificationCode: {
+      type: String,
+    },
+    verificationCodeExpires: {
+      type: Date,
+    },
+    verificationTokenExpires: {
+      type: Date,
+    },
     resetPasswordToken: {
       type: String,
     },
     resetPasswordExpires: {
+      type: Date,
+    },
+    resetPasswordCode: {
+      type: String,
+    },
+    resetPasswordCodeExpires: {
       type: Date,
     },
     quizStats: {
