@@ -6,7 +6,7 @@ const { ApiResponse } = require("../utils/ApiResponse")
 const { asyncHandler } = require("../utils/asyncHandler")
 const crypto = require("crypto")
 const sendEmail = require("../utils/sendEmail")
-
+const { getEmailTemplate, getPlainTextVersion } = require("../utils/emailTemplates");
 
 // Helper function to calculate subscription status (FIXED VERSION)
 const calculateSubscriptionStatus = (user) => {
@@ -131,18 +131,24 @@ const signup = asyncHandler(async (req, res) => {
     user.lastLogin = new Date()
     await user.save({ validateBeforeSave: false })
 
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`
-    const message = `
-      <h1>Verifikimi i Email-it</h1>
-      <p>Përshëndetje ${user.emri},</p>
-      <p>Ju lutem verifikoni email-in tuaj duke klikuar në lidhjen më poshtë:</p>
-      <a href="${verificationUrl}" target="_blank">Verifiko Email-in</a>
-    `
-    await sendEmail({
-      to: user.email,
-      subject: "Verifikoni email-in tuaj",
-      htmlContent: message,
-    })
+   // In signup function - REPLACE the email sending section
+const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
+
+const emailContent = {
+  title: "Verifikimi i Email-it",
+  userName: user.emri,
+  message: "Ju lutem verifikoni email-in tuaj duke klikuar në butonin më poshtë. Ky link do të jetë i vlefshëm për 1 orë.",
+};
+
+const htmlContent = getEmailTemplate(emailContent, "Verifiko Email-in", verificationUrl);
+const textContent = getPlainTextVersion(emailContent, verificationUrl);
+
+await sendEmail({
+  to: user.email,
+  subject: "Verifikoni email-in tuaj",
+  htmlContent,
+  textContent,
+});
 
     // Respond without token yet, user must verify first
     res
@@ -406,19 +412,24 @@ const forgotPassword = asyncHandler(async (req, res) => {
   console.log("RESET TOKEN:", resetToken)
 
   // Send reset email
-  const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`
-  const message = `
-    <h1>Rivendosja e Fjalëkalimit</h1>
-    <p>Përshëndetje ${user.emri},</p>
-    <p>Keni kërkuar rivendosjen e fjalëkalimit. Klikoni në lidhjen më poshtë për të vendosur një fjalëkalim të ri:</p>
-    <a href="${resetUrl}" target="_blank">Rivendos Fjalëkalimin</a>
-  `
+ // In forgotPassword function - REPLACE the email sending section
+const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
 
-  await sendEmail({
-    to: user.email,
-    subject: "Kërkesa për rivendosjen e fjalëkalimit",
-    htmlContent: message,
-  })
+const emailContent = {
+  title: "Rivendosja e Fjalëkalimit",
+  userName: user.emri,
+  message: "Keni kërkuar rivendosjen e fjalëkalimit. Klikoni në butonin më poshtë për të vendosur një fjalëkalim të ri. Ky link do të jetë i vlefshëm për 1 orë.",
+};
+
+const htmlContent = getEmailTemplate(emailContent, "Rivendos Fjalëkalimin", resetUrl);
+const textContent = getPlainTextVersion(emailContent, resetUrl);
+
+await sendEmail({
+  to: user.email,
+  subject: "Kërkesa për rivendosjen e fjalëkalimit",
+  htmlContent,
+  textContent,
+});
 
   res.json(new ApiResponse(200, {}, "Email për rivendosjen e fjalëkalimit dërguar"))
 })
@@ -449,11 +460,18 @@ const resetPassword = asyncHandler(async (req, res) => {
 const verifyEmail = asyncHandler(async (req, res) => {
   const { token } = req.params
 
-  const user = await User.findOne({ verificationToken: token })
-  if (!user) throw new ApiError(400, "Token verifikimi i pavlefshëm ose ka skaduar")
+  const user = await User.findOne({
+    verificationToken: token,
+    verificationTokenExpires: { $gt: Date.now() }, // Add this expiry check
+  })
+  
+  if (!user) {
+    throw new ApiError(400, "Token verifikimi i pavlefshëm ose ka skaduar")
+  }
 
   user.isVerified = true
   user.verificationToken = undefined
+  user.verificationTokenExpires = undefined // Clear expiry
   await user.save()
 
   res.json(new ApiResponse(200, {}, "Email-i u verifikua me sukses"))
