@@ -94,40 +94,25 @@ const normalizeGmailAddress = (email) => {
   return email.toLowerCase()
 }
 
-// @desc    Register user with 2-day free trial
-// @route   POST /api/auth/signup
-// @access  Public
+// In signup function - remove email verification sending, just create user
 const signup = asyncHandler(async (req, res) => {
-  console.log('[DEBUG SIGNUP] ========== SIGNUP STARTED ==========');
-  console.log('[DEBUG SIGNUP] Request body:', JSON.stringify(req.body, null, 2));
-  
   const { emri, mbiemri, email, password, termsAccepted } = req.body
-
-  console.log('[DEBUG SIGNUP] Extracted fields:');
-  console.log('[DEBUG SIGNUP] - emri:', emri);
-  console.log('[DEBUG SIGNUP] - mbiemri:', mbiemri);
-  console.log('[DEBUG SIGNUP] - email:', email);
-  console.log('[DEBUG SIGNUP] - termsAccepted:', termsAccepted);
 
   if (!termsAccepted) {
     throw new ApiError(400, "Ju duhet të pranoni Kushtet dhe Afatet për t'u regjistruar")
   }
 
   const normalizedEmail = normalizeGmailAddress(email)
-  console.log('[DEBUG SIGNUP] Normalized email:', normalizedEmail);
 
-  // Check if user exists with normalized email
   const userExists = await User.findOne({ email: normalizedEmail })
   if (userExists) {
     throw new ApiError(400, "Përdoruesi ekziston tashmë me këtë email")
   }
 
-  // Set role (admin or user)
   const role = normalizedEmail === process.env.ADMIN_EMAIL ? "admin" : "user"
 
-  // Set free trial start and expiry (2 days from now)
   const now = new Date()
-  const trialExpiry = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000) // 2 days later
+  const trialExpiry = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000)
 
   const user = await User.create({
     emri,
@@ -140,90 +125,28 @@ const signup = asyncHandler(async (req, res) => {
     subscriptionExpiresAt: trialExpiry,
     termsAccepted: true,
     termsAcceptedAt: now,
+    isVerified: false, // User starts as not verified
   })
 
-  console.log('[DEBUG SIGNUP] User created:', user._id);
-  console.log('[DEBUG SIGNUP] User emri after create:', user.emri);
-
   if (user) {
-    // Generate email verification token
-    const verificationToken = crypto.randomBytes(32).toString("hex")
-    user.verificationToken = verificationToken
-    user.verificationTokenExpires = Date.now() + 60 * 60 * 1000 // 1 hour
-
     user.streakCount = 1
     user.lastLogin = new Date()
     await user.save({ validateBeforeSave: false })
 
-    console.log('[DEBUG SIGNUP] Verification token generated:', verificationToken);
-    console.log('[DEBUG SIGNUP] FRONTEND_URL env:', process.env.FRONTEND_URL);
-
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
-    console.log('[DEBUG SIGNUP] Full verification URL:', verificationUrl);
-
-    const escapedName = escapeHtml(user.emri);
-    console.log('[DEBUG SIGNUP] Original name:', user.emri);
-    console.log('[DEBUG SIGNUP] Escaped name:', escapedName);
-
-    const message = `
-<html>
-<body style="font-family:Arial,sans-serif;margin:0;padding:20px;background:#f4f4f4;">
-  <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;">
-    <div style="background:#007bff;padding:30px;text-align:center;">
-      <h1 style="color:#fff;margin:0;">Verifikimi i Email-it</h1>
-    </div>
-    <div style="padding:30px;">
-      <p style="font-size:16px;color:#333;margin:0 0 20px;">Përshëndetje <strong>${escapedName}</strong>,</p>
-      <p style="font-size:16px;color:#333;margin:0 0 30px;">Faleminderit që u regjistruat! Klikoni butonin për të verifikuar email-in:</p>
-      <div style="text-align:center;margin:30px 0;">
-        <a href="${verificationUrl}" style="background:#007bff;color:#fff;padding:15px 40px;text-decoration:none;border-radius:5px;display:inline-block;font-weight:bold;">Verifiko Email-in</a>
-      </div>
-      <p style="font-size:14px;color:#666;margin:20px 0 10px;">Ose kopjoni këtë link:</p>
-      <div style="background:#f8f9fa;padding:12px;border-radius:5px;word-break:break-all;">
-        <a href="${verificationUrl}" style="color:#007bff;font-size:14px;">${verificationUrl}</a>
-      </div>
-      <p style="font-size:13px;color:#999;margin:20px 0 0;">⏱️ Linku skadon pas 1 ore.</p>
-    </div>
-    <div style="background:#f8f9fa;padding:15px;text-align:center;">
-      <p style="font-size:12px;color:#999;margin:0;">© ${new Date().getFullYear()} Gjuha Gjermane</p>
-    </div>
-  </div>
-</body>
-</html>
-`;
-
-    console.log('[DEBUG SIGNUP] Email HTML message length:', message.length);
-    console.log('[DEBUG SIGNUP] Email HTML first 500 chars:', message.substring(0, 500));
-    console.log('[DEBUG SIGNUP] Email HTML last 500 chars:', message.substring(message.length - 500));
-    console.log('[DEBUG SIGNUP] Sending email to:', user.email);
-
-    try {
-      await sendEmail({
-        to: user.email,
-        subject: "Verifikoni email-in tuaj - Gjuha Gjermane",
-        htmlContent: message,
-      });
-      console.log('[DEBUG SIGNUP] Email sent successfully!');
-    } catch (emailError) {
-      console.log('[DEBUG SIGNUP] EMAIL ERROR:', emailError);
-      console.log('[DEBUG SIGNUP] EMAIL ERROR message:', emailError.message);
-      console.log('[DEBUG SIGNUP] EMAIL ERROR stack:', emailError.stack);
-    }
-
-    // Respond without token yet, user must verify first
     res
       .status(201)
       .json(
         new ApiResponse(
           201,
           {},
-          "Përdoruesi u regjistrua me sukses. Ju lutem kontrolloni email-in për të verifikuar llogarinë tuaj.",
+          "Përdoruesi u regjistrua me sukses. Tani mund të hyni në llogarinë tuaj.",
         ),
       )
   } else {
     throw new ApiError(400, "Të dhënat e përdoruesit janë jo të vlefshme")
   }
 })
+
 
 const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body
@@ -235,21 +158,20 @@ const login = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Kredenciale të pavlefshme")
   }
 
-  if (!user.isVerified) {
-    throw new ApiError(401, "Ju lutem verifikoni email-in tuaj para se të hyni")
-  }
+  // REMOVED: Email verification check - users can login without verification
+  // if (!user.isVerified) {
+  //   throw new ApiError(401, "Ju lutem verifikoni email-in tuaj para se të hyni")
+  // }
 
   const isMatch = await user.comparePassword(password)
   if (!isMatch) {
     throw new ApiError(401, "Kredenciale të pavlefshme")
   }
 
-  // Check active sessions count
+  // ... rest of login logic stays the same
   const activeSessionsCount = await Session.getActiveSessionsCount(user._id)
 
-  // If user has 2 or more active sessions, invalidate ALL sessions
   if (activeSessionsCount >= 2) {
-    console.log(`[AUTH] User ${user.email} has ${activeSessionsCount} active sessions. Invalidating all sessions.`)
     await Session.invalidateAllSessions(user._id)
   }
 
@@ -282,7 +204,6 @@ const login = asyncHandler(async (req, res) => {
 
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
 
-  // Create new session for this device
   await Session.create({
     userId: user._id,
     token,
@@ -305,8 +226,8 @@ const login = asyncHandler(async (req, res) => {
         token,
         user: {
           id: user._id,
-          firstName: user.emri,  // Add firstName alias
-          lastName: user.mbiemri, // Add lastName alias
+          firstName: user.emri,
+          lastName: user.mbiemri,
           emri: user.emri,
           mbiemri: user.mbiemri,
           email: user.email,
@@ -316,12 +237,11 @@ const login = asyncHandler(async (req, res) => {
           avatarUrl,
           avatarStyle: user.avatarStyle || "adventurer",
           streakCount: user.streakCount || 0,
-          // Add these fields that frontend needs
           isPaid: user.isPaid,
           subscriptionType: user.subscriptionType,
           subscriptionExpiresAt: user.subscriptionExpiresAt,
           subscriptionCancelled: user.subscriptionCancelled || false,
-          // Computed subscription object
+          isVerified: user.isVerified, // Include verification status
           subscription: subscriptionStatus,
         },
       },
@@ -329,6 +249,50 @@ const login = asyncHandler(async (req, res) => {
     ),
   )
 })
+// Add new endpoint for requesting manual verification
+const requestVerification = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user.id)
+
+  if (!user) {
+    throw new ApiError(404, "User not found")
+  }
+
+  if (user.isVerified) {
+    throw new ApiError(400, "Email-i juaj është tashmë i verifikuar")
+  }
+
+  // Send email to admin for manual verification
+  const message = `
+<html>
+<body style="font-family:Arial,sans-serif;margin:0;padding:20px;background:#f4f4f4;">
+  <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;">
+    <div style="background:#007bff;padding:30px;text-align:center;">
+      <h1 style="color:#fff;margin:0;">Kërkesë për Verifikim</h1>
+    </div>
+    <div style="padding:30px;">
+      <p style="font-size:16px;color:#333;margin:0 0 20px;">Një përdorues ka kërkuar verifikimin e email-it:</p>
+      <div style="background:#f8f9fa;padding:15px;border-radius:5px;margin-bottom:20px;">
+        <p style="margin:5px 0;"><strong>Emri:</strong> ${user.emri} ${user.mbiemri}</p>
+        <p style="margin:5px 0;"><strong>Email:</strong> ${user.email}</p>
+        <p style="margin:5px 0;"><strong>ID:</strong> ${user._id}</p>
+        <p style="margin:5px 0;"><strong>Data e regjistrimit:</strong> ${user.createdAt}</p>
+      </div>
+      <p style="font-size:14px;color:#666;">Ju lutem verifikoni këtë përdorues manualisht në panel.</p>
+    </div>
+  </div>
+</body>
+</html>
+`
+
+  await sendEmail({
+    to: "info@gjuhagjemrane.com",
+    subject: `Kërkesë për verifikim - ${user.email}`,
+    htmlContent: message,
+  })
+
+  res.json(new ApiResponse(200, {}, "Kërkesa për verifikim u dërgua me sukses. Do t'ju njoftojmë kur të verifikohet."))
+})
+
 
 const logout = asyncHandler(async (req, res) => {
   const token = req.headers.authorization?.replace("Bearer ", "")
@@ -423,34 +387,33 @@ const getMe = asyncHandler(async (req, res) => {
 
   const subscriptionStatus = calculateSubscriptionStatus(user)
 
-  res.json(
-    new ApiResponse(200, {
-      user: {
-        id: user._id,
-        firstName: user.emri,  // Add firstName alias
-        lastName: user.mbiemri, // Add lastName alias
-        emri: user.emri,
-        mbiemri: user.mbiemri,
-        email: user.email,
-        role: user.role,
-        xp: user.xp,
-        level: user.level,
-        avatarUrl,
-        avatarStyle: user.avatarStyle || "adventurer",
-        studyHours: user.studyHours,
-        completedTests: user.completedTests,
-        achievements: user.achievements,
-        streakCount: user.streakCount || 0,
-        // Add these fields that frontend needs
-        isPaid: user.isPaid,
-        subscriptionType: user.subscriptionType,
-        subscriptionExpiresAt: user.subscriptionExpiresAt,
-        subscriptionCancelled: user.subscriptionCancelled || false,
-        // Computed subscription object
-        subscription: subscriptionStatus,
-      },
-    }),
-  )
+ res.json(
+  new ApiResponse(200, {
+    user: {
+      id: user._id,
+      firstName: user.emri,
+      lastName: user.mbiemri,
+      emri: user.emri,
+      mbiemri: user.mbiemri,
+      email: user.email,
+      role: user.role,
+      xp: user.xp,
+      level: user.level,
+      avatarUrl,
+      avatarStyle: user.avatarStyle || "adventurer",
+      studyHours: user.studyHours,
+      completedTests: user.completedTests,
+      achievements: user.achievements,
+      streakCount: user.streakCount || 0,
+      isPaid: user.isPaid,
+      subscriptionType: user.subscriptionType,
+      subscriptionExpiresAt: user.subscriptionExpiresAt,
+      subscriptionCancelled: user.subscriptionCancelled || false,
+      isVerified: user.isVerified || false, // Add this line
+      subscription: subscriptionStatus,
+    },
+  }),
+)
 })
 
 
@@ -535,4 +498,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   verifyEmail,
+  requestVerification
 }

@@ -9,6 +9,7 @@ const {
   forgotPassword,
   resetPassword,
   verifyEmail,
+  requestVerification
 } = require("../controllers/authController")
 const protect = require("../middleware/auth")
 
@@ -23,6 +24,7 @@ router.get("/me", protect, getMe)
 router.post("/forgot-password", forgotPassword)
 router.post("/reset-password/:token", resetPassword)
 router.get("/verify/:token", verifyEmail)
+router.post("/request-verification", protect, requestVerification) // Add this new route
 
 // Additional routes can be added here if necessary
 
