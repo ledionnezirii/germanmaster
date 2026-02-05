@@ -134,13 +134,18 @@ const signup = asyncHandler(async (req, res) => {
    const verificationUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`
 
 const message = `
-  <h1>Verifikimi i Email-it</h1>
-  <p>Përshëndetje ${user.emri},</p>
-  <p>Ju lutem verifikoni email-in tuaj duke klikuar në lidhjen më poshtë:</p>
-  <a href="${verificationUrl}" target="_blank" style="display:inline-block;padding:10px 20px;background:#007bff;color:#fff;text-decoration:none;border-radius:5px;">Verifiko Email-in</a>
-  <p>Nëse butoni nuk funksionon, kopjoni dhe vendosni këtë link në shfletuesin tuaj:</p>
-  <p>${verificationUrl}</p>
+<h1>Verifikimi i Email-it</h1>
+<p>Përshëndetje ${user.emri},</p>
+<p>Ju lutem verifikoni email-in tuaj duke klikuar në butonin më poshtë:</p>
+<a href="${verificationUrl}" target="_blank" style="display:inline-block;padding:10px 20px;background:#007bff;color:#fff;text-decoration:none;border-radius:5px;">Verifiko Email-in</a>
+
+<p>Nëse butoni nuk funksionon, klikoni linkun më poshtë (ky link është gjithmonë klikues):</p>
+<a href="${verificationUrl}" target="_blank">${verificationUrl}</a>
+
+<p>Nëse nuk e shihni këtë email, kontrolloni folderin Spam/Junk dhe klikoni “Not Spam”.</p>
+<p>Ky link skadon pas 1 ore.</p>
 `;
+
 
     await sendEmail({
       to: user.email,
