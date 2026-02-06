@@ -97,6 +97,7 @@ export const AuthProvider = ({ children }) => {
             achievements: userDataFromResponse.achievements,
             streakCount: userDataFromResponse.streakCount,
             avatarStyle: userDataFromResponse.avatarStyle || "adventurer",
+            isVerified: userDataFromResponse.isVerified || false,
             subscription: userDataFromResponse.subscription || {
               active: false,
               type: "free_trial",
@@ -159,6 +160,7 @@ export const AuthProvider = ({ children }) => {
         achievements: userData.achievements,
         streakCount: userData.streakCount,
         avatarStyle: userData.avatarStyle || "adventurer",
+        isVerified: userData.isVerified || false,
         subscription: userData.subscription || {
           active: false,
           type: "free_trial",
