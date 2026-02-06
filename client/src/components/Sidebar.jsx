@@ -31,6 +31,7 @@ import {
   UserRoundPen,
   Infinity,
   Star,
+  BrickWall,
 } from "lucide-react"
 import { MicrophoneIcon } from "@heroicons/react/24/outline"
 
@@ -68,6 +69,7 @@ const Sidebar = () => {
     { icon: Headphones, label: "Dëgjo", path: "/listen" },
     { icon: BookUser, label: "Fjalori", path: "/dictionary" },
     { icon: InfinityIcon, label: "Baza Gjuhësore", path: "/category" },
+    //{ icon: BrickWall, label: "Flashcards", path: "/flashcards" },
 
     { icon: Star, label: "Strukturat e gjuhes", path: "/structure" },
 

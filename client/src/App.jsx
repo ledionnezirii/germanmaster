@@ -35,6 +35,7 @@ import Race from "./pages/Race"
 import Dialogue from "./pages/Dialogue"
 import Sentence from "./pages/Sentence"
 import Structure from "./pages/Structure"
+import FlashCard from "./pages/FlashCard"
 
 
 const AppContent = () => {
@@ -111,9 +112,9 @@ const AppContent = () => {
                       <Route path="/race" element={<Race />} />
                       <Route path="/academies" element={<Academy />} />
                       <Route path="/dialogue" element={<Dialogue />} />
-                      <Route path="/sentences" element={<Sentence />} /> 
+                      <Route path="/sentences" element={<Sentence />} />
                       <Route path="/structure" element={<Structure />} />
-
+                      <Route path="/flashcards" element={<FlashCard />} />
                     </Routes>
                   </SubscriptionGate>
                 }

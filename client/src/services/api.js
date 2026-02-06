@@ -873,4 +873,14 @@ export const structureService = {
   },
 };
 
+
+export const flashCardService = {
+  getAllFlashCards: (params = {}) => api.get("/flashcards", { params }),
+  getFlashCardById: (id) => api.get(`/flashcards/${id}`),
+  createFlashCard: (flashCardData) => api.post("/flashcards", flashCardData),
+  updateFlashCard: (id, flashCardData) => api.put(`/flashcards/${id}`, flashCardData),
+  deleteFlashCard: (id) => api.delete(`/flashcards/${id}`),
+  addXP: (xpEarned) => api.post("/flashcards/xp/add", { xpEarned }),
+};
+
 export default api;
