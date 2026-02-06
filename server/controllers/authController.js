@@ -269,8 +269,8 @@ const requestVerification = asyncHandler(async (req, res) => {
     <div style="padding:30px;">
       <p style="font-size:16px;color:#333;margin:0 0 20px;">Një përdorues ka kërkuar verifikimin e email-it:</p>
       <div style="background:#f8f9fa;padding:15px;border-radius:5px;margin-bottom:20px;">
-        <p style="margin:5px 0;"><strong>Emri:</strong> ${user.emri} ${user.mbiemri}</p>
-        <p style="margin:5px 0;"><strong>Email:</strong> ${user.email}</p>
+        <p style="margin:5px 0;"><strong>Emri:</strong> ${escapeHtml(user.emri)} ${escapeHtml(user.mbiemri)}</p>
+        <p style="margin:5px 0;"><strong>Email:</strong> ${escapeHtml(user.email)}</p>
         <p style="margin:5px 0;"><strong>ID:</strong> ${user._id}</p>
         <p style="margin:5px 0;"><strong>Data e regjistrimit:</strong> ${user.createdAt}</p>
       </div>
@@ -431,13 +431,44 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   console.log("RESET TOKEN:", resetToken)
 
-  // Send reset email
+  // Send reset email with styled button and copyable link
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`
   const message = `
-    <h1>Rivendosja e Fjalëkalimit</h1>
-    <p>Përshëndetje ${user.emri},</p>
-    <p>Keni kërkuar rivendosjen e fjalëkalimit. Klikoni në lidhjen më poshtë për të vendosur një fjalëkalim të ri:</p>
-    <a href="${resetUrl}" target="_blank">Rivendos Fjalëkalimin</a>
+<html>
+<body style="font-family:Arial,sans-serif;margin:0;padding:20px;background:#f4f4f4;">
+  <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+    <div style="background:linear-gradient(135deg, #007bff 0%, #0056b3 100%);padding:30px;text-align:center;">
+      <h1 style="color:#fff;margin:0;font-size:28px;">Rivendosja e Fjalëkalimit</h1>
+    </div>
+    <div style="padding:40px 30px;">
+      <p style="font-size:16px;color:#333;margin:0 0 20px;">Përshëndetje ${escapeHtml(user.emri)},</p>
+      <p style="font-size:14px;color:#666;margin:0 0 30px;line-height:1.6;">Keni kërkuar rivendosjen e fjalëkalimit për llogarinë tuaj. Klikoni në butonin më poshtë për të vendosur një fjalëkalim të ri:</p>
+      
+      <div style="text-align:center;margin:30px 0;">
+        <a href="${resetUrl}" style="display:inline-block;padding:15px 40px;background:#007bff;color:#fff;text-decoration:none;border-radius:5px;font-weight:bold;font-size:16px;box-shadow:0 4px 6px rgba(0,123,255,0.3);transition:background 0.3s;">Rivendos Fjalëkalimin</a>
+      </div>
+      
+      <p style="font-size:14px;color:#666;margin:30px 0 10px;">Ose kopjoni dhe ngjisni këtë lidhje në shfletuesin tuaj:</p>
+      <div style="background:#f8f9fa;padding:15px;border-radius:5px;word-break:break-all;font-family:monospace;font-size:12px;color:#333;border:1px solid #e9ecef;">
+        ${resetUrl}
+      </div>
+      
+      <div style="background:#fff3cd;border-left:4px solid #ffc107;padding:15px;margin:30px 0;border-radius:4px;">
+        <p style="font-size:13px;color:#856404;margin:0;line-height:1.6;">
+          <strong>⚠️ Shënim i rëndësishëm:</strong><br>
+          • Kjo lidhje do të skadojë pas <strong>1 ore</strong><br>
+          • Nëse nuk keni kërkuar rivendosjen e fjalëkalimit, ju lutemi injoroni këtë email dhe fjalëkalimi juaj do të mbetet i pandryshuar
+        </p>
+      </div>
+      
+      <p style="font-size:12px;color:#999;margin:30px 0 0;border-top:1px solid #eee;padding-top:20px;text-align:center;">
+        Ky email u dërgua nga <strong>Gjuha Gjermane</strong><br>
+        Nëse keni pyetje, na kontaktoni në info@gjuhagjemrane.com
+      </p>
+    </div>
+  </div>
+</body>
+</html>
   `
 
   await sendEmail({
