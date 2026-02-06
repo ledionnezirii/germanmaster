@@ -282,7 +282,7 @@ const requestVerification = asyncHandler(async (req, res) => {
 `
 
   await sendEmail({
-    to: "info@gjuhagjemrane.com",
+    to: "info@gjuhagjermane.com",
     subject: `Kërkesë për verifikim - ${user.email}`,
     htmlContent: message,
   })
@@ -463,7 +463,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
       
       <p style="font-size:12px;color:#999;margin:30px 0 0;border-top:1px solid #eee;padding-top:20px;text-align:center;">
         Ky email u dërgua nga <strong>Gjuha Gjermane</strong><br>
-        Nëse keni pyetje, na kontaktoni në info@gjuhagjemrane.com
+        Nëse keni pyetje, na kontaktoni në info@gjuhagjermane.com
       </p>
     </div>
   </div>
