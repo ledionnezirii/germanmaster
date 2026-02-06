@@ -52,9 +52,9 @@ const SignUp = () => {
         setError("Fjalëkalimi nuk është i vlefshëm. Ju lutemi provoni një fjalëkalim tjetër.")
       } else if (errorMessage.toLowerCase().includes("terms")) {
         setError("Ju duhet të pranoni kushtet dhe afatet për të vazhduar.")
-      } else {
-        setError("Regjistrimi dështoi. Ju lutemi provoni përsëri.")
-      }
+      }  else {
+  setError("Ky email është tashmë i regjistruar. Ju lutemi klikoni butonin 'Hyni këtu' më poshtë për të hyrë në llogarinë tuaj.")
+}
     } finally {
       setLoading(false)
     }

@@ -54,7 +54,7 @@ const SignIn = () => {
         errorMessage.toLowerCase().includes("invalid") ||
         errorMessage.toLowerCase().includes("kredenciale")
       ) {
-        setError("Fjalëkalimi është i pasaktë. Ju lutemi provoni përsëri.")
+        setError("Email ose fjalëkalimi i pasaktë. Ju lutemi provoni përsëri.")
       }else if (
   errorMessage.toLowerCase().includes("email") ||
   errorMessage.toLowerCase().includes("user not found")
