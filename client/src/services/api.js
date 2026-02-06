@@ -2,6 +2,7 @@ import axios from "axios";
 
 // URL për kërkesat API
 const API_BASE_URL = "https://api.gjuhagjermane.com/api";
+//const API_BASE_URL = "/api";
 
 // URL për socket.io
 export const SOCKET_URL = "https://api.gjuhagjermane.com";
