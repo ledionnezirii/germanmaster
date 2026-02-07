@@ -7,7 +7,7 @@ import { useAuth } from "../context/AuthContext";
 
 export default function StructurePage() {
   const { user, updateUser } = useAuth();
-  const [selectedLevel, setSelectedLevel] = useState('all');
+  const [selectedLevel, setSelectedLevel] = useState('A1');
   const [structures, setStructures] = useState([]);
   const [selectedStructure, setSelectedStructure] = useState(null);
   const [completedStructures, setCompletedStructures] = useState([]);
@@ -15,7 +15,7 @@ export default function StructurePage() {
   const [quizMode, setQuizMode] = useState('write');
   const [loading, setLoading] = useState(false);
 
-  const levels = ['all', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+  const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
   useEffect(() => {
     fetchStructures();
@@ -334,10 +334,10 @@ function StructureDetail({ structure, typeIcons, isCompleted, onBack, onStartQui
                 <div key={actualIndex} className="bg-gradient-to-br from-gray-50 to-indigo-50 rounded-xl p-3 border border-gray-200 hover:shadow-md transition-all">
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex-1">
-                      <div className="text-xs font-semibold text-indigo-600 mb-0.5">GJERMANISHT</div>
-                      <p className="text-sm font-bold text-gray-900">{item.german}</p>
+                      <div className="text-[10px] font-semibold text-indigo-600 mb-0.5">GJERMANISHT</div>
+                      <p className="text-xl font-bold text-blue-400">{item.german}</p>
                     </div>
-                    <button
+                    {/* <button
                       onClick={() => playAudio(actualIndex, item.german)}
                       disabled={playingAudio === actualIndex}
                       className="p-1.5 rounded-lg bg-indigo-100 hover:bg-indigo-200 transition-colors disabled:opacity-50"
@@ -347,11 +347,11 @@ function StructureDetail({ structure, typeIcons, isCompleted, onBack, onStartQui
                       ) : (
                         <Volume2 className="w-3.5 h-3.5 text-indigo-600" />
                       )}
-                    </button>
+                    </button> */}
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-gray-500 mb-0.5">SHQIP</div>
-                    <p className="text-sm font-semibold text-gray-700">{item.albanian}</p>
+                    <div className="text-[10px] font-semibold text-gray-500 mb-0.5">SHQIP</div>
+                    <p className="text-xl font-semibold text-yellow-400">{item.albanian}</p>
                   </div>
                   {item.example && (
                     <p className="text-xs text-gray-500 italic mt-2 pt-2 border-t border-gray-200">{item.example}</p>

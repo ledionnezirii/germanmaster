@@ -32,6 +32,7 @@ import {
   Infinity,
   Star,
   BrickWall,
+  BrickWallFire,
 } from "lucide-react"
 import { MicrophoneIcon } from "@heroicons/react/24/outline"
 
