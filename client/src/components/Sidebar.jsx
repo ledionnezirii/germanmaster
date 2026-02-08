@@ -33,8 +33,9 @@ import {
   Star,
   BrickWall,
   BrickWallFire,
+  Type,
 } from "lucide-react"
-import { MicrophoneIcon } from "@heroicons/react/24/outline"
+import { ChatBubbleLeftIcon, MicrophoneIcon } from "@heroicons/react/24/outline"
 
 const fonts = {
   poppins: ["Poppins", "sans-serif"].join(", "),
@@ -84,6 +85,8 @@ const Sidebar = () => {
       ],
     },*/
     { icon: UniversityIcon, label: "Mëso Gramatiken", path: "/grammar" },
+      { icon: ChatBubbleLeftIcon, label: "worti", path: "/question" },
+
 
     { icon: LightbulbIcon, label: "Kuizet", path: "/quizes" },
     /*{ icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation" },*/

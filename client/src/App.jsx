@@ -37,6 +37,7 @@ import Dialogue from "./pages/Dialogue"
 import Sentence from "./pages/Sentence"
 import Structure from "./pages/Structure"
 import FlashCard from "./pages/FlashCard"
+import Chat from "./pages/Chat"
 
 
 const AppContent = () => {
@@ -112,6 +113,7 @@ const AppContent = () => {
                       <Route path="/dictionary" element={<Dictionary />} />
                       <Route path="/category" element={<Category />} />
                       <Route path="/grammar" element={<Grammar />} />
+                      <Route path="/question" element={<Chat />} />
                       <Route path="/plan" element={<Plan />} />
                       <Route path="/tests" element={<Tests />} />
                       <Route path="/pronunciation" element={<Pronunciation />} />
