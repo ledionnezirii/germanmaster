@@ -516,16 +516,17 @@ const Chat = () => {
             )}
 
             <form onSubmit={handleSubmit} className="flex gap-2">
-              <input
-                ref={inputRef}
-                type="text"
-                value={currentInput}
-                onChange={(e) => setCurrentInput(e.target.value)}
-                placeholder="Shkruaj përgjigjen tënde..."
-                className="flex-1 bg-gray-100 border-0 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-gray-900 focus:bg-white transition-all placeholder:text-gray-500"
-                disabled={loading || !currentQuestion}
-                autoComplete="off"
-              />
+            <input
+  ref={inputRef}
+  type="text"
+  value={currentInput}
+  onChange={(e) => setCurrentInput(e.target.value)}
+  placeholder="Shkruaj përgjigjen tënde..."
+  className="flex-1 bg-gray-100 border-0 rounded-xl px-3 py-2 text-base focus:ring-2 focus:ring-gray-900 focus:bg-white transition-all placeholder:text-gray-500"
+  //         ↑ Ndryshoje nga text-xs në text-base
+  disabled={loading || !currentQuestion}
+  autoComplete="off"
+/>
               <button
                 type="submit"
                 disabled={!currentInput.trim() || loading || !currentQuestion}
