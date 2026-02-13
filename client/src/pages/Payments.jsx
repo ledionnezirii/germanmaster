@@ -12,6 +12,7 @@ const Payment = () => {
   const [subscriptionStatus, setSubscriptionStatus] = useState(null)
   const [error, setError] = useState(null)
   const [processingPlan, setProcessingPlan] = useState(null)
+  const [processingPayment, setProcessingPayment] = useState(false)
 
   const PADDLE_CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN
   
@@ -55,6 +56,64 @@ const Payment = () => {
     },
   ]
 
+  // ✅ NEW: Poll backend to check if payment has been processed
+  const pollPaymentStatus = async (maxAttempts = 15, interval = 2000) => {
+    console.log("🔄 Starting to poll backend for payment confirmation...")
+    
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        console.log(`🔄 Polling attempt ${attempt}/${maxAttempts}...`)
+        
+        // Fetch fresh user data from backend
+        const response = await authService.getProfile()
+        const userData = response.data?.user || response.data
+        
+        console.log("📋 Backend user data:", {
+          isPaid: userData?.isPaid,
+          isActive: userData?.isActive,
+          subscriptionType: userData?.subscriptionType,
+        })
+        
+        // Check if backend has processed the payment
+        if (userData && userData.isPaid && userData.isActive) {
+          console.log("✅ Backend confirmed payment! Updating UI...")
+          
+          // Update context and local state
+          updateUser({
+            subscription: userData.subscription,
+            isPaid: true,
+            isActive: true,
+            subscriptionType: userData.subscriptionType,
+            subscriptionExpiresAt: userData.subscriptionExpiresAt,
+            subscriptionCancelled: false,
+          })
+          
+          // Update local component state
+          setUser(userData)
+          
+          // Update subscription status
+          const status = await subscriptionService.checkStatus()
+          setSubscriptionStatus(status)
+          
+          localStorage.removeItem("subscription_expired")
+          
+          return true
+        }
+        
+        // Wait before next attempt
+        if (attempt < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, interval))
+        }
+      } catch (err) {
+        console.error(`❌ Polling attempt ${attempt} failed:`, err)
+        // Continue polling even if one attempt fails
+      }
+    }
+    
+    console.log("⏰ Polling timeout - payment not confirmed yet")
+    return false
+  }
+
   useEffect(() => {
     const initPaddle = () => {
       if (!PADDLE_CLIENT_TOKEN) {
@@ -70,35 +129,30 @@ const Payment = () => {
       try {
         window.Paddle.Initialize({
           token: PADDLE_CLIENT_TOKEN,
-          eventCallback: (data) => {
+          eventCallback: async (data) => {
             if (data.type === "checkout.completed") {
-              setTimeout(async () => {
-                try {
-                  const response = await authService.getProfile()
-                  const userData = response.data?.user
-                  
-                  if (userData) {
-                    updateUser({
-                      subscription: userData.subscription,
-                      isPaid: true,
-                      subscriptionType: userData.subscriptionType,
-                      subscriptionExpiresAt: userData.subscriptionExpiresAt,
-                      subscriptionCancelled: false,
-                    })
-                    
-                    alert("✅ Pagesa u krye me sukses! Abonimi juaj është aktiv MENJËHERË!")
-                    localStorage.removeItem("subscription_expired")
-                    
-                    const status = await subscriptionService.checkStatus()
-                    setSubscriptionStatus(status)
-                  }
-                } catch (err) {
-                  alert("✅ Pagesa u krye me sukses! Ju lutem rifreskoni faqen për të parë ndryshimet.")
-                  setTimeout(() => window.location.reload(), 2000)
-                }
-              }, 2000)
+              console.log("🎉 Paddle checkout completed!")
+              setProcessingPayment(true)
+              
+              // Wait a bit for Paddle to send the webhook to our backend
+              await new Promise(resolve => setTimeout(resolve, 2000))
+              
+              // Poll backend to confirm payment has been processed
+              const confirmed = await pollPaymentStatus()
+              
+              setProcessingPayment(false)
+              
+              if (confirmed) {
+                alert("✅ Pagesa u krye me sukses! Abonimi juaj është aktiv TANI!\n\nUI-ja është përditësuar - keni qasje të plotë në të gjitha veçoritë Premium.")
+              } else {
+                // Fallback: reload page to get fresh data
+                alert("✅ Pagesa u krye me sukses!\n\nPo rifreskojmë faqen për të përditësuar të dhënat tuaja...")
+                setTimeout(() => window.location.reload(), 1500)
+              }
             }
+            
             if (data.type === "checkout.error") {
+              setProcessingPayment(false)
               setError(
                 "❌ Pagesa dështoi. Ju lutem provoni përsëri. NUK është tërhequr asnjë pagesë nga llogaria juaj.",
               )
@@ -288,7 +342,8 @@ const Payment = () => {
   const isCancelled = subscriptionStatus?.cancelled && subscriptionStatus?.active
   const isExpired = !subscriptionStatus?.active
 
-  const shouldShowBuyButton = isExpired || isFreeTrial || isCancelled
+  // Only show buy button when subscription is actually expired (not just cancelled)
+  const shouldShowBuyButton = isExpired || isFreeTrial
   const shouldShowCancelButton = subscriptionActive && !isCancelled
 
   return (
@@ -307,7 +362,33 @@ const Payment = () => {
         .animate-slide-up { 
           animation: slide-up 0.3s ease-out; 
         }
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+          animation: spin 1s linear infinite;
+        }
       `}</style>
+      
+      {/* ✅ NEW: Payment Processing Overlay */}
+      {processingPayment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-md mx-4 text-center shadow-2xl">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-green-500 mx-auto mb-4"></div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
+              Duke procesuar pagesën...
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Ju lutem prisni derisa të konfirmohet pagesa dhe t'ju aktivizohet qasja.
+            </p>
+            <div className="bg-blue-50 rounded-lg p-3">
+              <p className="text-sm text-blue-800">
+                ⏳ Mos e mbyllni këtë faqe derisa të përfundojë procesi...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white py-8 px-4 shadow-lg rounded-3xl">
         <div className="max-w-4xl mx-auto">
@@ -358,7 +439,7 @@ const Payment = () => {
                   </div>
                 )}
                 <p className="text-orange-100 text-sm mt-3">
-                  💡 Mund të rinovosh abonimin tënd në çdo kohë duke zgjedhur një plan më poshtë.
+                  💡 Plani do të jetë i disponueshëm përsëri pas përfundimit të periudhës aktuale.
                 </p>
               </div>
             </div>
@@ -411,19 +492,12 @@ const Payment = () => {
 
         {shouldShowBuyButton && (
           <div className="mb-8">
-
-           
-          
-
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-2" style={{ fontFamily: 'Poppins, sans-serif' }}>
-                {isCancelled ? "Rinovo Abonimin Tënd" : "Zgjidh Planin Tënd"}
+                Zgjidh Planin Tënd
               </h2>
               <p className="text-gray-600">
-                {isCancelled 
-                  ? "Zgjidh një plan për të vazhduar me qasje të plotë pas përfundimit të periudhës aktuale"
-                  : "Shiko çmimet më poshtë dhe kryeni pagesën online"
-                }
+                Shiko çmimet më poshtë dhe kryeni pagesën online
               </p>
             </div>
 
@@ -460,7 +534,7 @@ const Payment = () => {
 
                     <button
                       onClick={() => openCheckout(plan.priceId, plan.id)}
-                      disabled={processingPlan === plan.id}
+                      disabled={processingPlan === plan.id || processingPayment}
                       className="w-full py-2.5 px-4 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-lg text-center font-semibold transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       {processingPlan === plan.id ? "Duke procesuar..." : "Bli Tani"}
