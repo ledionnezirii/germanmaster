@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { dialogueService, authService, ttsService } from "../services/api"
+import { dialogueService, authService } from "../services/api"
 import SEO from "../components/SEO"
 import {
   Play,
@@ -139,7 +139,6 @@ const DialogueViewer = ({ dialogue, onContinue, onBack }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [hasStarted, setHasStarted] = useState(false)
   const dialogueRef = useRef(null)
-  const audioRef = useRef(null)
 
   useEffect(() => {
     if (dialogueRef.current) {
@@ -149,10 +148,8 @@ const DialogueViewer = ({ dialogue, onContinue, onBack }) => {
 
   useEffect(() => {
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause()
-        audioRef.current = null
-      }
+      // Cancel any ongoing speech when component unmounts
+      window.speechSynthesis.cancel()
     }
   }, [])
 
@@ -166,32 +163,22 @@ const DialogueViewer = ({ dialogue, onContinue, onBack }) => {
     const line = dialogue.dialogue[index]
 
     try {
-      const response = await ttsService.getDialogueAudio(
-        dialogue._id,
-        index,
-        line.text,
-        dialogue.level
-      )
+      // Cancel any ongoing speech
+      window.speechSynthesis.cancel()
 
-      if (!response || !(response instanceof Blob)) {
-        throw new Error('Invalid audio response')
-      }
+      // Create speech utterance
+      const utterance = new SpeechSynthesisUtterance(line.text)
+      utterance.lang = 'de-DE' // German language
+      utterance.rate = 0.9 // Slightly slower for learning
+      utterance.pitch = 1
 
-      const audioUrl = URL.createObjectURL(response)
-      const audio = new Audio(audioUrl)
-      audioRef.current = audio
-
-      audio.onloadeddata = () => {
+      utterance.onstart = () => {
         setIsLoading(false)
         setIsPlaying(true)
-      }
-
-      audio.onplay = () => {
         setCurrentLine(index)
       }
 
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl)
+      utterance.onend = () => {
         setTimeout(() => {
           if (index < dialogue.dialogue.length - 1) {
             playDialogueLine(index + 1)
@@ -204,18 +191,24 @@ const DialogueViewer = ({ dialogue, onContinue, onBack }) => {
         }, 800)
       }
 
-      audio.onerror = () => {
+      utterance.onerror = (error) => {
+        console.error("Speech synthesis error:", error)
         setIsLoading(false)
         setIsPlaying(false)
-        console.error("Error playing audio")
+        
         if (index < dialogue.dialogue.length - 1) {
           setTimeout(() => playDialogueLine(index + 1), 1000)
+        } else {
+          setTimeout(() => {
+            onContinue()
+          }, 1000)
         }
       }
 
-      await audio.play()
+      // Speak the text
+      window.speechSynthesis.speak(utterance)
     } catch (error) {
-      console.error("Error getting dialogue audio:", error)
+      console.error("Error with speech synthesis:", error)
       setIsLoading(false)
       setIsPlaying(false)
       
@@ -274,7 +267,7 @@ const DialogueViewer = ({ dialogue, onContinue, onBack }) => {
         />
       </div>
 
-      <div ref={dialogueRef} className="p-6 space-y-4 max-h-[400px] overflow-y-auto scroll-smooth">
+      <div ref__={dialogueRef} className="p-6 space-y-4 max-h-[400px] overflow-y-auto scroll-smooth">
         {!hasStarted ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-20 h-20 mb-6 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white animate-pulse">

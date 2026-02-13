@@ -7,7 +7,7 @@ const API_BASE_URL = "https://api.gjuhagjermane.com/api";
 // URL për socket.io
 export const SOCKET_URL = "https://api.gjuhagjermane.com";
 
-
+//export const SOCKET_URL= "http://localhost:5000/api"
 
 export const getAbsoluteImageUrl = (path) => {
   if (!path) return "/placeholder.svg?height=40&width=40";
@@ -882,6 +882,15 @@ export const flashCardService = {
   updateFlashCard: (id, flashCardData) => api.put(`/flashcards/${id}`, flashCardData),
   deleteFlashCard: (id) => api.delete(`/flashcards/${id}`),
   addXP: (xpEarned) => api.post("/flashcards/xp/add", { xpEarned }),
+};
+
+export const communityService = {
+  getMessages: (params = {}) => api.get("/community", { params }),
+  getReplies: (messageId) => api.get(`/community/${messageId}/replies`),
+  postMessage: (content, parentId = null, mentions = []) => 
+    api.post("/community", { content, parentId, mentions }),
+  toggleLike: (messageId) => api.post(`/community/${messageId}/like`),
+  deleteMessage: (messageId) => api.delete(`/community/${messageId}`),
 };
 
 

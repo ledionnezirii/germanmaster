@@ -34,6 +34,7 @@ import {
   BrickWall,
   BrickWallFire,
   Type,
+  Users,
 } from "lucide-react"
 import { ChatBubbleLeftIcon, MicrophoneIcon } from "@heroicons/react/24/outline"
 
@@ -72,6 +73,7 @@ const Sidebar = () => {
     { icon: BookUser, label: "Fjalori", path: "/dictionary" },
     { icon: InfinityIcon, label: "Baza Gjuhësore", path: "/category" },
     //{ icon: BrickWall, label: "Flashcards", path: "/flashcards" },
+    //{ icon: Users, label: "Parashtro pyetje", path: "/community" },
 
     { icon: Star, label: "Strukturat e gjuhes", path: "/structure" },
 
@@ -100,7 +102,7 @@ const Sidebar = () => {
 
     /*{ icon: User, label: "Menaxho", path: "/academies", requireAuth: true },*/
     /*{ icon: Sword, label: "Garo", path: "/race", requireAuth: true },*/
-    /*{ icon: SpeakerIcon, label: "Dialoge te ndryshme", path: "/dialogue", requireAuth: true },*/
+    //{ icon: SpeakerIcon, label: "Dialoge te ndryshme", path: "/dialogue", requireAuth: true },
 
 
     { icon: User, label: "Llogaria", path: "/account", requireAuth: true },

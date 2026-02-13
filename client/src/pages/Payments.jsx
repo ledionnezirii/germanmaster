@@ -411,30 +411,7 @@ const Payment = () => {
 
         {shouldShowBuyButton && (
           <div className="mb-8">
-            {/* IBAN Payment Notice */}
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-6 mb-8 shadow-md">
-              <div className="flex items-start gap-4">
-              
-                
-                   
-                   <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-  <p className="text-blue-800 text-sm leading-relaxed">
-    <strong>📝 Njoftim për Pagesat</strong>
-    <br />
-    Shumë shpejt do të integrojmë pagesat online përmes <strong>Paddle</strong>. 
-    Aktualisht jemi në fazën përfundimtare të integrimit, ndaj informacionet për pagesën nuk janë të disponueshme direkt në website.
-    <br /><br />
-    Për të marrë udhëzime rreth mënyrës së pagesës dhe për çdo informacion shtesë, 
-    ju lutemi na kontaktoni në Instagram:
-    <span className="ml-2 font-bold text-yellow-500">@gjuhagjermanee</span>
-  </p>
-</div>
 
-                  </div>
-                  <p className="text-amber-700 text-sm mt-4">
-                    💡 Pas kryerjes së transferit, abonimi juaj do të aktivizohet brenda 24 orëve pune.
-                  </p>
-                </div>
            
           
 
@@ -445,7 +422,7 @@ const Payment = () => {
               <p className="text-gray-600">
                 {isCancelled 
                   ? "Zgjidh një plan për të vazhduar me qasje të plotë pas përfundimit të periudhës aktuale"
-                  : "Shiko çmimet më poshtë dhe kryeni pagesën me transfer bankar"
+                  : "Shiko çmimet më poshtë dhe kryeni pagesën online"
                 }
               </p>
             </div>
@@ -481,9 +458,13 @@ const Payment = () => {
                       <span className="text-gray-500 text-sm ml-1 block mt-1">{plan.period}</span>
                     </div>
 
-                    <div className="py-2 px-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white rounded-lg text-center font-semibold">
-                      Se shpejti
-                    </div>
+                    <button
+                      onClick={() => openCheckout(plan.priceId, plan.id)}
+                      disabled={processingPlan === plan.id}
+                      className="w-full py-2.5 px-4 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white rounded-lg text-center font-semibold transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {processingPlan === plan.id ? "Duke procesuar..." : "Bli Tani"}
+                    </button>
                   </div>
                 </div>
               ))}
@@ -494,7 +475,7 @@ const Payment = () => {
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="flex items-center gap-2">
                   <span className="text-green-500 text-xl">✓</span>
-                  <span>Qasje pas verifikimit të pagesës</span>
+                  <span>Qasje e menjëhershme pas pagesës</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-green-500 text-xl">✓</span>
@@ -520,8 +501,8 @@ const Payment = () => {
             </div>
 
             <p className="text-center text-xs text-gray-500 mt-4">
-              🔒 Pagesë e sigurt me Transfer Bankar. Anulo në çdo kohë.
-              <br />⚡ <strong>Abonimi aktivizohet brenda 24 orëve pas transferit.</strong>
+              🔒 Pagesë e sigurt me Paddle. Anulo në çdo kohë.
+              <br />⚡ <strong>Abonimi aktivizohet menjëherë pas pagesës.</strong>
             </p>
           </div>
         )}
