@@ -35,6 +35,7 @@ import {
   BrickWallFire,
   Type,
   Users,
+  BrickWallIcon,
 } from "lucide-react"
 import { ChatBubbleLeftIcon, MicrophoneIcon } from "@heroicons/react/24/outline"
 
@@ -76,6 +77,7 @@ const Sidebar = () => {
     //{ icon: Users, label: "Parashtro pyetje", path: "/community" },
 
     { icon: Star, label: "Strukturat e gjuhes", path: "/structure" },
+     { icon: BrickWallIcon, label: "Formo Fjale", path: "/createword" },
 
     /*{
       icon: FileTerminal,

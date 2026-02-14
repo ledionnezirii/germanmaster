@@ -39,6 +39,7 @@ import Structure from "./pages/Structure"
 import FlashCard from "./pages/FlashCard"
 import Chat from "./pages/Chat"
 import Community from "./pages/Community"
+import Createword from "./pages/Createword"
 
 
 const AppContent = () => {
@@ -130,6 +131,7 @@ const AppContent = () => {
                       <Route path="/structure" element={<Structure />} />
                       <Route path="/flashcards" element={<FlashCard />} />
                       <Route path="/community" element={<Community />} />
+                      <Route path="/createword" element={<Createword />} />
                     </Routes>
                   </SubscriptionGate>
                 }

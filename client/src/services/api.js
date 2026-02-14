@@ -893,6 +893,20 @@ export const communityService = {
   deleteMessage: (messageId) => api.delete(`/community/${messageId}`),
 };
 
+export const createWordService = {
+  getAllLessons: (params = {}) => api.get("/createword", { params }),
+  getLessonById: (id) => api.get(`/createword/${id}`),
+  submitLesson: (lessonId, answers) =>
+    api.post("/createword/submit", { lessonId, answers }),
+  getFinishedLessons: () => api.get("/createword/finished"),
+  
+  // Admin
+  createLesson: (lessonData) => api.post("/createword", lessonData),
+  updateLesson: (id, lessonData) => api.put(`/createword/${id}`, lessonData),
+  deleteLesson: (id) => api.delete(`/createword/${id}`),
+};
+
+
 
 
 export default api;
