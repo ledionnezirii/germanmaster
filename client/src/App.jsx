@@ -83,11 +83,12 @@ const AppContent = () => {
         >
           {/* Notification Banner - now inside main content */}
           {!hideLayout && isAuthenticated && (
-           <Notification 
-  message="✨ Kemi shtuar një seksion të ri: 'Formo Fjalë'! Shko e zbulo dhe praktikoj fjalët çdo ditë!" 
+        <Notification 
+  message="✨ Tani mund të abonoheni lehtësisht përmes seksionit Premium! Nëse hasni ndonjë problem me pagesën, na kontaktoni ne instagram @gjuhagjermanee." 
   type="promo"
-  storageKey="promo_new_formo_fjali"
+  storageKey="promo_premium_payment"
 />
+
 
           )}
           
