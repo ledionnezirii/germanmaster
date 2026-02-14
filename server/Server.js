@@ -56,7 +56,7 @@ const sentenceRoutes = require("./routes/sentenceRoutes");
 const structureRoutes = require("./routes/structureRoutes")
 const flashCardRoutes = require('./routes/flashCardRoutes');
 const communityRoutes = require('./routes/communityRoutes');
-const createwordRoutes = require("./routes/createWordRoutes");
+const createWordRoutes = require("./routes/createWordRoutes");
 
 
 
@@ -312,7 +312,7 @@ app.use("/api/sentences", sentenceRoutes);
 app.use("/api/structures",structureRoutes)
 app.use('/api/flashcards', flashCardRoutes);
 app.use('/api/community', communityRoutes);
-app.use("/api/createword",createwordRoutes);
+app.use("/api/createword", createWordRoutes);
 
 
 
