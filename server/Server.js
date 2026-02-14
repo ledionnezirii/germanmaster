@@ -18,7 +18,7 @@ const {
 } = require("./controllers/challengeController");
 
 const { initRaceSocket } = require("./socket/raceSocket");
-
+const { initCommunitySocket } = require('./socket/communitySocket');
 // Import payment controller for webhook
 const paymentController = require("./controllers/paymentController");
 const checkExpiredSubscriptions = require("./utils/subscriptionChecker");
@@ -55,6 +55,9 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const sentenceRoutes = require("./routes/sentenceRoutes");
 const structureRoutes = require("./routes/structureRoutes")
 const flashCardRoutes = require('./routes/flashCardRoutes');
+const communityRoutes = require('./routes/communityRoutes');
+const createwordRoutes = require("./routes/createWordRoutes");
+
 
 
 const { errorHandler, notFound } = require("./middleware/errorMiddleware");
@@ -103,6 +106,7 @@ io.use(async (socket, next) => {
 });
 
 initRaceSocket(io);
+initCommunitySocket(io);
 
 io.on("connection", (socket) => {
   console.log(`🔌 User connected: ${socket.id} (${socket.username})`);
@@ -307,6 +311,9 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/sentences", sentenceRoutes);
 app.use("/api/structures",structureRoutes)
 app.use('/api/flashcards', flashCardRoutes);
+app.use('/api/community', communityRoutes);
+app.use("/api/createword",createwordRoutes);
+
 
 
 app.use(notFound);

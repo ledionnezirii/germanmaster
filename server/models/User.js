@@ -111,6 +111,12 @@ const userSchema = new mongoose.Schema(
         ref: "Translate",
       },
     ],
+    finishedCreateWord: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "CreateWord",
+  },
+],
     completedQuizzes: [
       {
         type: mongoose.Schema.Types.ObjectId,

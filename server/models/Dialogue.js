@@ -17,6 +17,13 @@ const dialogueSchema = new mongoose.Schema(
       default: 50,
       required: [true, "XP is required"],
     },
+    // NEW: Dialogue type
+    dialogueType: {
+      type: String,
+      enum: ["regular", "sentence_builder", "free_write"],
+      default: "regular",
+      required: true,
+    },
     dialogue: [
       {
         speaker: {
@@ -28,6 +35,23 @@ const dialogueSchema = new mongoose.Schema(
           required: true,
         },
         translation: {
+          type: String,
+        },
+        // NEW: For sentence_builder and free_write types
+        isUserTurn: {
+          type: Boolean,
+          default: false,
+        },
+        // NEW: For sentence_builder - words to choose from (shuffled)
+        wordOptions: [{
+          type: String,
+        }],
+        // NEW: For free_write - the correct answer to compare against
+        correctAnswer: {
+          type: String,
+        },
+        // NEW: Hint for the user
+        hint: {
           type: String,
         },
       },
