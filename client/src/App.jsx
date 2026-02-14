@@ -83,11 +83,12 @@ const AppContent = () => {
         >
           {/* Notification Banner - now inside main content */}
           {!hideLayout && isAuthenticated && (
-            <Notification 
-              message="🎉 50% zbritje për 100 përdoruesit e parë! Na kontaktoni në Instagram @gjuhagjermanee për të përfituar ofertën."
-              type="promo"
-              storageKey="promo_50_discount_v1"
-            />
+           <Notification 
+  message="✨ Kemi shtuar një seksion të ri: 'Formo Fjalë'! Shko e zbulo dhe praktikoj fjalët çdo ditë!" 
+  type="promo"
+  storageKey="promo_new_formo_fjali"
+/>
+
           )}
           
           <div className="p-4 max-w-7xl mx-auto">
