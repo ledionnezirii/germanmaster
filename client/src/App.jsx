@@ -40,7 +40,8 @@ import FlashCard from "./pages/FlashCard"
 import Chat from "./pages/Chat"
 import Community from "./pages/Community"
 import Createword from "./pages/Createword"
-
+import Exam from "./pages/Exam"
+import Poll from "./components/Poll"
 
 const AppContent = () => {
   const { isCollapsed } = useSidebar()
@@ -90,7 +91,11 @@ const AppContent = () => {
 />
 
 
-          )}
+)}
+
+          {!hideLayout && isAuthenticated && <Poll />}
+          
+          <div className="p-4 max-w-7xl mx-auto"></div>
           
           <div className="p-4 max-w-7xl mx-auto">
             <Routes>
@@ -134,6 +139,7 @@ const AppContent = () => {
                       <Route path="/flashcards" element={<FlashCard />} />
                       <Route path="/community" element={<Community />} />
                       <Route path="/createword" element={<Createword />} />
+                      <Route path="/exam" element={<Exam />} />
                     </Routes>
                   </SubscriptionGate>
                 }

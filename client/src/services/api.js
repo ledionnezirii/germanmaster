@@ -737,6 +737,12 @@ export const academyService = {
   getGroupInviteInfo: (academyId, groupId) =>
     api.get(`/academies/${academyId}/groups/${groupId}/invite-info`),
 
+    unlockGroupWithPin: (academyId, groupId, teacherPin) =>
+    api.post(`/academies/${academyId}/groups/${groupId}/unlock`, { teacherPin }),
+  // NEW: Join a group using the teacher code
+  joinByTeacherCode: (teacherCode) =>
+    api.post("/academies/join-by-code", { teacherCode }),
+
   // Task operations
   createTask: (academyId, groupId, taskData) =>
     api.post(`/academies/${academyId}/groups/${groupId}/tasks`, taskData),
@@ -907,6 +913,24 @@ export const createWordService = {
 };
 
 
+export const examService = {
+  getExamsByLevel: (level) => api.get(`/exams/level/${level}`),
+  getAllExamLevels: () => api.get('/exams/levels'),
+  getExamById: (id) => api.get(`/exams/${id}`),
+  submitListening: (examId, answers) => api.post('/exams/submit/listening', { examId, answers }),
+  submitWriting: (examId, answers) => api.post('/exams/submit/writing', { examId, answers }),
+  submitReading: (examId, answers) => api.post('/exams/submit/reading', { examId, answers }),
+  submitCompleteExam: (data) => api.post('/exams/submit/complete', data),
+  getUserHistory: () => api.get('/exams/user/history')
+};
 
+export const pollService = {
+  getActivePoll: (visitorId) =>
+    api.get("/polls/active", { params: { visitorId } }),
+  vote: (pollId, optionIndex, visitorId) =>
+    api.post("/polls/vote", { pollId, optionIndex, visitorId }),
+  createPoll: (pollData) => api.post("/polls/create", pollData),
+  getPollVoters: (pollId) => api.get(`/polls/${pollId}/voters`),
+}
 
 export default api;

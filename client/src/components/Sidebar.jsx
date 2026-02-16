@@ -75,6 +75,7 @@ const Sidebar = () => {
     { icon: InfinityIcon, label: "Baza Gjuhësore", path: "/category" },
     //{ icon: BrickWall, label: "Flashcards", path: "/flashcards" },
     //{ icon: Users, label: "Parashtro pyetje", path: "/community" },
+    //{ icon: Star, label: "Exmas", path: "/exam" },
 
     { icon: Star, label: "Strukturat e gjuhes", path: "/structure" },
      { icon: BrickWallIcon, label: "Formo Fjale", path: "/createword" },
@@ -90,6 +91,7 @@ const Sidebar = () => {
     },*/
     { icon: UniversityIcon, label: "Mëso Gramatiken", path: "/grammar" },
       { icon: ChatBubbleLeftIcon, label: "worti", path: "/question" },
+       // { icon: Dumbbell, label: "Ushtro Gramatiken", path: "/practice" },
 
 
     { icon: LightbulbIcon, label: "Kuizet", path: "/quizes" },
@@ -102,7 +104,7 @@ const Sidebar = () => {
 
     { icon: Calendar, label: "PlanProgrami", path: "/plan", requireAuth: true }, { icon: BarChart, label: "Renditja", path: "/leaderboard", requireAuth: false },
 
-    /*{ icon: User, label: "Menaxho", path: "/academies", requireAuth: true },*/
+    //{ icon: User, label: "Menaxho", path: "/academies", requireAuth: true },
     /*{ icon: Sword, label: "Garo", path: "/race", requireAuth: true },*/
     //{ icon: SpeakerIcon, label: "Dialoge te ndryshme", path: "/dialogue", requireAuth: true },
 
