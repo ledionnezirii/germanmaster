@@ -57,6 +57,8 @@ const structureRoutes = require("./routes/structureRoutes")
 const flashCardRoutes = require('./routes/flashCardRoutes');
 const communityRoutes = require('./routes/communityRoutes');
 const createWordRoutes = require("./routes/createWordRoutes");
+const examRoutes = require('./routes/examRoutes');
+const pollRoutes = require('./routes/pollRoutes')
 
 
 
@@ -313,6 +315,8 @@ app.use("/api/structures",structureRoutes)
 app.use('/api/flashcards', flashCardRoutes);
 app.use('/api/community', communityRoutes);
 app.use("/api/createword", createWordRoutes);
+app.use('/api/exams', examRoutes);
+app.use('/api/polls', pollRoutes)
 
 
 

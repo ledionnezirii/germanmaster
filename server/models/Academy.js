@@ -1,4 +1,5 @@
 const mongoose = require("mongoose")
+const crypto = require("crypto")
 
 const taskSchema = new mongoose.Schema({
   title: {
@@ -47,10 +48,28 @@ const groupSchema = new mongoose.Schema({
   description: {
     type: String,
   },
-  admin: {
+  // The assigned teacher for this group
+  teacher: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
+  },
+  // PIN code for teacher to unlock/access the group (6 digits)
+  teacherPin: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  // Code for students to join the group (6 chars)
+  teacherCode: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  // Whether teacher has unlocked the group with their PIN
+  teacherUnlocked: {
+    type: Boolean,
+    default: false,
   },
   members: [
     {
