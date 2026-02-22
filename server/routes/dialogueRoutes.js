@@ -1,22 +1,22 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const dialogueController = require("../controllers/dialogueController");
-const protect = require("../middleware/auth");
+const {
+  getStories,
+  getStoryById,
+  createStory,
+  generateAudio,
+  checkAnswer
+} = require('../controllers/dialogueController');
 
-// Public routes (or protected based on your needs)
-router.get("/", protect, dialogueController.getAllDialogues);
-router.get("/progress", protect, dialogueController.getUserProgress);
-router.get("/finished", protect, dialogueController.getFinishedDialogues);
-router.get("/:id", protect, dialogueController.getDialogueById);
+// Stories
+router.get('/stories', getStories);
+router.get('/stories/:id', getStoryById);
+router.post('/stories', createStory);
 
-// Quiz/Exercise submissions
-router.post("/submit", protect, dialogueController.submitDialogueQuiz); // For regular type
-router.post("/submit-sentence-builder", protect, dialogueController.submitSentenceBuilder); // NEW
-router.post("/submit-free-write", protect, dialogueController.submitFreeWrite); // NEW
+// Audio generation (ElevenLabs proxy)
+router.post('/audio/generate', generateAudio);
 
-// Admin routes
-router.post("/", protect, dialogueController.createDialogue);
-router.put("/:id", protect, dialogueController.updateDialogue);
-router.delete("/:id", protect, dialogueController.deleteDialogue);
+// Answer checking
+router.post('/answer/check', checkAnswer);
 
 module.exports = router;

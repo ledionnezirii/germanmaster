@@ -1,7 +1,6 @@
 const { Exam, UserExamAttempt } = require('../models/Exam');
 const User = require('../models/User');
 
-// Get all exams by level
 exports.getExamsByLevel = async (req, res) => {
   try {
     const { level } = req.params;
@@ -18,7 +17,11 @@ exports.getAllExamLevels = async (req, res) => {
     const exams = await Exam.find().select('level subLevel').sort({ level: 1, subLevel: 1 });
     const grouped = exams.reduce((acc, exam) => {
       if (!acc[exam.level]) acc[exam.level] = [];
-      acc[exam.level].push(`${exam.level}.${exam.subLevel}`);
+      const label = `${exam.level}.${exam.subLevel}`;
+      // FIX: only add if not already present (prevents duplicates on refresh)
+      if (!acc[exam.level].includes(label)) {
+        acc[exam.level].push(label);
+      }
       return acc;
     }, {});
     res.json({ success: true, data: grouped });
@@ -87,13 +90,12 @@ exports.submitWriting = async (req, res) => {
       const correctAnswer = exam.writingQuestions[index].correctAnswer.toLowerCase().trim();
       const userAnswer = answer.toLowerCase().trim();
       
-      // Calculate similarity (simple word match)
       const correctWords = correctAnswer.split(' ');
       const userWords = userAnswer.split(' ');
       const matchedWords = userWords.filter(word => correctWords.includes(word));
       const similarity = matchedWords.length / correctWords.length;
       
-      if (similarity >= 0.8) { // 80% word match
+      if (similarity >= 0.8) {
         correctCount++;
       }
     });
@@ -160,7 +162,6 @@ exports.submitCompleteExam = async (req, res) => {
     const passed = totalScore >= exam.passingScore;
     const xpEarned = passed ? exam.totalXp : Math.round(exam.totalXp * 0.5);
     
-    // Save attempt
     const attempt = new UserExamAttempt({
       userId,
       examId,
@@ -177,7 +178,6 @@ exports.submitCompleteExam = async (req, res) => {
     
     await attempt.save();
     
-    // Update user
     const user = await User.findById(userId);
     user.xp = (user.xp || 0) + xpEarned;
     

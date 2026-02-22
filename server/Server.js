@@ -59,6 +59,7 @@ const communityRoutes = require('./routes/communityRoutes');
 const createWordRoutes = require("./routes/createWordRoutes");
 const examRoutes = require('./routes/examRoutes');
 const pollRoutes = require('./routes/pollRoutes')
+const adminRoutes = require("./routes/adminRoutes");
 
 
 
@@ -67,6 +68,10 @@ const { requestLogger } = require("./middleware/loggerMiddleware");
 
 const app = express();
 const server = createServer(app);
+
+const onlineUsers = new Map(); // userId -> socketId
+app.set("onlineUsers", onlineUsers);
+
 
 
 
@@ -84,7 +89,7 @@ const io = new Server(server, {
   },
   transports: ["websocket", "polling"],
 });
-
+app.set("io", io)
 
 
 io.use(async (socket, next) => {
@@ -112,6 +117,14 @@ initCommunitySocket(io);
 
 io.on("connection", (socket) => {
   console.log(`🔌 User connected: ${socket.id} (${socket.username})`);
+  
+  // Add this - Track online user
+  if (socket.userId) {
+    onlineUsers.set(socket.userId, socket.id);
+    io.emit("onlineUsersCount", onlineUsers.size);
+    console.log(`👤 User ${socket.username} is now online. Total online: ${onlineUsers.size}`);
+  }
+  
   socket.emit("connected", {
     message: "Successfully connected to challenge server",
     userId: socket.userId,
@@ -316,7 +329,8 @@ app.use('/api/flashcards', flashCardRoutes);
 app.use('/api/community', communityRoutes);
 app.use("/api/createword", createWordRoutes);
 app.use('/api/exams', examRoutes);
-app.use('/api/polls', pollRoutes)
+app.use('/api/polls', pollRoutes);
+app.use('/api/admin', adminRoutes);
 
 
 

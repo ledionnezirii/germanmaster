@@ -2,7 +2,7 @@ const axios = require("axios")
 const { Storage } = require("@google-cloud/storage")
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY
-const ELEVENLABS_VOICE_ID = "rDmv3mOhK6TnhYWckFaD"
+const ELEVENLABS_VOICE_ID = "lx8LAX2EUAKftVz0Dk5z"
 
 let storage;
 try {
@@ -483,3 +483,69 @@ exports.preGenerateStructureAudio = async (req, res) => {
     return res.status(500).json({ error: "Failed to pre-generate structure audio" })
   }
 }
+
+exports.getExamAudio = async (req, res) => {
+  try {
+    const { examId, questionIndex } = req.params
+    const { text, level, section } = req.body
+
+    if (!examId) {
+      return res.status(400).json({ error: "Exam ID is required" })
+    }
+
+    // Create unique audio ID: examId_section_questionIndex
+    const audioId = `${examId}_${section || 'listening'}_${questionIndex}`
+    const filePath = getAudioFilePath(audioId, level, "exams")
+
+    if (await audioExists(audioId, level, "exams")) {
+      console.log(`[TTS] Serving cached exam audio from GCS: ${filePath}`)
+      const url = await getSignedUrl(filePath)
+      return res.json({ url })
+    }
+
+    if (!text) {
+      return res.status(404).json({ error: "Audio not found and no text provided to generate" })
+    }
+
+    console.log(`[TTS] Generating new exam audio for: ${audioId}`)
+    await generateAudio(text, audioId, level, "exams")
+
+    const url = await getSignedUrl(filePath)
+    return res.json({ url })
+  } catch (error) {
+    console.error("[TTS] Exam controller error:", error)
+    return res.status(500).json({ error: "Failed to get/generate exam audio" })
+  }
+}
+exports.getDialogueAudioWithVoice = async (req, res) => {
+  try {
+    const { dialogueId, lineIndex } = req.params;
+    const { text, level, voice_id } = req.body;
+
+    if (!dialogueId) {
+      return res.status(400).json({ error: "Dialogue ID is required" });
+    }
+
+    const audioId = `${dialogueId}_${lineIndex}`;
+    const filePath = getAudioFilePath(audioId, level, "dialogues");
+
+    if (await audioExists(audioId, level, "dialogues")) {
+      console.log(`[TTS] Serving cached dialogue audio from GCS: ${filePath}`);
+      const url = await getSignedUrl(filePath);
+      return res.json({ url });
+    }
+
+    if (!text) {
+      return res.status(404).json({ error: "Audio not found and no text provided to generate" });
+    }
+
+    console.log(`[TTS] Generating new dialogue audio for: ${audioId} with voice: ${voice_id}`);
+    await generateAudio(text, audioId, level, "dialogues", voice_id);
+
+    const url = await getSignedUrl(filePath);
+    return res.json({ url });
+  } catch (error) {
+    console.error("[TTS] Dialogue controller error:", error);
+    return res.status(500).json({ error: "Failed to get/generate dialogue audio" });
+  }
+};

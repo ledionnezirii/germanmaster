@@ -12,11 +12,6 @@ router.post('/dictionary/:wordId', protect, ttsController.getDictionaryAudio);
 // Phrases audio
 router.post('/phrase/:phraseId', protect, ttsController.getPhraseAudio);
 
-// Dialogue audio - single line
-router.post('/dialogue/:dialogueId/:lineIndex', protect, ttsController.getDialogueAudio);
-
-// Pre-generate all dialogue lines
-router.post('/dialogue/pre-generate', protect, ttsController.preGenerateDialogueAudio);
 
 // Check if audio exists (generic)
 router.get('/check/:id', protect, ttsController.checkAudio);
@@ -35,5 +30,8 @@ router.get('/check/:id', protect, ttsController.checkAudio);
 
 // Pre-generate audio (admin)
 router.post('/pre-generate', protect, ttsController.preGenerateAudio);
+
+
+router.post('/exam/:examId/:questionIndex', protect, ttsController.getExamAudio);
 
 module.exports = router;

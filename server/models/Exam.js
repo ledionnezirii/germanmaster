@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const questionSchema = new mongoose.Schema({
   text: { type: String, required: true },
-  audioUrl: String,
+    question: { type: String },
   options: [String],
   correctAnswer: { type: String, required: true },
   type: { 
@@ -21,7 +21,7 @@ const examSchema = new mongoose.Schema({
   subLevel: { 
     type: String, 
     required: true 
-  }, // e.g., "8" for A1.8
+  },
   
   listeningQuestions: [questionSchema],
   writingQuestions: [questionSchema],
