@@ -34,7 +34,7 @@ const Notification = ({
   if (!isVisible) return null
 
   const typeStyles = {
-    info: "bg-blue-600 text-white",
+    info: "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 text-white",
     success: "bg-green-600 text-white",
     warning: "bg-yellow-500 text-black",
     error: "bg-red-600 text-white",

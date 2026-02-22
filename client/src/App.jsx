@@ -42,6 +42,7 @@ import Community from "./pages/Community"
 import Createword from "./pages/Createword"
 import Exam from "./pages/Exam"
 import Poll from "./components/Poll"
+import Admin from "./components/Admin"
 
 const AppContent = () => {
   const { isCollapsed } = useSidebar()
@@ -84,16 +85,15 @@ const AppContent = () => {
         >
           {/* Notification Banner - now inside main content */}
           {!hideLayout && isAuthenticated && (
-        <Notification 
-  message="✨ Tani mund të abonoheni lehtësisht përmes seksionit Premium! Nëse hasni ndonjë problem me pagesën, na kontaktoni ne instagram @gjuhagjermanee." 
-  type="promo"
-  storageKey="promo_premium_payment"
+<Notification 
+  message="📢 Seksioni i ri 'Përgatitje për Provime' është live! Gjithashtu, na ndiqni @gjuhagjermanee në Instagram & TikTok, ku do të bëjmë anketa për të kuptuar çfarë ju nevojitet më shumë — dhe ne do t’i shtojmë në platformë. Na tregoni çfarë dëshironi të përmirësojmë!" 
+  type="info"
+  storageKey="promo_exam_section"
 />
-
 
 )}
 
-          {!hideLayout && isAuthenticated && <Poll />}
+          {/* {!hideLayout && isAuthenticated && <Poll />} */}
           
           <div className="p-4 max-w-7xl mx-auto"></div>
           
@@ -140,6 +140,7 @@ const AppContent = () => {
                       <Route path="/community" element={<Community />} />
                       <Route path="/createword" element={<Createword />} />
                       <Route path="/exam" element={<Exam />} />
+                      <Route path="/admin" element={<Admin />} />
                     </Routes>
                   </SubscriptionGate>
                 }

@@ -36,6 +36,7 @@ import {
   Type,
   Users,
   BrickWallIcon,
+  File,
 } from "lucide-react"
 import { ChatBubbleLeftIcon, MicrophoneIcon } from "@heroicons/react/24/outline"
 
@@ -46,7 +47,7 @@ const fonts = {
 
 const Sidebar = () => {
   const { isCollapsed, toggleSidebar } = useSidebar()
-  const { isAuthenticated } = useAuth()
+const { isAuthenticated, user } = useAuth()
   const location = useLocation()
 
   // State for expanded submenus
@@ -75,10 +76,11 @@ const Sidebar = () => {
     { icon: InfinityIcon, label: "Baza Gjuhësore", path: "/category" },
     //{ icon: BrickWall, label: "Flashcards", path: "/flashcards" },
     //{ icon: Users, label: "Parashtro pyetje", path: "/community" },
-    //{ icon: Star, label: "Exmas", path: "/exam" },
 
     { icon: Star, label: "Strukturat e gjuhes", path: "/structure" },
      { icon: BrickWallIcon, label: "Formo Fjale", path: "/createword" },
+         { icon:File, label: "Pergatitu per provime", path: "/exam" },
+
 
     /*{
       icon: FileTerminal,
@@ -92,10 +94,11 @@ const Sidebar = () => {
     { icon: UniversityIcon, label: "Mëso Gramatiken", path: "/grammar" },
       { icon: ChatBubbleLeftIcon, label: "worti", path: "/question" },
        // { icon: Dumbbell, label: "Ushtro Gramatiken", path: "/practice" },
+{ icon: User, label: "Admin Panel", path: "/admin", requireAuth: true, adminOnly: true },
 
 
     { icon: LightbulbIcon, label: "Kuizet", path: "/quizes" },
-    /*{ icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation" },*/
+   // { icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation" },
     { icon: NotebookPenIcon, label: "Fraza te ndryshme", path: "/phrases" },
     { icon: UserRoundPen, label: "Formo Fjali", path: "/sentences", requireAuth: false },
 
@@ -121,9 +124,17 @@ const Sidebar = () => {
     },
   ]
 
-  const filteredMenuItems = menuItems.filter((item) => !item.requireAuth || isAuthenticated)
-  const filteredFooterMenuItems = footerMenuItems.filter((item) => !item.requireAuth || isAuthenticated)
+const filteredMenuItems = menuItems.filter((item) => {
+  if (item.requireAuth && !isAuthenticated) return false
+  if (item.adminOnly && (!user || user.role !== 'admin')) return false
+  return true
+})
 
+const filteredFooterMenuItems = footerMenuItems.filter((item) => {
+  if (item.requireAuth && !isAuthenticated) return false
+  if (item.adminOnly && (!user || user.role !== 'admin')) return false
+  return true
+})
   const handleLinkClick = () => {
     window.scrollTo({ top: 0, behavior: "smooth" })
 

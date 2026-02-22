@@ -482,6 +482,12 @@ export const ttsService = {
     api
       .post(`/tts/phrase/${phraseId}`, { text, level })
       .then((res) => res.data.url),
+        // Exam audio - listening and writing sections
+  getExamAudio: (examId, questionIndex, text, level, section) =>
+    api
+      .post(`/tts/exam/${examId}/${questionIndex}`, { text, level, section })
+      .then((res) => res.data.url),
+
 
   // Dialogue audio - single line
   getDialogueAudio: (dialogueId, lineIndex, text, level) =>
@@ -517,6 +523,9 @@ export const ttsService = {
       level,
     }),
 
+    
+
+    
   preGenerateCategoryAudio: (categoryId, words, level) =>
     api.post("/tts/category/pre-generate", {
       categoryId,
@@ -794,18 +803,6 @@ export const raceService = {
   getUserRaceStats: () => api.get("/race/stats"),
 };
 
-export const dialogueService = {
-  getAllDialogues: (params = {}) => api.get("/dialogue", { params }),
-  getDialogueById: (id) => api.get(`/dialogue/${id}`),
-  submitDialogueQuiz: (dialogueId, answers) =>
-    api.post("/dialogue/submit", { dialogueId, answers }),
-  getFinishedDialogues: () => api.get("/dialogue/finished"),
-  getUserProgress: () => api.get("/dialogue/progress"),
-  createDialogue: (dialogueData) => api.post("/dialogue", dialogueData),
-  updateDialogue: (id, dialogueData) =>
-    api.put(`/dialogue/${id}`, dialogueData),
-  deleteDialogue: (id) => api.delete(`/dialogue/${id}`),
-};
 
 
 export const activityService = {
@@ -932,5 +929,56 @@ export const pollService = {
   createPoll: (pollData) => api.post("/polls/create", pollData),
   getPollVoters: (pollId) => api.get(`/polls/${pollId}/voters`),
 }
+
+export const dialogueAPI = {
+  // Get all stories with optional filters
+  getStories: async (level = '', category = '') => {
+    const params = new URLSearchParams();
+    if (level) params.append('level', level);
+    if (category) params.append('category', category);
+    const response = await fetch(`${API_BASE_URL}/dialogue/stories?${params}`);
+    return response.json();
+  },
+
+  // Get single story by ID
+  getStoryById: async (storyId) => {
+    const response = await fetch(`${API_BASE_URL}/dialogue/stories/${storyId}`);
+    return response.json();
+  },
+
+  // Get audio for dialogue step (cached or generated)
+  getDialogueAudio: async (storyId, stepIndex, text, level, voiceId) => {
+    const response = await fetch(`${API_BASE}/tts/dialogue/${storyId}/${stepIndex}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, level, voice_id: voiceId })
+    });
+    return response.json();
+  },
+
+  // Check answer
+  checkAnswer: async (storyId, stepIndex, answer) => {
+    const response = await fetch(`${API_BASE_URL}/dialogue/answer/check`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ story_id: storyId, step_index: stepIndex, answer })
+    });
+    return response.json();
+  }
+};
+
+
+export const adminService = {
+  getDashboardStats: () => api.get("/admin/stats"),
+  getAllUsers: (params = {}) => api.get("/admin/users", { params }),
+  getPaidUsers: (params = {}) => api.get("/admin/users/paid", { params }),
+  getOnlineUsers: () => api.get("/admin/users/online"),
+  updateUserRole: (userId, role) =>
+    api.put(`/admin/users/${userId}/role`, { role }),
+  toggleUserStatus: (userId) =>
+    api.put(`/admin/users/${userId}/toggle-status`),
+  deleteUser: (userId) => api.delete(`/admin/users/${userId}`),
+};
+
 
 export default api;
