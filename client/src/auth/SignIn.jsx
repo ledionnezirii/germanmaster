@@ -193,7 +193,7 @@ const SignIn = () => {
           </p>
         </div>
 
-        <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+        {/* <div className="mt-6 pt-4 border-t border-gray-200 text-center">
           <p className="text-gray-500 text-sm">
             Keni probleme me kyçjen? Na kontaktoni:
           </p>
@@ -208,7 +208,7 @@ const SignIn = () => {
               Email:info@gjuhagjermane.com
             </a>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   )

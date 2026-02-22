@@ -183,7 +183,7 @@ const Admin = () => {
     <div className="min-h-screen" style={{ backgroundColor: "#FDFBF7" }}>
       {/* Header */}
       <div className="border-b" style={{ borderColor: "#EDE8DF", backgroundColor: "#FDFBF7" }}>
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#1C1917" }}>
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -192,8 +192,8 @@ const Admin = () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-xl font-semibold tracking-tight" style={{ color: "#1C1917" }}>Admin Panel</h1>
-              <p className="text-xs" style={{ color: "#A8A29E" }}>Manage your platform</p>
+              <h1 className="text-base sm:text-xl font-semibold tracking-tight" style={{ color: "#1C1917" }}>Admin Panel</h1>
+              <p className="text-xs hidden sm:block" style={{ color: "#A8A29E" }}>Manage your platform</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -204,9 +204,9 @@ const Admin = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-8">
         {/* Tabs */}
-        <div className="flex gap-1 mb-8 p-1 rounded-xl inline-flex" style={{ backgroundColor: "#F5F0E8" }}>
+        <div className="flex gap-1 mb-6 sm:mb-8 p-1 rounded-xl overflow-x-auto" style={{ backgroundColor: "#F5F0E8" }}>
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -214,7 +214,7 @@ const Admin = () => {
                 setActiveTab(tab.id);
                 setCurrentPage(1);
               }}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                 activeTab === tab.id
                   ? "shadow-sm"
                   : "hover:opacity-80"
@@ -226,28 +226,28 @@ const Admin = () => {
               }
             >
               {tab.icon}
-              {tab.label}
+              <span className="hidden sm:inline">{tab.label}</span>
             </button>
           ))}
         </div>
 
         {/* Dashboard Stats */}
         {activeTab === "dashboard" && stats && (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="space-y-6 sm:space-y-8">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
               {statConfig.map((stat, index) => (
                 <div
                   key={stat.label}
-                  className={`rounded-2xl p-6 border transition-all duration-200 hover:shadow-md ${stat.bg} ${stat.border}`}
+                  className={`rounded-2xl p-4 sm:p-6 border transition-all duration-200 hover:shadow-md ${stat.bg} ${stat.border}`}
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="text-sm font-medium" style={{ color: "#78716C" }}>{stat.label}</p>
-                      <p className={`text-4xl font-bold mt-3 tracking-tight ${stat.accent}`}>
+                      <p className="text-xs sm:text-sm font-medium" style={{ color: "#78716C" }}>{stat.label}</p>
+                      <p className={`text-2xl sm:text-4xl font-bold mt-2 sm:mt-3 tracking-tight ${stat.accent}`}>
                         {stats[stat.key]}
                       </p>
                     </div>
-                    <div className={`w-10 h-10 rounded-xl ${stat.iconBg} flex items-center justify-center ${stat.accent}`}>
+                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl ${stat.iconBg} flex items-center justify-center ${stat.accent}`}>
                       {statIcons[index]}
                     </div>
                   </div>
@@ -256,9 +256,9 @@ const Admin = () => {
             </div>
 
             {stats.subscriptionBreakdown?.length > 0 && (
-              <div className="rounded-2xl border p-6" style={{ backgroundColor: "#FFFFFF", borderColor: "#EDE8DF" }}>
-                <h3 className="text-lg font-semibold mb-5" style={{ color: "#1C1917" }}>Subscription Breakdown</h3>
-                <div className="overflow-hidden rounded-xl border" style={{ borderColor: "#EDE8DF" }}>
+              <div className="rounded-2xl border p-4 sm:p-6" style={{ backgroundColor: "#FFFFFF", borderColor: "#EDE8DF" }}>
+                <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-5" style={{ color: "#1C1917" }}>Subscription Breakdown</h3>
+                <div className="overflow-hidden rounded-xl border overflow-x-auto" style={{ borderColor: "#EDE8DF" }}>
                   <table className="w-full">
                     <thead>
                       <tr style={{ backgroundColor: "#FAF8F4" }}>
@@ -290,9 +290,9 @@ const Admin = () => {
 
         {/* All Users Tab */}
         {activeTab === "all-users" && (
-          <div className="space-y-5">
+          <div className="space-y-4 sm:space-y-5">
             <div className="flex items-center gap-4">
-              <div className="relative flex-1 max-w-md">
+              <div className="relative flex-1 max-w-full sm:max-w-md">
                 <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: "#A8A29E" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                 </svg>
@@ -323,11 +323,11 @@ const Admin = () => {
               <>
                 <div className="rounded-2xl border overflow-hidden" style={{ backgroundColor: "#FFFFFF", borderColor: "#EDE8DF" }}>
                   <div className="overflow-x-auto">
-                    <table className="w-full">
+                    <table className="w-full min-w-[700px]">
                       <thead>
                         <tr style={{ backgroundColor: "#FAF8F4" }}>
                           {["Name", "Email", "Role", "Paid", "Sub Type", "XP", "Joined", "Status", "Actions"].map((h) => (
-                            <th key={h} className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: "#A8A29E" }}>{h}</th>
+                            <th key={h} className="px-3 sm:px-5 py-3 sm:py-3.5 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: "#A8A29E" }}>{h}</th>
                           ))}
                         </tr>
                       </thead>
@@ -340,11 +340,11 @@ const Admin = () => {
                             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#FDFBF7"}
                             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                           >
-                            <td className="px-5 py-4 text-sm font-medium" style={{ color: "#1C1917" }}>
+                            <td className="px-3 sm:px-5 py-3 sm:py-4 text-sm font-medium whitespace-nowrap" style={{ color: "#1C1917" }}>
                               {u.emri} {u.mbiemri}
                             </td>
-                            <td className="px-5 py-4 text-sm" style={{ color: "#78716C" }}>{u.email}</td>
-                            <td className="px-5 py-4">
+                            <td className="px-3 sm:px-5 py-3 sm:py-4 text-sm" style={{ color: "#78716C" }}>{u.email}</td>
+                            <td className="px-3 sm:px-5 py-3 sm:py-4">
                               <select
                                 value={u.role}
                                 onChange={(e) => handleRoleChange(u._id, e.target.value)}
@@ -356,7 +356,7 @@ const Admin = () => {
                                 <option value="academyAdmin">Academy Admin</option>
                               </select>
                             </td>
-                            <td className="px-5 py-4">
+                            <td className="px-3 sm:px-5 py-3 sm:py-4">
                               <span
                                 className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
                                 style={
@@ -369,14 +369,14 @@ const Admin = () => {
                                 {u.isPaid ? "Yes" : "No"}
                               </span>
                             </td>
-                            <td className="px-5 py-4">
+                            <td className="px-3 sm:px-5 py-3 sm:py-4">
                               <span className="text-xs font-medium px-2.5 py-1 rounded-full" style={{ backgroundColor: "#F5F0E8", color: "#44403C" }}>
                                 {u.subscriptionType || "free_trial"}
                               </span>
                             </td>
-                            <td className="px-5 py-4 text-sm font-bold" style={{ color: "#1C1917" }}>{u.xp || 0}</td>
-                            <td className="px-5 py-4 text-xs" style={{ color: "#A8A29E" }}>{formatDate(u.createdAt)}</td>
-                            <td className="px-5 py-4">
+                            <td className="px-3 sm:px-5 py-3 sm:py-4 text-sm font-bold" style={{ color: "#1C1917" }}>{u.xp || 0}</td>
+                            <td className="px-3 sm:px-5 py-3 sm:py-4 text-xs whitespace-nowrap" style={{ color: "#A8A29E" }}>{formatDate(u.createdAt)}</td>
+                            <td className="px-3 sm:px-5 py-3 sm:py-4">
                               <span
                                 className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
                                 style={
@@ -389,7 +389,7 @@ const Admin = () => {
                                 {u.isActive ? "Active" : "Inactive"}
                               </span>
                             </td>
-                            <td className="px-5 py-4">
+                            <td className="px-3 sm:px-5 py-3 sm:py-4">
                               <div className="flex items-center gap-2">
                                 <button
                                   onClick={() => handleToggleStatus(u._id)}
@@ -425,15 +425,15 @@ const Admin = () => {
                 </div>
 
                 {pagination && pagination.totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-3 pt-2">
+                  <div className="flex items-center justify-center gap-2 sm:gap-3 pt-2">
                     <button
                       disabled={currentPage === 1}
                       onClick={() => setCurrentPage((p) => p - 1)}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="flex items-center gap-1 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl border text-xs sm:text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                       style={{ backgroundColor: "#FFFFFF", borderColor: "#EDE8DF", color: "#44403C" }}
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-                      Previous
+                      <span className="hidden sm:inline">Previous</span>
                     </button>
                     <div className="flex items-center gap-1.5">
                       <span className="px-3.5 py-2 rounded-lg text-sm font-semibold" style={{ backgroundColor: "#1C1917", color: "#FFFFFF" }}>
@@ -444,10 +444,10 @@ const Admin = () => {
                     <button
                       disabled={currentPage === pagination.totalPages}
                       onClick={() => setCurrentPage((p) => p + 1)}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="flex items-center gap-1 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl border text-xs sm:text-sm font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                       style={{ backgroundColor: "#FFFFFF", borderColor: "#EDE8DF", color: "#44403C" }}
                     >
-                      Next
+                      <span className="hidden sm:inline">Next</span>
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
                     </button>
                   </div>
@@ -470,11 +470,11 @@ const Admin = () => {
             ) : (
               <div className="rounded-2xl border overflow-hidden" style={{ backgroundColor: "#FFFFFF", borderColor: "#EDE8DF" }}>
                 <div className="overflow-x-auto">
-                  <table className="w-full">
+                  <table className="w-full min-w-[600px]">
                     <thead>
                       <tr style={{ backgroundColor: "#F0FDF4" }}>
                         {["Name", "Email", "Sub Type", "Expires At", "Cancelled", "XP", "Streak"].map((h) => (
-                          <th key={h} className="px-5 py-3.5 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: "#15803D" }}>{h}</th>
+                          <th key={h} className="px-3 sm:px-5 py-3 sm:py-3.5 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: "#15803D" }}>{h}</th>
                         ))}
                       </tr>
                     </thead>
@@ -487,15 +487,15 @@ const Admin = () => {
                           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#FDFBF7"}
                           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                         >
-                          <td className="px-5 py-4 text-sm font-medium" style={{ color: "#1C1917" }}>{u.emri} {u.mbiemri}</td>
-                          <td className="px-5 py-4 text-sm" style={{ color: "#78716C" }}>{u.email}</td>
-                          <td className="px-5 py-4">
+                          <td className="px-3 sm:px-5 py-3 sm:py-4 text-sm font-medium whitespace-nowrap" style={{ color: "#1C1917" }}>{u.emri} {u.mbiemri}</td>
+                          <td className="px-3 sm:px-5 py-3 sm:py-4 text-sm" style={{ color: "#78716C" }}>{u.email}</td>
+                          <td className="px-3 sm:px-5 py-3 sm:py-4">
                             <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#EFF6FF", color: "#1E40AF" }}>
                               {u.subscriptionType || "N/A"}
                             </span>
                           </td>
-                          <td className="px-5 py-4 text-xs" style={{ color: "#78716C" }}>{formatDate(u.subscriptionExpiresAt)}</td>
-                          <td className="px-5 py-4">
+                          <td className="px-3 sm:px-5 py-3 sm:py-4 text-xs whitespace-nowrap" style={{ color: "#78716C" }}>{formatDate(u.subscriptionExpiresAt)}</td>
+                          <td className="px-3 sm:px-5 py-3 sm:py-4">
                             <span
                               className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
                               style={
@@ -508,8 +508,8 @@ const Admin = () => {
                               {u.subscriptionCancelled ? "Yes" : "No"}
                             </span>
                           </td>
-                          <td className="px-5 py-4 text-sm font-bold" style={{ color: "#1C1917" }}>{u.xp || 0}</td>
-                          <td className="px-5 py-4">
+                          <td className="px-3 sm:px-5 py-3 sm:py-4 text-sm font-bold" style={{ color: "#1C1917" }}>{u.xp || 0}</td>
+                          <td className="px-3 sm:px-5 py-3 sm:py-4">
                             <div className="flex items-center gap-1.5">
                               <span className="text-sm" style={{ color: "#EA580C" }}>
                                 <svg className="w-4 h-4 inline-block" fill="currentColor" viewBox="0 0 24 24"><path d="M12 23c-1.1 0-1.99-.89-1.99-1.99h3.98C13.99 22.11 13.1 23 12 23zm6-5v-5.5c0-3.07-2.13-5.64-5-6.32V5c0-.55-.45-1-1-1s-1 .45-1 1v1.18c-2.87.68-5 3.25-5 6.32V18l-2 2v1h16v-1l-2-2z" /></svg>
@@ -529,8 +529,8 @@ const Admin = () => {
 
         {/* Online Users Tab */}
         {activeTab === "online-users" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 px-4 py-2 rounded-full" style={{ backgroundColor: "#ECFDF5" }}>
                   <span className="relative flex h-2.5 w-2.5">
@@ -544,7 +544,7 @@ const Admin = () => {
               </div>
               <button
                 onClick={fetchOnlineUsers}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all"
+                className="flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all"
                 style={{ backgroundColor: "#1C1917", color: "#FFFFFF" }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#292524"}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#1C1917"}
@@ -562,7 +562,7 @@ const Admin = () => {
                 </div>
               </div>
             ) : onlineUsers.length === 0 ? (
-              <div className="rounded-2xl border p-16 text-center" style={{ backgroundColor: "#FFFFFF", borderColor: "#EDE8DF" }}>
+              <div className="rounded-2xl border p-8 sm:p-16 text-center" style={{ backgroundColor: "#FFFFFF", borderColor: "#EDE8DF" }}>
                 <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: "#F5F0E8" }}>
                   <svg className="w-8 h-8" style={{ color: "#A8A29E" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.182 16.318A4.486 4.486 0 0012.016 15a4.486 4.486 0 00-3.198 1.318M21 12a9 9 0 11-18 0 9 9 0 0118 0zM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75zm-.375 0h.008v.015h-.008V9.75zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75zm-.375 0h.008v.015h-.008V9.75z" /></svg>
                 </div>
@@ -570,11 +570,11 @@ const Admin = () => {
                 <p className="text-xs mt-1" style={{ color: "#A8A29E" }}>Check back later</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {onlineUsers.map((u) => (
                   <div
                     key={u._id}
-                    className="rounded-2xl border p-5 transition-all duration-200 hover:shadow-md"
+                    className="rounded-2xl border p-4 sm:p-5 transition-all duration-200 hover:shadow-md"
                     style={{ backgroundColor: "#FFFFFF", borderColor: "#EDE8DF" }}
                     onMouseEnter={(e) => e.currentTarget.style.borderColor = "#D6CFC3"}
                     onMouseLeave={(e) => e.currentTarget.style.borderColor = "#EDE8DF"}

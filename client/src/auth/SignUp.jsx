@@ -204,7 +204,7 @@ const SignUp = () => {
           </div>
 
           {/* Contact support section */}
-          <div className="mt-6 pt-4 border-t border-gray-200 text-center">
+          {/* <div className="mt-6 pt-4 border-t border-gray-200 text-center">
             <p className="text-gray-500 text-xs sm:text-sm">Keni probleme me regjistrimin? Na kontaktoni:</p>
             <div className="mt-2 flex flex-col items-center gap-1 text-xs sm:text-sm">
               <a href="https://instagram.com/gjuhagjermanee" target="_blank" rel="noopener noreferrer" className="text-yellow-600 font-bold hover:text-cyan-700 transition-colors">
@@ -217,7 +217,7 @@ const SignUp = () => {
               Email:info@gjuhagjermane.com
             </a>
             </div>
-          </div>
+          </div> */}
         </form>
       </div>
     </div>
