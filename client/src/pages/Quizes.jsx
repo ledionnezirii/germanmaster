@@ -27,7 +27,7 @@ export default function Quizes() {
   const [showResult, setShowResult] = useState(false)
   const [error, setError] = useState(null)
   const [completedQuizzes, setCompletedQuizzes] = useState([])
-  const [selectedLevel, setSelectedLevel] = useState("all")
+  const [selectedLevel, setSelectedLevel] = useState("A1")
   const [currentPage, setCurrentPage] = useState(1)
   const [submittedAnswers, setSubmittedAnswers] = useState({})
   const [currentStreak, setCurrentStreak] = useState(0)
@@ -142,7 +142,7 @@ export default function Quizes() {
     }
   }
 
-  const levels = ["all", "A1", "A2", "B1", "B2", "C1", "C2"]
+  const levels = ["A1", "A2", "B1", "B2", "C1", "C2"]
 
   const showNotification = (message, type = "success") => {
     setNotification({ message, type })
