@@ -32,7 +32,7 @@ const createBulkQuizes = async (req, res) => {
 // @access  Public
 const getAllQuizes = async (req, res) => {
   try {
-    const quizzes = await Quiz.find();
+const quizzes = await Quiz.find().sort({ createdAt: 1 });
     res.status(200).json({ success: true, data: quizzes });
   } catch (error) {
     console.error(error);
