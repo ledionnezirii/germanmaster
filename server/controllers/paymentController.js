@@ -354,8 +354,7 @@ const handleTransactionCompleted = async (event) => {
     //   }
     // }
     // ============ END OF CANCELLATION CHECK ============
-
-    const priceId = data.items?.[0]?.price_id
+const priceId = data.items?.[0]?.price?.id || data.items?.[0]?.price_id
     console.log("[v0] 🏷️ Price ID:", priceId)
 
     let subscriptionType = "1_month"
@@ -495,7 +494,7 @@ const handleTransactionCompleted = async (event) => {
         // ONE-TIME PAYMENTS: no subscription ID
         // paddleSubscriptionId: subscriptionId,
         priceId: priceId,
-        productId: data.items?.[0]?.product_id,
+        productId: data.items?.[0]?.price?.product_id,
         subscriptionType: subscriptionType,
         status: "active",
         amount: amount,
