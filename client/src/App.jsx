@@ -33,7 +33,6 @@ import Words from "./pages/Words"
 import Phrase from "./pages/Phrase"
 import Academy from "./pages/Academy"
 import Race from "./pages/Race"
-import Dialogue from "./pages/Dialogue"
 import Sentence from "./pages/Sentence"
 import Structure from "./pages/Structure"
 import FlashCard from "./pages/FlashCard"
@@ -43,6 +42,10 @@ import Createword from "./pages/Createword"
 import Exam from "./pages/Exam"
 import Poll from "./components/Poll"
 import Admin from "./components/Admin"
+import Videos from "./pages/Videos"
+import Stories from "./pages/Story"
+import WordAudio from "./pages/WordAudio"
+import Giveaway from "./components/Giveaway"
 
 const AppContent = () => {
   const { isCollapsed } = useSidebar()
@@ -133,7 +136,6 @@ const AppContent = () => {
                       <Route path="/phrases" element={<Phrase />} />
                       <Route path="/race" element={<Race />} />
                       <Route path="/academies" element={<Academy />} />
-                      <Route path="/dialogue" element={<Dialogue />} />
                       <Route path="/sentences" element={<Sentence />} />
                       <Route path="/structure" element={<Structure />} />
                       <Route path="/flashcards" element={<FlashCard />} />
@@ -141,6 +143,11 @@ const AppContent = () => {
                       <Route path="/createword" element={<Createword />} />
                       <Route path="/exam" element={<Exam />} />
                       <Route path="/admin" element={<Admin />} />
+                      <Route path="/videos" element={<Videos />} />
+                      <Route path="/stories" element={<Stories />} />
+                      <Route path="/wordaudio" element={<WordAudio />} />
+                      <Route path="/giveaways" element={<Giveaway />} />
+
                     </Routes>
                   </SubscriptionGate>
                 }

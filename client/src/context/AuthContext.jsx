@@ -1,6 +1,7 @@
 "use client"
-import { createContext, useContext, useState, useEffect, useCallback } from "react"
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react"
 import { authService } from "../services/api"
+import { io } from "socket.io-client"
 
 const AuthContext = createContext()
 
@@ -17,22 +18,46 @@ export const AuthProvider = ({ children }) => {
     try {
       const storedUser = localStorage.getItem("user")
       const parsedUser = storedUser ? JSON.parse(storedUser) : null
-      // console.log("AuthContext: useState init - Stored user:", parsedUser ? JSON.stringify(parsedUser, null, 2) : null)
       return parsedUser
     } catch (error) {
-      // console.error("AuthContext: useState init - Failed to parse user from localStorage:", error)
-      localStorage.removeItem("user") // Clear corrupted data
+      localStorage.removeItem("user")
       return null
     }
   })
 
   const setUser = useCallback((newValue) => {
-    // console.log("AuthContext: setUser called with:", newValue ? JSON.stringify(newValue, null, 2) : null)
     setUserState(newValue)
   }, [])
 
   const [loading, setLoading] = useState(true)
   const [token, setToken] = useState(localStorage.getItem("authToken"))
+  const socketRef = useRef(null)
+
+  // Socket.io connection for online status tracking
+  useEffect(() => {
+    if (token && user) {
+      // Connect to socket server
+      socketRef.current = io(import.meta.env.VITE_API_URL || "http://localhost:5000", {
+        auth: { token: token }
+      })
+
+      socketRef.current.on("connect", () => {
+        console.log("Socket connected for online tracking")
+      })
+
+      socketRef.current.on("connect_error", (error) => {
+        console.error("Socket connection error:", error.message)
+      })
+
+      // Cleanup on unmount or when token/user changes
+      return () => {
+        if (socketRef.current) {
+          socketRef.current.disconnect()
+          socketRef.current = null
+        }
+      }
+    }
+  }, [token, user])
 
   useEffect(() => {
     const checkSessionValidity = async () => {
@@ -41,9 +66,7 @@ export const AuthProvider = ({ children }) => {
         try {
           await authService.getProfile()
         } catch (error) {
-          // If session is invalid (401), log out the user
           if (error.response?.status === 401) {
-            // console.log("AuthContext: Session invalidated by server. Logging out.")
             localStorage.removeItem("authToken")
             localStorage.removeItem("user")
             setToken(null)
@@ -53,7 +76,6 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
-    // Check session validity every 30 seconds
     const interval = setInterval(checkSessionValidity, 30000)
 
     return () => clearInterval(interval)
@@ -62,26 +84,19 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initAuth = async () => {
       const savedToken = localStorage.getItem("authToken")
-      // console.log("AuthContext: initAuth called. Saved token:", savedToken ? "Exists" : "Does not exist")
 
       if (savedToken) {
         try {
           const response = await authService.getProfile()
-          // console.log(
-          //   "AuthContext: getProfile response data:",
-          //   response.data ? JSON.stringify(response.data, null, 2) : null,
-          // )
 
-          // Access the nested 'user' object from response.data
           const userDataFromResponse = response.data?.user
 
           if (!userDataFromResponse || Object.keys(userDataFromResponse).length === 0) {
-            // console.warn("AuthContext: getProfile returned no user data or empty object. Clearing auth.")
             localStorage.removeItem("authToken")
             localStorage.removeItem("user")
             setToken(null)
             setUser(null)
-            return // Exit early if no data
+            return
           }
 
           const fetchedUser = {
@@ -89,7 +104,7 @@ export const AuthProvider = ({ children }) => {
             firstName: userDataFromResponse.firstName || userDataFromResponse.emri,
             lastName: userDataFromResponse.lastName || userDataFromResponse.mbiemri,
             email: userDataFromResponse.email,
-              role: userDataFromResponse.role, 
+            role: userDataFromResponse.role, 
             profilePicture: userDataFromResponse.profilePicture,
             xp: userDataFromResponse.xp,
             level: userDataFromResponse.level,
@@ -107,43 +122,30 @@ export const AuthProvider = ({ children }) => {
               daysRemaining: 0,
             },
           }
-          // console.log("AuthContext: Fetched user data (before setting state):", JSON.stringify(fetchedUser, null, 2))
           setUser(fetchedUser)
-          // Store the fetched user data in localStorage
           localStorage.setItem("user", JSON.stringify(fetchedUser))
           setToken(savedToken)
         } catch (error) {
-          // console.error("AuthContext: Auth initialization error during getProfile:", error)
-          // If profile fetch fails, clear both token and user from storage
           localStorage.removeItem("authToken")
           localStorage.removeItem("user")
           setToken(null)
           setUser(null)
         }
       } else {
-        // If no token, ensure no user data is lingering in localStorage
-        // console.log("AuthContext: No saved token found. Clearing user from localStorage.")
         localStorage.removeItem("user")
         setUser(null)
       }
       setLoading(false)
-      // console.log("AuthContext: initAuth finished. Loading set to false.")
     }
     initAuth()
-  }, []) // Runs only once on mount
+  }, [])
 
   const login = useCallback(async (credentials) => {
     try {
       const response = await authService.login(credentials)
-      // The login response already destructures 'user' correctly, so this part is fine.
       const { token: newToken, user: userData } = response.data
-      // console.log(
-      //   "AuthContext: Login successful. Response data:",
-      //   response.data ? JSON.stringify(response.data, null, 2) : null,
-      // )
 
       if (!userData || Object.keys(userData).length === 0) {
-        // console.error("AuthContext: Login response did not contain user data or was empty.")
         throw new Error("Login failed: No user data received.")
       }
 
@@ -153,7 +155,7 @@ export const AuthProvider = ({ children }) => {
         firstName: userData.emri,
         lastName: userData.mbiemri,
         email: userData.email,
-         role: userData.role, 
+        role: userData.role, 
         profilePicture: userData.profilePicture,
         xp: userData.xp,
         level: userData.level,
@@ -171,14 +173,11 @@ export const AuthProvider = ({ children }) => {
           daysRemaining: 0,
         },
       }
-      // console.log("AuthContext: User data to store after login:", JSON.stringify(userToStore, null, 2))
-      // Store the full user data in localStorage upon login
       localStorage.setItem("user", JSON.stringify(userToStore))
       setToken(newToken)
       setUser(userToStore)
       return response
     } catch (error) {
-      // console.error("AuthContext: Login error:", error)
       throw error
     }
   }, [])
@@ -186,15 +185,24 @@ export const AuthProvider = ({ children }) => {
   const updateUser = useCallback((updatedData) => {
     setUser((prev) => {
       if (!prev) {
-        // console.warn("AuthContext: updateUser called but no previous user state exists.")
         return null
       }
       const newUser = { ...prev, ...updatedData }
-      // console.log("AuthContext: setUser called in updateUser with:", JSON.stringify(newUser, null, 2))
-      // Persist updated user data to localStorage
       localStorage.setItem("user", JSON.stringify(newUser))
       return newUser
     })
+  }, [])
+
+  const logout = useCallback(() => {
+    // Disconnect socket on logout
+    if (socketRef.current) {
+      socketRef.current.disconnect()
+      socketRef.current = null
+    }
+    localStorage.removeItem("authToken")
+    localStorage.removeItem("user")
+    setToken(null)
+    setUser(null)
   }, [])
 
   const value = {
@@ -205,23 +213,12 @@ export const AuthProvider = ({ children }) => {
     register: useCallback(async (userData) => {
       try {
         const response = await authService.register(userData)
-        // console.log(
-        //   "AuthContext: Register successful. Response data:",
-        //   response.data ? JSON.stringify(response.data, null, 2) : null,
-        // )
         return response
       } catch (error) {
-        // console.error("AuthContext: Register error:", error)
         throw error
       }
     }, []),
-    logout: useCallback(() => {
-      // console.log("AuthContext: Logging out. Clearing localStorage.")
-      localStorage.removeItem("authToken")
-      localStorage.removeItem("user") // Clear user data from localStorage on logout
-      setToken(null)
-      setUser(null)
-    }, []),
+    logout,
     updateUser,
     isAuthenticated: !!token,
   }

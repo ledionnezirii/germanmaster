@@ -88,7 +88,7 @@ api.interceptors.response.use(
       window.location.href = "/signin";
     }
     return Promise.reject(error);
-  }
+  },
 );
 
 export const authService = {
@@ -125,7 +125,7 @@ export const authService = {
   resetPassword: (token, newPassword) =>
     api.post(`/auth/reset-password/${token}`, { newPassword }),
   verifyEmail: (token) => api.get(`/auth/verify/${token}`),
- 
+
   requestVerification: () => api.post("/auth/request-verification"),
   getProfile: () => api.get("/auth/me"),
   updateProfile: (data) =>
@@ -338,7 +338,6 @@ export const testService = {
 
 export const pronunciationService = {
   getWords: (params = {}) => {
-    // console.log("[v0] Getting pronunciation words...");
     return api.get("/pronunciation", { params });
   },
   addPackage: (packageData) => api.post("/pronunciation", packageData),
@@ -352,7 +351,21 @@ export const pronunciationService = {
   getUserCompletedPackages: () => {
     return api.get("/pronunciation/completed-pronunciation-packages");
   },
+  transcribeAudio: async (audioBlob) => {
+    const formData = new FormData();
+    formData.append("audio", audioBlob, "recording.webm");
+    const token = localStorage.getItem("authToken");
+    const response = await fetch(`${API_BASE_URL}/pronunciation/transcribe`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    if (!response.ok) throw new Error("Transcription failed");
+    const json = await response.json();
+    return json.data?.transcript || json.transcript;
+  },
 };
+
 
 export const quizService = {
   getAllQuizzes: () => api.get("/quizes"),
@@ -482,20 +495,22 @@ export const ttsService = {
     api
       .post(`/tts/phrase/${phraseId}`, { text, level })
       .then((res) => res.data.url),
-        // Exam audio - listening and writing sections
+  // Exam audio - listening and writing sections
   getExamAudio: (examId, questionIndex, text, level, section) =>
     api
       .post(`/tts/exam/${examId}/${questionIndex}`, { text, level, section })
       .then((res) => res.data.url),
-
+  getStoryAudio: (storyId, stepIndex, text, level) =>
+    api
+      .post(`/tts/story/${storyId}/${stepIndex}`, { text, level })
+      .then((res) => res.data.url),
 
   // Dialogue audio - single line
   getDialogueAudio: (dialogueId, lineIndex, text, level) =>
     api
       .post(`/tts/dialogue/${dialogueId}/${lineIndex}`, { text, level })
       .then((res) => res.data.url),
-      
-  
+
   getStructureAudio: (structureId, itemIndex, text, level) =>
     api
       .post(`/tts/structure/${structureId}/${itemIndex}`, { text, level })
@@ -508,12 +523,25 @@ export const ttsService = {
       items,
       level,
     }),
+      getWordAudioAudio: (setId, wordIndex, text, level) =>
+    api
+      .post(`/tts/wordaudio/${setId}/${wordIndex}`, { text, level })
+      .then((res) => res.data.url),
+
+  preGenerateWordAudioAudio: (setId, words, level) =>
+    api.post("/tts/wordaudio/pre-generate", {
+      setId,
+      words,
+      level,
+    }),
   getCategoryAudio: (categoryId, wordIndex, text, level) =>
     api
       .post(`/tts/category/${categoryId}/${wordIndex}`, { text, level })
       .then((res) => res.data.url),
-   getPronunciationAudio: (wordId, text, level) =>
-    api.post(`/tts/pronunciation/${wordId}`, { text, level }).then((res) => res.data.url),
+  getPronunciationAudio: (wordId, text, level) =>
+    api
+      .post(`/tts/pronunciation/${wordId}`, { text, level })
+      .then((res) => res.data.url),
 
   // Pre-generate all dialogue lines (admin use)
   preGenerateDialogueAudio: (dialogueId, dialogueLines, level) =>
@@ -523,9 +551,6 @@ export const ttsService = {
       level,
     }),
 
-    
-
-    
   preGenerateCategoryAudio: (categoryId, words, level) =>
     api.post("/tts/category/pre-generate", {
       categoryId,
@@ -615,7 +640,7 @@ export const paymentService = {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      }
+      },
     );
     if (!response.ok) throw new Error("Failed to fetch subscription");
     return response.json();
@@ -632,22 +657,17 @@ export const paymentService = {
     return response.json();
   },
 
-  cancelSubscription: async (userId) => {
-    const token = localStorage.getItem("authToken");
-    const response = await fetch(
-      `${API_BASE_URL}/payments/subscription/cancel`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ userId }),
-      }
-    );
-    if (!response.ok) throw new Error("Failed to cancel subscription");
-    return response.json();
-  },
+   // ONE-TIME PAYMENTS ADDED: cancel not needed
+  // cancelSubscription: async (userId) => {
+  //   const token = localStorage.getItem("authToken");
+  //   const response = await fetch(`${API_BASE_URL}/payments/subscription/cancel`, {
+  //     method: "POST",
+  //     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+  //     body: JSON.stringify({ userId }),
+  //   });
+  //   if (!response.ok) throw new Error("Failed to cancel subscription");
+  //   return response.json();
+  // },
 };
 
 export const subscriptionService = {
@@ -658,7 +678,7 @@ export const subscriptionService = {
       // Fetch fresh user data from backend
       const response = await authService.getProfile();
       const user = response.data?.user || response.data;
-      
+
       // console.log("[Subscription] Fresh user data from backend:", user);
 
       if (!user) {
@@ -673,7 +693,7 @@ export const subscriptionService = {
       // Check subscription expiration using the correct field path
       const now = new Date();
       let expiresAt = null;
-      
+
       // Try to get expiration date from the correct location
       if (user.subscriptionExpiresAt) {
         expiresAt = new Date(user.subscriptionExpiresAt);
@@ -687,18 +707,21 @@ export const subscriptionService = {
       // CRITICAL FIX: Subscription is expired if current time is AFTER (greater than or equal to) expiration time
       // This means: at 11:58:00, if expires at 11:58:00, it's expired (time's up)
       const isExpired = !expiresAt || now >= expiresAt;
-      
+
       // Calculate days remaining ONLY if not expired
       let daysRemaining = 0;
       if (!isExpired && expiresAt) {
         const diffMs = expiresAt - now;
         daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
       }
-      
+
       // User has active subscription if:
       // 1. isPaid is true AND
       // 2. Current time is BEFORE expiration time (now < expiresAt)
-      const isCancelled = user.subscriptionCancelled || (user.subscription && user.subscription.cancelled) || false;
+      const isCancelled =
+        user.subscriptionCancelled ||
+        (user.subscription && user.subscription.cancelled) ||
+        false;
       const isActive = user.isPaid && !isExpired;
 
       // console.log("[Subscription] Days remaining:", daysRemaining);
@@ -710,9 +733,13 @@ export const subscriptionService = {
         active: isActive,
         expired: isExpired,
         daysRemaining: daysRemaining,
-        type: user.subscriptionType || (user.subscription && user.subscription.type),
+        type:
+          user.subscriptionType ||
+          (user.subscription && user.subscription.type),
         expiresAt: expiresAt ? expiresAt.toISOString() : null,
-        trialStartedAt: (user.subscription && user.subscription.trialStartedAt) || user.trialStartedAt,
+        trialStartedAt:
+          (user.subscription && user.subscription.trialStartedAt) ||
+          user.trialStartedAt,
         cancelled: isCancelled,
       };
 
@@ -746,8 +773,10 @@ export const academyService = {
   getGroupInviteInfo: (academyId, groupId) =>
     api.get(`/academies/${academyId}/groups/${groupId}/invite-info`),
 
-    unlockGroupWithPin: (academyId, groupId, teacherPin) =>
-    api.post(`/academies/${academyId}/groups/${groupId}/unlock`, { teacherPin }),
+  unlockGroupWithPin: (academyId, groupId, teacherPin) =>
+    api.post(`/academies/${academyId}/groups/${groupId}/unlock`, {
+      teacherPin,
+    }),
   // NEW: Join a group using the teacher code
   joinByTeacherCode: (teacherCode) =>
     api.post("/academies/join-by-code", { teacherCode }),
@@ -758,13 +787,13 @@ export const academyService = {
   updateTask: (academyId, groupId, taskId, taskData) =>
     api.put(
       `/academies/${academyId}/groups/${groupId}/tasks/${taskId}`,
-      taskData
+      taskData,
     ),
   deleteTask: (academyId, groupId, taskId) =>
     api.delete(`/academies/${academyId}/groups/${groupId}/tasks/${taskId}`),
   completeTask: (academyId, groupId, taskId) =>
     api.post(
-      `/academies/${academyId}/groups/${groupId}/tasks/${taskId}/complete`
+      `/academies/${academyId}/groups/${groupId}/tasks/${taskId}/complete`,
     ),
   getMyTasks: () => api.get("/academies/tasks/my"),
 
@@ -803,15 +832,12 @@ export const raceService = {
   getUserRaceStats: () => api.get("/race/stats"),
 };
 
-
-
 export const activityService = {
   addTime: (minutes = 1) => api.post("/activity/add-time", { minutes }),
   getHeatmap: (months = 12) => api.get(`/activity/heatmap?months=${months}`),
   getTodayActivity: () => api.get("/activity/today"),
   getStats: () => api.get("/activity/stats"),
 };
-
 
 export const notificationService = {
   // Get all notifications with pagination
@@ -838,30 +864,30 @@ export const sentenceService = {
   getAllSentences: (params = {}) => api.get("/sentences", { params }),
   getSentencesByLevel: (level) => api.get(`/sentences/level/${level}`),
   getSentenceById: (id) => api.get(`/sentences/${id}`),
-  submitSentence: (id, answers) => api.post(`/sentences/${id}/submit`, { answers }),
+  submitSentence: (id, answers) =>
+    api.post(`/sentences/${id}/submit`, { answers }),
   getCompletedSentences: () => api.get("/sentences/completed"),
   getFinishedSentences: () => api.get("/sentences/finished"),
   // Admin
   createSentence: (data) => api.post("/sentences", data),
-  createBulkSentences: (sentences) => api.post("/sentences/bulk", { sentences }),
+  createBulkSentences: (sentences) =>
+    api.post("/sentences/bulk", { sentences }),
   updateSentence: (id, data) => api.put(`/sentences/${id}`, data),
   deleteSentence: (id) => api.delete(`/sentences/${id}`),
 };
-
-
 
 export const structureService = {
   getAllStructures: async (level = null, type = null) => {
     const params = {};
     if (level) params.level = level;
     if (type) params.type = type;
-    return api.get('/structures', { params });
+    return api.get("/structures", { params });
   },
   getStructureById: async (id) => {
     return api.get(`/structures/${id}`);
   },
   createStructure: async (data) => {
-    return api.post('/structures', data);
+    return api.post("/structures", data);
   },
   updateStructure: async (id, data) => {
     return api.put(`/structures/${id}`, data);
@@ -870,19 +896,19 @@ export const structureService = {
     return api.delete(`/structures/${id}`);
   },
   submitQuiz: async (structureId, score) => {
-    return api.post('/structures/quiz/submit', { structureId, score });
+    return api.post("/structures/quiz/submit", { structureId, score });
   },
   getUserProgress: async () => {
-    return api.get('/structures/progress/me');
+    return api.get("/structures/progress/me");
   },
 };
-
 
 export const flashCardService = {
   getAllFlashCards: (params = {}) => api.get("/flashcards", { params }),
   getFlashCardById: (id) => api.get(`/flashcards/${id}`),
   createFlashCard: (flashCardData) => api.post("/flashcards", flashCardData),
-  updateFlashCard: (id, flashCardData) => api.put(`/flashcards/${id}`, flashCardData),
+  updateFlashCard: (id, flashCardData) =>
+    api.put(`/flashcards/${id}`, flashCardData),
   deleteFlashCard: (id) => api.delete(`/flashcards/${id}`),
   addXP: (xpEarned) => api.post("/flashcards/xp/add", { xpEarned }),
 };
@@ -890,7 +916,7 @@ export const flashCardService = {
 export const communityService = {
   getMessages: (params = {}) => api.get("/community", { params }),
   getReplies: (messageId) => api.get(`/community/${messageId}/replies`),
-  postMessage: (content, parentId = null, mentions = []) => 
+  postMessage: (content, parentId = null, mentions = []) =>
     api.post("/community", { content, parentId, mentions }),
   toggleLike: (messageId) => api.post(`/community/${messageId}/like`),
   deleteMessage: (messageId) => api.delete(`/community/${messageId}`),
@@ -902,23 +928,25 @@ export const createWordService = {
   submitLesson: (lessonId, answers) =>
     api.post("/createword/submit", { lessonId, answers }),
   getFinishedLessons: () => api.get("/createword/finished"),
-  
+
   // Admin
   createLesson: (lessonData) => api.post("/createword", lessonData),
   updateLesson: (id, lessonData) => api.put(`/createword/${id}`, lessonData),
   deleteLesson: (id) => api.delete(`/createword/${id}`),
 };
 
-
 export const examService = {
   getExamsByLevel: (level) => api.get(`/exams/level/${level}`),
-  getAllExamLevels: () => api.get('/exams/levels'),
+  getAllExamLevels: () => api.get("/exams/levels"),
   getExamById: (id) => api.get(`/exams/${id}`),
-  submitListening: (examId, answers) => api.post('/exams/submit/listening', { examId, answers }),
-  submitWriting: (examId, answers) => api.post('/exams/submit/writing', { examId, answers }),
-  submitReading: (examId, answers) => api.post('/exams/submit/reading', { examId, answers }),
-  submitCompleteExam: (data) => api.post('/exams/submit/complete', data),
-  getUserHistory: () => api.get('/exams/user/history')
+  submitListening: (examId, answers) =>
+    api.post("/exams/submit/listening", { examId, answers }),
+  submitWriting: (examId, answers) =>
+    api.post("/exams/submit/writing", { examId, answers }),
+  submitReading: (examId, answers) =>
+    api.post("/exams/submit/reading", { examId, answers }),
+  submitCompleteExam: (data) => api.post("/exams/submit/complete", data),
+  getUserHistory: () => api.get("/exams/user/history"),
 };
 
 export const pollService = {
@@ -928,45 +956,7 @@ export const pollService = {
     api.post("/polls/vote", { pollId, optionIndex, visitorId }),
   createPoll: (pollData) => api.post("/polls/create", pollData),
   getPollVoters: (pollId) => api.get(`/polls/${pollId}/voters`),
-}
-
-export const dialogueAPI = {
-  // Get all stories with optional filters
-  getStories: async (level = '', category = '') => {
-    const params = new URLSearchParams();
-    if (level) params.append('level', level);
-    if (category) params.append('category', category);
-    const response = await fetch(`${API_BASE_URL}/dialogue/stories?${params}`);
-    return response.json();
-  },
-
-  // Get single story by ID
-  getStoryById: async (storyId) => {
-    const response = await fetch(`${API_BASE_URL}/dialogue/stories/${storyId}`);
-    return response.json();
-  },
-
-  // Get audio for dialogue step (cached or generated)
-  getDialogueAudio: async (storyId, stepIndex, text, level, voiceId) => {
-    const response = await fetch(`${API_BASE}/tts/dialogue/${storyId}/${stepIndex}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, level, voice_id: voiceId })
-    });
-    return response.json();
-  },
-
-  // Check answer
-  checkAnswer: async (storyId, stepIndex, answer) => {
-    const response = await fetch(`${API_BASE_URL}/dialogue/answer/check`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ story_id: storyId, step_index: stepIndex, answer })
-    });
-    return response.json();
-  }
 };
-
 
 export const adminService = {
   getDashboardStats: () => api.get("/admin/stats"),
@@ -975,10 +965,47 @@ export const adminService = {
   getOnlineUsers: () => api.get("/admin/users/online"),
   updateUserRole: (userId, role) =>
     api.put(`/admin/users/${userId}/role`, { role }),
-  toggleUserStatus: (userId) =>
-    api.put(`/admin/users/${userId}/toggle-status`),
+  toggleUserStatus: (userId) => api.put(`/admin/users/${userId}/toggle-status`),
   deleteUser: (userId) => api.delete(`/admin/users/${userId}`),
 };
 
+export const videoService = {
+  getAllVideos: () => api.get("/videos"),
+  getVideoById: (id) => api.get(`/videos/${id}`),
+  markVideoFinished: (id) => api.post(`/videos/${id}/finish`),
+  getFinishedVideos: () => api.get("/videos/finished"), // ADD THIS
+};
 
+export const storyService = {
+  getAllStories: (level = "") =>
+    api.get("/stories", { params: level ? { level } : {} }),
+  getStoryById: (id) => api.get(`/stories/${id}`),
+  submitStory: (data) => api.post("/stories/submit", data),
+  getFinishedStories: () => api.get("/stories/finished"),
+};
+
+export const wordAudioService = {
+  getAllSets: (params = {}) => api.get("/wordaudio", { params }),
+  getSetById: (id) => api.get(`/wordaudio/${id}`),
+  submitQuiz: (setId, score, totalQuestions) =>
+    api.post("/wordaudio/submit", { setId, score, totalQuestions }),
+  getFinishedSets: () => api.get("/wordaudio/finished"),
+  // Admin
+  createSet: (setData) => api.post("/wordaudio/admin", setData),
+  createBulkSets: (sets) => api.post("/wordaudio/admin/bulk", { sets }),
+  updateSet: (id, setData) => api.put(`/wordaudio/admin/${id}`, setData),
+  deleteSet: (id) => api.delete(`/wordaudio/admin/${id}`),
+};
+
+
+export const giveawayService = {
+  getAllGiveaways: () => api.get("/giveaways"),
+  getGiveawayById: (id) => api.get(`/giveaways/${id}`),
+  enterGiveaway: (id) => api.post(`/giveaways/${id}/enter`),
+  createGiveaway: (data) => api.post("/giveaways", data),
+  updateGiveaway: (id, data) => api.put(`/giveaways/${id}`, data),
+  deleteGiveaway: (id) => api.delete(`/giveaways/${id}`),
+  pickWinners: (id) => api.post(`/giveaways/${id}/pick-winners`),
+  getAuditLog: (id) => api.get(`/giveaways/${id}/audit`), 
+};
 export default api;

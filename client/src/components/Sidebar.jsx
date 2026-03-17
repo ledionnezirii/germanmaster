@@ -37,6 +37,10 @@ import {
   Users,
   BrickWallIcon,
   File,
+  FilmIcon,
+  Camera,
+  ChevronDownSquare,
+  Gift,
 } from "lucide-react"
 import { ChatBubbleLeftIcon, MicrophoneIcon } from "@heroicons/react/24/outline"
 
@@ -96,9 +100,15 @@ const { isAuthenticated, user } = useAuth()
        // { icon: Dumbbell, label: "Ushtro Gramatiken", path: "/practice" },
 { icon: User, label: "Admin Panel", path: "/admin", requireAuth: true, adminOnly: true },
 
+    { icon: FilmIcon, label: "Video te ndryshme", path: "/videos" },
+    //{ icon: Camera, label: "Situata", path: "/stories" },
+        { icon: ChevronDownSquare, label: "Zgjedh fjalen duhur", path: "/wordaudio" },
+        //{ icon: Gift, label: "Shperblime", path: "/giveaways" },
+
+
 
     { icon: LightbulbIcon, label: "Kuizet", path: "/quizes" },
-   // { icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation" },
+    //{ icon: MicrophoneIcon, label: "Shqiptimi", path: "/pronunciation" },
     { icon: NotebookPenIcon, label: "Fraza te ndryshme", path: "/phrases" },
     { icon: UserRoundPen, label: "Formo Fjali", path: "/sentences", requireAuth: false },
 
@@ -109,7 +119,6 @@ const { isAuthenticated, user } = useAuth()
 
     //{ icon: User, label: "Menaxho", path: "/academies", requireAuth: true },
     /*{ icon: Sword, label: "Garo", path: "/race", requireAuth: true },*/
-    //{ icon: SpeakerIcon, label: "Dialoge te ndryshme", path: "/dialogue", requireAuth: true },
 
 
     { icon: User, label: "Llogaria", path: "/account", requireAuth: true },

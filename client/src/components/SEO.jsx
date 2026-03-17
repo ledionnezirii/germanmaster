@@ -14,8 +14,8 @@ const SEO = ({
 
   useEffect(() => {
     // Default values
-    const defaultTitle = 'Gjuha Gjermane - Mësoni Gjuhën Gjermane Online';
-    const defaultDescription = 'Mësoni gjuhën gjermane online me kursa interaktive, ushtrime, teste dhe më shumë.';
+    const defaultTitle = 'Mësoni Gjuhën Gjermane';
+    const defaultDescription = 'Mësoni gjuhën gjermane online ne menyre interaktive, ushtrime, teste, kuize, certifikata dhe më shumë.';
     const baseUrl = 'https://gjuhagjermane.com';
     
     // Set page title

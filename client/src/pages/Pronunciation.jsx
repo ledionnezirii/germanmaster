@@ -22,7 +22,6 @@ const PronunciationPractice = () => {
   const [selectedPackage, setSelectedPackage] = useState(null)
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
   const [isListening, setIsListening] = useState(false)
-  const [recognition, setRecognition] = useState(null)
   const [audioCache, setAudioCache] = useState({})
   const [sessionStats, setSessionStats] = useState({
     correctAnswers: 0,
@@ -39,6 +38,8 @@ const PronunciationPractice = () => {
   const [isMobile, setIsMobile] = useState(false)
   const [skipsUsed, setSkipsUsed] = useState(0)
   const currentAudioRef = useRef(null)
+  const mediaRecorderRef = useRef(null)
+  const audioChunksRef = useRef([])
   const maxSkips = 2
 
   useEffect(() => {
@@ -53,14 +54,6 @@ const PronunciationPractice = () => {
   const itemsPerPage = isMobile ? 8 : 20
 
   useEffect(() => {
-    if ("webkitSpeechRecognition" in window) {
-      const recognitionInstance = new window.webkitSpeechRecognition()
-      recognitionInstance.continuous = false
-      recognitionInstance.interimResults = false
-      recognitionInstance.lang = "de-DE"
-      setRecognition(recognitionInstance)
-    }
-
     loadPackages()
     loadCompletedPackages()
   }, [])
@@ -121,39 +114,56 @@ const PronunciationPractice = () => {
     }
   }
 
-  const startListening = () => {
-    if (recognition && !sessionStats.completedWords.includes(currentWordIndex)) {
+  const startListening = async () => {
+    if (sessionStats.completedWords.includes(currentWordIndex)) return
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       setIsListening(true)
       setFeedback("")
+      audioChunksRef.current = []
 
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript.toLowerCase()
-        checkPronunciation(transcript)
+      const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) audioChunksRef.current.push(e.data)
       }
 
-      recognition.onerror = () => {
-        setIsListening(false)
-        setFeedback("Gabim me njohjen e zërit. Ju lutem provoni përsëri.")
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop())
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
+        try {
+          const transcript = await pronunciationService.transcribeAudio(audioBlob)
+          checkPronunciation(transcript)
+        } catch (err) {
+          setFeedback("Gabim me njohjen e zërit. Ju lutem provoni përsëri.")
+          setIsListening(false)
+        }
       }
 
-      recognition.onend = () => {
-        setIsListening(false)
-      }
-
-      recognition.start()
+      mediaRecorder.start()
+      // Auto stop after 4 seconds
+      setTimeout(() => {
+        if (mediaRecorderRef.current?.state === "recording") {
+          mediaRecorderRef.current.stop()
+        }
+      }, 4000)
+    } catch (err) {
+      setIsListening(false)
+      setFeedback("Nuk mund të aksesohet mikrofoni. Ju lutem jepni leje.")
     }
   }
 
   const stopListening = () => {
-    if (recognition && isListening) {
-      recognition.stop()
-      setIsListening(false)
+    if (mediaRecorderRef.current?.state === "recording") {
+      mediaRecorderRef.current.stop()
     }
+    setIsListening(false)
   }
 
   const checkPronunciation = async (spokenText) => {
     if (!selectedPackage) return
-    const currentWord = selectedPackage.words[currentWordIndex]
 
     try {
       const response = await pronunciationService.checkPronunciation(selectedPackage._id, currentWordIndex, spokenText)
@@ -265,7 +275,6 @@ const PronunciationPractice = () => {
     }
 
     setSkipsUsed((prev) => prev + 1)
-
     setFeedback(`Fjalë e anashkaluar. Anashkalime të mbetura: ${maxSkips - skipsUsed - 1}`)
 
     if (!sessionStats.completedWords.includes(currentWordIndex)) {
@@ -281,7 +290,6 @@ const PronunciationPractice = () => {
   }
 
   const finishQuiz = () => {
-    console.log("Finish quiz clicked")
     const passThreshold = Math.ceil(selectedPackage.words.length * 0.7)
     if (sessionStats.completedWords.length >= passThreshold) {
       setCompletedPackages((prev) => new Set([...Array.from(prev), selectedPackage._id.toString()]))
@@ -326,7 +334,6 @@ const PronunciationPractice = () => {
               ? "border-gray-200 text-gray-400 cursor-not-allowed"
               : "border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400"
           }`}
-          data-testid="pagination-prev"
         >
           <ChevronLeft size={16} />
         </button>
@@ -344,7 +351,6 @@ const PronunciationPractice = () => {
                   ? "bg-orange-500 text-white border-orange-600 shadow-sm"
                   : "border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400"
               }`}
-              data-testid={`pagination-page-${pageNum}`}
             >
               {pageNum}
             </button>
@@ -359,7 +365,6 @@ const PronunciationPractice = () => {
               ? "border-gray-200 text-gray-400 cursor-not-allowed"
               : "border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400"
           }`}
-          data-testid="pagination-next"
         >
           <ChevronRight size={16} />
         </button>
@@ -372,7 +377,6 @@ const PronunciationPractice = () => {
     : 0
 
   const passThreshold = selectedPackage ? Math.ceil(selectedPackage.words.length * 0.7) : 0
-  const hasPassed = sessionStats.completedWords.length >= passThreshold
 
   if (selectedPackage) {
     if (showResults) {
@@ -473,7 +477,7 @@ const PronunciationPractice = () => {
                   }
                   className="w-12 h-12 sm:w-16 sm:h-16 bg-orange-500 hover:bg-orange-600 text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 shadow-lg active:scale-95"
                 >
-                  <Volume2 className="w-5 h-5 sm:w-6 sm:w-6" />
+                  <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
 
                 <button
@@ -481,7 +485,7 @@ const PronunciationPractice = () => {
                   disabled={sessionStats.completedWords.includes(currentWordIndex)}
                   className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 shadow-lg active:scale-95 ${
                     isListening
-                      ? "bg-red-500 hover:bg-red-600 text-white"
+                      ? "bg-red-500 hover:bg-red-600 text-white animate-pulse"
                       : sessionStats.completedWords.includes(currentWordIndex)
                         ? "bg-green-500 text-white cursor-default"
                         : "bg-green-500 hover:bg-green-600 text-white"
@@ -504,11 +508,17 @@ const PronunciationPractice = () => {
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                       : "bg-orange-500 hover:bg-orange-600 text-white"
                   }`}
-                  title={skipsUsed >= maxSkips ? "Nuk keni më anashkalime" : "Anashkalo fjalën (Skip word)"}
+                  title={skipsUsed >= maxSkips ? "Nuk keni më anashkalime" : "Anashkalo fjalën"}
                 >
-                  <X className="w-5 h-5 sm:w-6 sm:w-6" />
+                  <X className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               </div>
+
+              {isListening && (
+                <div className="text-center text-sm text-orange-600 font-medium animate-pulse">
+                  🎙️ Duke dëgjuar... (4 sekonda)
+                </div>
+              )}
 
               {feedback && (
                 <div
@@ -549,7 +559,7 @@ const PronunciationPractice = () => {
                     onClick={nextWord}
                     className="flex items-center gap-2 bg-orange-500 text-white px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors text-sm sm:text-base"
                   >
-                    {currentWordIndex === selectedPackage.words.length - 1 ? "Tjetër" : "Tjetër"}
+                    Tjetër
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -567,10 +577,9 @@ const PronunciationPractice = () => {
         <div className="max-w-6xl mx-auto w-full">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center min-h-96">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+            </div>
           </div>
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="bg-gray-100 animate-pulse h-32 rounded-lg"></div>
@@ -658,78 +667,72 @@ const PronunciationPractice = () => {
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center min-h-96">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 flex-1 overflow-y-auto">
-            {currentPackages.length > 0 ? (
-              currentPackages.map((pkg) => {
-                const isCompleted = completedPackages.has(pkg._id.toString())
-                const wordCount = pkg.words?.length || 0
-                return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 flex-1 overflow-y-auto">
+          {currentPackages.length > 0 ? (
+            currentPackages.map((pkg) => {
+              const isCompleted = completedPackages.has(pkg._id.toString())
+              const wordCount = pkg.words?.length || 0
+              return (
+                <div
+                  key={pkg._id}
+                  className={`p-3 rounded-lg shadow-sm border transition-all cursor-pointer overflow-hidden relative group h-fit ${
+                    isCompleted
+                      ? "bg-gradient-to-br from-green-50 to-emerald-50 border-green-300 hover:border-green-400 hover:shadow-lg"
+                      : "bg-white border-gray-200 hover:border-orange-300 hover:shadow-md"
+                  }`}
+                  onClick={() => selectPackage(pkg)}
+                >
                   <div
-                    key={pkg._id}
-                    className={`p-3 rounded-lg shadow-sm border transition-all cursor-pointer overflow-hidden relative group h-fit ${
-                      isCompleted
-                        ? "bg-gradient-to-br from-green-50 to-emerald-50 border-green-300 hover:border-green-400 hover:shadow-lg"
-                        : "bg-white border-gray-200 hover:border-orange-300 hover:shadow-md"
-                    }`}
-                    onClick={() => selectPackage(pkg)}
+                    className={`absolute top-2 right-2 ${getLevelColor(pkg.level)} px-1.5 py-0.5 rounded text-xs font-medium`}
                   >
-                    <div
-                      className={`absolute top-2 right-2 ${getLevelColor(pkg.level)} px-1.5 py-0.5 rounded text-xs font-medium`}
-                    >
-                      {pkg.level}
-                    </div>
-                    <Mic
-                      className={`absolute -bottom-4 -right-4 w-16 h-16 ${
-                        isCompleted ? "text-green-200" : "text-gray-200"
+                    {pkg.level}
+                  </div>
+                  <Mic
+                    className={`absolute -bottom-4 -right-4 w-16 h-16 ${
+                      isCompleted ? "text-green-200" : "text-gray-200"
+                    }`}
+                  />
+                  <div className="relative z-10">
+                    <h3
+                      className={`text-sm font-semibold mb-1 pr-12 truncate ${
+                        isCompleted
+                          ? "text-green-800 group-hover:text-green-900"
+                          : "text-gray-800 group-hover:text-orange-700"
                       }`}
-                    />
-                    <div className="relative z-10">
-                      <h3
-                        className={`text-sm font-semibold mb-1 pr-12 truncate ${
-                          isCompleted
-                            ? "text-green-800 group-hover:text-green-900"
-                            : "text-gray-800 group-hover:text-orange-700"
+                    >
+                      {pkg.title}
+                    </h3>
+                    <p className={`text-xs line-clamp-2 ${isCompleted ? "text-green-700" : "text-gray-600"}`}>
+                      {wordCount} fjalë për praktikë shqiptimi
+                    </p>
+                    <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center">
+                      <span className={`text-xs ${isCompleted ? "text-green-600" : "text-gray-500"}`}>
+                        Gjermanisht • Ushtrim Shqiptimi
+                      </span>
+                      <span
+                        className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                          isCompleted ? "bg-green-200 text-green-800" : "bg-yellow-100 text-yellow-800"
                         }`}
                       >
-                        {pkg.title}
-                      </h3>
-                      <p className={`text-xs line-clamp-2 ${isCompleted ? "text-green-700" : "text-gray-600"}`}>
-                        {wordCount} fjalë për praktikë shqiptimi
-                      </p>
-                      <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center">
-                        <span className={`text-xs ${isCompleted ? "text-green-600" : "text-gray-500"}`}>
-                          Gjermanisht • Ushtrim Shqiptimi
-                        </span>
-                        <span
-                          className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                            isCompleted ? "bg-green-200 text-green-800" : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {isCompleted ? "Përfunduar" : "Praktiko"}
-                        </span>
-                      </div>
+                        {isCompleted ? "Përfunduar" : "Praktiko"}
+                      </span>
                     </div>
                   </div>
-                )
-              })
-            ) : (
-              <div className="col-span-full text-center py-8">
-                <div className="bg-gray-50 rounded-lg p-6 inline-block">
-                  <Mic className="text-orange-500 w-10 h-10 mx-auto mb-3" />
-                  <h3 className="text-sm font-medium text-gray-800 mb-2">Nuk u gjetën paketa</h3>
-                  <p className="text-gray-500 text-xs">
-                    Provoni të zgjidhni nivele të ndryshme ose kontrolloni më vonë
-                  </p>
                 </div>
+              )
+            })
+          ) : (
+            <div className="col-span-full text-center py-8">
+              <div className="bg-gray-50 rounded-lg p-6 inline-block">
+                <Mic className="text-orange-500 w-10 h-10 mx-auto mb-3" />
+                <h3 className="text-sm font-medium text-gray-800 mb-2">Nuk u gjetën paketa</h3>
+                <p className="text-gray-500 text-xs">
+                  Provoni të zgjidhni nivele të ndryshme ose kontrolloni më vonë
+                </p>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
 
         <Pagination />
       </div>
