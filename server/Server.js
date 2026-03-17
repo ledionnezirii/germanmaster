@@ -49,7 +49,6 @@ const ttsRoutes = require("./routes/ttsRoutes");
 const phraseRoutes = require("./routes/phraseRoutes");
 const academyRoutes = require("./routes/academyRoutes");
 const raceRoutes = require("./routes/raceRoutes");
-const dialoguesRoutes = require("./routes/dialogueRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const sentenceRoutes = require("./routes/sentenceRoutes");
@@ -60,6 +59,10 @@ const createWordRoutes = require("./routes/createWordRoutes");
 const examRoutes = require('./routes/examRoutes');
 const pollRoutes = require('./routes/pollRoutes')
 const adminRoutes = require("./routes/adminRoutes");
+const videoRoutes = require("./routes/videoRoutes");
+const storyRoutes = require("./routes/storyRoutes");
+const wordAudioRoutes = require("./routes/wordAudioRoutes");
+const giveawayRoutes = require("./routes/giveawayRoutes");
 
 
 
@@ -200,11 +203,18 @@ io.on("connection", (socket) => {
       gameType: "quiz",
     });
   });
-
-  socket.on("disconnect", (reason) => {
+socket.on("disconnect", (reason) => {
     console.log(
       `🔌 User disconnected: ${socket.id} (${socket.username}), reason: ${reason}`
     );
+    
+    // Remove from online users map
+    if (socket.userId) {
+      onlineUsers.delete(socket.userId);
+      io.emit("onlineUsersCount", onlineUsers.size);
+      console.log(`👤 User ${socket.username} went offline. Total online: ${onlineUsers.size}`);
+    }
+    
     handleDisconnect(socket, io);
   });
 
@@ -320,7 +330,6 @@ app.use("/api/tts", ttsRoutes);
 app.use("/api/phrases", phraseRoutes);
 app.use("/api/academies", academyRoutes);
 app.use("/api/race", raceRoutes);
-app.use("/api/dialogue", dialoguesRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/sentences", sentenceRoutes);
@@ -331,6 +340,10 @@ app.use("/api/createword", createWordRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/polls', pollRoutes);
 app.use('/api/admin', adminRoutes);
+app.use("/api/videos", videoRoutes);
+app.use("/api/stories", storyRoutes);
+app.use("/api/wordaudio", wordAudioRoutes);
+app.use("/api/giveaways", giveawayRoutes);
 
 
 

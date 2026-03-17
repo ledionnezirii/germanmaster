@@ -11,6 +11,5 @@ const protect = require("../middleware/auth")
 router.post("/checkout/create", protect, paymentController.createCheckoutSession)
 router.get("/subscription/:userId", protect, paymentController.getUserSubscription)
 router.get("/payments/:userId", protect, paymentController.getUserPayments)
-router.post("/subscription/cancel", protect, paymentController.cancelSubscription)
 
 module.exports = router

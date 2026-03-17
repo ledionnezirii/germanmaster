@@ -549,3 +549,101 @@ exports.getDialogueAudioWithVoice = async (req, res) => {
     return res.status(500).json({ error: "Failed to get/generate dialogue audio" });
   }
 };
+exports.getStoryAudio = async (req, res) => {
+  try {
+    const { storyId, stepIndex } = req.params;
+    const { text, level } = req.body;
+    if (!storyId) return res.status(400).json({ error: "Story ID is required" });
+    const audioId = `${storyId}_${stepIndex}`;
+    const filePath = getAudioFilePath(audioId, level, "stories");
+    if (await audioExists(audioId, level, "stories")) {
+      const url = await getSignedUrl(filePath);
+      return res.json({ url });
+    }
+    if (!text) return res.status(404).json({ error: "Audio not found and no text provided" });
+    await generateAudio(text, audioId, level, "stories");
+    const url = await getSignedUrl(filePath);
+    return res.json({ url });
+  } catch (error) {
+    console.error("[TTS] Story controller error:", error);
+    return res.status(500).json({ error: "Failed to get/generate story audio" });
+  }
+};
+
+exports.getWordAudioAudio = async (req, res) => {
+  try {
+    const { setId, wordIndex } = req.params;
+    const { text, level } = req.body;
+
+    if (!setId) {
+      return res.status(400).json({ error: "Set ID is required" });
+    }
+
+    const audioId = `${setId}_${wordIndex}`;
+    const filePath = getAudioFilePath(audioId, level, "wordaudio");
+
+    if (await audioExists(audioId, level, "wordaudio")) {
+      console.log(`[TTS] Serving cached word audio from GCS: ${filePath}`);
+      const url = await getSignedUrl(filePath);
+      return res.json({ url });
+    }
+
+    if (!text) {
+      return res.status(404).json({ error: "Audio not found and no text provided to generate" });
+    }
+
+    console.log(`[TTS] Generating new word audio for: ${audioId}`);
+    await generateAudio(text, audioId, level, "wordaudio");
+
+    const url = await getSignedUrl(filePath);
+    return res.json({ url });
+  } catch (error) {
+    console.error("[TTS] Word Audio controller error:", error);
+    return res.status(500).json({ error: "Failed to get/generate word audio" });
+  }
+};
+
+exports.preGenerateWordAudioAudio = async (req, res) => {
+  try {
+    const { setId, words, level } = req.body;
+
+    if (!setId || !words || !Array.isArray(words)) {
+      return res.status(400).json({ error: "Set ID and words array are required" });
+    }
+
+    const results = [];
+
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      const audioId = `${setId}_${i}`;
+      const textToSpeak = word.germanWord;
+
+      if (!textToSpeak) {
+        results.push({ index: i, status: "skipped", audioId, reason: "No German word found" });
+        continue;
+      }
+
+      if (await audioExists(audioId, level, "wordaudio")) {
+        results.push({ index: i, status: "exists", audioId, word: textToSpeak });
+      } else {
+        try {
+          await generateAudio(textToSpeak, audioId, level, "wordaudio");
+          results.push({ index: i, status: "generated", audioId, word: textToSpeak });
+        } catch (error) {
+          results.push({ index: i, status: "error", audioId, word: textToSpeak, error: error.message });
+        }
+      }
+    }
+
+    return res.json({
+      message: "Word audio processing complete",
+      setId,
+      level,
+      totalWords: words.length,
+      results,
+    });
+  } catch (error) {
+    console.error("[TTS] Pre-generate word audio error:", error);
+    return res.status(500).json({ error: "Failed to pre-generate word audio" });
+  }
+}

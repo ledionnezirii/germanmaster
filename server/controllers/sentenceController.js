@@ -5,6 +5,9 @@ const { ApiResponse } = require("../utils/ApiResponse");
 const { asyncHandler } = require("../utils/asyncHandler");
 const { addUserXp } = require("./xpController");
 
+
+const FREE_SENTENCE_LIMIT = 5;
+
 // Get all sentence quizzes
 const getAllSentences = asyncHandler(async (req, res) => {
   const { level, page = 1, limit = 10 } = req.query;
@@ -146,26 +149,18 @@ const deleteSentence = asyncHandler(async (req, res) => {
 
 // Submit sentence quiz answers
 const submitSentence = asyncHandler(async (req, res) => {
-  const { answers } = req.body; // Array of user's answers: ["Ich bin Ledio", "Du gehst zur Schule", ...]
+  const { answers } = req.body;
   const userId = req.user.id;
 
   const sentence = await Sentence.findById(req.params.id);
+  if (!sentence) throw new ApiError(404, "Sentence quiz not found");
+  if (!answers || !Array.isArray(answers)) throw new ApiError(400, "Answers array is required");
 
-  if (!sentence) {
-    throw new ApiError(404, "Sentence quiz not found");
-  }
-
-  if (!answers || !Array.isArray(answers)) {
-    throw new ApiError(400, "Answers array is required");
-  }
-
-  // Calculate score
   let correctCount = 0;
   const results = sentence.questions.map((question, index) => {
     const userAnswer = answers[index] || "";
     const isCorrect = userAnswer.trim().toLowerCase() === question.correctSentence.trim().toLowerCase();
     if (isCorrect) correctCount++;
-    
     return {
       question: question.question,
       userAnswer,
@@ -181,40 +176,50 @@ const submitSentence = asyncHandler(async (req, res) => {
   let xpAwarded = 0;
   let alreadyCompleted = sentence.completedBy.includes(userId);
 
-  // Award XP if passed and not already completed
   if (passed && !alreadyCompleted) {
+    const user = await User.findById(userId);
+    if (!user) throw new ApiError(404, "User not found");
+
+    const finishedCount = user.finishedSentences ? user.finishedSentences.length : 0;
+    if (!user.isPaid && finishedCount >= FREE_SENTENCE_LIMIT) {
+      return res.json(new ApiResponse(200, {
+        results,
+        correctCount,
+        totalQuestions,
+        accuracy: Math.round(accuracy),
+        passed,
+        xpAwarded: 0,
+        alreadyCompleted: false,
+        limitReached: true,
+        message: "Keni arritur limitin falas! Kaloni në Premium për akses të pakufizuar.",
+      }));
+    }
+
     xpAwarded = sentence.xp;
-    
-    // Add XP to user
     await addUserXp(userId, xpAwarded);
-    
-    // Mark quiz as completed in Sentence model
     sentence.completedBy.push(userId);
     await sentence.save();
-
-    // Save finished sentence to User model
     await User.findByIdAndUpdate(userId, {
       $addToSet: { finishedSentences: sentence._id }
     });
   }
 
-  res.json(
-    new ApiResponse(200, {
-      results,
-      correctCount,
-      totalQuestions,
-      accuracy: Math.round(accuracy),
-      passed,
-      xpAwarded,
-      alreadyCompleted,
-      message: passed 
-        ? alreadyCompleted 
-          ? "Kuizi u kalua! (Tashmë i përfunduar - nuk fitohet XP)" 
-          : `Urime! Fitove ${xpAwarded} XP!`
-        : "Vazhdo të praktikosh! Duhet 70% për të kaluar.",
-    })
-  );
+  res.json(new ApiResponse(200, {
+    results,
+    correctCount,
+    totalQuestions,
+    accuracy: Math.round(accuracy),
+    passed,
+    xpAwarded,
+    alreadyCompleted,
+    message: passed
+      ? alreadyCompleted
+        ? "Kuizi u kalua! (Tashmë i përfunduar - nuk fitohet XP)"
+        : `Urime! Fitove ${xpAwarded} XP!`
+      : "Vazhdo të praktikosh! Duhet 70% për të kaluar.",
+  }));
 });
+
 
 // Get user's completed sentence quizzes
 const getCompletedSentences = asyncHandler(async (req, res) => {

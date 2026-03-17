@@ -34,4 +34,11 @@ router.post('/pre-generate', protect, ttsController.preGenerateAudio);
 
 router.post('/exam/:examId/:questionIndex', protect, ttsController.getExamAudio);
 
+
+router.post('/story/:storyId/:stepIndex', protect, ttsController.getStoryAudio);
+
+router.post('/wordaudio/:setId/:wordIndex', protect, ttsController.getWordAudioAudio);
+router.post('/wordaudio/pre-generate', protect, ttsController.preGenerateWordAudioAudio);
+
+
 module.exports = router;

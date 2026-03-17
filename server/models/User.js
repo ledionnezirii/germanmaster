@@ -263,11 +263,34 @@ const userSchema = new mongoose.Schema(
       wins: { type: Number, default: 0 },
       correctAnswers: { type: Number, default: 0 },
     },
+    finishedWordAudio: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "WordAudio",
+  },
+],
     wordRaceStats: {
       totalRaces: { type: Number, default: 0 },
       wins: { type: Number, default: 0 },
       correctWords: { type: Number, default: 0 },
     },
+
+finishedVideos: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Video",
+  },
+],
+videosFinished: {
+  type: Number,
+  default: 0,
+},
+finishedStories: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Story",
+  },
+],
     quizCycle: {
       type: [String],
       default: [],

@@ -1,6 +1,11 @@
 const PronunciationPackage = require("../models/Pronunciation")
 const User = require("../models/User")
 
+const OpenAI = require("openai")
+const { Readable } = require("stream")
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+
 // Merr të gjitha paketat/fjalët default
 exports.getWords = async (req, res) => {
   try {
@@ -179,6 +184,35 @@ exports.getUserCompletedPackages = async (req, res) => {
     })
   } catch (err) {
     console.error("[v0] Backend - Error in getUserCompletedPackages:", err)
+    res.status(500).json({ success: false, message: err.message })
+  }
+}
+
+
+
+
+exports.transcribeAudio = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "No audio file" })
+    }
+
+    // Convert buffer to a readable stream the OpenAI SDK expects
+    const stream = Readable.from(req.file.buffer)
+    stream.path = "audio.webm" // SDK uses this to determine file type
+
+    const transcription = await openai.audio.transcriptions.create({
+      file: stream,
+      model: "whisper-1",
+      language: "de",
+    })
+
+    res.status(200).json({
+      success: true,
+      transcript: transcription.text?.toLowerCase().trim(),
+    })
+  } catch (err) {
+    console.error("[transcribeAudio] Error:", err)
     res.status(500).json({ success: false, message: err.message })
   }
 }
