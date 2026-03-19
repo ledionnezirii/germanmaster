@@ -2,6 +2,12 @@ const Giveaway = require("../models/Giveaway");
 const User = require("../models/User");
 const cron = require("node-cron");
 
+// ── ADJUST THESE TO MATCH YOUR ACTUAL SUBSCRIPTION TYPE STRINGS IN THE DB ─────
+const INELIGIBLE_PLANS = ["3_months", "1_year"]; // 3mo & 1yr → can NEVER win
+const CAPPED_PLANS     = ["1_month"];             // 1mo → can win, max 20% of winners
+const MONTHLY_WIN_CAP  = 0.20;                    // 20%
+// ──────────────────────────────────────────────────────────────────────────────
+
 // ─────────────────────────────────────────────
 //  FISHER-YATES SHUFFLE (unbiased)
 // ─────────────────────────────────────────────
@@ -17,7 +23,7 @@ function fisherYatesShuffle(array) {
 // ─────────────────────────────────────────────
 //  AUDIT LOG BUILDER
 // ─────────────────────────────────────────────
-function buildAuditLog(participants, winners) {
+function buildAuditLog(participants, winners, extras = {}) {
   return {
     drawnAt: new Date().toISOString(),
     totalPoolSize: participants.length,
@@ -27,16 +33,16 @@ function buildAuditLog(participants, winners) {
       wonAt: new Date().toISOString(),
     })),
     method: "random-fisher-yates",
+    ...extras,
   };
 }
 
 // ─────────────────────────────────────────────
 //  SELECT WINNERS
-//  - Fetches only existing (non-deleted) users
-//  - Completely random — every participant has
-//    an equal chance regardless of XP
-//  - Fisher-Yates shuffle
-//  - NO duplicate winners
+//  Rules (invisible to users):
+//  - 3_months / 1_year plan → NEVER eligible to win
+//  - 1_month plan → eligible, but max 20% of winner slots
+//  - free / null → fully eligible, no cap
 // ─────────────────────────────────────────────
 async function selectWinners(participants, maxWinners) {
   // 1. Only keep participants whose accounts still exist
@@ -47,42 +53,69 @@ async function selectWinners(participants, maxWinners) {
 
   const existingMap = new Map(existingUsers.map(u => [u._id.toString(), u]));
 
-  // Filter out deleted accounts
   const activeParticipants = participants.filter(p =>
     existingMap.has(p.userId.toString())
   );
 
-  // 2. If ALL accounts were deleted, return empty — no ghost winners
   if (activeParticipants.length === 0) {
     return { winners: [], auditLog: null };
   }
 
-  // 3. Shuffle with Fisher-Yates (fully random, no weighting)
-  const shuffled = fisherYatesShuffle(activeParticipants);
+  // 2. Remove completely ineligible plans (3_months, 1_year)
+  const eligibleParticipants = activeParticipants.filter(
+    p => !INELIGIBLE_PLANS.includes(p.subscriptionType)
+  );
 
-  // 4. Pick winners — deduplicate (one win per user)
+  if (eligibleParticipants.length === 0) {
+    const auditLog = buildAuditLog(activeParticipants, [], {
+      ineligibleParticipants: activeParticipants.filter(p => INELIGIBLE_PLANS.includes(p.subscriptionType)).length,
+      eligibleParticipants: 0,
+      note: "No eligible participants after plan filtering.",
+    });
+    return { winners: [], auditLog };
+  }
+
+  // 3. Shuffle eligible participants
+  const shuffled = fisherYatesShuffle(eligibleParticipants);
+
+  // 4. Monthly cap: max 20% of maxWinners can be 1_month plan users
+  const monthlyQuota = Math.floor(maxWinners * MONTHLY_WIN_CAP);
+  let monthlyCount = 0;
+
   const seenUserIds = new Set();
   const winners = [];
 
   for (const p of shuffled) {
-    const uid = p.userId.toString();
-    if (seenUserIds.has(uid)) continue; // skip duplicate
-    seenUserIds.add(uid);
+    if (winners.length >= maxWinners) break;
 
+    const uid = p.userId.toString();
+    if (seenUserIds.has(uid)) continue;
+
+    // Apply monthly quota cap silently
+    if (CAPPED_PLANS.includes(p.subscriptionType)) {
+      if (monthlyCount >= monthlyQuota) continue;
+      monthlyCount++;
+    }
+
+    seenUserIds.add(uid);
     const user = existingMap.get(uid);
+
     winners.push({
-      userId: p.userId,
-      emri: user?.emri || p.emri,
-      mbiemri: user?.mbiemri || p.mbiemri,
-      email: user?.email || p.email,
+      userId:      p.userId,
+      emri:        user?.emri        || p.emri,
+      mbiemri:     user?.mbiemri     || p.mbiemri,
+      email:       user?.email       || p.email,
       avatarStyle: user?.avatarStyle || p.avatarStyle || "adventurer",
     });
-
-    if (winners.length >= maxWinners) break;
   }
 
-  // 5. Build audit log
-  const auditLog = buildAuditLog(activeParticipants, winners);
+  const auditLog = buildAuditLog(activeParticipants, winners, {
+    ineligibleParticipants: activeParticipants.filter(p => INELIGIBLE_PLANS.includes(p.subscriptionType)).length,
+    cappedPlanParticipants: activeParticipants.filter(p => CAPPED_PLANS.includes(p.subscriptionType)).length,
+    cappedPlanWinners: monthlyCount,
+    eligibleParticipants: eligibleParticipants.length,
+    monthlyQuotaApplied: monthlyQuota,
+  });
 
   return { winners, auditLog };
 }
@@ -94,14 +127,15 @@ async function endGiveaway(giveaway) {
   giveaway.status = "ended";
 
   if (giveaway.participants.length === 0) {
-    // No participants — mark as ended with no winners, log it
     giveaway.auditLog = {
       drawnAt: new Date().toISOString(),
       totalPoolSize: 0,
       uniqueParticipants: 0,
+      ineligibleParticipants: 0,
+      eligibleParticipants: 0,
       winners: [],
       method: "no-participants",
-      note: "Giveaway ended with zero participants. No winners selected.",
+      note: "Giveaway ended with zero participants.",
     };
     giveaway.winners = [];
   } else if (giveaway.winners.length === 0) {
@@ -118,8 +152,6 @@ async function endGiveaway(giveaway) {
 
 // ─────────────────────────────────────────────
 //  CRON JOB — runs every minute
-//  Automatically ends expired active giveaways
-//  No HTTP request needed to trigger this
 // ─────────────────────────────────────────────
 cron.schedule("* * * * *", async () => {
   try {
@@ -162,7 +194,6 @@ exports.getGiveawayById = async (req, res) => {
     const giveaway = await Giveaway.findById(req.params.id);
     if (!giveaway)
       return res.status(404).json({ success: false, message: "Giveaway not found" });
-
     res.json({ success: true, data: giveaway });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -174,7 +205,7 @@ exports.getGiveawayById = async (req, res) => {
 // ─────────────────────────────────────────────
 exports.createGiveaway = async (req, res) => {
   try {
-    const { title, description, imageUrl, endTime, maxWinners, maxParticipants } = req.body;
+    const { title, description, imageUrl, endTime, maxWinners, maxParticipants, minXp } = req.body;
 
     if (maxWinners && maxParticipants && maxWinners > maxParticipants) {
       return res.status(400).json({
@@ -189,7 +220,8 @@ exports.createGiveaway = async (req, res) => {
       imageUrl,
       endTime: new Date(endTime),
       maxWinners,
-      maxParticipants: maxParticipants || null, // null = unlimited
+      maxParticipants: maxParticipants || null,
+      minXp: minXp || 0,
     });
 
     res.status(201).json({ success: true, data: giveaway });
@@ -203,9 +235,7 @@ exports.createGiveaway = async (req, res) => {
 // ─────────────────────────────────────────────
 exports.updateGiveaway = async (req, res) => {
   try {
-    const giveaway = await Giveaway.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
+    const giveaway = await Giveaway.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!giveaway)
       return res.status(404).json({ success: false, message: "Giveaway not found" });
     res.json({ success: true, data: giveaway });
@@ -239,7 +269,16 @@ exports.enterGiveaway = async (req, res) => {
     if (new Date(giveaway.endTime) <= new Date())
       return res.status(400).json({ success: false, message: "Giveaway has ended" });
 
-    // Max participants cap check
+    // ── Minimum XP check ─────────────────────────────────────────────────────
+    const userXp = req.user.xp || 0;
+    if (giveaway.minXp > 0 && userXp < giveaway.minXp) {
+      return res.status(403).json({
+        success: false,
+        message: `You need at least ${giveaway.minXp} XP to enter this giveaway. You currently have ${userXp} XP.`,
+      });
+    }
+
+    // ── Max participants cap ──────────────────────────────────────────────────
     if (
       giveaway.maxParticipants !== null &&
       giveaway.maxParticipants !== undefined &&
@@ -251,23 +290,35 @@ exports.enterGiveaway = async (req, res) => {
       });
     }
 
-    // Duplicate entry check
+    // ── Duplicate entry check ─────────────────────────────────────────────────
     const alreadyEntered = giveaway.participants.some(
       p => p.userId.toString() === req.user._id.toString()
     );
     if (alreadyEntered)
       return res.status(400).json({ success: false, message: "Already entered" });
 
+    // ── Store subscription type for winner eligibility logic ──────────────────
+    // ADJUST: use the field/path that matches your User model
+    // e.g. req.user.subscription?.type, req.user.plan, req.user.tier, etc.
+    const subscriptionType = req.user.subscription?.type || null;
+
     giveaway.participants.push({
-      userId: req.user._id,
-      emri: req.user.emri,
-      mbiemri: req.user.mbiemri,
-      email: req.user.email,
-      avatarStyle: req.user.avatarStyle || "adventurer",
+      userId:           req.user._id,
+      emri:             req.user.emri,
+      mbiemri:          req.user.mbiemri,
+      email:            req.user.email,
+      avatarStyle:      req.user.avatarStyle || "adventurer",
+      subscriptionType,
     });
 
     await giveaway.save();
-    res.json({ success: true, message: "Entered successfully", data: giveaway });
+
+    // Same success message for everyone — no hint about eligibility rules
+    res.json({
+      success: true,
+      message: "Entered successfully!",
+      data: giveaway,
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -282,7 +333,6 @@ exports.pickWinners = async (req, res) => {
     if (!giveaway)
       return res.status(404).json({ success: false, message: "Giveaway not found" });
 
-    // 0 participants — return clear message, don't crash
     if (giveaway.participants.length === 0) {
       giveaway.status = "ended";
       giveaway.winners = [];
@@ -290,6 +340,8 @@ exports.pickWinners = async (req, res) => {
         drawnAt: new Date().toISOString(),
         totalPoolSize: 0,
         uniqueParticipants: 0,
+        ineligibleParticipants: 0,
+        eligibleParticipants: 0,
         winners: [],
         method: "no-participants",
         note: "Manually ended with zero participants.",
@@ -319,7 +371,7 @@ exports.pickWinners = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────
-//  GET audit log for a giveaway (admin)
+//  GET audit log (admin)
 // ─────────────────────────────────────────────
 exports.getAuditLog = async (req, res) => {
   try {
@@ -329,8 +381,10 @@ exports.getAuditLog = async (req, res) => {
     if (!giveaway)
       return res.status(404).json({ success: false, message: "Giveaway not found" });
     if (!giveaway.auditLog)
-      return res.status(404).json({ success: false, message: "No audit log yet — giveaway may still be active" });
-
+      return res.status(404).json({
+        success: false,
+        message: "No audit log yet — giveaway may still be active",
+      });
     res.json({ success: true, data: giveaway.auditLog });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
