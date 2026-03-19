@@ -111,6 +111,7 @@ const AppContent = () => {
 
               <Route path="/payments" element={<Payments />} />
               <Route path="/billing" element={<Payments />} />
+              <Route path="/giveaways" element={<Giveaway />} />
 
               <Route
                 path="/*"
@@ -146,7 +147,6 @@ const AppContent = () => {
                       <Route path="/videos" element={<Videos />} />
                       <Route path="/stories" element={<Stories />} />
                       <Route path="/wordaudio" element={<WordAudio />} />
-                      <Route path="/giveaways" element={<Giveaway />} />
 
                     </Routes>
                   </SubscriptionGate>

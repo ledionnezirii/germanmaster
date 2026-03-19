@@ -166,17 +166,32 @@ const Navbar = () => {
           <div className="flex items-center space-x-2 md:space-x-3">
             {isAuthenticated ? (
               <div className="flex items-center space-x-2">
-                {user?.streakCount !== undefined && (
-                  <div
-                    className="flex items-center space-x-1.5 bg-gradient-to-r from-orange-500/15 to-red-500/15 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold border border-orange-400/20 shadow-sm"
-                    style={{ fontFamily: fonts.poppins }}
-                  >
-                    <Flame className="h-3.5 w-3.5 text-orange-400 fill-orange-400/20" />
-                    <span className="text-orange-300">{user.streakCount}</span>
-                    <span className="text-orange-400/70 hidden sm:inline">Ditë</span>
-                  </div>
-                )}
-
+               <Link
+  to="/giveaways"
+  className="flex items-center space-x-1.5 bg-gradient-to-r from-yellow-500/20 via-orange-500/20 to-yellow-400/15 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold border border-orange-400/30 shadow-sm hover:from-yellow-500/35 hover:via-orange-500/35 hover:to-yellow-400/30 hover:border-orange-400/60 hover:shadow-orange-500/20 hover:shadow-md transition-all duration-200 hover:scale-105"
+  style={{ fontFamily: fonts.poppins }}
+>
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="text-yellow-400 drop-shadow-[0_0_4px_rgba(251,191,36,0.8)]"
+  >
+    <polyline points="20 12 20 22 4 22 4 12" />
+    <rect x="2" y="7" width="20" height="5" />
+    <line x1="12" y1="22" x2="12" y2="7" />
+    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+  </svg>
+  <span className="text-white hidden sm:inline drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]">
+    Shpërblime
+  </span>
+</Link>
                 {user?.xp !== undefined && (
                   <div
                     className="hidden md:flex items-center space-x-1.5 bg-gradient-to-r from-amber-500/15 to-orange-500/15 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-400/20 shadow-sm"

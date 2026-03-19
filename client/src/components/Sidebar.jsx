@@ -103,7 +103,6 @@ const { isAuthenticated, user } = useAuth()
     { icon: FilmIcon, label: "Video te ndryshme", path: "/videos" },
     //{ icon: Camera, label: "Situata", path: "/stories" },
         { icon: ChevronDownSquare, label: "Zgjedh fjalen duhur", path: "/wordaudio" },
-        //{ icon: Gift, label: "Shperblime", path: "/giveaways" },
 
 
 
