@@ -88,10 +88,10 @@ const AppContent = () => {
         >
           {/* Notification Banner - now inside main content */}
           {!hideLayout && isAuthenticated && (
-<Notification 
-  message="📢 Seksioni i ri 'Përgatitje për Provime' është live! Gjithashtu, na ndiqni @gjuhagjermanee në Instagram & TikTok, ku do të bëjmë anketa për të kuptuar çfarë ju nevojitet më shumë — dhe ne do t’i shtojmë në platformë. Na tregoni çfarë dëshironi të përmirësojmë!" 
-  type="info"
-  storageKey="promo_exam_section"
+<Notification
+  message="🎁 GIVEAWAY — 5 fitues marrin 1 Muaj Premium Falas! Po bëjmë giveaway. Regjistrohu tani tek ikona e dhurates me larte dhe fito akses premium në gjuhagjermane!"
+  type="giveaway"
+  storageKey="giveaway_monthly"
 />
 
 )}
