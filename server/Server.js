@@ -21,6 +21,9 @@ const { initRaceSocket } = require("./socket/raceSocket");
 const { initCommunitySocket } = require('./socket/communitySocket');
 // Import payment controller for webhook
 const paymentController = require("./controllers/paymentController");
+// ── NEW: Import RevenueCat controller for mobile webhook ──────────────────────
+const revenuecatController = require("./controllers/revenuecatController");
+// ─────────────────────────────────────────────────────────────────────────────
 const checkExpiredSubscriptions = require("./utils/subscriptionChecker");
 
 const authRoutes = require("./routes/authRoutes");
@@ -64,8 +67,6 @@ const storyRoutes = require("./routes/storyRoutes");
 const wordAudioRoutes = require("./routes/wordAudioRoutes");
 const giveawayRoutes = require("./routes/giveawayRoutes");
 
-
-
 const { errorHandler, notFound } = require("./middleware/errorMiddleware");
 const { requestLogger } = require("./middleware/loggerMiddleware");
 
@@ -74,9 +75,6 @@ const server = createServer(app);
 
 const onlineUsers = new Map(); // userId -> socketId
 app.set("onlineUsers", onlineUsers);
-
-
-
 
 const io = new Server(server, {
   cors: {
@@ -93,7 +91,6 @@ const io = new Server(server, {
   transports: ["websocket", "polling"],
 });
 app.set("io", io)
-
 
 io.use(async (socket, next) => {
   try {
@@ -121,7 +118,6 @@ initCommunitySocket(io);
 io.on("connection", (socket) => {
   console.log(`🔌 User connected: ${socket.id} (${socket.username})`);
   
-  // Add this - Track online user
   if (socket.userId) {
     onlineUsers.set(socket.userId, socket.id);
     io.emit("onlineUsersCount", onlineUsers.size);
@@ -141,7 +137,6 @@ io.on("connection", (socket) => {
       userId: socket.userId,
       username: socket.username,
     };
-    // Event will be handled by initRaceSocket
     socket.emit("race:join", raceData);
   });
 
@@ -170,7 +165,6 @@ io.on("connection", (socket) => {
     });
   });
 
-  // Challenge events
   socket.on("joinChallenge", (data) => {
     console.log("Join challenge event received:", data);
     const challengeData = {
@@ -203,18 +197,16 @@ io.on("connection", (socket) => {
       gameType: "quiz",
     });
   });
-socket.on("disconnect", (reason) => {
+
+  socket.on("disconnect", (reason) => {
     console.log(
       `🔌 User disconnected: ${socket.id} (${socket.username}), reason: ${reason}`
     );
-    
-    // Remove from online users map
     if (socket.userId) {
       onlineUsers.delete(socket.userId);
       io.emit("onlineUsersCount", onlineUsers.size);
       console.log(`👤 User ${socket.username} went offline. Total online: ${onlineUsers.size}`);
     }
-    
     handleDisconnect(socket, io);
   });
 
@@ -224,19 +216,29 @@ socket.on("disconnect", (reason) => {
 });
 
 // ============================================================
-// CRITICAL: Webhook route MUST be FIRST before ANY middleware
+// CRITICAL: Webhook routes MUST be FIRST before ANY middleware
 // ============================================================
+
+// Paddle webhook — needs raw body (web payments)
 app.post(
   "/api/payments/webhook",
   express.raw({ type: "application/json" }),
   paymentController.handleWebhook
 );
+console.log("✅ Webhook route registered: POST /api/payments/webhook (Paddle)");
 
-console.log(
-  "✅ Webhook route registered: POST /api/payments/webhook (with raw body parser)"
+// ── NEW: RevenueCat webhook — uses normal JSON (mobile payments) ──────────────
+// RevenueCat sends standard JSON, no raw body needed.
+// It uses an Authorization header with your REVENUECAT_WEBHOOK_SECRET.
+app.post(
+  "/api/payments/revenuecat/webhook",
+  express.json(),
+  revenuecatController.handleWebhook
 );
+console.log("✅ Webhook route registered: POST /api/payments/revenuecat/webhook (RevenueCat)");
+// ─────────────────────────────────────────────────────────────────────────────
 
-// Now add other middleware AFTER the webhook route
+// Now add other middleware AFTER the webhook routes
 app.use(
   helmet({
     crossOriginEmbedderPolicy: false,
@@ -262,7 +264,7 @@ app.use(
   })
 );
 
-// JSON parser for all other routes - AFTER webhook
+// JSON parser for all other routes - AFTER webhooks
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
@@ -273,11 +275,11 @@ app.use("/uploads", (req, res, next) => {
     process.env.NODE_ENV === "production"
       ? [process.env.FRONTEND_URL]
       : [
- "http://localhost:3000",
-    "http://localhost:3001", 
-    "http://localhost:5173",
-    "https://gjuhagjermane.com",
-    "https://www.gjuhagjermane.com"
+          "http://localhost:3000",
+          "http://localhost:3001",
+          "http://localhost:5173",
+          "https://gjuhagjermane.com",
+          "https://www.gjuhagjermane.com"
         ];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -333,7 +335,7 @@ app.use("/api/race", raceRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/sentences", sentenceRoutes);
-app.use("/api/structures",structureRoutes)
+app.use("/api/structures", structureRoutes);
 app.use('/api/flashcards', flashCardRoutes);
 app.use('/api/community', communityRoutes);
 app.use("/api/createword", createWordRoutes);
@@ -344,8 +346,6 @@ app.use("/api/videos", videoRoutes);
 app.use("/api/stories", storyRoutes);
 app.use("/api/wordaudio", wordAudioRoutes);
 app.use("/api/giveaways", giveawayRoutes);
-
-
 
 app.use(notFound);
 app.use(errorHandler);
@@ -394,7 +394,7 @@ const startServer = async () => {
     } catch (error) {
       console.error("[Cron] Subscription checker error:", error);
     }
-  }, 15 * 60 * 1000); // 15 minutes
+  }, 15 * 60 * 1000);
 
   // Also run once on startup
   checkExpiredSubscriptions().catch(console.error);
@@ -402,7 +402,8 @@ const startServer = async () => {
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Server running on port ${PORT}`);
     console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
-    console.log(`💳 Webhook endpoint: POST /api/payments/webhook`);
+    console.log(`💳 Paddle webhook:     POST /api/payments/webhook`);
+    console.log(`📱 RevenueCat webhook: POST /api/payments/revenuecat/webhook`);
     console.log(`🎯 Challenge system enabled with German questions`);
     console.log(`🏁 Race system enabled - Live quiz competition`);
   });

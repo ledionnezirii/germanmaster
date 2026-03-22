@@ -7,18 +7,44 @@ const paymentSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+
+    // ─── Source ───────────────────────────────────────────────────────────────
+    source: {
+      type: String,
+      enum: ["paddle", "revenuecat"],
+      default: "paddle",
+    },
+
+    // ─── Paddle fields (web) ──────────────────────────────────────────────────
     paddleSubscriptionId: {
       type: String,
     },
     paddleTransactionId: {
       type: String,
-      required: true,
-      unique: true,
+      // Not required — RevenueCat payments don't have this
     },
     paddleCustomerId: {
       type: String,
-      required: true,
+      // Not required — RevenueCat payments don't have this
     },
+
+    // ─── RevenueCat fields (mobile) ───────────────────────────────────────────
+    revenuecatTransactionId: {
+      type: String,
+    },
+    revenuecatOriginalTransactionId: {
+      type: String,
+    },
+    revenuecatAppUserId: {
+      type: String,
+    },
+    platform: {
+      type: String,
+      enum: ["ios", "android", "web", null],
+      default: null,
+    },
+
+    // ─── Shared fields ────────────────────────────────────────────────────────
     priceId: {
       type: String,
       required: true,
@@ -57,15 +83,12 @@ const paymentSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
-    // NEW FIELDS FOR BETTER CANCELLATION TRACKING
     cancelledBy: {
       type: String,
-      enum: ['user', 'admin', 'paddle', 'payment_failed'],
-      // Only set when subscription is cancelled
+      enum: ["user", "admin", "paddle", "revenuecat", "payment_failed"],
     },
     scheduledCancellationDate: {
       type: Date,
-      // When the cancellation will take effect (usually same as expiresAt)
     },
     webhookEvents: [
       {
@@ -83,14 +106,14 @@ const paymentSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
-// Indexes for performance
+// ─── Indexes ─────────────────────────────────────────────────────────────────
 paymentSchema.index({ userId: 1, status: 1 })
-paymentSchema.index(
-  { paddleSubscriptionId: 1 },
-  { unique: true, sparse: true }
-)
+paymentSchema.index({ paddleTransactionId: 1 }, { unique: true, sparse: true })
+paymentSchema.index({ paddleSubscriptionId: 1 }, { unique: true, sparse: true })
+paymentSchema.index({ revenuecatTransactionId: 1 }, { unique: true, sparse: true })
 paymentSchema.index({ expiresAt: 1 })
 paymentSchema.index({ status: 1 })
+paymentSchema.index({ source: 1 })
 paymentSchema.index({ scheduledCancellationDate: 1 })
 
 module.exports = mongoose.model("Payment", paymentSchema)
