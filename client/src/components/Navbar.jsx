@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useSidebar } from "../context/SidebarContext"
-import { Menu, User, LogOut, ChevronDown, Star, Flame } from "lucide-react"
+import { useLanguage } from "../context/LanguageContext"
+import { Menu, User, LogOut, ChevronDown, Star } from "lucide-react"
 import { generateDicebearUrl } from "../services/api"
 import mainLogo from "../../public/logo.png"
 
@@ -13,9 +14,16 @@ const fonts = {
   inter: ["Inter", "sans-serif"].join(", "),
 }
 
+const LANGUAGES = [
+  { code: "de", flag: "🇩🇪", label: "Deutsch" },
+  { code: "en", flag: "🇬🇧", label: "English" },
+  { code: "fr", flag: "🇫🇷", label: "Français" },
+]
+
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth()
   const { toggleSidebar } = useSidebar()
+  const { language, switchLanguage } = useLanguage()
   const navigate = useNavigate()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef(null)
@@ -40,9 +48,7 @@ const Navbar = () => {
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
+    return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
   const Button = ({ children, variant = "default", size = "default", className = "", onClick, ...props }) => {
@@ -101,6 +107,7 @@ const Navbar = () => {
   }
 
   const avatarUrl = user?.id && user?.avatarStyle ? generateDicebearUrl(user.id, user.avatarStyle) : null
+  const currentLang = LANGUAGES.find((l) => l.code === language) || LANGUAGES[0]
 
   return (
     <nav
@@ -109,7 +116,8 @@ const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Left side - Logo and menu toggle */}
+
+          {/* Left — Logo + sidebar toggle */}
           <div className="flex items-center space-x-2 md:space-x-4">
             {isAuthenticated && (
               <Button variant="ghost" size="icon" onClick={toggleSidebar} className="md:hidden">
@@ -146,7 +154,7 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* Center - Navigation links */}
+          {/* Center — Nav links */}
           <div className="hidden md:flex items-center space-x-1">
             {navLinks.map((link) => (
               <Link
@@ -162,36 +170,30 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Right side - Auth buttons or user menu */}
+          {/* Right — Actions + user */}
           <div className="flex items-center space-x-2 md:space-x-3">
             {isAuthenticated ? (
               <div className="flex items-center space-x-2">
-               <Link
-  to="/giveaways"
-  className="flex items-center space-x-1.5 bg-gradient-to-r from-yellow-500/20 via-orange-500/20 to-yellow-400/15 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold border border-orange-400/30 shadow-sm hover:from-yellow-500/35 hover:via-orange-500/35 hover:to-yellow-400/30 hover:border-orange-400/60 hover:shadow-orange-500/20 hover:shadow-md transition-all duration-200 hover:scale-105"
-  style={{ fontFamily: fonts.poppins }}
->
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className="text-yellow-400 drop-shadow-[0_0_4px_rgba(251,191,36,0.8)]"
-  >
-    <polyline points="20 12 20 22 4 22 4 12" />
-    <rect x="2" y="7" width="20" height="5" />
-    <line x1="12" y1="22" x2="12" y2="7" />
-    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
-    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
-  </svg>
-  <span className="text-white hidden sm:inline drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]">
-    Shpërblime
-  </span>
-</Link>
+
+                {/* Giveaways */}
+                <Link
+                  to="/giveaways"
+                  className="flex items-center space-x-1.5 bg-gradient-to-r from-yellow-500/20 via-orange-500/20 to-yellow-400/15 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold border border-orange-400/30 shadow-sm hover:from-yellow-500/35 hover:via-orange-500/35 hover:to-yellow-400/30 hover:border-orange-400/60 hover:shadow-orange-500/20 hover:shadow-md transition-all duration-200 hover:scale-105"
+                  style={{ fontFamily: fonts.poppins }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-yellow-400 drop-shadow-[0_0_4px_rgba(251,191,36,0.8)]">
+                    <polyline points="20 12 20 22 4 22 4 12" />
+                    <rect x="2" y="7" width="20" height="5" />
+                    <line x1="12" y1="22" x2="12" y2="7" />
+                    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z" />
+                    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z" />
+                  </svg>
+                  <span className="text-white hidden sm:inline drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]">
+                    Shpërblime
+                  </span>
+                </Link>
+
+                {/* XP badge */}
                 {user?.xp !== undefined && (
                   <div
                     className="hidden md:flex items-center space-x-1.5 bg-gradient-to-r from-amber-500/15 to-orange-500/15 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-400/20 shadow-sm"
@@ -203,6 +205,17 @@ const Navbar = () => {
                   </div>
                 )}
 
+                {/* 🌍 MULTILANG - uncomment when ready to launch
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="hidden sm:flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 transition-all duration-200"
+                >
+                  <span className="text-base leading-none">{currentLang.flag}</span>
+                  <span className="text-slate-400 uppercase tracking-wide">{currentLang.code}</span>
+                </button>
+                */}
+
+                {/* User dropdown */}
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -226,57 +239,80 @@ const Navbar = () => {
                     />
                   </button>
 
-                  {/* Dropdown Menu */}
+                  {/* Dropdown */}
                   {isDropdownOpen && (
                     <div
-                      className="absolute right-0 mt-2 w-64 md:w-56 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 focus:outline-none z-50 overflow-hidden"
+                      className="absolute right-0 mt-2 w-64 md:w-60 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 focus:outline-none z-50 overflow-hidden"
                       style={{ fontFamily: fonts.poppins }}
                     >
                       <div className="py-1">
-                        {/* User Info */}
+
+                        {/* User info */}
                         <div className="px-4 py-3 border-b border-white/5 bg-gradient-to-br from-white/5 to-transparent">
                           <div className="flex flex-col space-y-1">
                             {user?.firstName && (
                               <p className="font-bold text-white">
                                 {user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1).toLowerCase()}{" "}
-                                {user?.lastName
-                                  ? user.lastName.charAt(0).toUpperCase() + user.lastName.slice(1).toLowerCase()
-                                  : ""}
+                                {user?.lastName ? user.lastName.charAt(0).toUpperCase() + user.lastName.slice(1).toLowerCase() : ""}
                               </p>
                             )}
                             {user?.email && (
-                              <p
-                                className="text-slate-400 truncate text-xs font-medium"
-                                style={{ fontFamily: fonts.inter }}
-                              >
+                              <p className="text-slate-400 truncate text-xs font-medium" style={{ fontFamily: fonts.inter }}>
                                 {user.email}
                               </p>
                             )}
                           </div>
                         </div>
 
-                        {/* Account Link */}
+                        {/* 🌍 MULTILANG - uncomment when ready to launch
+                        <div className="px-4 py-3 border-b border-white/5">
+                          <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">
+                            Gjuha / Language
+                          </p>
+                          <div className="flex gap-2">
+                            {LANGUAGES.map((lang) => (
+                              <button
+                                key={lang.code}
+                                onClick={() => switchLanguage(lang.code)}
+                                className={`flex-1 flex flex-col items-center gap-1 py-2 px-1 rounded-xl text-xs font-bold transition-all duration-200 border ${
+                                  language === lang.code
+                                    ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-md shadow-emerald-500/10 scale-105"
+                                    : "border-white/10 text-slate-400 hover:bg-white/5 hover:text-slate-200 hover:border-white/20"
+                                }`}
+                              >
+                                <span className="text-lg">{lang.flag}</span>
+                                <span>{lang.label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        */}
+
+                        {/* Account */}
                         <Link
                           to="/account"
                           className="flex items-center px-4 py-2.5 text-slate-300 hover:bg-white/5 hover:text-white transition-all duration-200 group"
                           onClick={() => setIsDropdownOpen(false)}
                         >
-                          <div className="mr-3 w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors cursor-pointer">
+                          <div className="mr-3 w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors">
                             <User className="h-4 w-4" />
                           </div>
                           <span className="text-sm">Cilësimet e Llogarisë</span>
                         </Link>
 
-                        {/* Logout Button */}
+                        <div className="mx-4 my-1 border-t border-white/5" />
+
+                        {/* Logout */}
                         <button
                           onClick={handleLogout}
                           className="flex items-center w-full px-4 py-2.5 text-rose-300 hover:bg-rose-500/10 hover:text-rose-200 transition-all duration-200 group"
                         >
-                          <div className="mr-3 w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors cursor-pointer">
+                          <div className="mr-3 w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors">
                             <LogOut className="h-4 w-4" />
                           </div>
                           <span className="text-sm">Dil</span>
                         </button>
+
                       </div>
                     </div>
                   )}
@@ -303,6 +339,7 @@ const Navbar = () => {
               </div>
             )}
           </div>
+
         </div>
       </div>
     </nav>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { sentenceService, authService } from "../services/api";
+import { useLanguage } from "../context/LanguageContext";
 import { Star, Zap, TrendingUp, LogOut, Check, X, Lock, Crown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -59,6 +60,9 @@ export default function SentencePage() {
   const [quizTitle, setQuizTitle] = useState("");
   const [isPaid, setIsPaid] = useState(true);
   const [showPaywall, setShowPaywall] = useState(false);
+
+  // 👇 language from context
+  const { language } = useLanguage();
 
   const levels = ["all", "A1", "A2", "B1", "B2", "C1", "C2"];
 
@@ -122,7 +126,6 @@ export default function SentencePage() {
                   <p className="text-gray-600">Ndërto fjali duke rregulluar fjalët në rendin e saktë</p>
                 </div>
               </div>
-             
             </div>
           </div>
         </header>
@@ -150,8 +153,10 @@ export default function SentencePage() {
           </div>
         </div>
 
+        {/* 👇 pass language to SentenceList */}
         <SentenceList
           level={selectedLevel}
+          language={language}
           isPaid={isPaid}
           onSelectQuiz={(quizId, title) => {
             setSelectedQuizId(quizId);
@@ -428,7 +433,8 @@ export function SentenceQuiz({ quizId, quizTitle, selectedLevel, onComplete, onB
   );
 }
 
-export function SentenceList({ level, onSelectQuiz, isPaid, onLimitReached }) {
+// 👇 language prop added
+export function SentenceList({ level, language, onSelectQuiz, isPaid, onLimitReached }) {
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -460,6 +466,7 @@ export function SentenceList({ level, onSelectQuiz, isPaid, onLimitReached }) {
     fetchFinished();
   }, []);
 
+  // 👇 re-fetch when language changes
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
@@ -467,9 +474,15 @@ export function SentenceList({ level, onSelectQuiz, isPaid, onLimitReached }) {
         setError(null);
         let response;
         if (level && level !== "all") {
-          response = await sentenceService.getSentencesByLevel(level);
+          // 👇 pass language to level-filtered call
+          response = await sentenceService.getSentencesByLevel(level, language);
         } else {
-          response = await sentenceService.getAllSentences({ page: currentPage, limit: itemsPerPage });
+          // 👇 pass language to all-sentences call
+          response = await sentenceService.getAllSentences({
+            page: currentPage,
+            limit: itemsPerPage,
+            language,
+          });
         }
         const data = response.data?.data || response.data || response;
         const quizzesArray = data.sentences || data || [];
@@ -484,9 +497,10 @@ export function SentenceList({ level, onSelectQuiz, isPaid, onLimitReached }) {
       }
     };
     fetchQuizzes();
-  }, [level, currentPage]);
+  }, [level, currentPage, language]); // 👈 language in deps
 
-  useEffect(() => { setCurrentPage(1); }, [level]);
+  // 👇 reset page on level OR language change
+  useEffect(() => { setCurrentPage(1); }, [level, language]);
 
   const handleQuizClick = (quiz) => {
     const isFinished = finishedIds.includes(quiz._id) || quiz.isCompleted;

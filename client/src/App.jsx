@@ -46,6 +46,8 @@ import Videos from "./pages/Videos"
 import Stories from "./pages/Story"
 import WordAudio from "./pages/WordAudio"
 import Giveaway from "./components/Giveaway"
+import  {LanguageProvider}  from "./context/LanguageContext"
+
 
 const AppContent = () => {
   const { isCollapsed } = useSidebar()
@@ -162,13 +164,15 @@ const AppContent = () => {
 
 const App = () => {
   return (
-    <AuthProvider>
-      <SidebarProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </SidebarProvider>
-    </AuthProvider>
+     <LanguageProvider>      
+      <AuthProvider>
+        <SidebarProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </SidebarProvider>
+      </AuthProvider>
+    </LanguageProvider>      
   )
 }
 

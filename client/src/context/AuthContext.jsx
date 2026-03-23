@@ -1,6 +1,6 @@
 "use client"
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react"
-import { authService } from "../services/api"
+import { authService, SOCKET_URL } from "../services/api"  // import SOCKET_URL
 import { io } from "socket.io-client"
 
 const AuthContext = createContext()
@@ -37,10 +37,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (token && user) {
       // Connect to socket server
-      socketRef.current = io(import.meta.env.VITE_API_URL || "http://localhost:5000", {
-        auth: { token: token }
-      })
-
+      socketRef.current = io(SOCKET_URL, {
+  auth: { token: token },
+  transports: ["websocket", "polling"],
+})
       socketRef.current.on("connect", () => {
         console.log("Socket connected for online tracking")
       })
