@@ -13,6 +13,7 @@ const questionSchema = new mongoose.Schema({
     type: String,
     required: true,
   }],
+  
 });
 
 const sentenceSchema = new mongoose.Schema(
@@ -26,6 +27,12 @@ const sentenceSchema = new mongoose.Schema(
       enum: ["A1", "A2", "B1", "B2", "C1", "C2"],
       required: true,
     },
+       language: {       // 👈 ADD HERE
+  type: String,
+  enum: ["de", "en", "fr"],
+  default: "de",
+  index: true,
+},
     xp: {
       type: Number,
       required: true,
@@ -37,6 +44,7 @@ const sentenceSchema = new mongoose.Schema(
       ref: "User",
     }],
   },
+  
   {
     timestamps: true,
   }

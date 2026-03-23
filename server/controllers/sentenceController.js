@@ -5,15 +5,38 @@ const { ApiResponse } = require("../utils/ApiResponse");
 const { asyncHandler } = require("../utils/asyncHandler");
 const { addUserXp } = require("./xpController");
 
-
 const FREE_SENTENCE_LIMIT = 5;
+
+// Helper: build language query condition
+const buildLanguageQuery = (language) => {
+  if (!language) return {};
+  if (language === "de") {
+    return {
+      $or: [
+        { language: "de" },
+        { language: { $exists: false } },
+        { language: null },
+      ],
+    };
+  }
+  return { language };
+};
 
 // Get all sentence quizzes
 const getAllSentences = asyncHandler(async (req, res) => {
-  const { level, page = 1, limit = 10 } = req.query;
-  
+  const { level, page = 1, limit = 10, language } = req.query;
+
   const query = {};
   if (level) query.level = level;
+
+  // 👇 language filter: DE also includes old docs with no language field
+  const langQuery = buildLanguageQuery(language);
+  if (langQuery.$or) {
+    // merge $or with existing query
+    Object.assign(query, langQuery);
+  } else if (langQuery.language) {
+    query.language = langQuery.language;
+  }
 
   const sentences = await Sentence.find(query)
     .skip((page - 1) * limit)
@@ -49,9 +72,20 @@ const getSentenceById = asyncHandler(async (req, res) => {
 // Get sentences by level
 const getSentencesByLevel = asyncHandler(async (req, res) => {
   const { level } = req.params;
+  const { language } = req.query; // 👈 read language from query
   const userId = req.user.id;
 
-  const sentences = await Sentence.find({ level });
+  const query = { level };
+
+  // 👇 language filter: DE also includes old docs with no language field
+  const langQuery = buildLanguageQuery(language);
+  if (langQuery.$or) {
+    Object.assign(query, langQuery);
+  } else if (langQuery.language) {
+    query.language = langQuery.language;
+  }
+
+  const sentences = await Sentence.find(query);
 
   // Add completion status for each sentence
   const sentencesWithStatus = sentences.map((sentence) => ({
@@ -64,7 +98,7 @@ const getSentencesByLevel = asyncHandler(async (req, res) => {
 
 // Create a new sentence quiz (single)
 const createSentence = asyncHandler(async (req, res) => {
-  const { title, level, xp, questions } = req.body;
+  const { title, level, xp, questions, language } = req.body;
 
   if (!title || !level || !questions || questions.length === 0) {
     throw new ApiError(400, "Title, level, and at least one question are required");
@@ -80,6 +114,7 @@ const createSentence = asyncHandler(async (req, res) => {
   const sentence = await Sentence.create({
     title,
     level,
+    language: language || "de", // 👈 default to "de" if not provided
     xp: xp || 10,
     questions,
   });
@@ -107,7 +142,13 @@ const createBulkSentences = asyncHandler(async (req, res) => {
     }
   }
 
-  const createdSentences = await Sentence.insertMany(sentences);
+  // 👇 default language to "de" for any bulk item missing it
+  const sentencesWithLanguage = sentences.map((s) => ({
+    ...s,
+    language: s.language || "de",
+  }));
+
+  const createdSentences = await Sentence.insertMany(sentencesWithLanguage);
 
   res.status(201).json(
     new ApiResponse(201, createdSentences, `${createdSentences.length} sentence quizzes created successfully`)
@@ -116,7 +157,7 @@ const createBulkSentences = asyncHandler(async (req, res) => {
 
 // Update a sentence quiz
 const updateSentence = asyncHandler(async (req, res) => {
-  const { title, level, xp, questions } = req.body;
+  const { title, level, xp, questions, language } = req.body;
 
   const sentence = await Sentence.findById(req.params.id);
 
@@ -128,6 +169,7 @@ const updateSentence = asyncHandler(async (req, res) => {
   if (level) sentence.level = level;
   if (xp) sentence.xp = xp;
   if (questions) sentence.questions = questions;
+  if (language) sentence.language = language; // 👈 allow updating language
 
   await sentence.save();
 
@@ -220,14 +262,13 @@ const submitSentence = asyncHandler(async (req, res) => {
   }));
 });
 
-
 // Get user's completed sentence quizzes
 const getCompletedSentences = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
   const completedSentences = await Sentence.find({
     completedBy: userId,
-  }).select("title level xp");
+  }).select("title level xp language");
 
   res.json(new ApiResponse(200, completedSentences));
 });
@@ -239,7 +280,7 @@ const getFinishedSentences = asyncHandler(async (req, res) => {
   const user = await User.findById(userId)
     .populate({
       path: "finishedSentences",
-      select: "title level xp questions",
+      select: "title level xp questions language",
     });
 
   if (!user) {

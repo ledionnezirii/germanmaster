@@ -82,6 +82,35 @@ exports.getMonthlyLeaderboard = async (req, res) => {
     res.status(500).json({ success: false, message: error.message })
   }
 }
+exports.getMyRank = async (req, res) => {
+  try {
+    const userId = req.user._id // from your auth middleware
+    const user = await User.findById(userId)
+      .select("emri mbiemri xp level profilePicture avatarStyle streakCount")
+      .lean()
 
+    if (!user) return res.status(404).json({ success: false, message: "User not found" })
+
+    // Count how many users have strictly more XP
+    const rank = (await User.countDocuments({ xp: { $gt: user.xp } })) + 1
+
+    res.status(200).json({
+      success: true,
+      data: {
+        _id: user._id,
+        rank,
+        name: `${user.emri} ${user.mbiemri}`,
+        xp: user.xp,
+        level: user.level,
+        avatarStyle: user.avatarStyle || "adventurer",
+        streak: user.streakCount,
+      },
+    })
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message })
+  }
+}
+
+// Export getLeaderboard for use in socket.js
 // Export getLeaderboard for use in socket.js
 module.exports.getLeaderboard = getLeaderboard
