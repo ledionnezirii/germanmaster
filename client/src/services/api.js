@@ -858,11 +858,10 @@ export const notificationService = {
     api.delete(`/notifications/${notificationId}`),
 };
 
-// Add this to your services/api.js file
 
 export const sentenceService = {
   getAllSentences: (params = {}) => api.get("/sentences", { params }),
-  getSentencesByLevel: (level) => api.get(`/sentences/level/${level}`),
+  getSentencesByLevel: (level, language) => api.get(`/sentences/level/${level}`, { params: { language } }), // 👈 fixed
   getSentenceById: (id) => api.get(`/sentences/${id}`),
   submitSentence: (id, answers) =>
     api.post(`/sentences/${id}/submit`, { answers }),
