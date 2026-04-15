@@ -82,6 +82,10 @@ const dictionarySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    language: {
+      type: String,
+      default: "de",
+    },
     isActive: {
       type: Boolean,
       default: true,

@@ -20,6 +20,12 @@ const wordSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    language: {
+      type: String,
+      enum: ["de", "en", "fr", "tr", "it"],
+      default: "de",
+      index: true,
+    },
   },
   {
     timestamps: true,

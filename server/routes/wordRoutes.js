@@ -3,6 +3,7 @@ const router = express.Router()
 const {
   getLearnedWords,
   addLearnedWord,
+  addBulkLearnedWords,
   updateLearnedWord,
   removeLearnedWord,
   getWordStats,
@@ -21,6 +22,9 @@ router.get("/stats", getWordStats)
 
 // POST /api/words - Add a new learned word
 router.post("/", addLearnedWord)
+
+// POST /api/words/bulk - Add multiple learned words at once
+router.post("/bulk", addBulkLearnedWords)
 
 // POST /api/words/quiz-xp - Add XP for correct quiz answers
 router.post("/quiz-xp", addQuizXp)

@@ -1,6 +1,8 @@
 const Quiz = require("../models/Quiz");
 const User = require("../models/User");
 
+const FREE_QUIZ_LIMIT = 5;
+
 // @desc    Create a single quiz
 // @route   POST /api/quizzes
 // @access  Admin
@@ -32,13 +34,24 @@ const createBulkQuizes = async (req, res) => {
 // @access  Public
 const getAllQuizes = async (req, res) => {
   try {
-const quizzes = await Quiz.find().sort({ createdAt: 1 });
-    res.status(200).json({ success: true, data: quizzes });
+    const filter = {}
+    if (req.query.language) {
+      if (req.query.language === "de") {
+        filter.$or = [
+          { language: "de" },
+          { language: { $exists: false } },
+          { language: null },
+        ]
+      } else {
+        filter.language = req.query.language
+      }
+    }
+    const quizzes = await Quiz.find(filter).sort({ createdAt: 1 })
+    res.status(200).json({ success: true, data: quizzes })
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, error: "Server Error" });
+    res.status(500).json({ success: false, error: "Server Error" })
   }
-};
+}
 
 // @desc    Get single quiz by ID
 // @route   GET /api/quizzes/:id
@@ -111,9 +124,23 @@ const submitQuiz = async (req, res) => {
     let alreadyCompleted = false
 
     const user = await User.findById(req.user._id)
-    alreadyCompleted = user.finishedQuizzes.includes(quiz._id)
+    alreadyCompleted = user.finishedQuizzes.some((id) => String(id) === String(quiz._id))
 
     if (passed && !alreadyCompleted) {
+      // Check free limit for non-paid users
+      if (!user.isPaid && user.finishedQuizzes.length >= FREE_QUIZ_LIMIT) {
+        return res.status(200).json({
+          success: true,
+          passed,
+          percentage,
+          xpEarned: 0,
+          alreadyCompleted: false,
+          totalQuestions: quiz.questions.length,
+          correctAnswers: correctCount,
+          limitReached: true,
+        })
+      }
+
       // User passed and hasn't completed this quiz before - award XP
       xpEarned = quiz.xp
       user.finishedQuizzes.push(quiz._id)
@@ -145,14 +172,18 @@ const submitQuiz = async (req, res) => {
 
 const getCompletedQuizes = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).populate({
+    const user = await User.findById(req.user._id).select("finishedQuizzes isPaid").populate({
       path: "finishedQuizzes",
       model: "Quiz",
     });
 
     res.status(200).json({
       success: true,
-      data: user.finishedQuizzes || [],
+      data: {
+        quizzes: user.finishedQuizzes || [],
+        isPaid: user.isPaid || false,
+        freeLimit: FREE_QUIZ_LIMIT,
+      },
     });
   } catch (error) {
     console.error(error);

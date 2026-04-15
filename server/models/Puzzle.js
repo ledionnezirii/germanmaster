@@ -60,7 +60,7 @@ const puzzleSchema = new mongoose.Schema(
 )
 
 // Index for faster queries
-puzzleSchema.index({ activeDate: 1 })
+// activeDate index is already created by unique:true on the field definition
 puzzleSchema.index({ isActive: 1 })
 
 // Method to check if puzzle is for today

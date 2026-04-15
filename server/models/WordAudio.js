@@ -14,6 +14,7 @@ const wordAudioSetSchema = new mongoose.Schema(
       required: true,
     },
     xp: { type: Number, required: true, default: 20 },
+    language: { type: String, default: "de" },
     words: [wordPairSchema],
   },
   { timestamps: true }

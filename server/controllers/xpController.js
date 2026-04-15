@@ -91,4 +91,6 @@ module.exports = {
   addUserXp: exports.addUserXp,
   resetWeeklyXp: exports.resetWeeklyXp,
   resetMonthlyXp: exports.resetMonthlyXp,
+  getWeekStart,
+  getMonthStart,
 };

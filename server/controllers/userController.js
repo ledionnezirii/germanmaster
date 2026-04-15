@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const Dictionary = require("../models/Dictionary");
 const { ApiError } = require("../utils/ApiError");
 const { ApiResponse } = require("../utils/ApiResponse");
 const { asyncHandler } = require("../utils/asyncHandler");
@@ -18,6 +19,17 @@ const getProfile = asyncHandler(async (req, res) => {
 
   const avatarUrl = `https://api.dicebear.com/7.x/${user.avatarStyle}/svg?seed=${user._id}`;
 
+  // Migrate old global level into languageProgress["de"] for existing users
+  if (user.level && !user.languageProgress.find(p => p.language === "de")) {
+    user.languageProgress.push({ language: "de", level: user.level });
+    await user.save();
+  }
+
+  const mongoose = require("mongoose");
+  const dictionaryUnlockedCount = await Dictionary.countDocuments({
+    "unlocks.userId": new mongoose.Types.ObjectId(req.user.id),
+  });
+
   res.json(
     new ApiResponse(200, {
       id: user._id,
@@ -28,6 +40,8 @@ const getProfile = asyncHandler(async (req, res) => {
       avatarStyle: user.avatarStyle,
       xp: user.xp,
       level: user.level,
+      languageProgress: user.languageProgress || [],
+      dictionaryUnlockedCount,
       studyHours: user.studyHours,
       completedTests: user.completedTests,
       achievements: user.achievements,

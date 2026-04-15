@@ -64,6 +64,12 @@ const userSchema = new mongoose.Schema(
       enum: ["A1", "A2", "B1", "B2", "C1", "C2"],
       default: null,
     },
+    languageProgress: [
+      {
+        language: { type: String, enum: ["de", "en", "fr", "tr", "it"] },
+        level: { type: String, enum: ["A1", "A2", "B1", "B2", "C1", "C2"], default: null },
+      },
+    ],
     avatarStyle: {
       type: String,
       default: "adventurer",
@@ -80,6 +86,18 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    academyId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Academy",
+  default: null,
+},
+ 
+
+groupId: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Group",
+  default: null,
+},
     streakCount: {
       type: Number,
       default: 0,
@@ -137,6 +155,12 @@ const userSchema = new mongoose.Schema(
       },
     ],
     grammarFinished: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Grammar",
+      },
+    ],
+    grammarAccessedTopics: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Grammar",
@@ -206,13 +230,15 @@ const userSchema = new mongoose.Schema(
         ],
       },
     ],
-    certificates: [
-      {
-        level: String,
-        filePath: String,
-        issuedAt: Date,
-      },
-    ],
+   certificates: [
+  {
+    level: String,
+    language: { type: String, enum: ["de", "en", "fr", "tr", "it"], default: "de" },
+    filePath: String,
+    serialNumber: String,
+    issuedAt: Date,
+  },
+],
     currentLeague: {
       type: String,
       default: "Bronze",
@@ -317,6 +343,10 @@ finishedStories: [
       type: mongoose.Schema.Types.ObjectId,
       ref: "Dictionary",
       required: true,
+    },
+    language: {
+      type: String,
+      default: "de",
     },
     unlockedAt: {
       type: Date,

@@ -246,7 +246,7 @@ const login = asyncHandler(async (req, res) => {
     ),
   )
 })
-// Add new endpoint for requesting manual verification
+// Send verification email directly to the user
 const requestVerification = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id)
 
@@ -258,23 +258,29 @@ const requestVerification = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Email-i juaj është tashmë i verifikuar")
   }
 
-  // Send email to admin for manual verification
+  // Generate a verification token and save it
+  const verificationToken = crypto.randomBytes(32).toString("hex")
+  user.verificationToken = verificationToken
+  await user.save({ validateBeforeSave: false })
+
+  const verifyUrl = `${process.env.FRONTEND_URL}/verify/${verificationToken}`
+
   const message = `
 <html>
 <body style="font-family:Arial,sans-serif;margin:0;padding:20px;background:#f4f4f4;">
-  <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;">
-    <div style="background:#007bff;padding:30px;text-align:center;">
-      <h1 style="color:#fff;margin:0;">Kërkesë për Verifikim</h1>
+  <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+    <div style="background:linear-gradient(135deg, #0d9488 0%, #0f766e 100%);padding:30px;text-align:center;">
+      <h1 style="color:#fff;margin:0;font-size:28px;">Verifiko Email-in Tuaj</h1>
     </div>
-    <div style="padding:30px;">
-      <p style="font-size:16px;color:#333;margin:0 0 20px;">Një përdorues ka kërkuar verifikimin e email-it:</p>
-      <div style="background:#f8f9fa;padding:15px;border-radius:5px;margin-bottom:20px;">
-        <p style="margin:5px 0;"><strong>Emri:</strong> ${escapeHtml(user.emri)} ${escapeHtml(user.mbiemri)}</p>
-        <p style="margin:5px 0;"><strong>Email:</strong> ${escapeHtml(user.email)}</p>
-        <p style="margin:5px 0;"><strong>ID:</strong> ${user._id}</p>
-        <p style="margin:5px 0;"><strong>Data e regjistrimit:</strong> ${user.createdAt}</p>
+    <div style="padding:40px 30px;">
+      <p style="font-size:16px;color:#333;margin:0 0 20px;">Përshëndetje ${escapeHtml(user.emri)},</p>
+      <p style="font-size:15px;color:#555;margin:0 0 30px;">Klikoni butonin më poshtë për të verifikuar adresën tuaj të email-it:</p>
+      <div style="text-align:center;margin:30px 0;">
+        <a href="${verifyUrl}" style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-size:16px;font-weight:bold;display:inline-block;">Verifiko Email-in</a>
       </div>
-      <p style="font-size:14px;color:#666;">Ju lutem verifikoni këtë përdorues manualisht në panel.</p>
+      <p style="font-size:13px;color:#888;margin:20px 0 0;">Nëse butoni nuk funksionon, kopjoni dhe hapni këtë link në shfletues:</p>
+      <p style="font-size:12px;color:#0d9488;word-break:break-all;">${verifyUrl}</p>
+      <p style="font-size:13px;color:#aaa;margin-top:30px;">Nëse ju nuk e keni kërkuar këtë, mund ta injoroni këtë email.</p>
     </div>
   </div>
 </body>
@@ -282,12 +288,12 @@ const requestVerification = asyncHandler(async (req, res) => {
 `
 
   await sendEmail({
-    to: "info@gjuhagjermane.com",
-    subject: `Kërkesë për verifikim - ${user.email}`,
+    to: user.email,
+    subject: "Verifiko Email-in Tuaj - Gjuha Gjermane",
     htmlContent: message,
   })
 
-  res.json(new ApiResponse(200, {}, "Kërkesa për verifikim u dërgua me sukses. Do t'ju njoftojmë kur të verifikohet."))
+  res.json(new ApiResponse(200, {}, "Email-i i verifikimit u dërgua. Ju lutemi kontrolloni kutinë tuaj postare."))
 })
 
 
@@ -406,7 +412,12 @@ const getMe = asyncHandler(async (req, res) => {
       subscriptionType: user.subscriptionType,
       subscriptionExpiresAt: user.subscriptionExpiresAt,
       subscriptionCancelled: user.subscriptionCancelled || false,
-      isVerified: user.isVerified || false, // Add this line
+      isVerified: user.isVerified || false,
+      dictionaryUnlockedCounts: (user.dictionaryUnlockedWords || []).reduce((acc, w) => {
+        const lang = w.language || "de"
+        acc[lang] = (acc[lang] || 0) + 1
+        return acc
+      }, {}),
       subscription: subscriptionStatus,
     },
   }),

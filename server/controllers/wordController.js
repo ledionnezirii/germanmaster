@@ -4,26 +4,31 @@ const User = require("../models/User")
 // Get all learned words for the authenticated user
 exports.getLearnedWords = async (req, res) => {
   try {
-    const words = await Word.find({ userId: req.user.id }).sort({ createdAt: -1 })
+    const filter = { userId: req.user.id }
 
-    res.status(200).json({
-      success: true,
-      data: words,
-    })
+    if (req.query.language) {
+      if (req.query.language === "de") {
+        // Include old words that have no language field yet
+        filter.$or = [
+          { language: "de" },
+          { language: { $exists: false } },
+          { language: null },
+        ]
+      } else {
+        filter.language = req.query.language
+      }
+    }
+
+    const words = await Word.find(filter).sort({ createdAt: -1 })
+    res.status(200).json({ success: true, data: words })
   } catch (error) {
-    console.error("Error fetching learned words:", error)
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch learned words",
-      error: error.message,
-    })
+    res.status(500).json({ success: false, message: "Failed to fetch learned words", error: error.message })
   }
 }
-
 // Add a new learned word
 exports.addLearnedWord = async (req, res) => {
   try {
-    const { word, translation, notes } = req.body
+    const { word, translation, notes, language } = req.body
 
     if (!word || word.trim() === "") {
       return res.status(400).json({
@@ -32,10 +37,11 @@ exports.addLearnedWord = async (req, res) => {
       })
     }
 
-    // Check if word already exists for this user
+    // Check if word already exists for this user in the same language
     const existingWord = await Word.findOne({
       userId: req.user.id,
       word: word.trim(),
+      language: language || "de",
     })
 
     if (existingWord) {
@@ -49,6 +55,7 @@ exports.addLearnedWord = async (req, res) => {
       word: word.trim(),
       translation: translation?.trim() || "",
       notes: notes?.trim() || "",
+      language: language || "de",
       userId: req.user.id,
     })
 
@@ -72,11 +79,47 @@ exports.addLearnedWord = async (req, res) => {
   }
 }
 
+// Add multiple learned words at once (bulk)
+exports.addBulkLearnedWords = async (req, res) => {
+  try {
+    const { words: wordList, language } = req.body
+    if (!Array.isArray(wordList) || wordList.length === 0) {
+      return res.status(400).json({ success: false, message: "Word list is required" })
+    }
+
+    const lang = language || "de"
+    const added = []
+    const skipped = []
+
+    for (const item of wordList) {
+      const wordText = item.word?.trim()
+      if (!wordText) continue
+
+      const exists = await Word.findOne({ userId: req.user.id, word: wordText, language: lang })
+      if (exists) { skipped.push(wordText); continue }
+
+      const newWord = await Word.create({
+        word: wordText,
+        translation: item.translation?.trim() || "",
+        notes: "",
+        language: lang,
+        userId: req.user.id,
+      })
+      await User.findByIdAndUpdate(req.user.id, { $addToSet: { learnedWords: newWord._id } })
+      added.push(newWord)
+    }
+
+    res.status(201).json({ success: true, data: added, skipped })
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to add words", error: error.message })
+  }
+}
+
 // Update a learned word
 exports.updateLearnedWord = async (req, res) => {
   try {
     const { id } = req.params
-    const { word, translation, notes } = req.body
+    const { word, translation, notes, language } = req.body
 
     const existingWord = await Word.findOne({
       _id: id,
@@ -96,6 +139,7 @@ exports.updateLearnedWord = async (req, res) => {
         word: word?.trim() || existingWord.word,
         translation: translation?.trim() || existingWord.translation,
         notes: notes?.trim() || existingWord.notes,
+        language: language || existingWord.language,
       },
       { new: true, runValidators: true },
     )
@@ -154,39 +198,36 @@ exports.removeLearnedWord = async (req, res) => {
 }
 
 // Get word statistics
+
 exports.getWordStats = async (req, res) => {
   try {
-    const totalWords = await Word.countDocuments({ userId: req.user.id })
+    const baseFilter = { userId: req.user.id }
 
+    if (req.query.language) {
+      if (req.query.language === "de") {
+        baseFilter.$or = [
+          { language: "de" },
+          { language: { $exists: false } },
+          { language: null },
+        ]
+      } else {
+        baseFilter.language = req.query.language
+      }
+    }
+
+    const totalWords = await Word.countDocuments(baseFilter)
     const wordsThisWeek = await Word.countDocuments({
-      userId: req.user.id,
-      createdAt: {
-        $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      },
+      ...baseFilter,
+      createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
     })
-
     const wordsThisMonth = await Word.countDocuments({
-      userId: req.user.id,
-      createdAt: {
-        $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-      },
+      ...baseFilter,
+      createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
     })
 
-    res.status(200).json({
-      success: true,
-      data: {
-        totalWords,
-        wordsThisWeek,
-        wordsThisMonth,
-      },
-    })
+    res.status(200).json({ success: true, data: { totalWords, wordsThisWeek, wordsThisMonth } })
   } catch (error) {
-    console.error("Error fetching word stats:", error)
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch word statistics",
-      error: error.message,
-    })
+    res.status(500).json({ success: false, message: "Failed to fetch word statistics", error: error.message })
   }
 }
 
@@ -243,8 +284,10 @@ exports.getQuizWord = async (req, res) => {
       })
     }
 
-    // Get all user's words
-    const allWords = await Word.find({ userId }).lean()
+    const filter = { userId }
+    if (req.query.language) filter.language = req.query.language
+
+    const allWords = await Word.find(filter).lean()
 
     if (allWords.length === 0) {
       return res.status(404).json({
@@ -255,7 +298,6 @@ exports.getQuizWord = async (req, res) => {
 
     // Initialize or get current quiz cycle
     if (!user.quizCycle || user.quizCycle.length === 0) {
-      // Create a new shuffled cycle with all word IDs
       const shuffledIds = allWords.map((w) => w._id.toString())
       for (let i = shuffledIds.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1))
@@ -266,16 +308,12 @@ exports.getQuizWord = async (req, res) => {
       await user.save()
     }
 
-    // Get current word from cycle
     const currentWordId = user.quizCycle[user.quizCycleIndex]
     const currentWord = allWords.find((w) => w._id.toString() === currentWordId)
 
-    // Move to next word in cycle
     user.quizCycleIndex += 1
 
-    // If we've reached the end of the cycle, reset for next round
     if (user.quizCycleIndex >= user.quizCycle.length) {
-      // Reshuffle for next cycle
       const shuffledIds = allWords.map((w) => w._id.toString())
       for (let i = shuffledIds.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1))

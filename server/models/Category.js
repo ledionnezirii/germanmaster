@@ -57,6 +57,10 @@ const categorySchema = new mongoose.Schema(
       type: String,
       default: "#10B981",
     },
+    language: {
+      type: String,
+      default: "de",
+    },
     isActive: {
       type: Boolean,
       default: true,

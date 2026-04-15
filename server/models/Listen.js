@@ -27,6 +27,12 @@ const listenSchema = new mongoose.Schema(
       required: [true, "Correct text is required"],
       trim: true,
     },
+    language: {
+      type: String,
+      enum: ["de", "en", "fr", "tr", "it"],
+      default: "de",
+      index: true,
+    },
     audioUrl: {
       type: String,
       trim: true,

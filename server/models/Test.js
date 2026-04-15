@@ -67,6 +67,12 @@ const testSchema = new mongoose.Schema(
       enum: ["A1", "A2", "B1", "B2", "C1", "C2"],
       required: true,
     },
+    language: {
+  type: String,
+  enum: ["de", "en", "fr", "tr", "it"],
+  default: "de",
+  index: true,
+},
     xp: {
       type: Number,
       required: true,
@@ -129,6 +135,12 @@ const userTestHistorySchema = new mongoose.Schema(
       enum: ["A1", "A2", "B1", "B2", "C1", "C2"],
       required: true,
     },
+    language: {
+  type: String,
+  enum: ["de", "en", "fr", "tr", "it"],
+  default: "de",
+  index: true,
+},
     answers: [
       {
         questionId: {

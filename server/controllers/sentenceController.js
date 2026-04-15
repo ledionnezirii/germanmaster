@@ -29,10 +29,8 @@ const getAllSentences = asyncHandler(async (req, res) => {
   const query = {};
   if (level) query.level = level;
 
-  // 👇 language filter: DE also includes old docs with no language field
   const langQuery = buildLanguageQuery(language);
   if (langQuery.$or) {
-    // merge $or with existing query
     Object.assign(query, langQuery);
   } else if (langQuery.language) {
     query.language = langQuery.language;
@@ -41,7 +39,7 @@ const getAllSentences = asyncHandler(async (req, res) => {
   const sentences = await Sentence.find(query)
     .skip((page - 1) * limit)
     .limit(parseInt(limit))
-    .sort({ createdAt: 1 });
+    .sort({ createdAt: -1 });
 
   const total = await Sentence.countDocuments(query);
 
@@ -72,12 +70,11 @@ const getSentenceById = asyncHandler(async (req, res) => {
 // Get sentences by level
 const getSentencesByLevel = asyncHandler(async (req, res) => {
   const { level } = req.params;
-  const { language } = req.query; // 👈 read language from query
+  const { language } = req.query;
   const userId = req.user.id;
 
   const query = { level };
 
-  // 👇 language filter: DE also includes old docs with no language field
   const langQuery = buildLanguageQuery(language);
   if (langQuery.$or) {
     Object.assign(query, langQuery);
@@ -87,7 +84,6 @@ const getSentencesByLevel = asyncHandler(async (req, res) => {
 
   const sentences = await Sentence.find(query);
 
-  // Add completion status for each sentence
   const sentencesWithStatus = sentences.map((sentence) => ({
     ...sentence.toObject(),
     isCompleted: sentence.completedBy.includes(userId),
@@ -104,7 +100,6 @@ const createSentence = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Title, level, and at least one question are required");
   }
 
-  // Validate each question has required fields
   for (const q of questions) {
     if (!q.question || !q.correctSentence || !q.options || q.options.length < 2) {
       throw new ApiError(400, "Each question must have question, correctSentence, and at least 2 options");
@@ -114,7 +109,7 @@ const createSentence = asyncHandler(async (req, res) => {
   const sentence = await Sentence.create({
     title,
     level,
-    language: language || "de", // 👈 default to "de" if not provided
+    language: language || "de",
     xp: xp || 10,
     questions,
   });
@@ -130,7 +125,6 @@ const createBulkSentences = asyncHandler(async (req, res) => {
     throw new ApiError(400, "An array of sentences is required");
   }
 
-  // Validate each sentence
   for (const s of sentences) {
     if (!s.title || !s.level || !s.questions || s.questions.length === 0) {
       throw new ApiError(400, "Each sentence must have title, level, and at least one question");
@@ -142,7 +136,6 @@ const createBulkSentences = asyncHandler(async (req, res) => {
     }
   }
 
-  // 👇 default language to "de" for any bulk item missing it
   const sentencesWithLanguage = sentences.map((s) => ({
     ...s,
     language: s.language || "de",
@@ -169,7 +162,7 @@ const updateSentence = asyncHandler(async (req, res) => {
   if (level) sentence.level = level;
   if (xp) sentence.xp = xp;
   if (questions) sentence.questions = questions;
-  if (language) sentence.language = language; // 👈 allow updating language
+  if (language) sentence.language = language;
 
   await sentence.save();
 
@@ -198,10 +191,43 @@ const submitSentence = asyncHandler(async (req, res) => {
   if (!sentence) throw new ApiError(404, "Sentence quiz not found");
   if (!answers || !Array.isArray(answers)) throw new ApiError(400, "Answers array is required");
 
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError(404, "User not found");
+
+  // ── STRICT LOCK: if not paid, block submission entirely ──
+  // Allow only if user is paid OR if this is within their free limit
+  if (!user.isPaid) {
+    const finishedCount = user.finishedSentences ? user.finishedSentences.length : 0;
+    const alreadyFinishedThis = user.finishedSentences?.some(
+      (id) => id.toString() === sentence._id.toString()
+    );
+
+    // If they haven't finished it before and they're at/over the free limit → block
+    if (!alreadyFinishedThis && finishedCount >= FREE_SENTENCE_LIMIT) {
+      return res.json(
+        new ApiResponse(200, {
+          results: [],
+          correctCount: 0,
+          totalQuestions: sentence.questions.length,
+          accuracy: 0,
+          passed: false,
+          xpAwarded: 0,
+          alreadyCompleted: false,
+          limitReached: true,
+          isExpired: user.hadPaid === true, // tells frontend whether sub expired or never had one
+          message: user.hadPaid
+            ? "Abonimi juaj ka skaduar! Rinovoni Premium për akses të plotë."
+            : "Keni arritur limitin falas! Kaloni në Premium për akses të pakufizuar.",
+        })
+      );
+    }
+  }
+
   let correctCount = 0;
   const results = sentence.questions.map((question, index) => {
     const userAnswer = answers[index] || "";
-    const isCorrect = userAnswer.trim().toLowerCase() === question.correctSentence.trim().toLowerCase();
+    const isCorrect =
+      userAnswer.trim().toLowerCase() === question.correctSentence.trim().toLowerCase();
     if (isCorrect) correctCount++;
     return {
       question: question.question,
@@ -219,47 +245,31 @@ const submitSentence = asyncHandler(async (req, res) => {
   let alreadyCompleted = sentence.completedBy.includes(userId);
 
   if (passed && !alreadyCompleted) {
-    const user = await User.findById(userId);
-    if (!user) throw new ApiError(404, "User not found");
-
-    const finishedCount = user.finishedSentences ? user.finishedSentences.length : 0;
-    if (!user.isPaid && finishedCount >= FREE_SENTENCE_LIMIT) {
-      return res.json(new ApiResponse(200, {
-        results,
-        correctCount,
-        totalQuestions,
-        accuracy: Math.round(accuracy),
-        passed,
-        xpAwarded: 0,
-        alreadyCompleted: false,
-        limitReached: true,
-        message: "Keni arritur limitin falas! Kaloni në Premium për akses të pakufizuar.",
-      }));
-    }
-
     xpAwarded = sentence.xp;
     await addUserXp(userId, xpAwarded);
     sentence.completedBy.push(userId);
     await sentence.save();
     await User.findByIdAndUpdate(userId, {
-      $addToSet: { finishedSentences: sentence._id }
+      $addToSet: { finishedSentences: sentence._id },
     });
   }
 
-  res.json(new ApiResponse(200, {
-    results,
-    correctCount,
-    totalQuestions,
-    accuracy: Math.round(accuracy),
-    passed,
-    xpAwarded,
-    alreadyCompleted,
-    message: passed
-      ? alreadyCompleted
-        ? "Kuizi u kalua! (Tashmë i përfunduar - nuk fitohet XP)"
-        : `Urime! Fitove ${xpAwarded} XP!`
-      : "Vazhdo të praktikosh! Duhet 70% për të kaluar.",
-  }));
+  res.json(
+    new ApiResponse(200, {
+      results,
+      correctCount,
+      totalQuestions,
+      accuracy: Math.round(accuracy),
+      passed,
+      xpAwarded,
+      alreadyCompleted,
+      message: passed
+        ? alreadyCompleted
+          ? "Kuizi u kalua! (Tashmë i përfunduar - nuk fitohet XP)"
+          : `Urime! Fitove ${xpAwarded} XP!`
+        : "Vazhdo të praktikosh! Duhet 70% për të kaluar.",
+    })
+  );
 });
 
 // Get user's completed sentence quizzes
@@ -277,11 +287,10 @@ const getCompletedSentences = asyncHandler(async (req, res) => {
 const getFinishedSentences = asyncHandler(async (req, res) => {
   const userId = req.user.id;
 
-  const user = await User.findById(userId)
-    .populate({
-      path: "finishedSentences",
-      select: "title level xp questions language",
-    });
+  const user = await User.findById(userId).populate({
+    path: "finishedSentences",
+    select: "title level xp questions language",
+  });
 
   if (!user) {
     throw new ApiError(404, "Përdoruesi nuk u gjet");

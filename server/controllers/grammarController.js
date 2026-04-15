@@ -129,7 +129,7 @@ const getTopicsByLevel = asyncHandler(async (req, res) => {
   )
 })
 
-// @desc    Get single topic by ID - with daily limit check
+// @desc    Get single topic by ID - with permanent free limit check
 // @route   GET /api/grammar/:id
 // @access  Private
 const getTopicById = asyncHandler(async (req, res) => {
@@ -148,26 +148,21 @@ const getTopicById = asyncHandler(async (req, res) => {
       throw new ApiError(404, "User not found")
     }
 
-    resetDailyTopicsIfNewDay(user)
-
     const topicIdString = String(req.params.id)
-    const alreadyAccessedToday = user.grammarDailyTopics.topicIds.some((id) => String(id) === topicIdString)
+    const alreadyAccessed = user.grammarAccessedTopics && user.grammarAccessedTopics.some((id) => String(id) === topicIdString)
     const isFinished = user.grammarFinished.some((id) => String(id) === topicIdString)
 
-    if (!alreadyAccessedToday && !isFinished) {
-      if (!canAccessMoreTopicsToday(user)) {
-        const topicsAccessedCount = getTopicsAccessedToday(user)
-        
-        // ✅ SEND NOTIFICATION WHEN LIMIT REACHED
-        await notifyGrammarLimitReached(userId)
-        
-        throw new ApiError(
-          429,
-          `You can only access 2 grammar topics per day. You've accessed ${topicsAccessedCount} already. Come back tomorrow at 00:01.`,
-        )
+    if (!alreadyAccessed && !isFinished) {
+      if (!user.isPaid) {
+        const totalAccessed = user.grammarAccessedTopics ? user.grammarAccessedTopics.length : 0
+        if (totalAccessed >= 2) {
+          await notifyGrammarLimitReached(userId)
+          throw new ApiError(429, "Free plan allows only 2 grammar topics. Upgrade to Premium for unlimited access.")
+        }
       }
 
-      user.grammarDailyTopics.topicIds.push(req.params.id)
+      if (!user.grammarAccessedTopics) user.grammarAccessedTopics = []
+      user.grammarAccessedTopics.push(req.params.id)
       await user.save()
     }
   }
@@ -274,25 +269,20 @@ const markTopicAsFinished = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found")
   }
 
-  resetDailyTopicsIfNewDay(user)
-
   const topicIdString = String(topicId)
-  const alreadyAccessedToday = user.grammarDailyTopics.topicIds.some((id) => String(id) === topicIdString)
+  const alreadyAccessed = user.grammarAccessedTopics && user.grammarAccessedTopics.some((id) => String(id) === topicIdString)
   const alreadyFinished = user.grammarFinished.some((id) => String(id) === topicIdString)
 
-  if (!alreadyAccessedToday && !alreadyFinished) {
-    if (!canAccessMoreTopicsToday(user)) {
-      const topicsAccessedCount = getTopicsAccessedToday(user)
-      
-      // ✅ SEND NOTIFICATION WHEN LIMIT REACHED
-      await notifyGrammarLimitReached(userId)
-      
-      throw new ApiError(
-        429,
-        `You can only finish 2 grammar topics per day. You've accessed ${topicsAccessedCount} already. Come back tomorrow at 00:01.`,
-      )
+  if (!alreadyAccessed && !alreadyFinished) {
+    if (!user.isPaid) {
+      const totalAccessed = user.grammarAccessedTopics ? user.grammarAccessedTopics.length : 0
+      if (totalAccessed >= 2) {
+        await notifyGrammarLimitReached(userId)
+        throw new ApiError(429, "Free plan allows only 2 grammar topics. Upgrade to Premium for unlimited access.")
+      }
     }
-    user.grammarDailyTopics.topicIds.push(topicId)
+    if (!user.grammarAccessedTopics) user.grammarAccessedTopics = []
+    user.grammarAccessedTopics.push(topicId)
   }
 
   if (!alreadyFinished) {
@@ -333,21 +323,34 @@ const getDailyLimitStatus = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found")
   }
 
-  resetDailyTopicsIfNewDay(user)
-  await user.save()
+  const isPaid = user.isPaid || false
 
-  const topicsAccessedToday = getTopicsAccessedToday(user)
-  const accessedTopicIds = getAccessedTopicIdsToday(user)
-  const canAccessMore = canAccessMoreTopicsToday(user)
-  const remainingTopics = Math.max(0, 2 - topicsAccessedToday)
+  if (isPaid) {
+    return res.json(
+      new ApiResponse(200, {
+        topicsAccessed: 0,
+        canAccessMore: true,
+        remainingTopics: null,
+        limit: null,
+        accessedTopicIds: [],
+        isPaid: true,
+      }),
+    )
+  }
+
+  const accessedTopicIds = (user.grammarAccessedTopics || []).map((id) => String(id))
+  const topicsAccessed = accessedTopicIds.length
+  const canAccessMore = topicsAccessed < 2
+  const remainingTopics = Math.max(0, 2 - topicsAccessed)
 
   res.json(
     new ApiResponse(200, {
-      topicsAccessedToday,
+      topicsAccessed,
       canAccessMore,
       remainingTopics,
       limit: 2,
       accessedTopicIds,
+      isPaid: false,
     }),
   )
 })

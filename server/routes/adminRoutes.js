@@ -7,6 +7,8 @@ const {
   getPaidUsers,
   getOnlineUsers,
   getDashboardStats,
+  getVisitorStats,
+  getVisitorsByDate,
   updateUserRole,
   deleteUser,
   toggleUserStatus,
@@ -31,6 +33,8 @@ router.put('/updateAdmin/:userId', isAdmin, updateAdminStatus);
 
 
 router.get("/stats", getDashboardStats);
+router.get("/visitor-stats", getVisitorStats);
+router.get("/visitor-stats/users", getVisitorsByDate);
 router.get("/users", getAllUsers);
 router.get("/users/paid", getPaidUsers);
 router.get("/users/online", getOnlineUsers);

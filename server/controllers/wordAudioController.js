@@ -1,13 +1,23 @@
 const WordAudioSet = require("../models/WordAudio");
 const User = require("../models/User");
 
-const FREE_WORD_AUDIO_LIMIT = 3;
+const FREE_WORD_AUDIO_LIMIT = 5;
+
+const buildLanguageQuery = (language) => {
+  if (!language) return {}
+  if (language === "de") {
+    return { $or: [{ language: "de" }, { language: { $exists: false } }, { language: null }] }
+  }
+  return { language }
+}
 
 // Get all sets (optionally filter by level)
 exports.getAllSets = async (req, res) => {
   try {
-    const { level } = req.query;
-    const filter = level ? { level } : {};
+    const { level, language } = req.query;
+    const langQuery = buildLanguageQuery(language)
+    const filter = { ...langQuery };
+    if (level) filter.level = level;
     const sets = await WordAudioSet.find(filter).sort({ createdAt: 1 });
     res.json({ success: true, data: sets });
   } catch (error) {

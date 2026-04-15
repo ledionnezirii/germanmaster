@@ -11,6 +11,12 @@ const createWordSchema = new mongoose.Schema(
       enum: ["A1", "A2", "B1", "B2", "C1", "C2"],
       required: [true, "Level is required"],
     },
+    language: {
+  type: String,
+  enum: ["de", "en", "fr", "tr", "it"],
+  default: "de",
+  index: true,
+},
     xp: {
       type: Number,
       default: 50,

@@ -1,6 +1,6 @@
 const Structure = require('../models/Structure');
 const User = require('../models/User');
-
+const { addUserXp } = require("./xpController")
 // Get all structures (optionally filter by level)
 exports.getAllStructures = async (req, res) => {
   try {
@@ -103,12 +103,9 @@ exports.submitQuiz = async (req, res) => {
       // Check if structure already completed
       if (!user.completedStructures.includes(structureId)) {
         // Add XP
-        user.xp += structure.xp;
-        
-        // Mark structure as completed
-        user.completedStructures.push(structureId);
-        
-        await user.save();
+      user.completedStructures.push(structureId)
+await user.save()
+await addUserXp(userId, structure.xp)
         
         return res.json({
           success: true,

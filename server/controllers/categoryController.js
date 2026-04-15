@@ -3,14 +3,23 @@ const { ApiError } = require("../utils/ApiError");
 const { ApiResponse } = require("../utils/ApiResponse");
 const { asyncHandler } = require("../utils/asyncHandler");
 const User = require("../models/User");
+const { addUserXp } = require("./xpController")
 
+const buildLanguageQuery = (language) => {
+  if (!language) return {}
+  if (language === "de") {
+    return { $or: [{ language: "de" }, { language: { $exists: false } }, { language: null }] }
+  }
+  return { language }
+}
 // @desc    Get all categories
 // @route   GET /api/categories
 // @access  Public
 const getAllCategories = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 50, level } = req.query;
+  const { page = 1, limit = 50, level, language } = req.query;
 
-  const query = { isActive: true };
+  const langQuery = buildLanguageQuery(language)
+  const query = { isActive: true, ...langQuery };
   if (level) {
     query.level = level;
   }
@@ -74,7 +83,7 @@ const getCategoryById = asyncHandler(async (req, res) => {
 // @route   POST /api/categories
 // @access  Private (Admin)
 const createCategory = asyncHandler(async (req, res) => {
-  const { category, description, level, words, icon, color, type } = req.body;
+  const { category, description, level, words, icon, color, type, language = "de" } = req.body;
 
   console.log("[DEBUG] Received type from request body:", type);
   console.log("[DEBUG] Type of received type:", typeof type);
@@ -97,6 +106,7 @@ const createCategory = asyncHandler(async (req, res) => {
     icon,
     color,
     type,
+    language,
     createdBy: req.user.id,
   };
   console.log(
@@ -239,11 +249,9 @@ const finishCategory = asyncHandler(async (req, res) => {
 
   const xpGained = 10;
 
-  // Add category to finished list and add XP
-  user.categoryFinished.push(categoryId);
-  user.xp += xpGained;
-  await user.save();
-
+user.categoryFinished.push(categoryId)
+await user.save()
+await addUserXp(userId, xpGained)
   res.json(
     new ApiResponse(
       200,

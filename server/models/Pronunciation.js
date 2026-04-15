@@ -10,7 +10,8 @@ const pronunciationPackageSchema = new mongoose.Schema({
     xp: Number, 
     notes: String 
   }],
-  isDefault: { type: Boolean, default: true } // fjalët për të gjithë
+  isDefault: { type: Boolean, default: true }, // fjalët për të gjithë
+  language: { type: String, default: "de" }
 }, { timestamps: true });
 
 module.exports = mongoose.model("PronunciationPackage", pronunciationPackageSchema);

@@ -4,24 +4,35 @@ const { ApiError } = require("../utils/ApiError")
 const { ApiResponse } = require("../utils/ApiResponse")
 const { asyncHandler } = require("../utils/asyncHandler")
 
+const FREE_TRANSLATE_LIMIT = 5
+
 // @desc    Get all translation texts
 // @route   GET /api/translate
 // @access  Public
 const getAllTexts = asyncHandler(async (req, res) => {
   const { page = 1, limit = 20, level, difficulty } = req.query
 
-  const query = { isActive: true }
+ // Replace the existing getAllTexts query builder section
+const query = { isActive: true }
 
-  if (level && level !== "all") {
-    query.level = level
-  }
+if (level && level !== "all") query.level = level
+if (difficulty) query.difficulty = Number.parseInt(difficulty)
 
-  if (difficulty) {
-    query.difficulty = Number.parseInt(difficulty)
+// ── language filter ──
+if (req.query.language) {
+  if (req.query.language === "de") {
+    query.$or = [
+      { language: "de" },
+      { language: { $exists: false } },
+      { language: null },
+    ]
+  } else {
+    query.language = req.query.language
   }
+}
 
   const texts = await Translate.find(query)
-    .select("-questions.correctAnswer -questions.explanation") // Hide answers for security
+    .select("-questions.explanation")
     .sort({ createdAt: -1 })
     .limit(limit * 1)
     .skip((page - 1) * limit)
@@ -29,7 +40,6 @@ const getAllTexts = asyncHandler(async (req, res) => {
 
   const total = await Translate.countDocuments(query)
 
-  // Add question count
   const textsWithProgress = texts.map((text) => {
     const textObj = text.toObject()
     textObj.questionCount = text.questions.length
@@ -58,7 +68,6 @@ const getTextById = asyncHandler(async (req, res) => {
     throw new ApiError(404, "Text not found")
   }
 
-  // Remove correct answers and explanations for security
   const textObj = text.toObject()
   textObj.questions = textObj.questions.map((q) => ({
     _id: q._id,
@@ -73,7 +82,7 @@ const getTextById = asyncHandler(async (req, res) => {
 // @route   POST /api/translate/:id/submit
 // @access  Private
 const submitAnswers = asyncHandler(async (req, res) => {
-  const { answers } = req.body // Array of { questionId, answer }
+  const { answers } = req.body
 
   if (!Array.isArray(answers) || answers.length === 0) {
     throw new ApiError(400, "Answers array is required")
@@ -108,7 +117,6 @@ const submitAnswers = asyncHandler(async (req, res) => {
   const score = Math.round((correctAnswers / answers.length) * 100)
   const passed = score >= 70
 
-  // Calculate XP based on performance
   let xpAwarded = 0
   if (passed) {
     xpAwarded = Math.round(text.xpReward * (score / 100))
@@ -148,12 +156,44 @@ const submitAnswers = asyncHandler(async (req, res) => {
 
   await progress.save()
 
-  // Award XP to user if passed for the first time
+  // Award XP only if passed for the first time
   if (passed && xpAwarded > 0) {
-    await User.findByIdAndUpdate(req.user.id, {
-      $inc: { xp: xpAwarded, completedTests: 1 },
-      $addToSet: { passedTranslatedTexts: text._id },
-    })
+    const user = await User.findById(req.user.id)
+
+    const alreadyPassed =
+      user.passedTranslatedTexts &&
+      user.passedTranslatedTexts.map((id) => id.toString()).includes(text._id.toString())
+
+    if (!alreadyPassed) {
+      const completedCount = user.passedTranslatedTexts ? user.passedTranslatedTexts.length : 0
+
+      // Free limit check
+      if (!user.isPaid && completedCount >= FREE_TRANSLATE_LIMIT) {
+        return res.json(
+          new ApiResponse(200, {
+            score,
+            correctAnswers,
+            totalQuestions: answers.length,
+            passed,
+            xpAwarded: 0,
+            results,
+            attempts: progress.attempts,
+            limitReached: true,
+            message: "Free limit reached. Upgrade to Premium for unlimited access.",
+          }),
+        )
+      }
+
+      await User.findByIdAndUpdate(req.user.id, {
+        $inc: {
+          xp: xpAwarded,
+          weeklyXp: xpAwarded,
+          monthlyXp: xpAwarded,
+          completedTests: 1,
+        },
+        $addToSet: { passedTranslatedTexts: text._id },
+      })
+    }
   }
 
   res.json(
@@ -165,6 +205,7 @@ const submitAnswers = asyncHandler(async (req, res) => {
       xpAwarded,
       results,
       attempts: progress.attempts,
+      limitReached: false,
       message: passed
         ? "Congratulations! You passed the test!"
         : "Keep practicing! You can try again to improve your score.",
@@ -198,6 +239,8 @@ const getTextProgress = asyncHandler(async (req, res) => {
 // @route   GET /api/translate/user/progress
 // @access  Private
 const getUserProgress = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user.id).select("isPaid")
+
   const progress = await TranslateProgress.find({ userId: req.user.id })
     .populate("textId", "title level difficulty")
     .sort({ updatedAt: -1 })
@@ -226,6 +269,8 @@ const getUserProgress = asyncHandler(async (req, res) => {
       completedTexts,
       completionRate: totalTexts > 0 ? Math.round((completedTexts / totalTexts) * 100) : 0,
       progressByLevel,
+      isPaid: user.isPaid || false,
+      freeLimit: FREE_TRANSLATE_LIMIT,
     }),
   )
 })

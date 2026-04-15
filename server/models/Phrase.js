@@ -36,6 +36,10 @@ const phraseSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    language: {
+      type: String,
+      default: "de",
+    },
     isActive: {
       type: Boolean,
       default: true,

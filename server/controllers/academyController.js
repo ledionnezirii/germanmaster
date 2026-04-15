@@ -1,794 +1,503 @@
-const Academy = require("../models/Academy")
-const User = require("../models/User")
-const crypto = require("crypto")
-const sendStudentEmail = require("../utils/sendStudentEmail")
+const Academy = require("../models/Academy");
+const Group = require("../models/Group");
+const User = require("../models/User");
 
-// ── Create Academy ──
+// ─────────────────────────────────────────────────────────────
+// ACADEMY ENDPOINTS  (admin only)
+// ─────────────────────────────────────────────────────────────
+
+// POST /api/academy
+// Create a new academy (main admin)
 exports.createAcademy = async (req, res) => {
   try {
-    const { name, description } = req.body
-    const userId = req.user.id
-
-    const user = await User.findById(userId)
-    if (user.role !== "academyAdmin" && user.role !== "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Only academy admins can create academies",
-      })
-    }
+    const { name, description } = req.body;
 
     const academy = await Academy.create({
       name,
       description,
-      owner: userId,
-    })
+      createdBy: req.user._id,
+    });
 
-    res.status(201).json({
-      success: true,
-      data: academy,
-      message: "Academy created successfully",
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+    res.status(201).json({ success: true, data: academy });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-}
+};
 
-// ── Get all academies for the logged-in user ──
-exports.getMyAcademies = async (req, res) => {
+// GET /api/academy
+// Get all academies (admin sees all; academyAdmin sees only theirs)
+exports.getAllAcademies = async (req, res) => {
   try {
-    const userId = req.user.id
-    const user = await User.findById(userId)
-
-    let academies
-
-    if (user.role === "academyAdmin" || user.role === "admin") {
-      // Academy admins see academies they own
-      academies = await Academy.find({ owner: userId })
-        .populate("owner", "emri mbiemri email")
-        .populate("groups.teacher", "emri mbiemri email")
-    } else if (user.role === "teacher") {
-      // Teachers see groups they teach
-      academies = await Academy.find({ "groups.teacher": userId })
-        .populate("owner", "emri mbiemri email")
-        .populate("groups.teacher", "emri mbiemri email")
-    } else {
-      // Students see groups they're members of
-      academies = await Academy.find({ "groups.members": userId })
-        .populate("owner", "emri mbiemri email")
-        .populate("groups.teacher", "emri mbiemri email")
+    let filter = {};
+    if (req.user.role === "academyAdmin") {
+      filter.academyAdmin = req.user._id;
     }
 
-    res.status(200).json({
-      success: true,
-      data: academies,
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+    const academies = await Academy.find(filter)
+      .populate("academyAdmin", "emri mbiemri email")
+      .populate("createdBy", "emri mbiemri email")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, data: academies });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-}
+};
 
-// ── Get single academy ──
-exports.getAcademy = async (req, res) => {
+// GET /api/academy/:id
+exports.getAcademyById = async (req, res) => {
   try {
-    const { academyId } = req.params
-
-    const academy = await Academy.findById(academyId)
-      .populate("owner", "emri mbiemri email")
-      .populate("groups.teacher", "emri mbiemri email xp level avatarStyle")
-      .populate("groups.members", "emri mbiemri email xp level avatarStyle")
+    const academy = await Academy.findById(req.params.id)
+      .populate("academyAdmin", "emri mbiemri email")
+      .populate("createdBy", "emri mbiemri email");
 
     if (!academy) {
-      return res.status(404).json({
-        success: false,
-        message: "Academy not found",
-      })
+      return res.status(404).json({ success: false, message: "Academy not found" });
     }
 
-    res.status(200).json({
-      success: true,
-      data: academy,
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+    // academyAdmin can only see their own academy
+    if (
+      req.user.role === "academyAdmin" &&
+      String(academy.academyAdmin) !== String(req.user._id)
+    ) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    res.status(200).json({ success: true, data: academy });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
+};
+
+// PUT /api/academy/:id
+exports.updateAcademy = async (req, res) => {
+  try {
+    const { name, description, isActive } = req.body;
+
+    const academy = await Academy.findByIdAndUpdate(
+      req.params.id,
+      { name, description, isActive },
+      { new: true, runValidators: true }
+    );
+
+    if (!academy) {
+      return res.status(404).json({ success: false, message: "Academy not found" });
+    }
+
+    res.status(200).json({ success: true, data: academy });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// DELETE /api/academy/:id
+exports.deleteAcademy = async (req, res) => {
+  try {
+    const academy = await Academy.findByIdAndDelete(req.params.id);
+    if (!academy) {
+      return res.status(404).json({ success: false, message: "Academy not found" });
+    }
+
+    // Remove all groups under this academy
+    await Group.deleteMany({ academyId: req.params.id });
+
+    // Clear academyId & groupId from students who were in these groups
+    await User.updateMany(
+      { academyId: req.params.id },
+      { $unset: { academyId: "", groupId: "" } }
+    );
+
+    res.status(200).json({ success: true, message: "Academy deleted" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// POST /api/academy/:id/assign-admin
+// Assign an academyAdmin user to an academy (main admin only)
+exports.assignAcademyAdmin = async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    if (user.role !== "academyAdmin") {
+      return res
+        .status(400)
+        .json({ success: false, message: "User must have the academyAdmin role" });
+    }
+
+    const academy = await Academy.findByIdAndUpdate(
+      req.params.id,
+      { academyAdmin: userId },
+      { new: true }
+    ).populate("academyAdmin", "emri mbiemri email");
+
+    if (!academy) {
+      return res.status(404).json({ success: false, message: "Academy not found" });
+    }
+
+    // Also stamp the user's academyId so they know which academy they manage
+    await User.findByIdAndUpdate(userId, { academyId: academy._id });
+
+    res.status(200).json({ success: true, data: academy });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// GROUP ENDPOINTS  (academyAdmin / teacher)
+// ─────────────────────────────────────────────────────────────
+
+// Helper: verify the requesting teacher owns the group's academy
+async function verifyTeacherOwnsGroup(groupId, teacherId) {
+  const group = await Group.findById(groupId);
+  if (!group) return null;
+  if (String(group.teacherId) !== String(teacherId)) return null;
+  return group;
 }
 
-// ── Create Group (Academy Admin assigns teacher and generates PIN) ──
+// POST /api/academy/groups
+// Create a group inside the teacher's academy
 exports.createGroup = async (req, res) => {
   try {
-    const { academyId } = req.params
-    const { name, description, teacherId } = req.body
-    const userId = req.user.id
+    const { name, level } = req.body;
 
-    const academy = await Academy.findById(academyId)
-
+    // Find the academy that belongs to this teacher
+    const academy = await Academy.findOne({ academyAdmin: req.user._id });
     if (!academy) {
-      return res.status(404).json({
-        success: false,
-        message: "Academy not found",
-      })
+      return res
+        .status(403)
+        .json({ success: false, message: "You have no academy assigned to you" });
     }
 
-    // Only academy owner can create groups
-    if (academy.owner.toString() !== userId) {
-      const user = await User.findById(userId)
-      if (user.role !== "admin" && user.role !== "academyAdmin") {
-        return res.status(403).json({
-          success: false,
-          message: "Only academy admins can create groups",
-        })
-      }
-    }
-
-    // Validate teacher exists and has teacher role
-    const teacher = await User.findById(teacherId)
-    if (!teacher) {
-      return res.status(404).json({
-        success: false,
-        message: "Teacher not found",
-      })
-    }
-
-    if (teacher.role !== "teacher") {
-      return res.status(400).json({
-        success: false,
-        message: "Selected user is not a teacher",
-      })
-    }
-
-    // Generate unique 6-char teacher PIN for teacher to access group
-    let teacherPin
-    let isPinUnique = false
-    while (!isPinUnique) {
-      teacherPin = Math.floor(100000 + Math.random() * 900000).toString()
-      const existing = await Academy.findOne({ "groups.teacherPin": teacherPin })
-      if (!existing) isPinUnique = true
-    }
-
-    // Generate unique 6-char code for students to join
-    let teacherCode
-    let isCodeUnique = false
-    while (!isCodeUnique) {
-      teacherCode = crypto.randomBytes(3).toString("hex").toUpperCase()
-      const existing = await Academy.findOne({ "groups.teacherCode": teacherCode })
-      if (!existing) isCodeUnique = true
-    }
-
-    const newGroup = {
+    const group = await Group.create({
       name,
-      description,
-      teacher: teacherId,
-      teacherPin,
-      teacherCode,
-      teacherUnlocked: false, // Teacher must unlock with PIN first
-      members: [],
-      tasks: [],
-      invitations: [],
-    }
+      level,
+      academyId: academy._id,
+      teacherId: req.user._id,
+    });
 
-    academy.groups.push(newGroup)
-    await academy.save()
-
-    const updatedAcademy = await Academy.findById(academyId)
-      .populate("owner", "emri mbiemri email")
-      .populate("groups.teacher", "emri mbiemri email")
-
-    res.status(201).json({
-      success: true,
-      data: updatedAcademy,
-      teacherPin, // Return PIN so admin can share with teacher
-      message: `Group created. Teacher PIN: ${teacherPin} (share with teacher)`,
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+    res.status(201).json({ success: true, data: group });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-}
+};
 
-// ── Teacher unlocks their group with PIN ──
-exports.unlockGroupWithPin = async (req, res) => {
+// GET /api/academy/groups
+// Get all groups for the logged-in teacher (with student count)
+exports.getMyGroups = async (req, res) => {
   try {
-    const { academyId, groupId } = req.params
-    const { teacherPin } = req.body
-    const userId = req.user.id
+    const groups = await Group.find({ teacherId: req.user._id })
+      .populate("academyId", "name")
+      .sort({ createdAt: -1 });
 
-    const user = await User.findById(userId)
-    if (user.role !== "teacher") {
-      return res.status(403).json({
-        success: false,
-        message: "Only teachers can unlock groups",
-      })
-    }
+    // Attach student count to each group
+    const result = groups.map((g) => ({
+      ...g.toObject(),
+      studentCount: g.students.length,
+    }));
 
-    const academy = await Academy.findById(academyId)
-    if (!academy) {
-      return res.status(404).json({
-        success: false,
-        message: "Academy not found",
-      })
-    }
-
-    const group = academy.groups.id(groupId)
-    if (!group) {
-      return res.status(404).json({
-        success: false,
-        message: "Group not found",
-      })
-    }
-
-    // Check if user is the assigned teacher
-    if (group.teacher.toString() !== userId) {
-      return res.status(403).json({
-        success: false,
-        message: "You are not the teacher of this group",
-      })
-    }
-
-    // Verify PIN
-    if (group.teacherPin !== teacherPin) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid PIN code",
-      })
-    }
-
-    group.teacherUnlocked = true
-    await academy.save()
-
-    res.status(200).json({
-      success: true,
-      message: "Group unlocked successfully",
-      data: academy,
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+    res.status(200).json({ success: true, data: result });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-}
+};
 
-// ── Invite students to group (Teacher only, after unlocking) ──
-exports.inviteToGroup = async (req, res) => {
+// GET /api/academy/groups/:groupId
+// Get one group with full student list
+exports.getGroupById = async (req, res) => {
   try {
-    const { academyId, groupId } = req.params
-    const { email } = req.body
-    const userId = req.user.id
-
-    const academy = await Academy.findById(academyId)
-
-    if (!academy) {
-      return res.status(404).json({
-        success: false,
-        message: "Academy not found",
-      })
-    }
-
-    const group = academy.groups.id(groupId)
+    const group = await Group.findById(req.params.groupId)
+      .populate("academyId", "name")
+      .populate("students", "emri mbiemri email xp level streakCount");
 
     if (!group) {
-      return res.status(404).json({
-        success: false,
-        message: "Group not found",
-      })
+      return res.status(404).json({ success: false, message: "Group not found" });
     }
 
-    // Check if user is the teacher
-    if (group.teacher.toString() !== userId) {
-      return res.status(403).json({
-        success: false,
-        message: "Only the group teacher can invite students",
-      })
+    if (
+      req.user.role !== "admin" &&
+      String(group.teacherId) !== String(req.user._id)
+    ) {
+      return res.status(403).json({ success: false, message: "Access denied" });
     }
 
-    // Check if teacher has unlocked the group
-    if (!group.teacherUnlocked) {
-      return res.status(403).json({
-        success: false,
-        message: "You must unlock the group with your PIN before inviting students",
-      })
-    }
-
-    // Check if already invited
-    const alreadyInvited = group.invitations.find((inv) => inv.email === email && inv.status === "pending")
-    if (alreadyInvited) {
-      return res.status(400).json({
-        success: false,
-        message: "User already has a pending invitation",
-      })
-    }
-
-    // Check if already a member
-    const existingUser = await User.findOne({ email })
-    if (existingUser && group.members.includes(existingUser._id.toString())) {
-      return res.status(400).json({
-        success: false,
-        message: "User is already a member of this group",
-      })
-    }
-
-    group.invitations.push({
-      email,
-      status: "pending",
-    })
-
-    await academy.save()
-
-    const inviteLink = `${process.env.FRONTEND_URL || "http://localhost:3000"}/academy/join/${academyId}/${groupId}?email=${encodeURIComponent(email)}`
-
-    const teacher = await User.findById(userId)
-    const teacherName = teacher ? `${teacher.emri} ${teacher.mbiemri}` : "Your Teacher"
-
-    const emailSent = await sendStudentEmail({
-      to: email,
-      teacherName,
-      groupName: group.name,
-      academyName: academy.name,
-      teacherCode: group.teacherCode,
-      inviteLink,
-    })
-
-    res.status(200).json({
-      success: true,
-      data: academy,
-      inviteLink,
-      emailSent,
-      message: emailSent
-        ? "Invitation email sent successfully!"
-        : "Invitation created but email could not be sent. Share the invite link manually.",
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+    res.status(200).json({ success: true, data: group });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-}
+};
 
-// ── Student joins group by teacher code ──
-exports.joinByTeacherCode = async (req, res) => {
+// PUT /api/academy/groups/:groupId
+exports.updateGroup = async (req, res) => {
   try {
-    const { teacherCode } = req.body
-    const userId = req.user.id
-
-    if (!teacherCode) {
-      return res.status(400).json({
-        success: false,
-        message: "Teacher code is required",
-      })
-    }
-
-    const user = await User.findById(userId)
-
-    // Find the academy containing a group with this teacher code
-    const academy = await Academy.findOne({ "groups.teacherCode": teacherCode.toUpperCase() })
-
-    if (!academy) {
-      return res.status(404).json({
-        success: false,
-        message: "Invalid teacher code. No group found.",
-      })
-    }
-
-    const group = academy.groups.find((g) => g.teacherCode === teacherCode.toUpperCase())
-
+    const group = await verifyTeacherOwnsGroup(req.params.groupId, req.user._id);
     if (!group) {
-      return res.status(404).json({
-        success: false,
-        message: "Group not found",
-      })
+      return res
+        .status(403)
+        .json({ success: false, message: "Group not found or access denied" });
     }
 
-    // Check if teacher has unlocked the group
-    if (!group.teacherUnlocked) {
-      return res.status(403).json({
-        success: false,
-        message: "This group is not yet active. The teacher must unlock it first.",
-      })
-    }
+    const { name, level, isActive } = req.body;
+    Object.assign(group, { name, level, isActive });
+    await group.save();
 
-    // Check if already a member
-    if (group.members.map((m) => m.toString()).includes(userId)) {
-      return res.status(400).json({
-        success: false,
-        message: "You are already a member of this group",
-      })
-    }
-
-    // Check if the user is the teacher
-    if (group.teacher.toString() === userId) {
-      return res.status(400).json({
-        success: false,
-        message: "You are the teacher of this group",
-      })
-    }
-
-    // Add user to group members
-    group.members.push(userId)
-
-    // If there was a pending invitation, mark it accepted
-    const invitation = group.invitations.find((inv) => inv.email === user.email && inv.status === "pending")
-    if (invitation) {
-      invitation.status = "accepted"
-    }
-
-    await academy.save()
-
-    const updatedAcademy = await Academy.findById(academy._id)
-      .populate("owner", "emri mbiemri email")
-      .populate("groups.teacher", "emri mbiemri email")
-      .populate("groups.members", "emri mbiemri email xp level avatarStyle")
-
-    res.status(200).json({
-      success: true,
-      data: updatedAcademy,
-      message: `Joined group "${group.name}" successfully!`,
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+    res.status(200).json({ success: true, data: group });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-}
+};
 
-// ── Accept group invitation (via link) ──
-exports.acceptInvitation = async (req, res) => {
-  try {
-    const { academyId, groupId } = req.params
-    const userId = req.user.id
-
-    const user = await User.findById(userId)
-    const academy = await Academy.findById(academyId)
-
-    if (!academy) {
-      return res.status(404).json({
-        success: false,
-        message: "Academy not found",
-      })
-    }
-
-    const group = academy.groups.id(groupId)
-
-    if (!group) {
-      return res.status(404).json({
-        success: false,
-        message: "Group not found",
-      })
-    }
-
-    // Check if teacher has unlocked the group
-    if (!group.teacherUnlocked) {
-      return res.status(403).json({
-        success: false,
-        message: "This group is not yet active. The teacher must unlock it first.",
-      })
-    }
-
-    // Find invitation
-    const invitation = group.invitations.find((inv) => inv.email === user.email && inv.status === "pending")
-
-    if (!invitation) {
-      return res.status(404).json({
-        success: false,
-        message: "No pending invitation found for your email",
-      })
-    }
-
-    // Add user to group members
-    if (!group.members.includes(userId)) {
-      group.members.push(userId)
-    }
-
-    invitation.status = "accepted"
-
-    await academy.save()
-
-    res.status(200).json({
-      success: true,
-      data: academy,
-      message: "Joined group successfully",
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
-  }
-}
-
-// ── Create Task (Teacher only, after unlocking) ──
-exports.createTask = async (req, res) => {
-  try {
-    const { academyId, groupId } = req.params
-    const { title, description, xpReward, dueDate } = req.body
-    const userId = req.user.id
-
-    const academy = await Academy.findById(academyId)
-
-    if (!academy) {
-      return res.status(404).json({
-        success: false,
-        message: "Academy not found",
-      })
-    }
-
-    const group = academy.groups.id(groupId)
-
-    if (!group) {
-      return res.status(404).json({
-        success: false,
-        message: "Group not found",
-      })
-    }
-
-    // Check if user is the teacher
-    if (group.teacher.toString() !== userId) {
-      return res.status(403).json({
-        success: false,
-        message: "Only the teacher can create tasks",
-      })
-    }
-
-    // Check if teacher has unlocked the group
-    if (!group.teacherUnlocked) {
-      return res.status(403).json({
-        success: false,
-        message: "You must unlock the group with your PIN before creating tasks",
-      })
-    }
-
-    const newTask = {
-      title,
-      description,
-      xpReward: xpReward || 50,
-      dueDate,
-      createdBy: userId,
-      completedBy: [],
-    }
-
-    group.tasks.push(newTask)
-    await academy.save()
-
-    res.status(201).json({
-      success: true,
-      data: academy,
-      message: "Task created successfully",
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
-  }
-}
-
-// ── Complete Task (Students only) ──
-exports.completeTask = async (req, res) => {
-  try {
-    const { academyId, groupId, taskId } = req.params
-    const userId = req.user.id
-
-    const academy = await Academy.findById(academyId)
-
-    if (!academy) {
-      return res.status(404).json({
-        success: false,
-        message: "Academy not found",
-      })
-    }
-
-    const group = academy.groups.id(groupId)
-
-    if (!group) {
-      return res.status(404).json({
-        success: false,
-        message: "Group not found",
-      })
-    }
-
-    // Check if user is member of the group
-    if (!group.members.includes(userId)) {
-      return res.status(403).json({
-        success: false,
-        message: "You are not a member of this group",
-      })
-    }
-
-    const task = group.tasks.id(taskId)
-
-    if (!task) {
-      return res.status(404).json({
-        success: false,
-        message: "Task not found",
-      })
-    }
-
-    // Check if already completed
-    const alreadyCompleted = task.completedBy.find((comp) => comp.userId.toString() === userId)
-
-    if (alreadyCompleted) {
-      return res.status(400).json({
-        success: false,
-        message: "Task already completed",
-      })
-    }
-
-    // Add to completed
-    task.completedBy.push({
-      userId,
-      completedAt: new Date(),
-    })
-
-    await academy.save()
-
-    // Award XP to user
-    const user = await User.findById(userId)
-    user.xp += task.xpReward
-    user.weeklyXp += task.xpReward
-    user.monthlyXp += task.xpReward
-    await user.save()
-
-    res.status(200).json({
-      success: true,
-      data: academy,
-      message: `Task completed! You earned ${task.xpReward} XP`,
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
-  }
-}
-
-// ── Get group leaderboard ──
-exports.getGroupLeaderboard = async (req, res) => {
-  try {
-    const { academyId, groupId } = req.params
-
-    const academy = await Academy.findById(academyId)
-
-    if (!academy) {
-      return res.status(404).json({
-        success: false,
-        message: "Academy not found",
-      })
-    }
-
-    const group = academy.groups.id(groupId)
-
-    if (!group) {
-      return res.status(404).json({
-        success: false,
-        message: "Group not found",
-      })
-    }
-
-    // Get all members with their stats
-    const members = await User.find({
-      _id: { $in: group.members },
-    }).select("emri mbiemri email xp level avatarStyle")
-
-    // Sort by XP
-    const leaderboard = members.sort((a, b) => b.xp - a.xp)
-
-    res.status(200).json({
-      success: true,
-      data: leaderboard,
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
-  }
-}
-
-// ── Delete Group (Academy Admin only) ──
+// DELETE /api/academy/groups/:groupId
 exports.deleteGroup = async (req, res) => {
   try {
-    const { academyId, groupId } = req.params
-    const userId = req.user.id
-
-    const academy = await Academy.findById(academyId)
-
-    if (!academy) {
-      return res.status(404).json({
-        success: false,
-        message: "Academy not found",
-      })
-    }
-
-    const group = academy.groups.id(groupId)
-
+    const group = await verifyTeacherOwnsGroup(req.params.groupId, req.user._id);
     if (!group) {
-      return res.status(404).json({
-        success: false,
-        message: "Group not found",
-      })
+      return res
+        .status(403)
+        .json({ success: false, message: "Group not found or access denied" });
     }
 
-    // Only academy owner can delete groups
-    if (academy.owner.toString() !== userId) {
-      return res.status(403).json({
-        success: false,
-        message: "Only the academy admin can delete groups",
-      })
+    // Remove groupId from all students in this group
+    await User.updateMany(
+      { _id: { $in: group.students } },
+      { $unset: { groupId: "" } }
+    );
+
+    await Group.findByIdAndDelete(req.params.groupId);
+
+    res.status(200).json({ success: true, message: "Group deleted" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// POST /api/academy/groups/:groupId/students
+// Add a student to the group by email or userId
+exports.addStudentToGroup = async (req, res) => {
+  try {
+    const group = await verifyTeacherOwnsGroup(req.params.groupId, req.user._id);
+    if (!group) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Group not found or access denied" });
     }
 
-    group.remove()
-    await academy.save()
+    const { email, userId } = req.body;
+
+    const student = email
+      ? await User.findOne({ email: email.toLowerCase() })
+      : await User.findById(userId);
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: "Student not found" });
+    }
+
+    if (group.students.includes(student._id)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Student is already in this group" });
+    }
+
+    group.students.push(student._id);
+    await group.save();
+
+    // Stamp the student with academyId and groupId
+    await User.findByIdAndUpdate(student._id, {
+      academyId: group.academyId,
+      groupId: group._id,
+    });
 
     res.status(200).json({
       success: true,
-      data: academy,
-      message: "Group deleted successfully",
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+      message: "Student added",
+      data: { studentId: student._id, name: `${student.emri} ${student.mbiemri}` },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-}
+};
 
-// ── Get group info for invitation page ──
-exports.getGroupInviteInfo = async (req, res) => {
+// DELETE /api/academy/groups/:groupId/students/:studentId
+exports.removeStudentFromGroup = async (req, res) => {
   try {
-    const { academyId, groupId } = req.params
-
-    const academy = await Academy.findById(academyId)
-      .populate("owner", "emri mbiemri email")
-      .populate("groups.teacher", "emri mbiemri email")
-
-    if (!academy) {
-      return res.status(404).json({
-        success: false,
-        message: "Academy not found",
-      })
-    }
-
-    const group = academy.groups.id(groupId)
-
+    const group = await verifyTeacherOwnsGroup(req.params.groupId, req.user._id);
     if (!group) {
-      return res.status(404).json({
-        success: false,
-        message: "Group not found",
-      })
+      return res
+        .status(403)
+        .json({ success: false, message: "Group not found or access denied" });
     }
 
-    const teacher = group.teacher
+    group.students = group.students.filter(
+      (id) => String(id) !== req.params.studentId
+    );
+    await group.save();
+
+    // Clear groupId from student (keep academyId in case they're in another group)
+    await User.findByIdAndUpdate(req.params.studentId, {
+      $unset: { groupId: "" },
+    });
+
+    res.status(200).json({ success: true, message: "Student removed from group" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
+// LEADERBOARD
+// GET /api/academy/groups/:groupId/leaderboard
+// Returns all students with their full activity stats, sorted by XP
+// ─────────────────────────────────────────────────────────────
+exports.getGroupLeaderboard = async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.groupId);
+    if (!group) {
+      return res.status(404).json({ success: false, message: "Group not found" });
+    }
+
+    if (
+      req.user.role !== "admin" &&
+      String(group.teacherId) !== String(req.user._id)
+    ) {
+      return res.status(403).json({ success: false, message: "Access denied" });
+    }
+
+    // Pull all stats fields we care about from the User model
+    const students = await User.find(
+      { _id: { $in: group.students } },
+      {
+        emri: 1,
+        mbiemri: 1,
+        email: 1,
+        xp: 1,
+        weeklyXp: 1,
+        monthlyXp: 1,
+        level: 1,
+        streakCount: 1,
+        completedTests: 1,
+        studyHours: 1,
+        avatarStyle: 1,
+        // Arrays — we only need the length; we'll compute below
+        finishedSentences: 1,
+        passedTranslatedTexts: 1,
+        listenTestsPassed: 1,
+        completedPronunciationPackages: 1,
+        grammarFinished: 1,
+        completedQuizzes: 1,
+        learnedWords: 1,
+        phrasesFinished: 1,
+        puzzleCompleted: 1,
+        finishedDialogues: 1,
+        finishedVideos: 1,
+        finishedStories: 1,
+        finishedWordAudio: 1,
+        categoryFinished: 1,
+        completedStructures: 1,
+        finishedCreateWord: 1,
+        quizStats: 1,
+        wordRaceStats: 1,
+        lastLogin: 1,
+      }
+    ).lean();
+
+    // Shape the leaderboard data — count arrays, attach rank
+    const leaderboard = students
+      .map((s) => ({
+        _id: s._id,
+        name: `${s.emri} ${s.mbiemri}`,
+        email: s.email,
+        avatarStyle: s.avatarStyle,
+        level: s.level,
+        lastLogin: s.lastLogin,
+
+        // ── XP & engagement ──
+        xp: s.xp || 0,
+        weeklyXp: s.weeklyXp || 0,
+        monthlyXp: s.monthlyXp || 0,
+        streakCount: s.streakCount || 0,
+        studyHours: s.studyHours || 0,
+        completedTests: s.completedTests || 0,
+
+        // ── Activity counts ──
+        sentencesFinished: (s.finishedSentences || []).length,
+        textsTranslated: (s.passedTranslatedTexts || []).length,
+        listenTestsPassed: (s.listenTestsPassed || []).length,
+        pronunciationPackages: (s.completedPronunciationPackages || []).length,
+        grammarTopics: (s.grammarFinished || []).length,
+        quizzesCompleted: (s.completedQuizzes || []).length,
+        wordsLearned: (s.learnedWords || []).length,
+        phrasesFinished: (s.phrasesFinished || []).length,
+        puzzlesCompleted: (s.puzzleCompleted || []).length,
+        dialoguesFinished: (s.finishedDialogues || []).length,
+        videosFinished: (s.finishedVideos || []).length,
+        storiesFinished: (s.finishedStories || []).length,
+        wordAudioFinished: (s.finishedWordAudio || []).length,
+        categoriesFinished: (s.categoryFinished || []).length,
+        structuresCompleted: (s.completedStructures || []).length,
+        createWordFinished: (s.finishedCreateWord || []).length,
+
+        // ── Game stats ──
+        quizStats: s.quizStats || { totalQuizzes: 0, wins: 0, correctAnswers: 0 },
+        wordRaceStats: s.wordRaceStats || { totalRaces: 0, wins: 0, correctWords: 0 },
+      }))
+      .sort((a, b) => b.xp - a.xp)
+      .map((s, index) => ({ ...s, rank: index + 1 }));
 
     res.status(200).json({
       success: true,
       data: {
-        academyName: academy.name,
-        academyDescription: academy.description,
         groupName: group.name,
-        groupDescription: group.description,
-        memberCount: group.members.length,
-        teacherName: teacher ? `${teacher.emri} ${teacher.mbiemri}` : "Unknown",
-        teacherCode: group.teacherCode,
-        isUnlocked: group.teacherUnlocked,
+        level: group.level,
+        totalStudents: leaderboard.length,
+        leaderboard,
       },
-    })
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    })
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-}
+};
+// POST /api/academy/groups/join
+exports.joinGroupByCode = async (req, res) => {
+  try {
+    const { joinCode } = req.body;
+    const group = await Group.findOne({ joinCode: joinCode.toUpperCase() });
+    if (!group) return res.status(404).json({ success: false, message: "Invalid join code" });
+    if (group.students.includes(req.user._id))
+      return res.status(400).json({ success: false, message: "Already in this group" });
 
+    group.students.push(req.user._id);
+    await group.save();
+
+    await User.findByIdAndUpdate(req.user._id, {
+      academyId: group.academyId,
+      groupId: group._id,
+    });
+
+    res.status(200).json({ success: true, message: "Joined group!", data: group });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};// GET /api/academy/groups/mine
+exports.getMyGroup = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user.groupId) return res.status(200).json({ success: true, data: null });
+
+    const group = await Group.findById(user.groupId)
+      .populate("academyId", "name");
+
+    res.status(200).json({ success: true, data: group });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+// ─────────────────────────────────────────────────────────────
+// ADMIN: get any group's leaderboard by group id
+// GET /api/academy/admin/groups/:groupId/leaderboard
+// ─────────────────────────────────────────────────────────────
+exports.adminGetGroupLeaderboard = exports.getGroupLeaderboard;

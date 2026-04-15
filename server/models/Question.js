@@ -22,6 +22,13 @@ const questionSchema = new mongoose.Schema(
         message: "Level must be one of: A1, A2, B1, B2, C1, C2",
       },
     },
+    // Add after `level` field
+language: {
+  type: String,
+  enum: ["de", "en", "fr", "tr", "it"],
+  default: "de",
+  index: true,
+},
     category: {
       type: String,
       enum: ["grammar", "vocabulary", "pronunciation", "culture","articles","translation","Begginers","Präpositionen","Adjectives","Perfekt"],

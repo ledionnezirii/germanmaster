@@ -40,6 +40,13 @@ const translateSchema = new mongoose.Schema(
         message: "Level must be one of: A1, A2, B1, B2, C1, C2",
       },
     },
+    // Add after `level` field
+language: {
+  type: String,
+  enum: ["de", "en", "fr", "tr", "it"],
+  default: "de",
+  index: true,
+},
     text: {
       type: String,
       required: [true, "Text is required"],

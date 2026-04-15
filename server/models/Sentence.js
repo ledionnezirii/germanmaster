@@ -29,7 +29,7 @@ const sentenceSchema = new mongoose.Schema(
     },
        language: {       // 👈 ADD HERE
   type: String,
-  enum: ["de", "en", "fr"],
+    enum: ["de", "en", "fr", "tr", "it"],
   default: "de",
   index: true,
 },

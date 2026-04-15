@@ -112,11 +112,16 @@ const getOnlineUsers = asyncHandler(async (req, res) => {
     })
   );
 });
-
-// Get admin dashboard stats
 const getDashboardStats = asyncHandler(async (req, res) => {
+  const Payment = require("../models/Payment");
+
   const now = new Date();
-  const todayStart = new Date(now.setHours(0, 0, 0, 0));
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+  const revenueMatch = { status: { $in: ["active", "completed", "past_due"] } };
 
   const [
     totalUsers,
@@ -124,22 +129,35 @@ const getDashboardStats = asyncHandler(async (req, res) => {
     freeUsers,
     newUsersToday,
     activeSubscriptions,
+    revenueThisMonth,
+    revenuePrevMonth,
+    revenueTotal,
   ] = await Promise.all([
     User.countDocuments(),
     User.countDocuments({ isPaid: true }),
     User.countDocuments({ isPaid: false }),
     User.countDocuments({ createdAt: { $gte: todayStart } }),
-    User.countDocuments({
-      isPaid: true,
-      subscriptionExpiresAt: { $gt: new Date() },
-    }),
+    User.countDocuments({ isPaid: true, subscriptionExpiresAt: { $gt: new Date() } }),
+
+    Payment.aggregate([
+      { $match: { ...revenueMatch, createdAt: { $gte: thisMonthStart } } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]),
+
+    Payment.aggregate([
+      { $match: { ...revenueMatch, createdAt: { $gte: prevMonthStart, $lte: prevMonthEnd } } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]),
+
+    Payment.aggregate([
+      { $match: revenueMatch },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]),
   ]);
 
-  // Online count from socket
   const onlineUserIds = req.app.get("onlineUsers") || new Map();
   const onlineCount = onlineUserIds.size;
 
-  // Subscription type breakdown
   const subscriptionBreakdown = await User.aggregate([
     { $match: { isPaid: true } },
     { $group: { _id: "$subscriptionType", count: { $sum: 1 } } },
@@ -154,10 +172,14 @@ const getDashboardStats = asyncHandler(async (req, res) => {
       activeSubscriptions,
       onlineCount,
       subscriptionBreakdown,
+      revenue: {
+        thisMonth: revenueThisMonth[0]?.total || 0,
+        prevMonth: revenuePrevMonth[0]?.total || 0,
+        total:     revenueTotal[0]?.total     || 0,
+      },
     })
   );
 });
-
 // Update user role
 const updateUserRole = asyncHandler(async (req, res) => {
   const { userId } = req.params;
@@ -213,11 +235,90 @@ const toggleUserStatus = asyncHandler(async (req, res) => {
   );
 });
 
+// Daily visitor stats — counts unique users who logged in / created a session each day
+const getVisitorStats = asyncHandler(async (req, res) => {
+  const Session = require("../models/Session");
+  const days = Math.min(parseInt(req.query.days) || 30, 90);
+
+  const since = new Date();
+  since.setDate(since.getDate() - (days - 1));
+  since.setHours(0, 0, 0, 0);
+
+  // Group sessions by calendar day, count distinct users per day
+  const raw = await Session.aggregate([
+    { $match: { createdAt: { $gte: since } } },
+    {
+      $group: {
+        _id: {
+          year:  { $year:       "$createdAt" },
+          month: { $month:      "$createdAt" },
+          day:   { $dayOfMonth: "$createdAt" },
+          userId: "$userId",           // one entry per user per day
+        },
+      },
+    },
+    {
+      $group: {
+        _id: { year: "$_id.year", month: "$_id.month", day: "$_id.day" },
+        visitors: { $sum: 1 },         // count unique users
+      },
+    },
+    { $sort: { "_id.year": 1, "_id.month": 1, "_id.day": 1 } },
+  ]);
+
+  // Fill in missing days with 0 so the chart always has `days` points
+  const map = {};
+  for (const r of raw) {
+    const key = `${r._id.year}-${String(r._id.month).padStart(2,"0")}-${String(r._id.day).padStart(2,"0")}`;
+    map[key] = r.visitors;
+  }
+
+  const result = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(since);
+    d.setDate(since.getDate() + i);
+    const key = d.toISOString().slice(0, 10);
+    result.push({ date: key, visitors: map[key] || 0 });
+  }
+
+  const total  = result.reduce((s, r) => s + r.visitors, 0);
+  const today  = result[result.length - 1]?.visitors || 0;
+
+  res.json(new ApiResponse(200, { data: result, total, today }));
+});
+
+// Users who visited on a specific date
+const getVisitorsByDate = asyncHandler(async (req, res) => {
+  const Session = require("../models/Session");
+  const { date } = req.query; // YYYY-MM-DD
+  if (!date) return res.status(400).json(new ApiResponse(400, null, "date param required"));
+
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(date);
+  end.setHours(23, 59, 59, 999);
+
+  // Unique userIds who had a session that day
+  const rows = await Session.aggregate([
+    { $match: { createdAt: { $gte: start, $lte: end } } },
+    { $group: { _id: "$userId" } },
+  ]);
+
+  const userIds = rows.map((r) => r._id);
+  const users = await User.find({ _id: { $in: userIds } })
+    .select("emri mbiemri email isPaid xp avatarStyle")
+    .lean();
+
+  res.json(new ApiResponse(200, { users, count: users.length }));
+});
+
 module.exports = {
   getAllUsers,
   getPaidUsers,
   getOnlineUsers,
   getDashboardStats,
+  getVisitorStats,
+  getVisitorsByDate,
   updateUserRole,
   deleteUser,
   toggleUserStatus,

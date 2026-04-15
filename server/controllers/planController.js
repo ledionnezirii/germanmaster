@@ -1,5 +1,6 @@
 const Plan = require("../models/Plan")
 const User = require("../models/User")
+const { addUserXp } = require("./xpController")
 
 exports.createOrUpdatePlan = async (req, res) => {
   const { level, weeks } = req.body
@@ -408,7 +409,6 @@ exports.markTopicAsCompleted = async (req, res) => {
       xpAwarded: xpReward,
     })
 
-    user.xp = (user.xp || 0) + xpReward
 
     // ✅ CHECK IF ALL TOPICS IN THIS WEEK ARE NOW COMPLETED
     const allTopicsInWeek = foundWeek.topics
@@ -440,8 +440,9 @@ exports.markTopicAsCompleted = async (req, res) => {
       }
     }
 
-    await user.save()
-
+// dhe zëvendëso await user.save() me:
+await user.save()
+await addUserXp(userId.toString(), xpReward)
     res.status(200).json({
       success: true,
       data: {

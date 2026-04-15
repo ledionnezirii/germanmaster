@@ -1,35 +1,49 @@
 const Phrase = require("../models/Phrase")
 const User = require("../models/User")
 const { notifyPhraseLimitReached } = require("./notificationController")
+const { addUserXp } = require("./xpController")
 
 
-const DAILY_PHRASE_LIMIT = 10
+const FREE_DAILY_LIMIT = 2
+const PAID_DAILY_LIMIT = 10
 
-// Helper function to check if it's a new day (resets at 00:01)
+const buildLanguageQuery = (language) => {
+  if (!language) return {}
+  if (language === "de") {
+    return { $or: [{ language: "de" }, { language: { $exists: false } }, { language: null }] }
+  }
+  return { language }
+}
+
+// Helper: get the correct daily limit for a user
+const getDailyLimit = (user) => {
+  return user.isPaid ? PAID_DAILY_LIMIT : FREE_DAILY_LIMIT
+}
+
+// Helper: check if it's a new day (resets at 00:01)
 const isNewDay = (lastDate) => {
   if (!lastDate) return true
-  
+
   const now = new Date()
   const last = new Date(lastDate)
-  
-  // Create date objects for comparison at 00:01
+
   const todayReset = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 1, 0, 0)
   const lastReset = new Date(last.getFullYear(), last.getMonth(), last.getDate(), 0, 1, 0, 0)
-  
-  // If current time is before 00:01, use yesterday's reset time
+
   if (now.getHours() === 0 && now.getMinutes() < 1) {
     todayReset.setDate(todayReset.getDate() - 1)
   }
-  
+
   return todayReset > lastReset
 }
 
 // Get all phrases with optional filters
 exports.getAllPhrases = async (req, res) => {
   try {
-    const { level, category, page = 1, limit = 20 } = req.query
+    const { level, category, page = 1, limit = 20, language } = req.query
 
-    const query = { isActive: true }
+    const langQuery = buildLanguageQuery(language)
+    const query = { isActive: true, ...langQuery }
     if (level) query.level = level
     if (category) query.category = category
 
@@ -60,14 +74,17 @@ exports.getAllPhrases = async (req, res) => {
 exports.getPhrasesByLevel = async (req, res) => {
   try {
     const { level } = req.params
-    const { page = 1, limit = 20 } = req.query
+    const { page = 1, limit = 20, language } = req.query
 
-    const phrases = await Phrase.find({ level, isActive: true })
+    const langQuery = buildLanguageQuery(language)
+    const query = { level, isActive: true, ...langQuery }
+
+    const phrases = await Phrase.find(query)
       .sort({ createdAt: 1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
 
-    const count = await Phrase.countDocuments({ level, isActive: true })
+    const count = await Phrase.countDocuments(query)
 
     res.status(200).json({
       success: true,
@@ -113,7 +130,7 @@ exports.getPhraseById = async (req, res) => {
 // Create new phrase (Admin only)
 exports.createPhrase = async (req, res) => {
   try {
-    const { german, albanian, xp, level, category, difficulty, usageExample } = req.body
+    const { german, albanian, xp, level, category, difficulty, usageExample, language = "de" } = req.body
 
     const phrase = await Phrase.create({
       german,
@@ -123,6 +140,7 @@ exports.createPhrase = async (req, res) => {
       category,
       difficulty,
       usageExample,
+      language,
     })
 
     res.status(201).json({
@@ -170,7 +188,10 @@ exports.createBulkPhrases = async (req, res) => {
 // Update phrase (Admin only)
 exports.updatePhrase = async (req, res) => {
   try {
-    const phrase = await Phrase.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true })
+    const phrase = await Phrase.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    })
 
     if (!phrase) {
       return res.status(404).json({
@@ -218,7 +239,7 @@ exports.deletePhrase = async (req, res) => {
   }
 }
 
-// Mark phrase as finished for user - WITH DAILY LIMIT
+// Mark phrase as finished — FREE=4/day, PAID=10/day
 exports.markPhraseAsFinished = async (req, res) => {
   try {
     const { phraseId } = req.params
@@ -226,39 +247,33 @@ exports.markPhraseAsFinished = async (req, res) => {
 
     const phrase = await Phrase.findById(phraseId)
     if (!phrase) {
-      return res.status(404).json({
-        success: false,
-        message: "Phrase not found",
-      })
+      return res.status(404).json({ success: false, message: "Phrase not found" })
     }
 
     const user = await User.findById(userId)
-
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      })
+      return res.status(404).json({ success: false, message: "User not found" })
     }
 
+    // Already finished — no-op
     if (user.phrasesFinished.includes(phraseId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Phrase already marked as finished",
-      })
+      return res.status(400).json({ success: false, message: "Phrase already marked as finished" })
     }
 
+    // Reset daily count if it's a new day
     const newDay = isNewDay(user.lastPhraseUnlockDate)
-    
     if (newDay) {
       user.dailyPhraseUnlocks = 0
       user.lastPhraseUnlockDate = new Date()
     }
 
-    if (user.dailyPhraseUnlocks >= DAILY_PHRASE_LIMIT) {
-      // ✅ SEND NOTIFICATION WHEN LIMIT REACHED
+    // Get the correct limit for this user (paid vs free)
+    const dailyLimit = getDailyLimit(user)
+
+    // Check daily limit
+    if (user.dailyPhraseUnlocks >= dailyLimit) {
       await notifyPhraseLimitReached(userId)
-      
+
       const now = new Date()
       const nextReset = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 1, 0, 0)
       const timeUntilReset = nextReset - now
@@ -267,26 +282,27 @@ exports.markPhraseAsFinished = async (req, res) => {
 
       return res.status(429).json({
         success: false,
-        message: `Keni arritur limitin ditor të ${DAILY_PHRASE_LIMIT} frazave. Provoni përsëri pas ${hoursUntilReset} orësh dhe ${minutesUntilReset} minutash.`,
+        message: `Keni arritur limitin ditor të ${dailyLimit} frazave. Provoni përsëri pas ${hoursUntilReset} orësh dhe ${minutesUntilReset} minutash.`,
         dailyLimitReached: true,
         remainingUnlocks: 0,
         resetTime: nextReset.toISOString(),
         hoursUntilReset,
         minutesUntilReset,
+        isPaid: user.isPaid,
+        dailyLimit,
       })
     }
 
-    user.phrasesFinished.push(phraseId)
-    user.xp += phrase.xp
-    user.dailyPhraseUnlocks += 1
-    user.lastPhraseUnlockDate = new Date()
-    
-    // Send notification when exactly reaching the limit
-    if (user.dailyPhraseUnlocks === DAILY_PHRASE_LIMIT) {
-      await notifyPhraseLimitReached(userId)
-    }
-    
-    await user.save()
+ user.phrasesFinished.push(phraseId)
+user.dailyPhraseUnlocks += 1
+user.lastPhraseUnlockDate = new Date()
+
+if (user.dailyPhraseUnlocks === dailyLimit) {
+  await notifyPhraseLimitReached(userId)
+}
+
+await user.save()
+await addUserXp(userId, phrase.xp)
 
     res.status(200).json({
       success: true,
@@ -295,7 +311,9 @@ exports.markPhraseAsFinished = async (req, res) => {
         xpGained: phrase.xp,
         totalXp: user.xp,
         dailyUnlocksUsed: user.dailyPhraseUnlocks,
-        remainingUnlocks: DAILY_PHRASE_LIMIT - user.dailyPhraseUnlocks,
+        remainingUnlocks: dailyLimit - user.dailyPhraseUnlocks,
+        dailyLimit,
+        isPaid: user.isPaid,
       },
       message: "Phrase marked as finished",
     })
@@ -307,7 +325,8 @@ exports.markPhraseAsFinished = async (req, res) => {
     })
   }
 }
-// Unmark phrase as finished for user
+
+// Unmark phrase as finished
 exports.unmarkPhraseAsFinished = async (req, res) => {
   try {
     const { phraseId } = req.params
@@ -315,28 +334,17 @@ exports.unmarkPhraseAsFinished = async (req, res) => {
 
     const phrase = await Phrase.findById(phraseId)
     if (!phrase) {
-      return res.status(404).json({
-        success: false,
-        message: "Phrase not found",
-      })
+      return res.status(404).json({ success: false, message: "Phrase not found" })
     }
 
     const user = await User.findById(userId)
-
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      })
+      return res.status(404).json({ success: false, message: "User not found" })
     }
 
-    // Remove phrase from finished list and subtract XP
     const index = user.phrasesFinished.indexOf(phraseId)
     if (index === -1) {
-      return res.status(400).json({
-        success: false,
-        message: "Phrase is not marked as finished",
-      })
+      return res.status(400).json({ success: false, message: "Phrase is not marked as finished" })
     }
 
     user.phrasesFinished.splice(index, 1)
@@ -345,11 +353,7 @@ exports.unmarkPhraseAsFinished = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: {
-        phraseId,
-        xpLost: phrase.xp,
-        totalXp: user.xp,
-      },
+      data: { phraseId, xpLost: phrase.xp, totalXp: user.xp },
       message: "Phrase unmarked as finished",
     })
   } catch (error) {
@@ -367,12 +371,8 @@ exports.getFinishedPhrases = async (req, res) => {
     const userId = req.user.id
 
     const user = await User.findById(userId).populate("phrasesFinished")
-
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      })
+      return res.status(404).json({ success: false, message: "User not found" })
     }
 
     res.status(200).json({
@@ -389,7 +389,7 @@ exports.getFinishedPhrases = async (req, res) => {
   }
 }
 
-// Get user's phrase progress - WITH DAILY LIMIT INFO
+// Get user's phrase progress — includes daily limit info based on isPaid
 exports.getUserPhraseProgress = async (req, res) => {
   try {
     const userId = req.user.id
@@ -397,10 +397,7 @@ exports.getUserPhraseProgress = async (req, res) => {
 
     const user = await User.findById(userId)
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      })
+      return res.status(404).json({ success: false, message: "User not found" })
     }
 
     const query = { isActive: true }
@@ -409,17 +406,16 @@ exports.getUserPhraseProgress = async (req, res) => {
     const totalPhrases = await Phrase.countDocuments(query)
     const finishedPhrases = user.phrasesFinished.length
 
-    // Calculate daily limit info
+    // Daily limit based on plan
+    const dailyLimit = getDailyLimit(user)
     const newDay = isNewDay(user.lastPhraseUnlockDate)
     const dailyUnlocksUsed = newDay ? 0 : (user.dailyPhraseUnlocks || 0)
-    const remainingUnlocks = DAILY_PHRASE_LIMIT - dailyUnlocksUsed
+    const remainingUnlocks = dailyLimit - dailyUnlocksUsed
 
-    // Calculate time until next reset
+    // Time until next reset
     const now = new Date()
     let nextReset = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 1, 0, 0)
-    if (now >= nextReset) {
-      nextReset.setDate(nextReset.getDate() + 1)
-    }
+    if (now >= nextReset) nextReset.setDate(nextReset.getDate() + 1)
     const timeUntilReset = nextReset - now
     const hoursUntilReset = Math.floor(timeUntilReset / (1000 * 60 * 60))
     const minutesUntilReset = Math.floor((timeUntilReset % (1000 * 60 * 60)) / (1000 * 60))
@@ -432,13 +428,14 @@ exports.getUserPhraseProgress = async (req, res) => {
         percentage: totalPhrases > 0 ? ((finishedPhrases / totalPhrases) * 100).toFixed(2) : 0,
         phrasesFinished: user.phrasesFinished,
         // Daily limit info
-        dailyLimit: DAILY_PHRASE_LIMIT,
+        dailyLimit,
         dailyUnlocksUsed,
         remainingUnlocks,
         dailyLimitReached: remainingUnlocks <= 0,
         resetTime: nextReset.toISOString(),
         hoursUntilReset,
         minutesUntilReset,
+        isPaid: user.isPaid,
       },
     })
   } catch (error) {
@@ -450,29 +447,24 @@ exports.getUserPhraseProgress = async (req, res) => {
   }
 }
 
-// NEW: Get daily limit status
+// Get daily limit status
 exports.getDailyLimitStatus = async (req, res) => {
   try {
     const userId = req.user.id
 
     const user = await User.findById(userId)
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      })
+      return res.status(404).json({ success: false, message: "User not found" })
     }
 
+    const dailyLimit = getDailyLimit(user)
     const newDay = isNewDay(user.lastPhraseUnlockDate)
     const dailyUnlocksUsed = newDay ? 0 : (user.dailyPhraseUnlocks || 0)
-    const remainingUnlocks = DAILY_PHRASE_LIMIT - dailyUnlocksUsed
+    const remainingUnlocks = dailyLimit - dailyUnlocksUsed
 
-    // Calculate time until next reset
     const now = new Date()
     let nextReset = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 1, 0, 0)
-    if (now >= nextReset) {
-      nextReset.setDate(nextReset.getDate() + 1)
-    }
+    if (now >= nextReset) nextReset.setDate(nextReset.getDate() + 1)
     const timeUntilReset = nextReset - now
     const hoursUntilReset = Math.floor(timeUntilReset / (1000 * 60 * 60))
     const minutesUntilReset = Math.floor((timeUntilReset % (1000 * 60 * 60)) / (1000 * 60))
@@ -480,13 +472,14 @@ exports.getDailyLimitStatus = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
-        dailyLimit: DAILY_PHRASE_LIMIT,
+        dailyLimit,
         dailyUnlocksUsed,
         remainingUnlocks,
         dailyLimitReached: remainingUnlocks <= 0,
         resetTime: nextReset.toISOString(),
         hoursUntilReset,
         minutesUntilReset,
+        isPaid: user.isPaid,
       },
     })
   } catch (error) {
@@ -497,6 +490,7 @@ exports.getDailyLimitStatus = async (req, res) => {
     })
   }
 }
+
 // Add XP from quiz completion
 exports.addQuizXp = async (req, res) => {
   try {
@@ -504,30 +498,19 @@ exports.addQuizXp = async (req, res) => {
     const { xp } = req.body
 
     if (!xp || xp <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Valid XP amount is required",
-      })
+      return res.status(400).json({ success: false, message: "Valid XP amount is required" })
     }
 
     const user = await User.findById(userId)
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      })
+      return res.status(404).json({ success: false, message: "User not found" })
     }
 
-    // Add XP to user
-    user.xp += xp
-    await user.save()
+    await addUserXp(userId, xp)
 
     res.status(200).json({
       success: true,
-      data: {
-        xpGained: xp,
-        totalXp: user.xp,
-      },
+      data: { xpGained: xp, totalXp: user.xp },
       message: "Quiz XP added successfully",
     })
   } catch (error) {

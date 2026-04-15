@@ -3,6 +3,23 @@ const User = require("../models/User");
 const { ApiError } = require("../utils/ApiError");
 const { ApiResponse } = require("../utils/ApiResponse");
 const { asyncHandler } = require("../utils/asyncHandler");
+const { addUserXp } = require("./xpController");
+
+const FREE_LISTEN_LIMIT = 5;
+// Helper: build language query condition (same pattern as sentenceController)
+const buildLanguageQuery = (language) => {
+  if (!language) return {};
+  if (language === "de") {
+    return {
+      $or: [
+        { language: "de" },
+        { language: { $exists: false } },
+        { language: null },
+      ],
+    };
+  }
+  return { language };
+};
 
 // Helper function to normalize text for comparison
 const normalizeText = (text) => {
@@ -90,7 +107,7 @@ const areWordsClose = (word1, word2) => {
 // @route   GET /api/listen
 // @access  Public
 const getAllTests = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 20, level, difficulty } = req.query;
+  const { page = 1, limit = 20, level, difficulty, language } = req.query;
   const query = { isActive: true };
 
   if (level) {
@@ -98,6 +115,13 @@ const getAllTests = asyncHandler(async (req, res) => {
   }
   if (difficulty) {
     query.difficulty = Number.parseInt(difficulty);
+  }
+
+  const langQuery = buildLanguageQuery(language);
+  if (langQuery.$or) {
+    Object.assign(query, langQuery);
+  } else if (langQuery.language) {
+    query.language = langQuery.language;
   }
 
   const tests = await Listen.find(query)
@@ -126,19 +150,27 @@ const getAllTests = asyncHandler(async (req, res) => {
 // @access  Public
 const getTestsByLevel = asyncHandler(async (req, res) => {
   const { level } = req.params;
-  const { page = 1, limit = 20 } = req.query;
+  const { page = 1, limit = 20, language } = req.query;
 
   if (!["A1", "A2", "B1", "B2", "C1", "C2"].includes(level)) {
     throw new ApiError(400, "Invalid level");
   }
 
-  const tests = await Listen.find({ level, isActive: true })
+  const query = { level, isActive: true };
+  const langQuery = buildLanguageQuery(language);
+  if (langQuery.$or) {
+    Object.assign(query, langQuery);
+  } else if (langQuery.language) {
+    query.language = langQuery.language;
+  }
+
+  const tests = await Listen.find(query)
     .select("-correctText")
     .sort({ difficulty: 1, createdAt: -1 })
     .limit(limit * 1)
     .skip((page - 1) * limit);
 
-  const total = await Listen.countDocuments({ level, isActive: true });
+  const total = await Listen.countDocuments(query);
 
   res.json(
     new ApiResponse(200, {
@@ -201,45 +233,48 @@ const checkAnswer = asyncHandler(async (req, res) => {
 
   let xpAwarded = 0;
   if (isCorrect) {
-    // Check if user has already completed this test before
     const existingCompletion = test.listenTestsPassed.find(
       (completion) => completion.user.toString() === req.user.id,
     );
 
     if (existingCompletion) {
-      // User already completed this test before - only give 2 XP
       xpAwarded = 2;
     } else {
-      // First time completing - give full XP
       xpAwarded = test.xpReward || 10;
     }
 
-    // Update user's XP and add to listenTestsPassed
+    await addUserXp(req.user.id, xpAwarded);
     await User.findByIdAndUpdate(req.user.id, {
-      $inc: { xp: xpAwarded, completedTests: existingCompletion ? 0 : 1 },
+      $inc: { completedTests: existingCompletion ? 0 : 1 },
       $addToSet: { listenTestsPassed: testId },
     });
-  }
 
-  // Record completion in the test document ONLY if correct
-  if (isCorrect) {
-    const existingCompletion = test.listenTestsPassed.find(
-      (completion) => completion.user.toString() === req.user.id,
-    );
     if (!existingCompletion) {
+      const user = await User.findById(req.user.id);
+      const completedCount = user.listenTestsPassed ? user.listenTestsPassed.length : 0;
+      if (!user.isPaid && completedCount >= FREE_LISTEN_LIMIT) {
+        return res.json(
+          new ApiResponse(200, {
+            correct: isCorrect,
+            score,
+            correctAnswer: test.correctText,
+            userAnswer,
+            xpAwarded: 0,
+            message: "Keni arritur limitin falas. Kaloni në Premium për akses të pakufizuar.",
+            limitReached: true,
+          }),
+        );
+      }
       test.listenTestsPassed.push({
         user: req.user.id,
         score,
         completedAt: new Date(),
       });
       await test.save();
-    } else {
-      // Update existing completion with better score if applicable
-      if (score > existingCompletion.score) {
-        existingCompletion.score = score;
-        existingCompletion.completedAt = new Date();
-        await test.save();
-      }
+    } else if (score > existingCompletion.score) {
+      existingCompletion.score = score;
+      existingCompletion.completedAt = new Date();
+      await test.save();
     }
   }
 
@@ -251,6 +286,7 @@ const checkAnswer = asyncHandler(async (req, res) => {
   } else {
     message = "Vazhdoni të praktikoni! Do ta arrini.";
   }
+
   res.json(
     new ApiResponse(200, {
       correct: isCorrect,
@@ -259,7 +295,7 @@ const checkAnswer = asyncHandler(async (req, res) => {
       userAnswer,
       xpAwarded,
       message,
-      similarityMetric: "Enhanced Jaccard", // Updated metric name
+      similarityMetric: "Enhanced Jaccard",
     }),
   );
 });
@@ -304,6 +340,7 @@ const createTest = asyncHandler(async (req, res) => {
   const {
     title,
     level,
+    language,
     text,
     correctText,
     audioUrl,
@@ -316,6 +353,7 @@ const createTest = asyncHandler(async (req, res) => {
   const test = await Listen.create({
     title,
     level,
+    language,
     text,
     correctText,
     audioUrl,
@@ -370,7 +408,7 @@ const getUserProgress = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user.id).populate(
     "listenTestsPassed",
     "title level difficulty",
-  );
+  ).select("+isPaid");
   const totalTests = await Listen.countDocuments({ isActive: true });
   const completedTests = user.listenTestsPassed.length;
 
@@ -410,6 +448,8 @@ const getUserProgress = asyncHandler(async (req, res) => {
       completedTestIds, // All completed test IDs from both sources
       allCompletedTests: user.listenTestsPassed, // All completed tests from user profile
       completedFromTests: completedTestIds, // Completed tests found in test documents
+      isPaid: user.isPaid || false,
+      freeLimit: FREE_LISTEN_LIMIT,
     }),
   );
 });
@@ -418,7 +458,7 @@ const getUserProgress = asyncHandler(async (req, res) => {
 // @route   GET /api/listen/all
 // @access  Private
 const getAllTestsWithCompletion = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 50, level, difficulty } = req.query;
+  const { page = 1, limit = 50, level, difficulty, language } = req.query;
   const query = { isActive: true };
 
   if (level) {
@@ -426,6 +466,13 @@ const getAllTestsWithCompletion = asyncHandler(async (req, res) => {
   }
   if (difficulty) {
     query.difficulty = Number.parseInt(difficulty);
+  }
+
+  const langQuery = buildLanguageQuery(language);
+  if (langQuery.$or) {
+    Object.assign(query, langQuery);
+  } else if (langQuery.language) {
+    query.language = langQuery.language;
   }
 
   // Get tests with completion information

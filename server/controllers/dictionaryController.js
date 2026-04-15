@@ -5,6 +5,21 @@ const { ApiResponse } = require("../utils/ApiResponse")
 const { asyncHandler } = require("../utils/asyncHandler")
 const mongoose = require("mongoose")
 
+const FREE_DAILY_LIMIT = 5
+const PAID_DAILY_LIMIT = 25
+
+const buildLanguageQuery = (language) => {
+  if (!language) return {}
+  if (language === "de") {
+    return { $or: [{ language: "de" }, { language: { $exists: false } }, { language: null }] }
+  }
+  return { language }
+}
+
+const getDailyLimit = (user) => {
+  return user.isPaid ? PAID_DAILY_LIMIT : FREE_DAILY_LIMIT
+}
+
 // Helper function to check unlock status
 const addUnlockStatus = (words, userId) => {
   if (!userId) {
@@ -21,21 +36,11 @@ const addUnlockStatus = (words, userId) => {
   return words.map((word) => {
     const wordObj = word.toObject ? word.toObject() : { ...word }
 
-    // Get unlocks array from either the object or the original word
     const unlocksArray = wordObj.unlocks || word.unlocks || []
 
-    console.log("[v0] Checking unlock status for word:", wordObj.word)
-    console.log("[v0] Unlocks array length:", unlocksArray.length)
-    console.log("[v0] User ID to match:", userIdStr)
-
-    // Check if user has unlocked this word
     const hasUnlocked = unlocksArray.some((unlock) => {
-      if (!unlock || !unlock.userId) {
-        console.log("[v0] Invalid unlock entry:", unlock)
-        return false
-      }
+      if (!unlock || !unlock.userId) return false
 
-      // Handle different userId formats (ObjectId vs plain string)
       let unlockUserIdStr
       if (unlock.userId._id) {
         unlockUserIdStr = unlock.userId._id.toString()
@@ -45,19 +50,8 @@ const addUnlockStatus = (words, userId) => {
         unlockUserIdStr = String(unlock.userId)
       }
 
-      const isMatch = unlockUserIdStr === userIdStr
-      console.log(
-        "[v0] Comparing unlock userId:",
-        unlockUserIdStr,
-        "with current userId:",
-        userIdStr,
-        "Match:",
-        isMatch,
-      )
-      return isMatch
+      return unlockUserIdStr === userIdStr
     })
-
-    console.log("[v0] Final result - Word:", wordObj.word, "isUnlocked:", hasUnlocked)
 
     wordObj.isUnlocked = hasUnlocked
     delete wordObj.unlocks
@@ -68,7 +62,7 @@ const addUnlockStatus = (words, userId) => {
 
 // Helper function to get daily unlock count
 const getDailyUnlockCount = async (userId) => {
-const twentyFourHoursAgo = new Date(Date.now() - 25 * 60 * 60 * 1000)
+  const twentyFourHoursAgo = new Date(Date.now() - 25 * 60 * 60 * 1000)
   const result = await Dictionary.aggregate([
     { $unwind: "$unlocks" },
     {
@@ -87,12 +81,12 @@ const twentyFourHoursAgo = new Date(Date.now() - 25 * 60 * 60 * 1000)
 // @route   GET /api/dictionary
 // @access  Public
 const getAllWords = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 20, search, level, sortBy = "word", sortOrder = "asc" } = req.query
+  const { page = 1, limit = 20, search, level, sortBy = "word", sortOrder = "asc", language } = req.query
   const userId = req.user?.id
 
-  console.log("[v0] getAllWords called - userId:", userId)
+  const langQuery = buildLanguageQuery(language)
+  const query = { isActive: true, ...langQuery }
 
-  const query = { isActive: true }
   if (search) {
     query.$or = [
       { word: { $regex: search, $options: "i" } },
@@ -109,17 +103,12 @@ const getAllWords = asyncHandler(async (req, res) => {
   sort[sortBy] = sortOrder === "desc" ? -1 : 1
 
   const words = await Dictionary.find(query)
-    .select("+unlocks") // Explicitly include unlocks field
+    .select("+unlocks")
     .sort(sort)
     .limit(limit * 1)
     .skip((page - 1) * limit)
     .populate("createdBy", "emri mbiemri")
-    .lean() // Convert to plain JavaScript objects for easier manipulation
-
-  console.log("[v0] Found words:", words.length)
-  if (words.length > 0) {
-    console.log("[v0] First word unlocks array:", words[0].unlocks ? words[0].unlocks.length : 0)
-  }
+    .lean()
 
   const total = await Dictionary.countDocuments(query)
 
@@ -144,26 +133,23 @@ const getAllWords = asyncHandler(async (req, res) => {
 // @access  Public
 const getWordsByLevel = asyncHandler(async (req, res) => {
   const { level } = req.params
-  const { page = 1, limit = 20 } = req.query
+  const { page = 1, limit = 20, language } = req.query
   const userId = req.user?.id
-
-  console.log("[v0] getWordsByLevel called - level:", level, "userId:", userId)
 
   if (!["A1", "A2", "B1", "B2", "C1", "C2"].includes(level)) {
     throw new ApiError(400, "Invalid level. Must be one of: A1, A2, B1, B2, C1, C2")
   }
 
-  const words = await Dictionary.find({ level, isActive: true })
-    .select("+unlocks") // Explicitly include unlocks field
+  const langQuery = buildLanguageQuery(language)
+  const words = await Dictionary.find({ level, isActive: true, ...langQuery })
+    .select("+unlocks")
     .sort({ word: 1 })
     .limit(limit * 1)
     .skip((page - 1) * limit)
     .populate("createdBy", "emri mbiemri")
     .lean()
 
-  console.log("[v0] Found words for level:", words.length)
-
-  const total = await Dictionary.countDocuments({ level, isActive: true })
+  const total = await Dictionary.countDocuments({ level, isActive: true, ...langQuery })
 
   const wordsWithUnlockStatus = addUnlockStatus(words, userId)
 
@@ -202,20 +188,22 @@ const getWordById = asyncHandler(async (req, res) => {
 const unlockWord = asyncHandler(async (req, res) => {
   const userId = req.user.id
   const wordId = req.params.id
-
-  console.log("[v0] unlockWord called - userId:", userId, "wordId:", wordId)
+  const language = req.body.language || "de"
 
   const word = await Dictionary.findById(wordId).select("+unlocks")
   if (!word || !word.isActive) {
     throw new ApiError(404, "Word not found")
   }
 
-  console.log("[v0] Current word unlocks:", word.unlocks ? word.unlocks.length : 0)
+  // Fetch user to determine their plan
+  const user = await User.findById(userId)
+  if (!user) {
+    throw new ApiError(404, "User not found")
+  }
 
-  // Check if already unlocked in Dictionary
+  // Check if already unlocked
   const alreadyUnlocked = word.unlocks?.some((unlock) => unlock.userId.toString() === userId.toString())
   if (alreadyUnlocked) {
-    console.log("[v0] Word already unlocked by this user")
     const wordWithStatus = addUnlockStatus([word], userId)
     return res.json(
       new ApiResponse(200, {
@@ -226,13 +214,15 @@ const unlockWord = asyncHandler(async (req, res) => {
     )
   }
 
-  // Check daily limit
+  // Check daily limit based on plan
+  const dailyLimit = getDailyLimit(user)
   const dailyUnlocks = await getDailyUnlockCount(userId)
 
-  console.log("[v0] Daily unlocks count:", dailyUnlocks)
-
-  if (dailyUnlocks >= 20) {
-    throw new ApiError(429, `Keni arritur limitin ditor prej 20 fjalëve. Provoni përsëri pas 24 orësh.`)
+  if (dailyUnlocks >= dailyLimit) {
+    throw new ApiError(
+      429,
+      `Keni arritur limitin ditor prej ${dailyLimit} fjalëve. Provoni përsëri pas 24 orësh.`,
+    )
   }
 
   // Add unlock to Dictionary word
@@ -242,15 +232,14 @@ const unlockWord = asyncHandler(async (req, res) => {
   })
   await word.save()
 
-  console.log("[v0] Word unlocked successfully. New unlock count:", word.unlocks.length)
-
   // Also save to User's dictionaryUnlockedWords field
   await User.findByIdAndUpdate(
     userId,
     {
-      $addToSet: {
+      $push: {
         dictionaryUnlockedWords: {
           wordId: new mongoose.Types.ObjectId(wordId),
+          language,
           unlockedAt: new Date(),
         },
       },
@@ -265,7 +254,9 @@ const unlockWord = asyncHandler(async (req, res) => {
       201,
       {
         word: wordWithStatus[0],
-        remainingUnlocks: 20 - dailyUnlocks - 1,
+        remainingUnlocks: dailyLimit - dailyUnlocks - 1,
+        dailyLimit,
+        isPaid: user.isPaid,
         unlockedAt: new Date(),
       },
       "Fjala u zhbllokua me sukses!",
@@ -279,6 +270,12 @@ const unlockWord = asyncHandler(async (req, res) => {
 const getUnlockStats = asyncHandler(async (req, res) => {
   const userId = req.user.id
 
+  const user = await User.findById(userId)
+  if (!user) {
+    throw new ApiError(404, "User not found")
+  }
+
+  const dailyLimit = getDailyLimit(user)
   const dailyUnlocks = await getDailyUnlockCount(userId)
 
   const totalResult = await Dictionary.aggregate([
@@ -319,10 +316,11 @@ const getUnlockStats = asyncHandler(async (req, res) => {
     new ApiResponse(200, {
       todayUnlocks: dailyUnlocks,
       totalUnlocks,
-      remainingUnlocks: Math.max(0, 20 - dailyUnlocks),
-      dailyLimit: 20,
+      remainingUnlocks: Math.max(0, dailyLimit - dailyUnlocks),
+      dailyLimit,
       nextResetTime,
-      canUnlock: dailyUnlocks < 20,
+      canUnlock: dailyUnlocks < dailyLimit,
+      isPaid: user.isPaid,
     }),
   )
 })
@@ -402,11 +400,12 @@ const getMyUnlockedWords = asyncHandler(async (req, res) => {
 // @route   POST /api/dictionary
 // @access  Private (Admin)
 const addWord = asyncHandler(async (req, res) => {
-  const { word, translation, level, pronunciation, partOfSpeech, examples, difficulty, tags } = req.body
+  const { word, translation, level, pronunciation, partOfSpeech, examples, difficulty, tags, language = "de" } = req.body
 
   const existingWord = await Dictionary.findOne({
     word: { $regex: new RegExp(`^${word}$`, "i") },
     level,
+    language,
   })
 
   if (existingWord) {
@@ -422,6 +421,7 @@ const addWord = asyncHandler(async (req, res) => {
     examples,
     difficulty,
     tags,
+    language,
     createdBy: req.user.id,
   })
 
@@ -440,7 +440,6 @@ const addMultipleWords = asyncHandler(async (req, res) => {
 
   let userId = req.user?.id
   if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-    console.warn("req.user.id is missing or invalid. Using a dummy ObjectId for createdBy.")
     userId = new mongoose.Types.ObjectId("60d5ec49f8c7a10015e8d7c1")
   }
 
@@ -471,6 +470,7 @@ const addMultipleWords = asyncHandler(async (req, res) => {
         examples: transformedExamples,
         difficulty: wordData.difficulty || 1,
         tags: Array.isArray(wordData.tags) ? wordData.tags.map((tag) => tag.trim().toLowerCase()) : [],
+        language: wordData.language || "de",
         createdBy: userId,
         isActive: true,
         unlocks: [],
@@ -573,17 +573,17 @@ const deleteWord = asyncHandler(async (req, res) => {
 // @route   GET /api/dictionary/search
 // @access  Public
 const searchWords = asyncHandler(async (req, res) => {
-  const { q, level, limit = 10 } = req.query
+  const { q, level, limit = 10, language } = req.query
   const userId = req.user?.id
-
-  console.log("[v0] searchWords called - query:", q, "userId:", userId)
 
   if (!q || q.trim().length < 2) {
     throw new ApiError(400, "Search query must be at least 2 characters long")
   }
 
+  const langQuery = buildLanguageQuery(language)
   const query = {
     isActive: true,
+    ...langQuery,
     $or: [
       { word: { $regex: q, $options: "i" } },
       { translation: { $regex: q, $options: "i" } },

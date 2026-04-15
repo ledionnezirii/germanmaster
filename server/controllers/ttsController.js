@@ -2,7 +2,7 @@ const axios = require("axios")
 const { Storage } = require("@google-cloud/storage")
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY
-const ELEVENLABS_VOICE_ID = "lx8LAX2EUAKftVz0Dk5z"
+const ELEVENLABS_VOICE_ID = "Jvf6TAXwMUVTSR20U0f9"
 
 let storage;
 try {
@@ -135,15 +135,16 @@ exports.getAudio = async (req, res) => {
 exports.getDictionaryAudio = async (req, res) => {
   try {
     const { wordId } = req.params
-    const { text, level } = req.body
+    const { text, level, language = "de" } = req.body
 
     if (!wordId) {
       return res.status(400).json({ error: "Word ID is required" })
     }
 
-    const filePath = getAudioFilePath(wordId, level, "dictionary")
+    const type = `dictionary/${language}`
+    const filePath = getAudioFilePath(wordId, level, type)
 
-    if (await audioExists(wordId, level, "dictionary")) {
+    if (await audioExists(wordId, level, type)) {
       console.log(`[TTS] Serving cached dictionary audio from GCS: ${filePath}`)
       const url = await getSignedUrl(filePath)
       return res.json({ url })
@@ -153,8 +154,8 @@ exports.getDictionaryAudio = async (req, res) => {
       return res.status(404).json({ error: "Audio not found and no text provided to generate" })
     }
 
-    console.log(`[TTS] Generating new dictionary audio for word: ${wordId}`)
-    await generateAudio(text, wordId, level, "dictionary")
+    console.log(`[TTS] Generating new dictionary audio for word: ${wordId} (${language})`)
+    await generateAudio(text, wordId, level, type)
 
     const url = await getSignedUrl(filePath)
     return res.json({ url })
@@ -167,15 +168,16 @@ exports.getDictionaryAudio = async (req, res) => {
 exports.getPhraseAudio = async (req, res) => {
   try {
     const { phraseId } = req.params
-    const { text, level } = req.body
+    const { text, level, language = "de" } = req.body
 
     if (!phraseId) {
       return res.status(400).json({ error: "Phrase ID is required" })
     }
 
-    const filePath = getAudioFilePath(phraseId, level, "phrases")
+    const type = `phrases/${language}`
+    const filePath = getAudioFilePath(phraseId, level, type)
 
-    if (await audioExists(phraseId, level, "phrases")) {
+    if (await audioExists(phraseId, level, type)) {
       console.log(`[TTS] Serving cached phrase audio from GCS: ${filePath}`)
       const url = await getSignedUrl(filePath)
       return res.json({ url })
@@ -185,8 +187,8 @@ exports.getPhraseAudio = async (req, res) => {
       return res.status(404).json({ error: "Audio not found and no text provided to generate" })
     }
 
-    console.log(`[TTS] Generating new phrase audio for: ${phraseId}`)
-    await generateAudio(text, phraseId, level, "phrases")
+    console.log(`[TTS] Generating new phrase audio for: ${phraseId} (${language})`)
+    await generateAudio(text, phraseId, level, type)
 
     const url = await getSignedUrl(filePath)
     return res.json({ url })
@@ -232,16 +234,17 @@ exports.getDialogueAudio = async (req, res) => {
 exports.getCategoryAudio = async (req, res) => {
   try {
     const { categoryId, wordIndex } = req.params
-    const { text, level } = req.body
+    const { text, level, language = "de" } = req.body
 
     if (!categoryId) {
       return res.status(400).json({ error: "Category ID is required" })
     }
 
+    const type = `categories/${language}`
     const audioId = `${categoryId}_${wordIndex}`
-    const filePath = getAudioFilePath(audioId, level, "categories")
+    const filePath = getAudioFilePath(audioId, level, type)
 
-    if (await audioExists(audioId, level, "categories")) {
+    if (await audioExists(audioId, level, type)) {
       console.log(`[TTS] Serving cached category audio from GCS: ${filePath}`)
       const url = await getSignedUrl(filePath)
       return res.json({ url })
@@ -251,8 +254,8 @@ exports.getCategoryAudio = async (req, res) => {
       return res.status(404).json({ error: "Audio not found and no text provided to generate" })
     }
 
-    console.log(`[TTS] Generating new category audio for: ${audioId}`)
-    await generateAudio(text, audioId, level, "categories")
+    console.log(`[TTS] Generating new category audio for: ${audioId} (${language})`)
+    await generateAudio(text, audioId, level, type)
 
     const url = await getSignedUrl(filePath)
     return res.json({ url })
@@ -376,15 +379,16 @@ exports.preGenerateCategoryAudio = async (req, res) => {
 exports.getPronunciationAudio = async (req, res) => {
   try {
     const { wordId } = req.params
-    const { text, level } = req.body
+    const { text, level, language = "de" } = req.body
 
     if (!wordId) {
       return res.status(400).json({ error: "Word ID is required" })
     }
 
-    const filePath = getAudioFilePath(wordId, level, "pronunciation")
+    const type = `pronunciation/${language}`
+    const filePath = getAudioFilePath(wordId, level, type)
 
-    if (await audioExists(wordId, level, "pronunciation")) {
+    if (await audioExists(wordId, level, type)) {
       console.log(`[TTS] Serving cached pronunciation audio from GCS: ${filePath}`)
       const url = await getSignedUrl(filePath)
       return res.json({ url })
@@ -394,8 +398,8 @@ exports.getPronunciationAudio = async (req, res) => {
       return res.status(404).json({ error: "Audio not found and no text provided to generate" })
     }
 
-    console.log(`[TTS] Generating new pronunciation audio for: ${wordId}`)
-    await generateAudio(text, wordId, level, "pronunciation")
+    console.log(`[TTS] Generating new pronunciation audio for: ${wordId} (${language})`)
+    await generateAudio(text, wordId, level, type)
 
     const url = await getSignedUrl(filePath)
     return res.json({ url })
@@ -573,16 +577,17 @@ exports.getStoryAudio = async (req, res) => {
 exports.getWordAudioAudio = async (req, res) => {
   try {
     const { setId, wordIndex } = req.params;
-    const { text, level } = req.body;
+    const { text, level, language = "de" } = req.body;
 
     if (!setId) {
       return res.status(400).json({ error: "Set ID is required" });
     }
 
+    const type = `wordaudio/${language}`;
     const audioId = `${setId}_${wordIndex}`;
-    const filePath = getAudioFilePath(audioId, level, "wordaudio");
+    const filePath = getAudioFilePath(audioId, level, type);
 
-    if (await audioExists(audioId, level, "wordaudio")) {
+    if (await audioExists(audioId, level, type)) {
       console.log(`[TTS] Serving cached word audio from GCS: ${filePath}`);
       const url = await getSignedUrl(filePath);
       return res.json({ url });
@@ -592,8 +597,8 @@ exports.getWordAudioAudio = async (req, res) => {
       return res.status(404).json({ error: "Audio not found and no text provided to generate" });
     }
 
-    console.log(`[TTS] Generating new word audio for: ${audioId}`);
-    await generateAudio(text, audioId, level, "wordaudio");
+    console.log(`[TTS] Generating new word audio for: ${audioId} (${language})`);
+    await generateAudio(text, audioId, level, type);
 
     const url = await getSignedUrl(filePath);
     return res.json({ url });

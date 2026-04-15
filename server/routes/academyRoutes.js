@@ -1,44 +1,67 @@
-const express = require("express")
-const router = express.Router()
-const {
-  createAcademy,
-  getMyAcademies,
-  getAcademy,
-  createGroup,
-  unlockGroupWithPin,
-  inviteToGroup,
-  acceptInvitation,
-  createTask,
-  completeTask,
-  getGroupLeaderboard,
-  deleteGroup,
-  getGroupInviteInfo,
-  joinByTeacherCode,
-} = require("../controllers/academyController")
+const express = require("express");
+const router = express.Router();
+const ctrl = require("../controllers/academyController");
 
-const protect = require("../middleware/auth")
+// ── Middleware (adjust import paths to match your project) ──
+const  protect  = require("../middleware/auth");
+const  adminOnly  = require("../middleware/isAdmin");
 
-// Academy routes
-router.post("/", protect, createAcademy)
-router.get("/", protect, getMyAcademies)
-router.get("/:academyId", protect, getAcademy)
+// Helper: allow only admin OR academyAdmin
+const adminOrTeacher = (req, res, next) => {
+  if (req.user.role === "admin" || req.user.role === "academyAdmin") return next();
+  return res.status(403).json({ success: false, message: "Access denied" });
+};
 
-// Group routes
-router.post("/:academyId/groups", protect, createGroup)
-router.post("/:academyId/groups/:groupId/unlock", protect, unlockGroupWithPin)
-router.post("/:academyId/groups/:groupId/invite", protect, inviteToGroup)
-router.post("/:academyId/groups/:groupId/accept", protect, acceptInvitation)
-router.delete("/:academyId/groups/:groupId", protect, deleteGroup)
-router.get("/:academyId/groups/:groupId/invite-info", getGroupInviteInfo)
+// ─────────────────────────────────────────────────────────────
+// ACADEMY ROUTES  — admin only
+// ─────────────────────────────────────────────────────────────
+router.post("/", protect, adminOnly, ctrl.createAcademy);
+router.get("/", protect, adminOrTeacher, ctrl.getAllAcademies);
+router.get("/:id", protect, adminOrTeacher, ctrl.getAcademyById);
+router.put("/:id", protect, adminOnly, ctrl.updateAcademy);
+router.delete("/:id", protect, adminOnly, ctrl.deleteAcademy);
+router.post("/:id/assign-admin", protect, adminOnly, ctrl.assignAcademyAdmin);
 
-// Join by teacher code
-router.post("/join-by-code", protect, joinByTeacherCode)
+// ─────────────────────────────────────────────────────────────
+// GROUP ROUTES  — academyAdmin (teacher) manages their groups
+// NOTE: these sit under /api/academy/groups/...
+// ─────────────────────────────────────────────────────────────
+router.post("/groups/join", protect, ctrl.joinGroupByCode);
+router.get("/groups/mine", protect, ctrl.getMyGroup);
+router.post("/groups", protect, adminOrTeacher, ctrl.createGroup);
+router.get("/groups", protect, adminOrTeacher, ctrl.getMyGroups);
+router.get("/groups/:groupId", protect, adminOrTeacher, ctrl.getGroupById);
+router.put("/groups/:groupId", protect, adminOrTeacher, ctrl.updateGroup);
+router.delete("/groups/:groupId", protect, adminOrTeacher, ctrl.deleteGroup);
 
-// Task routes
-router.post("/:academyId/groups/:groupId/tasks", protect, createTask)
-router.post("/:academyId/groups/:groupId/tasks/:taskId/complete", protect, completeTask)
+
+// Students inside a group
+router.post(
+  "/groups/:groupId/students",
+  protect,
+  adminOrTeacher,
+  ctrl.addStudentToGroup
+);
+router.delete(
+  "/groups/:groupId/students/:studentId",
+  protect,
+  adminOrTeacher,
+  ctrl.removeStudentFromGroup
+);
 
 // Leaderboard
-router.get("/:academyId/groups/:groupId/leaderboard", protect, getGroupLeaderboard)
+router.get(
+  "/groups/:groupId/leaderboard",
+  protect,
+  adminOrTeacher,
+  ctrl.getGroupLeaderboard
+);
 
-module.exports = router
+module.exports = router;
+
+// ─────────────────────────────────────────────────────────────
+// Register in your main app.js / server.js like this:
+//
+//   const academyRoutes = require("./routes/academyRoutes");
+//   app.use("/api/academy", academyRoutes);
+// ─────────────────────────────────────────────────────────────

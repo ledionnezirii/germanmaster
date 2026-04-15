@@ -1,5 +1,6 @@
 const { Exam, UserExamAttempt } = require('../models/Exam');
 const User = require('../models/User');
+const { addUserXp } = require("./xpController");
 
 exports.getExamsByLevel = async (req, res) => {
   try {
@@ -178,15 +179,14 @@ exports.submitCompleteExam = async (req, res) => {
     
     await attempt.save();
     
-    const user = await User.findById(userId);
-    user.xp = (user.xp || 0) + xpEarned;
-    
-    if (passed) {
-      user.examsFinished = (user.examsFinished || 0) + 1;
-    }
-    
-    await user.save();
-    
+ // ✅ Vetëm kjo:
+await addUserXp(userId, xpEarned);
+
+if (passed) {
+  await User.findByIdAndUpdate(userId, {
+    $inc: { examsFinished: 1 }
+  })
+}
     res.json({ 
       success: true, 
       data: { 
