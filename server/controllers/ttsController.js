@@ -141,7 +141,7 @@ exports.getDictionaryAudio = async (req, res) => {
       return res.status(400).json({ error: "Word ID is required" })
     }
 
-    const type = `dictionary/${language}`
+    const type = `dictionary`
     const filePath = getAudioFilePath(wordId, level, type)
 
     if (await audioExists(wordId, level, type)) {
@@ -174,7 +174,7 @@ exports.getPhraseAudio = async (req, res) => {
       return res.status(400).json({ error: "Phrase ID is required" })
     }
 
-    const type = `phrases/${language}`
+    const type = `phrases`
     const filePath = getAudioFilePath(phraseId, level, type)
 
     if (await audioExists(phraseId, level, type)) {
@@ -240,7 +240,7 @@ exports.getCategoryAudio = async (req, res) => {
       return res.status(400).json({ error: "Category ID is required" })
     }
 
-    const type = `categories/${language}`
+    const type = `categories`
     const audioId = `${categoryId}_${wordIndex}`
     const filePath = getAudioFilePath(audioId, level, type)
 
@@ -385,7 +385,7 @@ exports.getPronunciationAudio = async (req, res) => {
       return res.status(400).json({ error: "Word ID is required" })
     }
 
-    const type = `pronunciation/${language}`
+    const type = `pronunciation`
     const filePath = getAudioFilePath(wordId, level, type)
 
     if (await audioExists(wordId, level, type)) {
