@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { categoriesService, ttsService } from "../services/api"
+import { useLanguage } from "../context/LanguageContext"
 import { 
   FolderOpen, ArrowLeft, BookOpen, Calendar, Check, 
   Grid, Globe, Leaf, Briefcase, Coffee, Film, Guitar, 
@@ -59,7 +60,26 @@ const typeStyles = {
   default: { bg: "bg-slate-50", text: "text-slate-700", border: "border-slate-200" }
 }
 
+const typeGradients = {
+  "Bazat":           "from-sky-400 to-blue-500",
+  "Numra":           "from-indigo-400 to-violet-500",
+  "Tjera":           "from-violet-400 to-purple-500",
+  "Fraza":           "from-rose-400 to-pink-500",
+  "Koha":            "from-emerald-400 to-teal-500",
+  "Mjedisi":         "from-amber-400 to-yellow-500",
+  "Natyra":          "from-green-400 to-emerald-500",
+  "Njerëzit":        "from-pink-400 to-rose-500",
+  "Gramatikë":       "from-red-400 to-orange-500",
+  "Të Përgjithshme": "from-yellow-400 to-amber-500",
+  "Mbiemra":         "from-fuchsia-400 to-pink-500",
+  "Vocabulary":      "from-blue-400 to-cyan-500",
+  "Folje":           "from-purple-400 to-indigo-500",
+  "Kulturë":         "from-orange-400 to-amber-500",
+  default:           "from-slate-400 to-gray-500"
+}
+
 const Category = () => {
+  const { language } = useLanguage()
   const [categories, setCategories] = useState([])
   const [selectedCategory, setSelectedCategory] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -76,6 +96,13 @@ const Category = () => {
   const [playingAudioIndex, setPlayingAudioIndex] = useState(null)
   const [loadingAudioIndex, setLoadingAudioIndex] = useState(null)
   const [audioCache, setAudioCache] = useState({})
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
+  }, [])
   const audioRef = useRef(null)
 
   const showNotification = (message, type = "success") => {
@@ -145,12 +172,12 @@ const Category = () => {
     return () => { if (sentinel) observer.unobserve(sentinel) }
   }, [loadMoreCategories, loadingMore])
 
-  useEffect(() => { fetchCategories() }, [])
+  useEffect(() => { fetchCategories() }, [language])
 
   const fetchCategories = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await categoriesService.getAllCategories({ limit: 100 })
+      const response = await categoriesService.getAllCategories({ limit: 100 }, language)
       let categoriesData = []
       if (response.data) {
         if (Array.isArray(response.data)) categoriesData = response.data
@@ -230,7 +257,8 @@ const Category = () => {
         selectedCategory.id,
         index,
         wordObj.word,
-        selectedCategory.level || "A1"
+        selectedCategory.level || "A1",
+        language
       )
       
       const audioUrl = response.url || response.data?.url || response
@@ -441,7 +469,7 @@ const Category = () => {
 
           {/* Words Grid */}
           {loading ? (
-            <div className="flex items-center justify-center min-h-96">
+            <div className="flex items-center justify-center min-h-48">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
             </div>
           ) : selectedCategory.words?.length > 0 ? (
@@ -449,63 +477,69 @@ const Category = () => {
               {selectedCategory.words.map((wordObj, index) => {
                 const isPlaying = playingAudioIndex === index
                 const isLoading = loadingAudioIndex === index
-                
+
                 return (
                   <div
                     key={index}
-                    className="bg-white rounded-xl p-4 border-2 border-emerald-200 hover:border-emerald-300 hover:shadow-md transition-all animate-stagger-in"
+                    className="group bg-[#FEFCF8] rounded-2xl p-4 border border-stone-200 hover:border-stone-300 hover:shadow-md transition-all duration-200 animate-stagger-in"
                     style={{ animationDelay: `${Math.min(index * 30, 300)}ms` }}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-semibold text-slate-900 text-sm">{wordObj.word}</h3>
-                        <p className="text-slate-600 text-sm mt-0.5">{wordObj.translation}</p>
-                        {wordObj.pronunciation && (
-                          <p className="text-slate-400 text-xs mt-1 italic">/{wordObj.pronunciation}/</p>
+                    <div className="flex items-start gap-3">
+                      {/* Index badge */}
+                      <div className="flex-shrink-0 w-7 h-7 rounded-full bg-stone-100 flex items-center justify-center mt-0.5">
+                        <span className="text-xs font-bold text-stone-400">{index + 1}</span>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <h3 className="font-bold text-gray-900 text-base leading-tight">{wordObj.word}</h3>
+                            <p className="text-stone-500 text-sm mt-0.5">{wordObj.translation}</p>
+                            {wordObj.pronunciation && (
+                              <p className="text-stone-400 text-xs mt-1 italic font-light">/{wordObj.pronunciation}/</p>
+                            )}
+                          </div>
+
+                          {/* Audio Button */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); playWordAudio(wordObj, index) }}
+                            disabled={isLoading}
+                            className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center transition-all active:scale-90 ${
+                              isPlaying
+                                ? "bg-teal-500 text-white shadow-md shadow-teal-200"
+                                : isLoading
+                                  ? "bg-stone-100 text-stone-300"
+                                  : "bg-stone-100 text-stone-500 hover:bg-teal-50 hover:text-teal-600"
+                            }`}
+                            title={isPlaying ? "Ndalo" : "Dëgjo"}
+                          >
+                            {isLoading ? (
+                              <div className="w-3.5 h-3.5 animate-spin rounded-full border-b-2 border-current" />
+                            ) : isPlaying ? (
+                              <Pause className="w-3.5 h-3.5" />
+                            ) : (
+                              <Volume2 className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+
+                        {wordObj.examples?.length > 0 && (
+                          <div className="mt-3 pt-2.5 border-t border-stone-100">
+                            {wordObj.examples.slice(0, 2).map((example, i) => (
+                              <p key={i} className="text-xs text-stone-400 leading-relaxed mt-1">"{example}"</p>
+                            ))}
+                          </div>
                         )}
                       </div>
-                      
-                      {/* Audio Button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          playWordAudio(wordObj, index)
-                        }}
-                        disabled={isLoading}
-                        className={`flex-shrink-0 p-2.5 rounded-xl transition-all active:scale-90 ${
-                          isPlaying 
-                            ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30" 
-                            : isLoading
-                              ? "bg-slate-100 text-slate-400"
-                              : "bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 hover:from-emerald-100 hover:to-teal-100 border border-emerald-200"
-                        }`}
-                        title={isPlaying ? "Ndalo" : "Dëgjo"}
-                      >
-                        {isLoading ? (
-                          <div className="w-4 h-4 animate-spin rounded-full border-b-2 border-current"></div>
-                        ) : isPlaying ? (
-                          <Pause className="w-4 h-4" />
-                        ) : (
-                          <Volume2 className="w-4 h-4" />
-                        )}
-                      </button>
                     </div>
-                    {wordObj.examples?.length > 0 && (
-                      <div className="mt-3 pt-3 border-t border-emerald-100">
-                        <p className="text-xs text-emerald-600 font-medium mb-1.5">Shembuj</p>
-                        {wordObj.examples.slice(0, 2).map((example, i) => (
-                          <p key={i} className="text-xs text-slate-500 leading-relaxed">• {example}</p>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 )
               })}
             </div>
           ) : (
-            <div className="text-center py-20 bg-white rounded-xl border-2 border-emerald-200">
-              <BookOpen className="w-10 h-10 text-emerald-300 mx-auto mb-3" />
-              <p className="text-slate-500 text-sm">Nuk ka fjalë në këtë kategori</p>
+            <div className="text-center py-20 bg-[#FEFCF8] rounded-2xl border border-stone-200">
+              <BookOpen className="w-10 h-10 text-stone-300 mx-auto mb-3" />
+              <p className="text-stone-400 text-sm">Nuk ka fjalë në këtë kategori</p>
             </div>
           )}
         </div>
@@ -537,18 +571,42 @@ const Category = () => {
         <div className="max-w-6xl mx-auto w-full">
           {/* Header */}
           <header className="mb-4 flex-shrink-0">
-            <div className="bg-white rounded-2xl shadow-xl border-2 border-emerald-200 p-6 overflow-hidden relative animate-slide-up">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full transform translate-x-16 -translate-y-16 opacity-50" />
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-teal-100 to-emerald-100 rounded-full transform -translate-x-8 translate-y-8 opacity-50" />
-              <div className="relative z-10">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 mb-2">Kategori Fjalësh</h1>
-                    <p className="text-slate-600 text-sm">Eksploro kategori të ndryshme të fjalëve gjermane</p>
+            <div style={{
+              display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: "flex-start",
+              justifyContent: "space-between",
+              gap: 24,
+              background: "linear-gradient(135deg, #14532d 0%, #16a34a 40%, #22c55e 75%, #86efac 100%)",
+              borderRadius: 20,
+              padding: isMobile ? "20px" : "28px 32px",
+              position: "relative",
+              overflow: "hidden",
+            }}>
+              <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }} />
+              <div style={{ position: "absolute", bottom: -60, right: 80, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+
+              <div style={{ flex: 1, position: "relative", zIndex: 1 }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.8)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+                  <FolderOpen size={14} />
+                  Praktikë Gjuhësore
+                </div>
+                <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 28 : 38, fontWeight: 400, color: "#fff", letterSpacing: -0.5, lineHeight: 1.1, margin: "0 0 8px" }}>
+                  Kategori Fjalësh
+                </h1>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", margin: 0, maxWidth: 380, lineHeight: 1.5 }}>
+                  Eksploro kategori të ndryshme të fjalëve gjermane
+                </p>
+              </div>
+
+              <div style={{ display: "flex", gap: 12, flexShrink: 0, position: "relative", zIndex: 1, alignSelf: "center", width: isMobile ? "100%" : "auto" }}>
+                <div style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, flex: isMobile ? 1 : "unset", minWidth: isMobile ? 0 : 130 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(255,255,255,0.2)" }}>
+                    <Trophy size={16} color="#fff" />
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Languages className="w-6 h-6 text-emerald-600" />
-                    <span className="text-sm font-semibold text-emerald-700">{categories.length} kategori</span>
+                  <div>
+                    <div style={{ fontSize: 22, fontWeight: 600, color: "#fff", lineHeight: 1, marginBottom: 2 }}>{categories.length}</div>
+                    <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>Kategori</div>
                   </div>
                 </div>
               </div>
@@ -557,7 +615,7 @@ const Category = () => {
 
           {/* Loading State */}
           {loading ? (
-            <div className="flex items-center justify-center min-h-96">
+            <div className="flex items-center justify-center min-h-48">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
             </div>
           ) : categories.length > 0 ? (
@@ -568,53 +626,46 @@ const Category = () => {
                   const categoryIdStr = String(category._id?._id || category._id)
                   const isCompleted = finishedCategoryIds.includes(categoryIdStr)
                   const style = getTypeStyle(category.type)
+                  const gradient = typeGradients[category.type] || typeGradients.default
 
                   return (
                     <div
                       key={category._id}
                       onClick={() => fetchCategoryDetails(category._id, category.category)}
-                      className={`group bg-white rounded-xl p-4 border-2 cursor-pointer transition-all relative hover:-translate-y-1 animate-stagger-in ${
-                        isCompleted
-                          ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-amber-300 hover:border-amber-400"
-                          : "border-emerald-200 hover:border-emerald-300 hover:shadow-lg"
-                      }`}
+                      className="group relative bg-white rounded-2xl overflow-hidden cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-xl shadow-sm border border-gray-100 animate-stagger-in"
                       style={{ animationDelay: `${Math.min(index * 20, 400)}ms` }}
                     >
-                      {isCompleted && (
-                        <div className="absolute top-3 right-3">
-                          <div className="w-5 h-5 bg-gradient-to-r from-amber-400 to-orange-400 rounded-full flex items-center justify-center shadow-sm">
-                            <Check className="w-3 h-3 text-white" />
-                          </div>
+                      {/* Gradient icon area */}
+                      <div className={`bg-gradient-to-br ${gradient} p-5 flex items-center justify-center relative`}>
+                        <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <IconComponent className="w-6 h-6 text-white drop-shadow" />
                         </div>
-                      )}
-                      
-                      <div className={`w-10 h-10 rounded-lg ${style.bg} flex items-center justify-center mb-3 group-hover:scale-105 transition-transform border ${style.border}`}>
-                        <IconComponent className={`w-5 h-5 ${style.text}`} />
-                      </div>
-                      
-                      <h3 className={`text-sm font-semibold line-clamp-2 mb-2 min-h-[2.5rem] ${
-                        isCompleted
-                          ? "text-amber-700 group-hover:text-amber-800"
-                          : "text-gray-800 group-hover:text-emerald-700"
-                      }`}>
-                        {category.category}
-                      </h3>
-                      
-                      <div className="flex items-center justify-between">
-                        {category.type && (
-                          <span className={`inline-block px-2 py-0.5 text-xs font-medium rounded-md ${style.bg} ${style.text}`}>
-                            {category.type}
-                          </span>
+                        {isCompleted && (
+                          <div className="absolute top-2.5 right-2.5 w-6 h-6 bg-white rounded-full flex items-center justify-center shadow">
+                            <Check className="w-3.5 h-3.5 text-amber-500" />
+                          </div>
                         )}
-                        <span
-                          className={`text-xs px-3 py-1 rounded-full font-semibold shadow-sm ${
+                      </div>
+
+                      {/* Card body */}
+                      <div className={`p-3.5 ${isCompleted ? "bg-amber-50/60" : "bg-white"}`}>
+                        <h3 className="text-sm font-semibold text-gray-800 group-hover:text-gray-900 line-clamp-2 mb-2.5 min-h-[2.5rem]">
+                          {category.category}
+                        </h3>
+                        <div className="flex items-center justify-between">
+                          {category.type && (
+                            <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${style.bg} ${style.text}`}>
+                              {category.type}
+                            </span>
+                          )}
+                          <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full transition-colors ${
                             isCompleted
-                              ? "bg-gradient-to-r from-amber-400 to-orange-400 text-white"
-                              : "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
-                          }`}
-                        >
-                          {isCompleted ? "✓ Kryer" : "Hap"}
-                        </span>
+                              ? "bg-amber-100 text-amber-600"
+                              : "bg-gray-100 text-gray-500 group-hover:bg-emerald-500 group-hover:text-white"
+                          }`}>
+                            {isCompleted ? "✓ Kryer" : "Hap"}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )

@@ -1,11 +1,9 @@
-"use client"
-
 import { useState, useRef, useEffect } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useSidebar } from "../context/SidebarContext"
 import { useLanguage } from "../context/LanguageContext"
-import { Menu, User, LogOut, ChevronDown, Star } from "lucide-react"
+import { Menu, User, LogOut, ChevronDown } from "lucide-react"
 import { generateDicebearUrl } from "../services/api"
 import mainLogo from "../../public/logo.png"
 
@@ -15,10 +13,20 @@ const fonts = {
 }
 
 const LANGUAGES = [
-  { code: "de", flag: "🇩🇪", label: "Deutsch" },
-  { code: "en", flag: "🇬🇧", label: "English" },
-  { code: "fr", flag: "🇫🇷", label: "Français" },
+  { code: "de", flag: "https://flagcdn.com/w40/de.png", label: "Deutsch" },
+  { code: "en", flag: "https://flagcdn.com/w40/gb.png", label: "English" },
+  { code: "fr", flag: "https://flagcdn.com/w40/fr.png", label: "Français" },
+  //{ code: "tr", flag: "https://flagcdn.com/w40/tr.png", label: "Türkçe" },
+  //{ code: "it", flag: "https://flagcdn.com/w40/it.png", label: "Italiano" },
 ]
+
+const subtitles = {
+  de: "Gjermanisht për Shqiptarët",
+  en: "Anglisht për Shqiptarët",
+  fr: "Frëngjisht për Shqiptarët",
+  tr: "Turqisht për Shqiptarët",
+  it: "Italisht për Shqiptarët",
+}
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth()
@@ -128,7 +136,7 @@ const Navbar = () => {
             <Link to="/" className="flex items-center space-x-2.5 group">
               <div className="relative flex items-center justify-center group-hover:scale-110 transition-all duration-300">
                 <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/30 to-teal-500/30 rounded-full blur-xl group-hover:blur-2xl transition-all duration-300"></div>
-                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 to-teal-400/20 rounded-full blur-md group-hover:from-emerald-400/30 group-hover:to-teal-300/30 transition-all duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/20 to-teal-400/20 rounded-full blur-md transition-all duration-300"></div>
                 <img
                   src={mainLogo || "/placeholder.svg"}
                   width={40}
@@ -145,10 +153,10 @@ const Navbar = () => {
                   gjuhagjermane
                 </span>
                 <span
-                  className="text-[10px] md:text-xs text-slate-400 font-medium block"
+                  className="text-[10px] md:text-xs text-slate-400 font-medium block transition-all duration-300"
                   style={{ fontFamily: fonts.inter }}
                 >
-                  Gjermanisht për Shqiptarët
+                  {subtitles[language] || "Gjermanisht për Shqiptarët"}
                 </span>
               </div>
             </Link>
@@ -193,28 +201,6 @@ const Navbar = () => {
                   </span>
                 </Link>
 
-                {/* XP badge */}
-                {user?.xp !== undefined && (
-                  <div
-                    className="hidden md:flex items-center space-x-1.5 bg-gradient-to-r from-amber-500/15 to-orange-500/15 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-400/20 shadow-sm"
-                    style={{ fontFamily: fonts.poppins }}
-                  >
-                    <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400/20" />
-                    <span className="text-amber-300">{user.xp}</span>
-                    <span className="text-amber-400/70">XP</span>
-                  </div>
-                )}
-
-                {/* 🌍 MULTILANG - uncomment when ready to launch
-                <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="hidden sm:flex items-center gap-1.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 px-2.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 transition-all duration-200"
-                >
-                  <span className="text-base leading-none">{currentLang.flag}</span>
-                  <span className="text-slate-400 uppercase tracking-wide">{currentLang.code}</span>
-                </button>
-                */}
-
                 {/* User dropdown */}
                 <div className="relative" ref={dropdownRef}>
                   <button
@@ -242,7 +228,7 @@ const Navbar = () => {
                   {/* Dropdown */}
                   {isDropdownOpen && (
                     <div
-                      className="absolute right-0 mt-2 w-64 md:w-60 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 focus:outline-none z-50 overflow-hidden"
+                      className="absolute right-0 mt-2 w-72 md:w-68 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 focus:outline-none z-50 overflow-hidden"
                       style={{ fontFamily: fonts.poppins }}
                     >
                       <div className="py-1">
@@ -263,30 +249,6 @@ const Navbar = () => {
                             )}
                           </div>
                         </div>
-
-                        {/* 🌍 MULTILANG - uncomment when ready to launch
-                        <div className="px-4 py-3 border-b border-white/5">
-                          <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">
-                            Gjuha / Language
-                          </p>
-                          <div className="flex gap-2">
-                            {LANGUAGES.map((lang) => (
-                              <button
-                                key={lang.code}
-                                onClick={() => switchLanguage(lang.code)}
-                                className={`flex-1 flex flex-col items-center gap-1 py-2 px-1 rounded-xl text-xs font-bold transition-all duration-200 border ${
-                                  language === lang.code
-                                    ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-md shadow-emerald-500/10 scale-105"
-                                    : "border-white/10 text-slate-400 hover:bg-white/5 hover:text-slate-200 hover:border-white/20"
-                                }`}
-                              >
-                                <span className="text-lg">{lang.flag}</span>
-                                <span>{lang.label}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                        */}
 
                         {/* Account */}
                         <Link

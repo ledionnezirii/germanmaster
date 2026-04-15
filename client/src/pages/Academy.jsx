@@ -1,1085 +1,794 @@
-"use client"
+import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import { academyService } from "../services/api";
 
-import { useState, useEffect } from "react"
-import { academyService } from "../services/api"
+// ── Icons ──────────────────────────────────────────────────────────────────────
+const Icon = ({ path, size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+    <path d={path} />
+  </svg>
+);
+const I = {
+  users:     "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
+  plus:      "M12 5v14M5 12h14",
+  trash:     "M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6",
+  edit:      "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z",
+  chevronR:  "M9 18l6-6-6-6",
+  x:         "M18 6L6 18M6 6l12 12",
+  book:      "M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 19.5A2.5 2.5 0 0 0 6.5 22H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z",
+  shield:    "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
+  trophy:    "M6 9H2V3h4v6zM22 9h-4V3h4v6zM12 19v-3M8 22h8M6 9c0 3.31 2.69 6 6 6s6-2.69 6-6",
+  arrowL:    "M19 12H5M12 19l-7-7 7-7",
+  userPlus:  "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM19 8v6M22 11h-6",
+  userMinus: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 11h-6",
+  key:       "M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4",
+  hash:      "M4 9h16M4 15h16M10 3L8 21M16 3l-2 18",
+  star:      "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z",
+  zap:       "M13 2L3 14h9l-1 8 10-12h-9l1-8z",
+  copy:      "M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M8 4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2zM16 12H8M12 8v8",
+  check:     "M20 6L9 17l-5-5",
+  logIn:     "M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3",
+};
 
-const Academy = () => {
-  const [academies, setAcademies] = useState([])
-  const [selectedAcademy, setSelectedAcademy] = useState(null)
-  const [selectedGroup, setSelectedGroup] = useState(null)
-  const [view, setView] = useState("academies")
-  const [loading, setLoading] = useState(true)
-  const [leaderboard, setLeaderboard] = useState([])
-  const [userRole, setUserRole] = useState(null)
-  const [userId, setUserId] = useState(null)
-  const [inviteLink, setInviteLink] = useState("")
-  const [showInviteLink, setShowInviteLink] = useState(false)
+const LEVEL_COLORS = {
+  A1: { bg: "#e8f5e9", text: "#2e7d32", border: "#a5d6a7" },
+  A2: { bg: "#e3f2fd", text: "#1565c0", border: "#90caf9" },
+  B1: { bg: "#fff3e0", text: "#e65100", border: "#ffcc80" },
+  B2: { bg: "#fce4ec", text: "#880e4f", border: "#f48fb1" },
+  C1: { bg: "#f3e5f5", text: "#4a148c", border: "#ce93d8" },
+  C2: { bg: "#fafafa", text: "#212121", border: "#bdbdbd" },
+};
 
-  const [academyForm, setAcademyForm] = useState({ name: "", description: "" })
-  const [groupForm, setGroupForm] = useState({ name: "", description: "", teacherId: "" })
-  const [taskForm, setTaskForm] = useState({ title: "", description: "", xpReward: 50, dueDate: "" })
-  const [inviteEmail, setInviteEmail] = useState("")
-  const [inviteSending, setInviteSending] = useState(false)
+// ── Shared UI primitives ───────────────────────────────────────────────────────
+const LevelBadge = ({ level }) => {
+  const c = LEVEL_COLORS[level] || { bg: "#f5f5f5", text: "#666", border: "#ddd" };
+  return (
+    <span style={{ background: c.bg, color: c.text, border: `1px solid ${c.border}`, padding: "2px 10px", borderRadius: 20, fontSize: 12, fontWeight: 700, letterSpacing: "0.05em" }}>
+      {level}
+    </span>
+  );
+};
 
-  const [teacherCode, setTeacherCode] = useState("")
-  const [joiningByCode, setJoiningByCode] = useState(false)
+const LevelBadgeDark = ({ level }) => (
+  <span style={{ background: "rgba(255,255,255,0.2)", color: "#fff", padding: "3px 12px", borderRadius: 20, fontSize: 13, fontWeight: 700, letterSpacing: "0.06em", border: "1px solid rgba(255,255,255,0.3)" }}>
+    {level}
+  </span>
+);
 
-  const [showCreateAcademy, setShowCreateAcademy] = useState(false)
-  const [showCreateGroup, setShowCreateGroup] = useState(false)
-  const [showCreateTask, setShowCreateTask] = useState(false)
-  const [showInviteForm, setShowInviteForm] = useState(false)
-  
-  // NEW: PIN unlock state
-  const [showPinUnlock, setShowPinUnlock] = useState(false)
-  const [teacherPin, setTeacherPin] = useState("")
-  const [unlocking, setUnlocking] = useState(false)
-  const [generatedPin, setGeneratedPin] = useState("")
-  
-  // NEW: Available teachers for group creation
-  const [availableTeachers, setAvailableTeachers] = useState([])
+const Avatar = ({ name = "", size = 36 }) => {
+  const initials = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  const hue = name.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % 360;
+  return (
+    <div style={{ width: size, height: size, borderRadius: "50%", background: `hsl(${hue},55%,62%)`, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: size * 0.36, flexShrink: 0 }}>
+      {initials || "?"}
+    </div>
+  );
+};
 
-  useEffect(() => {
-    const userStr = localStorage.getItem("user")
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr)
-        setUserRole(user.role || "user")
-        setUserId(user._id || user.id)
-      } catch (e) {
-        setUserRole("user")
-      }
-    }
-    fetchAcademies()
-    if (isAcademyAdmin) {
-      fetchTeachers()
-    }
-  }, [])
+const Modal = ({ open, onClose, title, children, width = 480 }) => {
+  if (!open) return null;
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(10,14,26,0.72)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "#fff", borderRadius: 16, width: "100%", maxWidth: width, boxShadow: "0 24px 80px rgba(0,0,0,0.22)", overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 24px", borderBottom: "1px solid #f0f0f0" }}>
+          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: "#0f172a" }}>{title}</h3>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", padding: 4, borderRadius: 6, display: "flex" }}>
+            <Icon path={I.x} size={20} />
+          </button>
+        </div>
+        <div style={{ padding: "24px" }}>{children}</div>
+      </div>
+    </div>
+  );
+};
 
-  const fetchTeachers = async () => {
-    // You'll need to add this endpoint to your backend
-    // For now, you can manually add teachers or fetch all users with role="teacher"
-    // This is placeholder - implement based on your user management
-    setAvailableTeachers([])
-  }
+const Field = ({ label, children, hint }) => (
+  <div style={{ marginBottom: 18 }}>
+    <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>{label}</label>
+    {children}
+    {hint && <p style={{ margin: "4px 0 0", fontSize: 12, color: "#94a3b8" }}>{hint}</p>}
+  </div>
+);
 
-  const fetchAcademies = async () => {
+const Input = (props) => (
+  <input {...props} style={{ width: "100%", boxSizing: "border-box", padding: "9px 12px", border: "1.5px solid #e2e8f0", borderRadius: 8, fontSize: 14, color: "#0f172a", outline: "none", background: "#fafafa", transition: "border 0.15s", ...props.style }}
+    onFocus={e => e.target.style.borderColor = "#6366f1"}
+    onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+  />
+);
+
+const Sel = ({ children, ...props }) => (
+  <select {...props} style={{ width: "100%", boxSizing: "border-box", padding: "9px 12px", border: "1.5px solid #e2e8f0", borderRadius: 8, fontSize: 14, color: "#0f172a", outline: "none", background: "#fafafa", cursor: "pointer", ...props.style }}
+    onFocus={e => e.target.style.borderColor = "#6366f1"}
+    onBlur={e => e.target.style.borderColor = "#e2e8f0"}
+  >
+    {children}
+  </select>
+);
+
+const Btn = ({ variant = "primary", children, icon, loading, ...props }) => {
+  const vs = {
+    primary: { background: "#6366f1", color: "#fff", border: "none" },
+    danger:  { background: "#ef4444", color: "#fff", border: "none" },
+    ghost:   { background: "transparent", color: "#6366f1", border: "1.5px solid #e0e0ff" },
+    green:   { background: "#16a34a", color: "#fff", border: "none" },
+  };
+  return (
+    <button {...props} disabled={loading || props.disabled}
+      style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "9px 18px", borderRadius: 9, fontSize: 14, fontWeight: 600, cursor: "pointer", transition: "opacity 0.15s", opacity: loading ? 0.7 : 1, ...vs[variant], ...props.style }}
+      onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = "0.85"; }}
+      onMouseLeave={e => { e.currentTarget.style.opacity = "1"; }}
+    >
+      {icon && <Icon path={icon} size={15} />}
+      {loading ? "Loading…" : children}
+    </button>
+  );
+};
+
+const StatCard = ({ label, value, icon, color = "#6366f1" }) => (
+  <div style={{ background: "#fff", borderRadius: 12, padding: "16px 20px", border: "1px solid #f0f0f8", display: "flex", alignItems: "center", gap: 14, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+    <div style={{ width: 44, height: 44, borderRadius: 12, background: `${color}18`, display: "flex", alignItems: "center", justifyContent: "center", color }}>
+      <Icon path={icon} size={20} />
+    </div>
+    <div>
+      <div style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2, fontWeight: 500 }}>{label}</div>
+    </div>
+  </div>
+);
+
+function ActionBtn({ icon, onClick, danger }) {
+  return (
+    <button onClick={onClick} style={{ background: "none", border: "1px solid #f0f0f8", color: danger ? "#ef4444" : "#94a3b8", padding: 6, borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.15s, color 0.15s" }}
+      onMouseEnter={e => { e.currentTarget.style.background = danger ? "#fef2f2" : "#f8f9ff"; e.currentTarget.style.color = danger ? "#ef4444" : "#6366f1"; }}
+      onMouseLeave={e => { e.currentTarget.style.background = "none"; e.currentTarget.style.color = danger ? "#ef4444" : "#94a3b8"; }}
+    >
+      <Icon path={icon} size={14} />
+    </button>
+  );
+}
+
+function EmptyState({ icon, title, subtitle }) {
+  return (
+    <div style={{ textAlign: "center", padding: "80px 20px", color: "#94a3b8" }}>
+      <div style={{ width: 60, height: 60, borderRadius: 18, background: "#f0f0ff", margin: "0 auto 16px", display: "flex", alignItems: "center", justifyContent: "center", color: "#c7c9f5" }}>
+        <Icon path={icon} size={28} />
+      </div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: "#64748b", marginBottom: 6 }}>{title}</div>
+      <div style={{ fontSize: 14 }}>{subtitle}</div>
+    </div>
+  );
+}
+
+function LoadingGrid({ rows = 3 }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 18 }}>
+      <style>{`@keyframes acpulse{0%,100%{opacity:1}50%{opacity:.45}}`}</style>
+      {Array.from({ length: rows * 3 }).map((_, i) => (
+        <div key={i} style={{ background: "#fff", borderRadius: 14, padding: 22, border: "1px solid #eef0f6", animation: "acpulse 1.4s ease-in-out infinite" }}>
+          <div style={{ height: 18, background: "#f0f0f8", borderRadius: 8, marginBottom: 10, width: "60%" }} />
+          <div style={{ height: 13, background: "#f5f5fb", borderRadius: 6, marginBottom: 7, width: "90%" }} />
+          <div style={{ height: 13, background: "#f5f5fb", borderRadius: 6, width: "70%" }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PageHeader({ title, subtitle, back, actions }) {
+  return (
+    <div style={{ background: "#fff", borderBottom: "1px solid #eef0f6", padding: "0 32px", display: "flex", alignItems: "center", height: 64, position: "sticky", top: 0, zIndex: 100, gap: 0 }}>
+      {back && (
+        <button onClick={back} style={{ background: "none", border: "none", cursor: "pointer", color: "#6366f1", display: "flex", alignItems: "center", gap: 6, fontSize: 14, fontWeight: 600, marginRight: 16, padding: "6px 10px", borderRadius: 8 }}
+          onMouseEnter={e => e.currentTarget.style.background = "#f0f0ff"}
+          onMouseLeave={e => e.currentTarget.style.background = "none"}
+        >
+          <Icon path={I.arrowL} size={16} /> Back
+        </button>
+      )}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
+        <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
+          <Icon path={I.shield} size={17} />
+        </div>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "#0f172a", lineHeight: 1.1 }}>{title}</div>
+          {subtitle && <div style={{ fontSize: 12, color: "#94a3b8" }}>{subtitle}</div>}
+        </div>
+      </div>
+      {actions && <div style={{ display: "flex", gap: 8 }}>{actions}</div>}
+    </div>
+  );
+}
+
+// ── Shared leaderboard table ───────────────────────────────────────────────────
+function LeaderboardTable({ leaderboard, currentUserId, isTeacher, onRemove, groupId }) {
+  return (
+    <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #eef0f6", overflow: "hidden", boxShadow: "0 1px 8px rgba(0,0,0,0.04)" }}>
+      {!leaderboard?.leaderboard?.length ? (
+        <EmptyState icon={I.users} title="No students yet" subtitle="Add students to see the leaderboard." />
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 640 }}>
+            <thead>
+              <tr style={{ background: "#f8f9fc" }}>
+                {["Rank", "Student", "Level", "XP", "Weekly XP", "Streak", "Words", "Grammar", "Quizzes", ...(isTeacher ? [""] : [])].map(h => (
+                  <th key={h} style={{ padding: "12px 14px", textAlign: "left", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap", borderBottom: "1px solid #f0f0f8" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {leaderboard.leaderboard.map((s, i) => {
+                const isMe = String(s._id) === String(currentUserId);
+                return (
+                  <tr key={s._id} style={{ borderBottom: "1px solid #f8f9fc", background: isMe ? "#f0f4ff" : i < 3 ? ["#fffbeb","#f8f9ff","#f5fff5"][i] : "#fff" }}>
+                    <td style={{ padding: "12px 14px", fontWeight: 800, fontSize: 16, color: ["#f59e0b","#94a3b8","#b45309","#64748b"][Math.min(i,3)] }}>
+                      {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${s.rank}`}
+                    </td>
+                    <td style={{ padding: "12px 14px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <Avatar name={s.name} size={34} />
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 14, color: "#0f172a", display: "flex", alignItems: "center", gap: 6 }}>
+                            {s.name}
+                            {isMe && <span style={{ fontSize: 10, background: "#e0e7ff", color: "#4f46e5", padding: "1px 7px", borderRadius: 20, fontWeight: 700 }}>YOU</span>}
+                          </div>
+                          <div style={{ fontSize: 11, color: "#94a3b8" }}>{s.email}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ padding: "12px 14px" }}>{s.level ? <LevelBadge level={s.level} /> : <span style={{ color: "#cbd5e1", fontSize: 13 }}>—</span>}</td>
+                    <td style={{ padding: "12px 14px", fontWeight: 700, color: "#6366f1" }}>{(s.xp || 0).toLocaleString()}</td>
+                    <td style={{ padding: "12px 14px", color: "#0ea5e9", fontWeight: 600 }}>{(s.weeklyXp || 0).toLocaleString()}</td>
+                    <td style={{ padding: "12px 14px" }}><span style={{ fontWeight: 600, color: s.streakCount > 0 ? "#f59e0b" : "#94a3b8", fontSize: 13 }}>🔥 {s.streakCount || 0}</span></td>
+                    <td style={{ padding: "12px 14px", color: "#64748b", fontSize: 13 }}>{s.wordsLearned || 0}</td>
+                    <td style={{ padding: "12px 14px", color: "#64748b", fontSize: 13 }}>{s.grammarTopics || 0}</td>
+                    <td style={{ padding: "12px 14px", color: "#64748b", fontSize: 13 }}>{s.quizzesCompleted || 0}</td>
+                    {isTeacher && (
+                      <td style={{ padding: "12px 14px" }}>
+                        <button onClick={() => onRemove(groupId, s._id)} title="Remove student"
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", padding: 4, borderRadius: 6, opacity: 0.45, transition: "opacity 0.15s" }}
+                          onMouseEnter={e => e.currentTarget.style.opacity = "1"}
+                          onMouseLeave={e => e.currentTarget.style.opacity = "0.45"}
+                        >
+                          <Icon path={I.userMinus} size={16} />
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// STUDENT VIEW
+// ══════════════════════════════════════════════════════════════
+function StudentView({ currentUser }) {
+  const [myGroup,    setMyGroup]    = useState(null);
+  const [leaderboard,setLeaderboard]= useState(null);
+  const [loading,    setLoading]    = useState(true);
+  const [lbLoading,  setLbLoading]  = useState(false);
+  const [view,       setView]       = useState("group"); // "group" | "leaderboard"
+  const [joinCode,   setJoinCode]   = useState("");
+  const [joining,    setJoining]    = useState(false);
+  const [joinError,  setJoinError]  = useState("");
+  const [copied,     setCopied]     = useState(false);
+
+  useEffect(() => { fetchMyGroup(); }, []);
+
+  const fetchMyGroup = async () => {
+    setLoading(true);
     try {
-      setLoading(true)
-      const response = await academyService.getAllAcademies()
-      setAcademies(response.data || response || [])
-    } catch (error) {
-      alert("Failed to fetch academies: " + (error.response?.data?.message || error.message))
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const createAcademy = async (e) => {
-    e.preventDefault()
-    try {
-      await academyService.createAcademy(academyForm)
-      setAcademyForm({ name: "", description: "" })
-      setShowCreateAcademy(false)
-      await fetchAcademies()
-      alert("Academy created successfully!")
-    } catch (error) {
-      alert(error.response?.data?.message || "Error creating academy")
-    }
-  }
-
-  const createGroup = async (e) => {
-    e.preventDefault()
-    if (!groupForm.teacherId) {
-      alert("Please select a teacher for this group")
-      return
-    }
-    try {
-      const response = await academyService.createGroup(selectedAcademy._id, groupForm)
-      
-      // Show the generated PIN to admin
-      if (response.teacherPin) {
-        setGeneratedPin(response.teacherPin)
-        alert(`Group created! Teacher PIN: ${response.teacherPin}\n\nPlease share this PIN with the teacher privately.`)
-      }
-      
-      setGroupForm({ name: "", description: "", teacherId: "" })
-      setShowCreateGroup(false)
-      await fetchAcademies()
-      const updatedAcademies = await academyService.getAllAcademies()
-      const data = updatedAcademies.data || updatedAcademies || []
-      const updated = data.find((a) => a._id === selectedAcademy._id)
-      if (updated) setSelectedAcademy(updated)
-    } catch (error) {
-      alert(error.response?.data?.message || "Error creating group")
-    }
-  }
-
-  const unlockGroupWithPin = async (e) => {
-    e.preventDefault()
-    if (!teacherPin.trim() || teacherPin.length !== 6) {
-      alert("Please enter a valid 6-digit PIN")
-      return
-    }
-    try {
-      setUnlocking(true)
-      await academyService.unlockGroupWithPin(selectedAcademy._id, selectedGroup._id, teacherPin)
-      setTeacherPin("")
-      setShowPinUnlock(false)
-      await fetchAcademies()
-      const updatedAcademies = await academyService.getAllAcademies()
-      const data = updatedAcademies.data || updatedAcademies || []
-      const updated = data.find((a) => a._id === selectedAcademy._id)
-      if (updated) {
-        setSelectedAcademy(updated)
-        const updatedGroup = updated.groups.find(g => g._id === selectedGroup._id)
-        if (updatedGroup) setSelectedGroup(updatedGroup)
-      }
-      alert("Group unlocked successfully! You can now manage this group.")
-    } catch (error) {
-      alert(error.response?.data?.message || "Invalid PIN code")
-    } finally {
-      setUnlocking(false)
-    }
-  }
-
-  const inviteStudent = async (e) => {
-    e.preventDefault()
-    try {
-      setInviteSending(true)
-      const response = await academyService.inviteStudent(selectedAcademy._id, selectedGroup._id, inviteEmail)
-      setInviteEmail("")
-      if (response.inviteLink) {
-        setInviteLink(response.inviteLink)
-        setShowInviteLink(true)
-      }
-      await fetchAcademies()
-      if (response.emailSent) {
-        alert("Invitation email sent to " + inviteEmail + " successfully!")
-      } else {
-        alert("Invitation created but email could not be sent. Share the invite link manually.")
-      }
-    } catch (error) {
-      alert(error.response?.data?.message || "Error sending invitation")
-    } finally {
-      setInviteSending(false)
-    }
-  }
-
-  const handleJoinByCode = async (e) => {
-    e.preventDefault()
-    if (!teacherCode.trim()) {
-      alert("Please enter the teacher code")
-      return
-    }
-    try {
-      setJoiningByCode(true)
-      const response = await academyService.joinByTeacherCode(teacherCode.trim().toUpperCase())
-      setTeacherCode("")
-      await fetchAcademies()
-      alert(response.message || "Joined group successfully!")
-    } catch (error) {
-      alert(error.response?.data?.message || "Invalid code or error joining")
-    } finally {
-      setJoiningByCode(false)
-    }
-  }
-
-  const acceptInvitation = async (groupId) => {
-    try {
-      await academyService.acceptInvitation(selectedAcademy._id, groupId)
-      await fetchAcademies()
-      alert("Joined group successfully!")
-    } catch (error) {
-      alert(error.response?.data?.message || "Error joining group")
-    }
-  }
-
-  const createTask = async (e) => {
-    e.preventDefault()
-    try {
-      await academyService.createTask(selectedAcademy._id, selectedGroup._id, taskForm)
-      setTaskForm({ title: "", description: "", xpReward: 50, dueDate: "" })
-      setShowCreateTask(false)
-      await fetchAcademies()
-      alert("Task created successfully!")
-    } catch (error) {
-      alert(error.response?.data?.message || "Error creating task")
-    }
-  }
-
-  const completeTask = async (taskId) => {
-    try {
-      const response = await academyService.completeTask(selectedAcademy._id, selectedGroup._id, taskId)
-      await fetchAcademies()
-      alert(response.message || "Task completed successfully!")
-    } catch (error) {
-      alert(error.response?.data?.message || "Error completing task")
-    }
-  }
+      const res = await academyService.getMyGroup();
+      const g = res.data?.data ?? res.data;
+      setMyGroup(g || null);
+    } catch { setMyGroup(null); }
+    finally { setLoading(false); }
+  };
 
   const fetchLeaderboard = async () => {
+    if (!myGroup?._id) return;
+    setLbLoading(true);
     try {
-      const response = await academyService.getGroupLeaderboard(selectedAcademy._id, selectedGroup._id)
-      setLeaderboard(response.data || response || [])
-    } catch (error) {
-      // silent fail
-    }
-  }
+      const res = await academyService.getGroupLeaderboard(myGroup._id);
+      setLeaderboard(res.data?.data || res.data);
+    } catch { /* silent */ }
+    finally { setLbLoading(false); }
+  };
 
-  const getLevelColor = (level) => {
-    if (level >= 20) return "from-amber-400 to-yellow-500 text-amber-950"
-    if (level >= 15) return "from-rose-400 to-pink-500 text-white"
-    if (level >= 10) return "from-orange-400 to-red-500 text-white"
-    if (level >= 5) return "from-sky-400 to-blue-500 text-white"
-    return "from-emerald-400 to-green-500 text-white"
-  }
+  const openLeaderboard = () => {
+    setView("leaderboard");
+    if (!leaderboard) fetchLeaderboard();
+  };
 
-  const copyInviteLink = () => {
-    navigator.clipboard.writeText(inviteLink)
-    alert("Invite link copied!")
-  }
+  const handleJoin = async () => {
+    if (!joinCode.trim()) return;
+    setJoining(true); setJoinError("");
+    try {
+      await academyService.joinGroupByCode(joinCode.trim().toUpperCase());
+      await fetchMyGroup();
+      setView("group"); setJoinCode("");
+    } catch (e) {
+      setJoinError(e.response?.data?.message || "Invalid join code. Please try again.");
+    } finally { setJoining(false); }
+  };
 
-  const copyTeacherCode = (code) => {
-    navigator.clipboard.writeText(code)
-    alert("Code copied!")
-  }
-
-  const getTeacherName = (group) => {
-    if (group.teacher && typeof group.teacher === "object") {
-      return `${group.teacher.emri || ""} ${group.teacher.mbiemri || ""}`.trim()
-    }
-    return "Teacher"
-  }
-
-  const isAcademyAdmin = userRole === "academyAdmin" || userRole === "admin"
-  const isTeacher = userRole === "teacher"
-
-  const isGroupTeacher = (group) => {
-    return (
-      group?.teacher?.toString() === userId ||
-      group?.teacher === userId ||
-      (typeof group?.teacher === "object" && group?.teacher?._id === userId)
-    )
-  }
-
-  const breadcrumbs = []
-  breadcrumbs.push({ label: "Academies", action: () => { setSelectedAcademy(null); setSelectedGroup(null); setView("academies") } })
-  if (selectedAcademy) {
-    breadcrumbs.push({ label: selectedAcademy.name, action: () => { setSelectedGroup(null); setView("groups") } })
-  }
-  if (selectedGroup) {
-    breadcrumbs.push({ label: selectedGroup.name, action: () => setView("tasks") })
-  }
+  const myRank = leaderboard?.leaderboard?.find(s => String(s._id) === String(currentUser?._id));
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="flex flex-col items-center gap-6">
-          <div className="relative">
-            <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 animate-pulse" />
-            <div className="absolute inset-0 h-14 w-14 rounded-2xl border-2 border-transparent border-t-white/40 animate-spin" />
-          </div>
-          <div className="text-center">
-            <p className="text-sm font-semibold text-gray-800 tracking-tight">Loading</p>
-            <p className="text-xs text-gray-400 mt-1">Please wait...</p>
-          </div>
-        </div>
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#f7f8fc" }}>
+        <PageHeader title="My Academy" subtitle="Loading…" />
+        <div style={{ padding: "32px 20px", maxWidth: 900, margin: "0 auto" }}><LoadingGrid rows={1} /></div>
       </div>
-    )
+    );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50/80">
-      {/* Header */}
-      <div className="sticky top-0 z-30 backdrop-blur-xl bg-white/70 border-b border-gray-200/60">
-        <div className="max-w-6xl mx-auto px-5 py-3.5">
-          <div className="flex items-center justify-between">
-            <nav className="flex items-center gap-1 text-sm min-w-0" aria-label="Breadcrumb">
-              {breadcrumbs.map((crumb, i) => (
-                <span key={i} className="flex items-center gap-1 min-w-0">
-                  {i > 0 && (
-                    <svg className="h-3.5 w-3.5 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  )}
-                  {i < breadcrumbs.length - 1 ? (
-                    <button
-                      onClick={crumb.action}
-                      className="text-gray-400 hover:text-indigo-600 transition-colors truncate max-w-[140px] font-medium"
-                    >
-                      {crumb.label}
-                    </button>
-                  ) : (
-                    <span className="font-bold text-gray-900 truncate max-w-[200px]">{crumb.label}</span>
-                  )}
-                </span>
-              ))}
-            </nav>
-
-            <span
-              className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase ${
-                isAcademyAdmin
-                  ? "bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-200"
-                  : isTeacher
-                  ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-200"
-                  : "bg-gray-100 text-gray-500 border border-gray-200"
-              }`}
-            >
-              <span className={`h-1.5 w-1.5 rounded-full ${isAcademyAdmin || isTeacher ? "bg-white/60" : "bg-gray-400"}`} />
-              {isAcademyAdmin ? "Admin" : isTeacher ? "Teacher" : "Student"}
-            </span>
+  // ── No group: show join screen ─────────────────────────────────────────────
+  if (!myGroup) {
+    return (
+      <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#f7f8fc" }}>
+        <PageHeader title="My Academy" subtitle="Join a group to get started" />
+        <div style={{ maxWidth: 460, margin: "64px auto", padding: "0 20px" }}>
+          <div style={{ background: "#fff", borderRadius: 20, padding: 40, boxShadow: "0 4px 24px rgba(0,0,0,0.07)", border: "1px solid #eef0f6", textAlign: "center" }}>
+            <div style={{ width: 72, height: 72, borderRadius: 20, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", color: "#fff" }}>
+              <Icon path={I.key} size={30} />
+            </div>
+            <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 800, color: "#0f172a" }}>Join a Group</h2>
+            <p style={{ margin: "0 0 28px", color: "#64748b", fontSize: 14, lineHeight: 1.6 }}>
+              Enter the 6-character join code your teacher gave you.
+            </p>
+            <input
+              value={joinCode}
+              onChange={e => { setJoinCode(e.target.value.toUpperCase().slice(0, 6)); setJoinError(""); }}
+              onKeyDown={e => e.key === "Enter" && handleJoin()}
+              placeholder="AB12CD"
+              maxLength={6}
+              style={{ width: "100%", boxSizing: "border-box", padding: "14px 16px", border: `2px solid ${joinError ? "#fca5a5" : "#e2e8f0"}`, borderRadius: 12, fontSize: 24, fontWeight: 800, letterSpacing: "0.35em", textAlign: "center", textTransform: "uppercase", outline: "none", background: "#fafafa", color: "#0f172a", marginBottom: joinError ? 8 : 20, transition: "border 0.15s" }}
+              onFocus={e => { if (!joinError) e.target.style.borderColor = "#6366f1"; }}
+              onBlur={e => { if (!joinError) e.target.style.borderColor = "#e2e8f0"; }}
+            />
+            {joinError && <p style={{ margin: "0 0 16px", fontSize: 13, color: "#ef4444", fontWeight: 500 }}>{joinError}</p>}
+            <Btn loading={joining} onClick={handleJoin} style={{ width: "100%", justifyContent: "center", padding: "13px", fontSize: 15 }}>
+              <Icon path={I.logIn} size={16} /> Join Group
+            </Btn>
           </div>
         </div>
       </div>
+    );
+  }
 
-      <div className="max-w-6xl mx-auto px-5 py-6">
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-1 mb-8 p-1 bg-white rounded-2xl shadow-sm border border-gray-100 w-fit">
-          {[
-            { key: "academies", label: "Academies", icon: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253", show: true },
-            { key: "groups", label: "Groups", icon: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z", show: !!selectedAcademy },
-            { key: "tasks", label: "Tasks", icon: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4", show: !!selectedGroup },
-            { key: "leaderboard", label: "Leaderboard", icon: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z", show: !!selectedGroup },
-          ]
-            .filter((t) => t.show)
-            .map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => {
-                  setView(tab.key)
-                  if (tab.key === "leaderboard") fetchLeaderboard()
-                }}
-                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded-xl transition-all duration-200 ${
-                  view === tab.key
-                    ? "bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-200/50"
-                    : "text-gray-400 hover:text-gray-700 hover:bg-gray-50"
-                }`}
-              >
-                <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d={tab.icon} />
-                </svg>
-                {tab.label}
-              </button>
-            ))}
-        </div>
+  // ── Has group ──────────────────────────────────────────────────────────────
+  return (
+    <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#f7f8fc" }}>
+      <PageHeader
+        title={view === "leaderboard" ? "Class Leaderboard" : myGroup?.name || "My Group"}
+        subtitle={view === "leaderboard" ? myGroup?.name : (myGroup?.academyId?.name || "Your class")}
+        back={view === "leaderboard" ? () => setView("group") : null}
+      />
 
-        {/* Join by Code (students only) */}
-        {!isAcademyAdmin && !isTeacher && view === "academies" && (
-          <div className="mb-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 p-[1px]">
-            <div className="rounded-[15px] bg-white p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-200">
-                  <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900">Join with Teacher Code</p>
-                  <p className="text-xs text-gray-400">Enter the 6-character code from your teacher</p>
-                </div>
-              </div>
-              <form onSubmit={handleJoinByCode} className="flex gap-3">
-                <input
-                  type="text"
-                  value={teacherCode}
-                  onChange={(e) => setTeacherCode(e.target.value.toUpperCase())}
-                  className="flex-1 h-12 px-4 bg-gray-50 border-2 border-gray-100 rounded-xl text-base font-mono font-black tracking-[0.3em] uppercase text-center text-indigo-600 placeholder:text-gray-300 placeholder:font-normal placeholder:tracking-normal placeholder:text-sm focus:outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50 transition-all"
-                  placeholder="ENTER CODE"
-                  maxLength={6}
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={joiningByCode}
-                  className="h-12 px-6 bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-indigo-200 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
-                >
-                  {joiningByCode ? (
-                    <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                  ) : "Join"}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Teacher PIN Unlock (teachers only, when viewing a group) */}
-        {isTeacher && selectedGroup && !selectedGroup.teacherUnlocked && isGroupTeacher(selectedGroup) && (
-          <div className="mb-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-red-600 p-[1px]">
-            <div className="rounded-[15px] bg-white p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 shadow-lg shadow-amber-200">
-                  <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900">Unlock Group</p>
-                  <p className="text-xs text-gray-400">Enter your 6-digit PIN to access this group</p>
-                </div>
-              </div>
-              <form onSubmit={unlockGroupWithPin} className="flex gap-3">
-                <input
-                  type="text"
-                  value={teacherPin}
-                  onChange={(e) => setTeacherPin(e.target.value.replace(/\D/g, ''))}
-                  className="flex-1 h-12 px-4 bg-gray-50 border-2 border-gray-100 rounded-xl text-base font-mono font-black tracking-[0.3em] text-center text-amber-600 placeholder:text-gray-300 placeholder:font-normal placeholder:tracking-normal placeholder:text-sm focus:outline-none focus:border-amber-300 focus:ring-4 focus:ring-amber-50 transition-all"
-                  placeholder="ENTER PIN"
-                  maxLength={6}
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={unlocking}
-                  className="h-12 px-6 bg-gradient-to-r from-amber-500 to-orange-600 text-white text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-amber-200 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50"
-                >
-                  {unlocking ? (
-                    <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                  ) : "Unlock"}
-                </button>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* ACADEMIES VIEW - Keep existing code but update role checks */}
-        {view === "academies" && (
-          <div className="space-y-6">
-            {isAcademyAdmin && (
-              <div>
-                <button
-                  onClick={() => setShowCreateAcademy(!showCreateAcademy)}
-                  className={`inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
-                    showCreateAcademy
-                      ? "bg-gray-900 text-white shadow-lg shadow-gray-300"
-                      : "bg-white text-gray-700 border-2 border-dashed border-gray-200 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/50"
-                  }`}
-                >
-                  <svg className={`h-4 w-4 transition-transform duration-200 ${showCreateAcademy ? "rotate-45" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  {showCreateAcademy ? "Close" : "Create New Academy"}
-                </button>
-
-                {showCreateAcademy && (
-                  <div className="mt-4 rounded-2xl bg-white border border-gray-100 p-6 shadow-xl shadow-gray-100/50">
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className="h-8 w-1 rounded-full bg-gradient-to-b from-indigo-500 to-violet-600" />
-                      <h3 className="text-base font-bold text-gray-900">New Academy</h3>
-                    </div>
-                    <form onSubmit={createAcademy} className="space-y-4">
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-[0.15em]">Name</label>
-                        <input
-                          type="text"
-                          value={academyForm.name}
-                          onChange={(e) => setAcademyForm({ ...academyForm, name: e.target.value })}
-                          className="w-full h-12 px-4 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm font-medium placeholder:text-gray-300 focus:outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50 transition-all"
-                          placeholder="Enter academy name"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-[0.15em]">Description</label>
-                        <textarea
-                          value={academyForm.description}
-                          onChange={(e) => setAcademyForm({ ...academyForm, description: e.target.value })}
-                          className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm font-medium placeholder:text-gray-300 focus:outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50 transition-all resize-none"
-                          placeholder="Enter description (optional)"
-                          rows={2}
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        className="w-full h-12 bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-indigo-200 hover:-translate-y-0.5 transition-all duration-200"
-                      >
-                        Create Academy
-                      </button>
-                    </form>
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "32px 20px" }}>
+        {view === "group" && (
+          <>
+            {/* Hero card */}
+            <div style={{ background: "linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%)", borderRadius: 20, padding: "28px 32px", marginBottom: 20, color: "#fff", position: "relative", overflow: "hidden" }}>
+              <div style={{ position: "absolute", right: -20, top: -20, width: 140, height: 140, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }} />
+              <div style={{ position: "absolute", right: 30, bottom: -30, width: 100, height: 100, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+              <div style={{ position: "relative" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 20 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Icon path={I.users} size={24} />
                   </div>
-                )}
-              </div>
-            )}
-
-            {/* Academy list - keep existing rendering */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900 tracking-tight">My Academies</h2>
-                <span className="text-xs font-semibold text-gray-300 bg-gray-50 px-3 py-1 rounded-full">{academies.length} total</span>
-              </div>
-
-              {/* Keep existing academy rendering code */}
-              {academies.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {academies.map((academy, idx) => (
-                    <button
-                      key={academy._id}
-                      onClick={() => {
-                        setSelectedAcademy(academy)
-                        setView("groups")
-                      }}
-                      className="group text-left rounded-2xl bg-white border border-gray-100 p-5 hover:shadow-xl hover:shadow-indigo-100/50 hover:-translate-y-1 hover:border-indigo-200 transition-all duration-300"
-                    >
-                      {/* Keep existing academy card content */}
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className={`flex items-center justify-center h-11 w-11 rounded-xl bg-gradient-to-br ${
-                          ['from-indigo-400 to-violet-500', 'from-rose-400 to-pink-500', 'from-amber-400 to-orange-500', 'from-emerald-400 to-teal-500', 'from-sky-400 to-blue-500'][idx % 5]
-                        } shadow-lg shrink-0`}>
-                          <svg className="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                          </svg>
-                        </div>
-                        <span className="text-[10px] font-semibold text-gray-300 bg-gray-50 px-2 py-0.5 rounded-md">{new Date(academy.createdAt).toLocaleDateString("en-US")}</span>
-                      </div>
-                      <h3 className="text-sm font-bold text-gray-900 group-hover:text-indigo-600 transition-colors mb-1.5 truncate">{academy.name}</h3>
-                      <p className="text-xs text-gray-400 mb-4 line-clamp-2 leading-relaxed">{academy.description}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-50 text-[11px] font-semibold text-gray-500">
-                          <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
-                          {academy.groups?.length || 0} groups
-                        </span>
-                        <svg className="h-4 w-4 text-gray-300 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-20 rounded-2xl border-2 border-dashed border-gray-200 bg-white">
-                  <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-50 to-violet-50 mb-4">
-                    <svg className="h-7 w-7 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 22, fontWeight: 800, lineHeight: 1.1 }}>{myGroup?.name}</div>
+                    <div style={{ fontSize: 13, opacity: 0.75, marginTop: 2 }}>{myGroup?.academyId?.name}</div>
                   </div>
-                  <p className="text-base font-bold text-gray-900 mb-1">No academies yet</p>
-                  <p className="text-xs text-gray-400 mb-5">Start by creating your first academy</p>
-                  {isAcademyAdmin && (
-                    <button
-                      onClick={() => setShowCreateAcademy(true)}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-xl hover:shadow-lg hover:shadow-indigo-200 hover:-translate-y-0.5 transition-all duration-200"
-                    >
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      Create Academy
-                    </button>
-                  )}
+                  {myGroup?.level && <LevelBadgeDark level={myGroup.level} />}
                 </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* GROUPS VIEW - Update with teacher selection and PIN display */}
-        {view === "groups" && selectedAcademy && (
-          <div className="space-y-6">
-            {isAcademyAdmin && (
-              <div>
-                <button
-                  onClick={() => setShowCreateGroup(!showCreateGroup)}
-                  className={`inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
-                    showCreateGroup
-                      ? "bg-gray-900 text-white shadow-lg shadow-gray-300"
-                      : "bg-white text-gray-700 border-2 border-dashed border-gray-200 hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/50"
-                  }`}
-                >
-                  <svg className={`h-4 w-4 transition-transform duration-200 ${showCreateGroup ? "rotate-45" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  {showCreateGroup ? "Close" : "Create New Group"}
-                </button>
-
-                {showCreateGroup && (
-                  <div className="mt-4 rounded-2xl bg-white border border-gray-100 p-6 shadow-xl shadow-gray-100/50">
-                    <div className="flex items-center gap-3 mb-5">
-                      <div className="h-8 w-1 rounded-full bg-gradient-to-b from-indigo-500 to-violet-600" />
-                      <h3 className="text-base font-bold text-gray-900">New Group</h3>
-                    </div>
-                    <form onSubmit={createGroup} className="space-y-4">
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-[0.15em]">Group Name</label>
-                        <input
-                          type="text"
-                          value={groupForm.name}
-                          onChange={(e) => setGroupForm({ ...groupForm, name: e.target.value })}
-                          className="w-full h-12 px-4 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm font-medium placeholder:text-gray-300 focus:outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50 transition-all"
-                          placeholder="Enter group name"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-[0.15em]">Description</label>
-                        <textarea
-                          value={groupForm.description}
-                          onChange={(e) => setGroupForm({ ...groupForm, description: e.target.value })}
-                          className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm font-medium placeholder:text-gray-300 focus:outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50 transition-all resize-none"
-                          placeholder="Enter description (optional)"
-                          rows={2}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-[0.15em]">Assign Teacher</label>
-                        <input
-                          type="text"
-                          value={groupForm.teacherId}
-                          onChange={(e) => setGroupForm({ ...groupForm, teacherId: e.target.value })}
-                          className="w-full h-12 px-4 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm font-medium placeholder:text-gray-300 focus:outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50 transition-all"
-                          placeholder="Enter teacher user ID"
-                          required
-                        />
-                        <p className="text-xs text-gray-400 mt-1">Enter the teacher's user ID. A PIN will be generated for them.</p>
-                      </div>
-                      <button
-                        type="submit"
-                        className="w-full h-12 bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-indigo-200 hover:-translate-y-0.5 transition-all duration-200"
-                      >
-                        Create Group
-                      </button>
-                    </form>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Group list - update to show lock status */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900 tracking-tight">Groups</h2>
-                <span className="text-xs font-semibold text-gray-300 bg-gray-50 px-3 py-1 rounded-full">{selectedAcademy.groups?.length || 0} total</span>
-              </div>
-
-              {selectedAcademy.groups?.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {selectedAcademy.groups.map((group, idx) => (
-                    <div
-                      key={group._id}
-                      onClick={() => {
-                        setSelectedGroup(group)
-                        setView("tasks")
-                      }}
-                      className="group rounded-2xl bg-white border border-gray-100 p-5 hover:shadow-xl hover:shadow-indigo-100/50 hover:-translate-y-1 hover:border-indigo-200 transition-all duration-300 cursor-pointer"
-                    >
-                      <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className={`flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br ${
-                            ['from-indigo-400 to-violet-500', 'from-rose-400 to-pink-500', 'from-amber-400 to-orange-500', 'from-emerald-400 to-teal-500'][idx % 4]
-                          } shadow-lg shrink-0`}>
-                            <svg className="h-4.5 w-4.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                          </div>
-                          <div className="min-w-0">
-                            <h3 className="text-sm font-bold text-gray-900 truncate group-hover:text-indigo-600 transition-colors">{group.name}</h3>
-                            {!group.teacherUnlocked && (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 mt-0.5">
-                                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
-                                Locked
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        {group.teacherCode && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              copyTeacherCode(group.teacherCode)
-                            }}
-                            className="shrink-0 px-3 py-1.5 bg-gradient-to-r from-indigo-50 to-violet-50 border border-indigo-100 rounded-lg text-[11px] font-mono font-black tracking-widest text-indigo-600 hover:from-indigo-100 hover:to-violet-100 transition-all"
-                            title="Click to copy code"
-                          >
-                            {group.teacherCode}
-                          </button>
-                        )}
-                      </div>
-
-                      {group.description && (
-                        <p className="text-xs text-gray-400 mb-3 line-clamp-2 leading-relaxed">{group.description}</p>
-                      )}
-
-                      <div className="flex items-center gap-2 mb-3">
-                        <div className="flex items-center justify-center h-5 w-5 rounded-full bg-gray-50">
-                          <svg className="h-3 w-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                        </div>
-                        <span className="text-xs text-gray-400">
-                          Teacher: <span className="font-semibold text-gray-700">{getTeacherName(group)}</span>
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-50 text-[11px] font-semibold text-gray-500">
-                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m3 5.197V21" />
-                            </svg>
-                            {group.members?.length || 0}
-                          </span>
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gray-50 text-[11px] font-semibold text-gray-500">
-                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                            </svg>
-                            {group.tasks?.length || 0}
-                          </span>
-                        </div>
-                        <svg className="h-4 w-4 text-gray-300 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+                  {[
+                    { label: "Your XP", value: (currentUser?.xp || 0).toLocaleString() },
+                    { label: "Your Rank", value: myRank ? `#${myRank.rank}` : "—" },
+                    { label: "Streak", value: `🔥 ${currentUser?.streakCount || 0}` },
+                  ].map(s => (
+                    <div key={s.label} style={{ background: "rgba(255,255,255,0.13)", borderRadius: 12, padding: "12px 16px" }}>
+                      <div style={{ fontSize: 18, fontWeight: 800 }}>{s.value}</div>
+                      <div style={{ fontSize: 12, opacity: 0.75, marginTop: 2 }}>{s.label}</div>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-20 rounded-2xl border-2 border-dashed border-gray-200 bg-white">
-                  <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-50 to-violet-50 mb-4">
-                    <svg className="h-7 w-7 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <p className="text-base font-bold text-gray-900 mb-1">No groups yet</p>
-                  <p className="text-xs text-gray-400 mb-5">Create the first group for this academy</p>
-                  {isAcademyAdmin && (
-                    <button
-                      onClick={() => setShowCreateGroup(true)}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-xl hover:shadow-lg hover:shadow-indigo-200 hover:-translate-y-0.5 transition-all duration-200"
-                    >
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      Create Group
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* TASKS VIEW - Update teacher checks and add locked group warning */}
-        {view === "tasks" && selectedGroup && (
-          <div className="space-y-5">
-            {/* Keep existing group info header and rest of tasks view */}
-            {/* Just update isGroupAdmin checks to isGroupTeacher */}
-            {/* The rest of the tasks view stays the same */}
-            
-            {/* Group info header */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-600 p-5 text-white">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-32 translate-x-32" />
-              <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full translate-y-20 -translate-x-20" />
-              <div className="relative flex items-center justify-between flex-wrap gap-4">
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm shrink-0">
-                    <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="text-base font-bold truncate">{selectedGroup.name}</h3>
-                    <p className="text-xs text-white/70 mt-0.5">
-                      Teacher: <span className="font-semibold text-white/90">{getTeacherName(selectedGroup)}</span>
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {selectedGroup.teacherCode && (
-                    <button
-                      onClick={() => copyTeacherCode(selectedGroup.teacherCode)}
-                      className="px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-[11px] font-mono font-black tracking-widest hover:bg-white/30 transition-colors"
-                    >
-                      {selectedGroup.teacherCode}
-                    </button>
-                  )}
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 backdrop-blur-sm text-[11px] font-semibold">
-                    <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m3 5.197V21" />
-                    </svg>
-                    {selectedGroup.members?.length || 0} students
-                  </span>
-                </div>
               </div>
             </div>
 
-            {/* Teacher action buttons (only if group is unlocked) */}
-            {isGroupTeacher(selectedGroup) && selectedGroup.teacherUnlocked && (
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => { setShowCreateTask(!showCreateTask); setShowInviteForm(false) }}
-                  className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
-                    showCreateTask
-                      ? "bg-gray-900 text-white shadow-lg"
-                      : "bg-white text-gray-700 border-2 border-dashed border-gray-200 hover:border-indigo-300 hover:text-indigo-600"
-                  }`}
-                >
-                  <svg className={`h-3.5 w-3.5 transition-transform duration-200 ${showCreateTask ? "rotate-45" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  New Task
-                </button>
-                <button
-                  onClick={() => { setShowInviteForm(!showInviteForm); setShowCreateTask(false) }}
-                  className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-bold rounded-xl transition-all duration-200 ${
-                    showInviteForm
-                      ? "bg-gray-900 text-white shadow-lg"
-                      : "bg-white text-gray-700 border-2 border-dashed border-gray-200 hover:border-emerald-300 hover:text-emerald-600"
-                  }`}
-                >
-                  <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                  </svg>
-                  Invite Students
+            {/* Join code display */}
+            {myGroup?.joinCode && (
+              <div style={{ background: "#fff", borderRadius: 14, padding: "14px 20px", marginBottom: 16, border: "1px solid #eef0f6", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: "#f0f0ff", display: "flex", alignItems: "center", justifyContent: "center", color: "#6366f1" }}>
+                    <Icon path={I.hash} size={16} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Group Join Code</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "#0f172a", letterSpacing: "0.2em" }}>{myGroup.joinCode}</div>
+                  </div>
+                </div>
+                <button onClick={() => { navigator.clipboard.writeText(myGroup.joinCode); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+                  style={{ background: copied ? "#f0fdf4" : "#f8f9ff", border: `1px solid ${copied ? "#bbf7d0" : "#e2e8f0"}`, color: copied ? "#16a34a" : "#6366f1", padding: "8px 14px", borderRadius: 8, cursor: "pointer", fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6, transition: "all 0.2s" }}>
+                  <Icon path={copied ? I.check : I.copy} size={14} />
+                  {copied ? "Copied!" : "Copy"}
                 </button>
               </div>
             )}
 
-            {/* Create task form (keep existing but update check) */}
-            {showCreateTask && isGroupTeacher(selectedGroup) && selectedGroup.teacherUnlocked && (
-              <div className="rounded-2xl bg-white border border-gray-100 p-6 shadow-xl shadow-gray-100/50">
-                {/* Keep existing task form code */}
-                <div className="flex items-center gap-3 mb-5">
-                  <div className="h-8 w-1 rounded-full bg-gradient-to-b from-indigo-500 to-violet-600" />
-                  <h4 className="text-base font-bold text-gray-900">New Task</h4>
+            {/* Leaderboard button */}
+            <button onClick={openLeaderboard}
+              style={{ width: "100%", background: "#fff", border: "1px solid #eef0f6", borderRadius: 14, padding: "18px 24px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", boxShadow: "0 1px 6px rgba(0,0,0,0.04)", transition: "box-shadow 0.2s, transform 0.15s" }}
+              onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 24px rgba(99,102,241,0.12)"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 6px rgba(0,0,0,0.04)"; e.currentTarget.style.transform = "none"; }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: "#fff8e1", display: "flex", alignItems: "center", justifyContent: "center", color: "#f59e0b" }}>
+                  <Icon path={I.trophy} size={20} />
                 </div>
-                <form onSubmit={createTask} className="space-y-4">
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-[0.15em]">Title</label>
-                    <input
-                      type="text"
-                      value={taskForm.title}
-                      onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
-                      className="w-full h-12 px-4 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm font-medium placeholder:text-gray-300 focus:outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50 transition-all"
-                      placeholder="Enter task title"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-[0.15em]">Description</label>
-                    <textarea
-                      value={taskForm.description}
-                      onChange={(e) => setTaskForm({ ...taskForm, description: e.target.value })}
-                      className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm font-medium placeholder:text-gray-300 focus:outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50 transition-all resize-none"
-                      placeholder="Enter description"
-                      rows={2}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-[0.15em]">XP Reward</label>
-                      <input
-                        type="number"
-                        value={taskForm.xpReward}
-                        onChange={(e) => setTaskForm({ ...taskForm, xpReward: Number.parseInt(e.target.value) })}
-                        className="w-full h-12 px-4 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm font-medium focus:outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50 transition-all"
-                        min="1"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-gray-400 mb-2 uppercase tracking-[0.15em]">Due Date</label>
-                      <input
-                        type="date"
-                        value={taskForm.dueDate}
-                        onChange={(e) => setTaskForm({ ...taskForm, dueDate: e.target.value })}
-                        className="w-full h-12 px-4 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm font-medium focus:outline-none focus:border-indigo-300 focus:ring-4 focus:ring-indigo-50 transition-all"
-                      />
-                    </div>
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full h-12 bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-indigo-200 hover:-translate-y-0.5 transition-all duration-200"
-                  >
-                    Create Task
-                  </button>
-                </form>
+                <div style={{ textAlign: "left" }}>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: "#0f172a" }}>Class Leaderboard</div>
+                  <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 1 }}>See how you rank against your classmates</div>
+                </div>
               </div>
-            )}
-
-            {/* Invite form (keep existing but update check) */}
-            {showInviteForm && isGroupTeacher(selectedGroup) && selectedGroup.teacherUnlocked && (
-              <div className="rounded-2xl bg-white border border-gray-100 p-6 shadow-xl shadow-gray-100/50">
-                {/* Keep existing invite form code */}
-                <div className="flex items-center gap-3 mb-1">
-                  <div className="h-8 w-1 rounded-full bg-gradient-to-b from-emerald-400 to-teal-500" />
-                  <h4 className="text-base font-bold text-gray-900">Invite Student</h4>
-                </div>
-                <p className="text-xs text-gray-400 mb-5 ml-4">Enter student email to send invitation.</p>
-                <form onSubmit={inviteStudent} className="flex gap-3">
-                  <input
-                    type="email"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    className="flex-1 h-12 px-4 bg-gray-50 border-2 border-gray-100 rounded-xl text-sm font-medium placeholder:text-gray-300 focus:outline-none focus:border-emerald-300 focus:ring-4 focus:ring-emerald-50 transition-all"
-                    placeholder="email@example.com"
-                    required
-                  />
-                  <button
-                    type="submit"
-                    disabled={inviteSending}
-                    className="h-12 px-6 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm font-bold rounded-xl hover:shadow-lg hover:shadow-emerald-200 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:hover:translate-y-0"
-                  >
-                    {inviteSending ? (
-                      <svg className="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                    ) : "Send"}
-                  </button>
-                </form>
-                {showInviteLink && inviteLink && (
-                  <div className="mt-5 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100 rounded-xl">
-                    <p className="text-xs font-bold text-emerald-700 mb-2.5">Invite link generated!</p>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={inviteLink}
-                        readOnly
-                        className="flex-1 h-10 px-3 bg-white border border-emerald-200 rounded-lg text-xs font-mono text-emerald-700"
-                      />
-                      <button
-                        onClick={copyInviteLink}
-                        className="h-10 px-4 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition-colors"
-                      >
-                        Copy
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => setShowInviteLink(false)}
-                      className="mt-2.5 text-[11px] font-semibold text-emerald-500 hover:text-emerald-700 transition-colors"
-                    >
-                      Close
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Tasks list - keep existing, just update permissions */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-gray-900 tracking-tight">Tasks</h2>
-                <span className="text-xs font-semibold text-gray-300 bg-gray-50 px-3 py-1 rounded-full">{selectedGroup.tasks?.length || 0} total</span>
-              </div>
-
-              {selectedGroup.tasks?.length > 0 ? (
-                <div className="space-y-3">
-                  {selectedGroup.tasks.map((task) => {
-                    const isCompleted = task.completedBy?.some((comp) => comp.userId?.toString() === userId)
-                    return (
-                      <div
-                        key={task._id}
-                        className={`rounded-2xl border-2 p-5 transition-all duration-300 ${
-                          isCompleted
-                            ? "border-emerald-200 bg-gradient-to-r from-emerald-50/80 to-teal-50/50"
-                            : "border-gray-100 bg-white hover:shadow-lg hover:shadow-gray-100/80 hover:-translate-y-0.5 hover:border-gray-200"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2.5 mb-1.5">
-                              {isCompleted && (
-                                <div className="flex items-center justify-center h-6 w-6 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-200 shrink-0">
-                                  <svg className="h-3.5 w-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                </div>
-                              )}
-                              <h3 className={`text-sm font-bold truncate ${isCompleted ? "text-emerald-700" : "text-gray-900"}`}>
-                                {task.title}
-                              </h3>
-                            </div>
-                            {task.description && (
-                              <p className="text-xs text-gray-400 leading-relaxed line-clamp-2">{task.description}</p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2.5 shrink-0">
-                            <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 text-[11px] font-black text-amber-700">
-                              <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                              {task.xpReward} XP
-                            </span>
-                            {!isCompleted && selectedGroup.teacherUnlocked && (
-                              <button
-                                onClick={() => completeTask(task._id)}
-                                className="h-9 px-4 bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-xs font-bold rounded-xl hover:shadow-lg hover:shadow-indigo-200 hover:-translate-y-0.5 transition-all duration-200"
-                              >
-                                Complete
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-100">
-                          {task.dueDate && (
-                            <span className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-400">
-                              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                              {new Date(task.dueDate).toLocaleDateString("en-US")}
-                            </span>
-                          )}
-                          <span className="flex items-center gap-1.5 text-[11px] font-semibold text-gray-400">
-                            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m3 5.197V21" />
-                            </svg>
-                            {task.completedBy?.length || 0} completed
-                          </span>
-                          {isCompleted && (
-                            <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600">
-                              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                              Completed
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-20 rounded-2xl border-2 border-dashed border-gray-200 bg-white">
-                  <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-50 to-violet-50 mb-4">
-                    <svg className="h-7 w-7 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                    </svg>
-                  </div>
-                  <p className="text-base font-bold text-gray-900 mb-1">No tasks yet</p>
-                  <p className="text-xs text-gray-400 mb-5">Create the first task for this group</p>
-                  {isGroupTeacher(selectedGroup) && selectedGroup.teacherUnlocked && (
-                    <button
-                      onClick={() => setShowCreateTask(true)}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-xl hover:shadow-lg hover:shadow-indigo-200 hover:-translate-y-0.5 transition-all duration-200"
-                    >
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                      Create Task
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+              <Icon path={I.chevronR} size={18} />
+            </button>
+          </>
         )}
 
-        {/* LEADERBOARD VIEW - Keep existing, no changes needed */}
-        {view === "leaderboard" && selectedGroup && (
-          <div>
-            {/* Keep existing leaderboard code */}
-          </div>
+        {view === "leaderboard" && (
+          lbLoading ? <LoadingGrid rows={1} /> : leaderboard ? (
+            <>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: 14, marginBottom: 24 }}>
+                <StatCard label="Classmates" value={leaderboard.totalStudents} icon={I.users} color="#6366f1" />
+                {myRank && <StatCard label="Your Rank" value={`#${myRank.rank}`} icon={I.trophy} color="#f59e0b" />}
+                {myRank && <StatCard label="Your XP" value={(myRank.xp || 0).toLocaleString()} icon={I.zap} color="#10b981" />}
+              </div>
+              <LeaderboardTable leaderboard={leaderboard} currentUserId={currentUser?._id} isTeacher={false} />
+            </>
+          ) : <EmptyState icon={I.trophy} title="Leaderboard unavailable" subtitle="Could not load leaderboard data." />
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default Academy
+// ══════════════════════════════════════════════════════════════
+// TEACHER / ADMIN VIEW
+// ══════════════════════════════════════════════════════════════
+function TeacherAdminView({ currentUser }) {
+  const isAdmin   = currentUser?.role === "admin";
+  const isTeacher = currentUser?.role === "academyAdmin";
+
+  const [view,          setView]          = useState("academies");
+  const [selectedAcademy,setSelectedAcademy]= useState(null);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [academies,     setAcademies]     = useState([]);
+  const [groups,        setGroups]        = useState([]);
+  const [leaderboard,   setLeaderboard]   = useState(null);
+  const [loading,       setLoading]       = useState(false);
+  const [error,         setError]         = useState(null);
+  const [modal,         setModal]         = useState(null);
+  const [formData,      setFormData]      = useState({});
+  const [submitting,    setSubmitting]    = useState(false);
+  const [searchEmail,   setSearchEmail]   = useState("");
+
+  useEffect(() => { if (view === "academies") fetchAcademies(); }, [view]);
+  useEffect(() => { if (view === "groups")    fetchGroups();    }, [view]);
+
+  const fetchAcademies = async () => {
+    setLoading(true); setError(null);
+    try { const res = await academyService.getAllAcademies(); setAcademies(Array.isArray(res.data) ? res.data : res.data?.data || []); }
+    catch { setError("Failed to load academies."); } finally { setLoading(false); }
+  };
+  const fetchGroups = async () => {
+    setLoading(true); setError(null);
+    try { const res = await academyService.getMyGroups(); setGroups(Array.isArray(res.data) ? res.data : res.data?.data || []); }
+    catch { setError("Failed to load groups."); } finally { setLoading(false); }
+  };
+  const fetchLeaderboard = async (groupId) => {
+    setLoading(true); setError(null);
+    try { const res = await academyService.getGroupLeaderboard(groupId); setLeaderboard(res.data?.data || res.data); }
+    catch { setError("Failed to load leaderboard."); } finally { setLoading(false); }
+  };
+
+  const openGroups      = (a) => { setSelectedAcademy(a); setView("groups"); };
+  const openLeaderboard = (g) => { setSelectedGroup(g); setView("leaderboard"); fetchLeaderboard(g._id); };
+  const goBack = () => {
+    if (view === "leaderboard") setView("groups");
+    else if (view === "groups") { setView("academies"); setSelectedAcademy(null); }
+  };
+
+  const handleCreateAcademy = async () => {
+    if (!formData.name?.trim()) return; setSubmitting(true);
+    try { await academyService.createAcademy({ name: formData.name, description: formData.description }); setModal(null); setFormData({}); fetchAcademies(); }
+    catch (e) { alert(e.response?.data?.message || "Error"); } finally { setSubmitting(false); }
+  };
+  const handleUpdateAcademy = async () => {
+    setSubmitting(true);
+    try { await academyService.updateAcademy(formData._id, { name: formData.name, description: formData.description }); setModal(null); setFormData({}); fetchAcademies(); }
+    catch (e) { alert(e.response?.data?.message || "Error"); } finally { setSubmitting(false); }
+  };
+  const handleDeleteAcademy = async (id) => {
+    if (!window.confirm("Delete this academy and all its groups?")) return;
+    try { await academyService.deleteAcademy(id); fetchAcademies(); } catch (e) { alert(e.response?.data?.message || "Error"); }
+  };
+  const handleCreateGroup = async () => {
+    if (!formData.name?.trim() || !formData.level) return; setSubmitting(true);
+    try { await academyService.createGroup({ name: formData.name, level: formData.level }); setModal(null); setFormData({}); fetchGroups(); }
+    catch (e) { alert(e.response?.data?.message || "Error"); } finally { setSubmitting(false); }
+  };
+  const handleUpdateGroup = async () => {
+    setSubmitting(true);
+    try { await academyService.updateGroup(formData._id, { name: formData.name, level: formData.level }); setModal(null); setFormData({}); fetchGroups(); }
+    catch (e) { alert(e.response?.data?.message || "Error"); } finally { setSubmitting(false); }
+  };
+  const handleDeleteGroup = async (id) => {
+    if (!window.confirm("Delete this group?")) return;
+    try { await academyService.deleteGroup(id); fetchGroups(); } catch (e) { alert(e.response?.data?.message || "Error"); }
+  };
+  const handleAddStudent = async () => {
+    if (!searchEmail.trim()) return; setSubmitting(true);
+    try { await academyService.addStudentToGroup(formData.groupId, { email: searchEmail.trim().toLowerCase() }); setModal(null); setSearchEmail(""); setFormData({}); fetchGroups(); }
+    catch (e) { alert(e.response?.data?.message || "Student not found"); } finally { setSubmitting(false); }
+  };
+  const handleRemoveStudent = async (groupId, studentId) => {
+    if (!window.confirm("Remove this student from the group?")) return;
+    try { await academyService.removeStudentFromGroup(groupId, studentId); fetchLeaderboard(groupId); }
+    catch (e) { alert(e.response?.data?.message || "Error"); }
+  };
+
+  const headerTitle = view === "academies" ? "Academies" : view === "groups" ? (selectedAcademy?.name || "Groups") : selectedGroup?.name;
+  const headerSub   = view === "leaderboard" ? "Leaderboard" : view === "groups" ? "Manage groups" : "Manage academies";
+  const headerActions = (
+    <>
+      {view === "academies" && isAdmin   && <Btn icon={I.plus}    onClick={() => { setFormData({}); setModal("createAcademy"); }}>New Academy</Btn>}
+      {view === "groups"    && isTeacher && <Btn icon={I.plus}    onClick={() => { setFormData({}); setModal("createGroup"); }}>New Group</Btn>}
+      {view === "leaderboard" && isTeacher && selectedGroup && <Btn icon={I.userPlus} onClick={() => { setFormData({ groupId: selectedGroup._id }); setModal("addStudent"); }}>Add Student</Btn>}
+    </>
+  );
+
+  return (
+    <div style={{ fontFamily: "'DM Sans','Segoe UI',sans-serif", minHeight: "100vh", background: "#f7f8fc" }}>
+      <PageHeader title={headerTitle} subtitle={headerSub} back={view !== "academies" ? goBack : null} actions={headerActions} />
+
+      <div style={{ padding: "32px", maxWidth: 1100, margin: "0 auto" }}>
+        {error && <div style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", padding: "12px 16px", borderRadius: 10, marginBottom: 24, fontSize: 14 }}>{error}</div>}
+
+        {view === "academies" && (
+          loading ? <LoadingGrid /> :
+          academies.length === 0 ? <EmptyState icon={I.shield} title="No academies yet" subtitle={isAdmin ? "Create your first academy to get started." : "No academies assigned to you yet."} /> : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))", gap: 18 }}>
+              {academies.map(a => (
+                <AcademyCard key={a._id} academy={a} isAdmin={isAdmin}
+                  onView={() => openGroups(a)}
+                  onEdit={() => { setFormData({ _id: a._id, name: a.name, description: a.description }); setModal("editAcademy"); }}
+                  onDelete={() => handleDeleteAcademy(a._id)}
+                />
+              ))}
+            </div>
+          )
+        )}
+
+        {view === "groups" && (
+          loading ? <LoadingGrid /> :
+          groups.length === 0 ? <EmptyState icon={I.users} title="No groups yet" subtitle={isTeacher ? "Create your first group to start adding students." : "No groups."} /> : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 18 }}>
+              {groups.map(g => (
+                <GroupCard key={g._id} group={g} isTeacher={isTeacher}
+                  onLeaderboard={() => openLeaderboard(g)}
+                  onEdit={() => { setFormData({ _id: g._id, name: g.name, level: g.level }); setModal("editGroup"); }}
+                  onDelete={() => handleDeleteGroup(g._id)}
+                  onAddStudent={() => { setFormData({ groupId: g._id }); setModal("addStudent"); }}
+                />
+              ))}
+            </div>
+          )
+        )}
+
+        {view === "leaderboard" && (
+          loading ? <LoadingGrid rows={1} /> : leaderboard ? (
+            <>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 14, marginBottom: 28 }}>
+                <StatCard label="Total Students" value={leaderboard.totalStudents} icon={I.users} color="#6366f1" />
+                <StatCard label="Level" value={leaderboard.level || "—"} icon={I.book} color="#f59e0b" />
+              </div>
+              <LeaderboardTable leaderboard={leaderboard} currentUserId={currentUser?._id} isTeacher={isTeacher} onRemove={handleRemoveStudent} groupId={selectedGroup?._id} />
+            </>
+          ) : null
+        )}
+      </div>
+
+      {/* Modals */}
+      <Modal open={modal === "createAcademy"} onClose={() => setModal(null)} title="Create Academy">
+        <Field label="Academy Name"><Input placeholder="e.g. Gjuha Academy Prishtinë" value={formData.name || ""} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} /></Field>
+        <Field label="Description (optional)">
+          <textarea value={formData.description || ""} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} placeholder="Brief description…" rows={3}
+            style={{ width: "100%", boxSizing: "border-box", padding: "9px 12px", border: "1.5px solid #e2e8f0", borderRadius: 8, fontSize: 14, outline: "none", resize: "vertical", background: "#fafafa" }} />
+        </Field>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
+          <Btn loading={submitting} onClick={handleCreateAcademy}>Create Academy</Btn>
+        </div>
+      </Modal>
+
+      <Modal open={modal === "editAcademy"} onClose={() => setModal(null)} title="Edit Academy">
+        <Field label="Academy Name"><Input value={formData.name || ""} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} /></Field>
+        <Field label="Description">
+          <textarea value={formData.description || ""} onChange={e => setFormData(p => ({ ...p, description: e.target.value }))} rows={3}
+            style={{ width: "100%", boxSizing: "border-box", padding: "9px 12px", border: "1.5px solid #e2e8f0", borderRadius: 8, fontSize: 14, outline: "none", resize: "vertical", background: "#fafafa" }} />
+        </Field>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
+          <Btn loading={submitting} onClick={handleUpdateAcademy}>Save Changes</Btn>
+        </div>
+      </Modal>
+
+      <Modal open={modal === "createGroup"} onClose={() => setModal(null)} title="Create Group">
+        <Field label="Group Name" hint='e.g. "A1 Monday 18:00"'><Input placeholder="Group name" value={formData.name || ""} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} /></Field>
+        <Field label="Level">
+          <Sel value={formData.level || ""} onChange={e => setFormData(p => ({ ...p, level: e.target.value }))}>
+            <option value="">Select level…</option>
+            {["A1","A2","B1","B2","C1","C2"].map(l => <option key={l}>{l}</option>)}
+          </Sel>
+        </Field>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
+          <Btn loading={submitting} onClick={handleCreateGroup}>Create Group</Btn>
+        </div>
+      </Modal>
+
+      <Modal open={modal === "editGroup"} onClose={() => setModal(null)} title="Edit Group">
+        <Field label="Group Name"><Input value={formData.name || ""} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} /></Field>
+        <Field label="Level">
+          <Sel value={formData.level || ""} onChange={e => setFormData(p => ({ ...p, level: e.target.value }))}>
+            <option value="">Select level…</option>
+            {["A1","A2","B1","B2","C1","C2"].map(l => <option key={l}>{l}</option>)}
+          </Sel>
+        </Field>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <Btn variant="ghost" onClick={() => setModal(null)}>Cancel</Btn>
+          <Btn loading={submitting} onClick={handleUpdateGroup}>Save Changes</Btn>
+        </div>
+      </Modal>
+
+      <Modal open={modal === "addStudent"} onClose={() => { setModal(null); setSearchEmail(""); }} title="Add Student to Group">
+        <Field label="Student Email" hint="Enter the student's registered email address.">
+          <Input type="email" placeholder="student@example.com" value={searchEmail} onChange={e => setSearchEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handleAddStudent()} />
+        </Field>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <Btn variant="ghost" onClick={() => { setModal(null); setSearchEmail(""); }}>Cancel</Btn>
+          <Btn icon={I.userPlus} loading={submitting} onClick={handleAddStudent}>Add Student</Btn>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+// ── AcademyCard ────────────────────────────────────────────────────────────────
+function AcademyCard({ academy, isAdmin, onView, onEdit, onDelete }) {
+  const admin = academy.academyAdmin;
+  return (
+    <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #eef0f6", padding: "22px", boxShadow: "0 1px 6px rgba(0,0,0,0.04)", transition: "box-shadow 0.2s, transform 0.15s", cursor: "pointer" }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 24px rgba(99,102,241,0.12)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 6px rgba(0,0,0,0.04)"; e.currentTarget.style.transform = "none"; }}
+      onClick={onView}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
+            <Icon path={I.shield} size={20} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 16, color: "#0f172a" }}>{academy.name}</div>
+            <div style={{ fontSize: 12, color: academy.isActive !== false ? "#22c55e" : "#ef4444", fontWeight: 600, marginTop: 1 }}>
+              {academy.isActive !== false ? "● Active" : "● Inactive"}
+            </div>
+          </div>
+        </div>
+        {isAdmin && (
+          <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+            <ActionBtn icon={I.edit} onClick={onEdit} />
+            <ActionBtn icon={I.trash} onClick={onDelete} danger />
+          </div>
+        )}
+      </div>
+      {academy.description && <p style={{ margin: "0 0 14px", fontSize: 13, color: "#64748b", lineHeight: 1.5 }}>{academy.description}</p>}
+      {admin && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: "#f8f9ff", borderRadius: 8 }}>
+          <Avatar name={`${admin.emri || ""} ${admin.mbiemri || ""}`} size={26} />
+          <div>
+            <div style={{ fontSize: 12, color: "#94a3b8" }}>Academy Admin</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#0f172a" }}>{admin.emri} {admin.mbiemri}</div>
+          </div>
+        </div>
+      )}
+      <div style={{ marginTop: 14, display: "flex", alignItems: "center", justifyContent: "flex-end", color: "#6366f1", fontSize: 13, fontWeight: 600, gap: 4 }}>
+        View Groups <Icon path={I.chevronR} size={15} />
+      </div>
+    </div>
+  );
+}
+
+// ── GroupCard (teacher view — shows join code) ─────────────────────────────────
+function GroupCard({ group, isTeacher, onLeaderboard, onEdit, onDelete, onAddStudent }) {
+  const count = group.studentCount ?? group.students?.length ?? 0;
+  const [copied, setCopied] = useState(false);
+  return (
+    <div style={{ background: "#fff", borderRadius: 14, border: "1px solid #eef0f6", padding: "20px", boxShadow: "0 1px 6px rgba(0,0,0,0.04)", transition: "box-shadow 0.2s, transform 0.15s" }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 24px rgba(99,102,241,0.1)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 6px rgba(0,0,0,0.04)"; e.currentTarget.style.transform = "none"; }}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 11, background: "#f0f4ff", display: "flex", alignItems: "center", justifyContent: "center", color: "#6366f1" }}>
+            <Icon path={I.users} size={19} />
+          </div>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 15, color: "#0f172a" }}>{group.name}</div>
+            <div style={{ marginTop: 3 }}><LevelBadge level={group.level} /></div>
+          </div>
+        </div>
+        {isTeacher && (
+          <div style={{ display: "flex", gap: 4 }}>
+            <ActionBtn icon={I.edit} onClick={onEdit} />
+            <ActionBtn icon={I.trash} onClick={onDelete} danger />
+          </div>
+        )}
+      </div>
+
+      {isTeacher && group.joinCode && (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#f8f9ff", borderRadius: 8, padding: "8px 12px", marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <Icon path={I.key} size={13} />
+            <span style={{ fontWeight: 800, letterSpacing: "0.15em", color: "#4f46e5", fontSize: 15 }}>{group.joinCode}</span>
+          </div>
+          <button onClick={() => { navigator.clipboard.writeText(group.joinCode); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: copied ? "#16a34a" : "#6366f1", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>
+            <Icon path={copied ? I.check : I.copy} size={12} />
+            {copied ? "Copied" : "Copy"}
+          </button>
+        </div>
+      )}
+
+      <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#64748b", fontSize: 13, marginBottom: 14 }}>
+        <Icon path={I.users} size={14} /> {count} student{count !== 1 ? "s" : ""}
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={onLeaderboard} style={{ flex: 1, background: "#f0f0ff", color: "#6366f1", border: "none", borderRadius: 9, padding: "8px 0", fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 5, transition: "background 0.15s" }}
+          onMouseEnter={e => e.currentTarget.style.background = "#e0e0ff"}
+          onMouseLeave={e => e.currentTarget.style.background = "#f0f0ff"}
+        >
+          <Icon path={I.trophy} size={14} /> Leaderboard
+        </button>
+        {isTeacher && (
+          <button onClick={onAddStudent} style={{ background: "#f0fdf4", color: "#16a34a", border: "none", borderRadius: 9, padding: "8px 12px", fontWeight: 600, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 5, transition: "background 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.background = "#dcfce7"}
+            onMouseLeave={e => e.currentTarget.style.background = "#f0fdf4"}
+          >
+            <Icon path={I.userPlus} size={14} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
+// ROOT EXPORT — routes by role automatically
+// ══════════════════════════════════════════════════════════════
+export default function Academy() {
+  const { user } = useAuth();
+  if (!user) return null;
+  if (user.role === "user") return <StudentView currentUser={user} />;
+  return <TeacherAdminView currentUser={user} />;
+}

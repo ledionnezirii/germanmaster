@@ -1,7 +1,54 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { CheckCircle, XCircle, ArrowLeft, Trophy, Target, Star, Flame, BookOpen } from "lucide-react";
+import { CheckCircle, XCircle, ArrowLeft, Trophy, Target, Star, Flame, BookOpen, Crown, Lock } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+function PaywallModal({ onClose }) {
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.85, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.85, opacity: 0, y: 20 }}
+          transition={{ type: "spring", stiffness: 350, damping: 28 }}
+          className="bg-white rounded-3xl shadow-2xl border-2 border-emerald-200 p-8 max-w-sm w-full text-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 flex items-center justify-center mx-auto mb-5">
+            <Crown className="h-10 w-10 text-amber-500" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Limit i Arritur</h2>
+          <p className="text-gray-500 text-sm mb-2 leading-relaxed">
+            Versioni falas lejon vetëm <span className="font-bold text-emerald-600">3</span> provime të kryera.
+          </p>
+          <p className="text-gray-400 text-xs mb-6 leading-relaxed">
+            Kaloni në planin Premium për të pasur akses të pakufizuar në të gjitha provimet.
+          </p>
+          <button
+            onClick={() => { window.location.href = "/payments" }}
+            className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all border-none cursor-pointer mb-3"
+          >
+            Shiko Planet Premium
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 bg-gray-50 text-gray-500 rounded-xl font-medium text-sm border border-gray-200 hover:bg-gray-100 transition-all cursor-pointer"
+          >
+            Mbyll
+          </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
 
 const getLevelColor = (level) => {
   const map = {
@@ -242,6 +289,8 @@ export default function Exam() {
 
   const [finishedExams, setFinishedExams] = useState({});
   const [expandedSections, setExpandedSections] = useState({});
+  const [isPaid, setIsPaid] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   const [questionKey, setQuestionKey] = useState(0);
 
@@ -253,7 +302,18 @@ export default function Exam() {
     fetchedRef.current = true;
     fetchAvailableLevels();
     loadFinishedExams();
+    checkSubscription();
   }, []);
+
+  const checkSubscription = async () => {
+    try {
+      const { subscriptionService } = await import("../services/api");
+      const status = await subscriptionService.checkStatus();
+      setIsPaid(status.active || false);
+    } catch (e) {
+      console.error("Error checking subscription:", e);
+    }
+  };
 
   useEffect(() => {
     return () => {
@@ -667,14 +727,23 @@ export default function Exam() {
   }
 
   if (currentSection === "select") {
+    const finishedCount = Object.keys(finishedExams).length;
+    const FREE_EXAM_LIMIT = 3;
+
     return (
       <div className="min-h-screen bg-slate-50 p-6">
+        {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
         <FadeIn className="max-w-6xl mx-auto">
           <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-5">
             <h1 className="text-2xl font-bold text-slate-800 mb-1">{"Përgatitje për Provime"}</h1>
             <p className="text-slate-500 text-sm">
               {"Zgjidhni nivelin tuaj dhe filloni testin për të vlerësuar njohuritë tuaja."}
             </p>
+            {!isPaid && (
+              <p className="text-xs text-amber-600 mt-2 font-medium">
+                {`${Math.min(finishedCount, FREE_EXAM_LIMIT)}/${FREE_EXAM_LIMIT} provime falas të përdorura`}
+              </p>
+            )}
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 p-4 mb-5">
@@ -702,41 +771,34 @@ export default function Exam() {
               }).map((examLabel) => {
                 const isFinished = !!finishedExams[examLabel];
                 const finishedScore = finishedExams[examLabel]?.score;
+                const isLocked = !isFinished && !isPaid && finishedCount >= FREE_EXAM_LIMIT;
 
                 return (
                   <button
                     key={examLabel}
-                    onClick={() => selectExam(examLabel)}
-                    className={`relative flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all border active:scale-[0.98] ${isFinished
-                        ? "bg-orange-50 border-orange-200 hover:border-orange-300"
-                        : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm"
-                      }`}
+                    onClick={() => isLocked ? setShowPaywall(true) : selectExam(examLabel)}
+                    className={`relative flex items-center gap-3 px-4 py-3.5 rounded-xl text-left transition-all border active:scale-[0.98] ${
+                      isLocked
+                        ? "bg-slate-50 border-slate-200 hover:border-slate-300 opacity-70"
+                        : isFinished
+                          ? "bg-orange-50 border-orange-200 hover:border-orange-300"
+                          : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm"
+                    }`}
                   >
                     <span className={`flex-shrink-0 px-2 py-1 rounded-md text-[10px] font-bold border ${getLevelColor(level)}`}>
                       {level}
                     </span>
 
-                    <span className={`text-sm font-semibold flex-1 ${isFinished ? "text-orange-700" : "text-slate-800"}`}>
+                    <span className={`text-sm font-semibold flex-1 ${isFinished ? "text-orange-700" : isLocked ? "text-slate-400" : "text-slate-800"}`}>
                       {examLabel}
                     </span>
 
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      {isFinished && (
-                        <span className="text-[10px] font-bold text-orange-500 mr-1">{finishedScore}%</span>
-                      )}
-                      <svg width="14" height="14" fill="none" stroke={isFinished ? "#f97316" : "#94a3b8"} viewBox="0 0 24 24" strokeWidth="2">
-                        <path d="M3 18v-6a9 9 0 0118 0v6" strokeLinecap="round" />
-                        <path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3v5zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3v5z" />
-                      </svg>
-                      <svg width="14" height="14" fill="none" stroke={isFinished ? "#f97316" : "#94a3b8"} viewBox="0 0 24 24" strokeWidth="2">
-                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" strokeLinecap="round" />
-                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" strokeLinecap="round" />
-                      </svg>
-                      <svg width="14" height="14" fill="none" stroke={isFinished ? "#f97316" : "#94a3b8"} viewBox="0 0 24 24" strokeWidth="2">
-                        <path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2V3z" strokeLinecap="round" />
-                        <path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7V3z" strokeLinecap="round" />
-                      </svg>
-                    </div>
+                    {isFinished && (
+                      <span className="text-[10px] font-bold text-orange-500 flex-shrink-0">{finishedScore}%</span>
+                    )}
+                    {isLocked && (
+                      <Lock className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                    )}
                   </button>
                 );
               })

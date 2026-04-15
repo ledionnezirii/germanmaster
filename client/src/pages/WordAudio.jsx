@@ -1,12 +1,13 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { wordAudioService, ttsService } from "../services/api";
+import { useLanguage } from "../context/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { Crown, Lock, Star, LogOut, Volume, Check, X } from "lucide-react";
 
-async function speakGerman(text, setId, wordIndex, level) {
+async function speakGerman(text, setId, wordIndex, level, language = "de") {
   try {
-    const url = await ttsService.getWordAudioAudio(setId, wordIndex, text, level);
+    const url = await ttsService.getWordAudioAudio(setId, wordIndex, text, level, language);
     const audio = new Audio(url);
     audio.play();
   } catch (error) {
@@ -14,7 +15,8 @@ async function speakGerman(text, setId, wordIndex, level) {
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = "de-DE";
+      const langMap = { de: "de-DE", en: "en-GB", fr: "fr-FR", tr: "tr-TR", it: "it-IT" };
+      utterance.lang = langMap[language] || "de-DE";
       utterance.rate = 0.9;
       window.speechSynthesis.speak(utterance);
     }
@@ -82,7 +84,7 @@ function PaywallModal({ onClose }) {
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">Limit i Arritur</h2>
           <p className="text-gray-500 text-sm mb-2 leading-relaxed">
-            Versioni falas lejon vetëm <span className="font-bold text-emerald-600">3</span> sete të përfunduara.
+            Versioni falas lejon vetëm <span className="font-bold text-emerald-600">5</span> sete të përfunduara.
           </p>
           <p className="text-gray-400 text-xs mb-6 leading-relaxed">
             Kaloni në planin Premium për të pasur akses të pakufizuar në të gjitha setet Word Audio.
@@ -106,6 +108,7 @@ function PaywallModal({ onClose }) {
 }
 
 export default function WordAudio() {
+  const { language } = useLanguage();
   const [sets, setSets] = useState([]);
   const [finishedIds, setFinishedIds] = useState([]);
   const [activeSet, setActiveSet] = useState(null);
@@ -114,6 +117,13 @@ export default function WordAudio() {
   const [showPaywall, setShowPaywall] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [freeLimit, setFreeLimit] = useState(3);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -121,7 +131,7 @@ export default function WordAudio() {
       try {
         const params = selectedLevel !== "all" ? { level: selectedLevel } : {};
         const [setsRes, finishedRes] = await Promise.all([
-          wordAudioService.getAllSets(params),
+          wordAudioService.getAllSets(params, language),
           wordAudioService.getFinishedSets(),
         ]);
 
@@ -141,7 +151,7 @@ export default function WordAudio() {
       setLoading(false);
     };
     load();
-  }, [selectedLevel]);
+  }, [selectedLevel, language]);
 
   const handleFinish = (setId, passed, limitReached) => {
     if (limitReached) {
@@ -154,7 +164,7 @@ export default function WordAudio() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-48">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
       </div>
     );
@@ -175,19 +185,44 @@ export default function WordAudio() {
 
       <div className="max-w-6xl mx-auto w-full">
         <header className="mb-4 flex-shrink-0">
-          <div className="bg-white rounded-2xl shadow-xl border border-emerald-100 p-6 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full transform translate-x-16 -translate-y-16 opacity-50" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-teal-100 to-emerald-100 rounded-full transform -translate-x-8 translate-y-8 opacity-50" />
-            <div className="relative z-10">
-              <div className="flex items-center justify-between">
+          <div style={{
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 24,
+            background: "linear-gradient(135deg, #9d174d 0%, #db2777 40%, #ec4899 75%, #f9a8d4 100%)",
+            borderRadius: 20,
+            padding: isMobile ? "20px" : "28px 32px",
+            position: "relative",
+            overflow: "hidden",
+          }}>
+            <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }} />
+            <div style={{ position: "absolute", bottom: -60, right: 80, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+
+            <div style={{ flex: 1, position: "relative", zIndex: 1 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.8)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+                <Volume size={14} />
+                Praktikë Gjuhësore
+              </div>
+              <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 28 : 38, fontWeight: 400, color: "#fff", letterSpacing: -0.5, lineHeight: 1.1, margin: "0 0 8px" }}>
+                Bashko Fjalet
+              </h1>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", margin: 0, maxWidth: 380, lineHeight: 1.5 }}>
+                Zgjidh nje fjale dhe zgjidh fjalet {(LANG_CONFIG[language] || LANG_CONFIG.de).name} - Shqip
+              </p>
+            </div>
+
+            <div style={{ display: "flex", gap: 12, flexShrink: 0, position: "relative", zIndex: 1, alignSelf: "center", width: isMobile ? "100%" : "auto" }}>
+              <div style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, flex: isMobile ? 1 : "unset", minWidth: isMobile ? 0 : 130 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(255,255,255,0.2)" }}>
+                  <Star size={16} color="#fff" />
+                </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 mb-2">Word Match</h1>
-                  <p className="text-gray-600">Zgjidh nje fjale dhe zgjidh fjalet Gjermanisht - Shqip</p>
+                  <div style={{ fontSize: 22, fontWeight: 600, color: "#fff", lineHeight: 1, marginBottom: 2 }}>{finishedIds.length}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>Të Përfunduara</div>
                 </div>
               </div>
-              <p className="text-xs text-gray-400 mt-2">
-                Teste të përfunduara: {finishedIds.length}
-              </p>
             </div>
           </div>
         </header>
@@ -241,10 +276,10 @@ export default function WordAudio() {
                     }
                   }}
                   className={`p-4 rounded-2xl shadow-lg border-2 transition-all duration-200 cursor-pointer overflow-hidden relative group h-fit hover:-translate-y-1 ${
-                    isLocked
+                    done
                       ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-amber-300 hover:border-amber-400"
-                      : done
-                      ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-amber-300 hover:border-amber-400"
+                      : isLocked
+                      ? "bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 hover:border-gray-300"
                       : "bg-white border-gray-100 hover:border-emerald-300"
                   }`}
                 >
@@ -252,35 +287,37 @@ export default function WordAudio() {
                     {set.level}
                   </div>
 
-                  {isLocked && !done && (
-                    <div className="absolute top-3 left-3 w-7 h-7 rounded-lg bg-gradient-to-br from-amber-400 to-orange-400 flex items-center justify-center shadow-md">
-                      <Lock className="w-4 h-4 text-white" />
+                  {isLocked && (
+                    <div className="absolute top-3 left-3 z-20">
+                      <Lock className="w-4 h-4 text-gray-400" />
                     </div>
                   )}
 
                   <div className="relative z-10">
                     <h3 className={`text-sm font-bold mb-2 pr-14 truncate ${
-                      isLocked || done ? "text-amber-700 group-hover:text-amber-800" : "text-gray-800 group-hover:text-emerald-700"
+                      done ? "text-amber-700 group-hover:text-amber-800" : isLocked ? "text-gray-400" : "text-gray-800 group-hover:text-emerald-700"
                     }`}>
                       {set.title}
                     </h3>
-                    <p className={`text-xs line-clamp-2 leading-relaxed ${isLocked || done ? "text-amber-600" : "text-gray-500"}`}>
+                    <p className={`text-xs line-clamp-2 leading-relaxed ${done ? "text-amber-600" : isLocked ? "text-gray-300" : "text-gray-500"}`}>
                       {set.words?.length} fjale për të mësuar
                     </p>
                     <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
-                      <span className={`text-xs font-medium ${isLocked || done ? "text-amber-500" : "text-gray-400"}`}>
-                        Gjermanisht • Shqip
+                      <span className={`text-xs font-medium ${done ? "text-amber-500" : isLocked ? "text-gray-300" : "text-gray-400"}`}>
+                        {(LANG_CONFIG[language] || LANG_CONFIG.de).name} • Shqip
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 px-2.5 py-1 rounded-full font-bold flex items-center gap-1 shadow-sm border border-emerald-200">
-                          <Star className="h-3 w-3" />
-                          {set.xp}
-                        </span>
+                        {!isLocked && (
+                          <span className="text-xs bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 px-2.5 py-1 rounded-full font-bold flex items-center gap-1 shadow-sm border border-emerald-200">
+                            <Star className="h-3 w-3" />
+                            {set.xp}
+                          </span>
+                        )}
                         <span className={`text-xs px-3 py-1 rounded-full font-semibold shadow-sm ${
                           done
                             ? "bg-gradient-to-r from-amber-400 to-orange-400 text-white"
                             : isLocked
-                            ? "bg-gradient-to-r from-amber-300 to-orange-300 text-white"
+                            ? "bg-gray-200 text-gray-400"
                             : "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
                         }`}>
                           {done ? "Kryer" : isLocked ? "Premium" : "Fillo"}
@@ -298,7 +335,17 @@ export default function WordAudio() {
   );
 }
 
+const LANG_CONFIG = {
+  de: { name: "Gjermanisht", flag: "https://flagcdn.com/w40/de.png", speechLang: "de-DE" },
+  en: { name: "Anglisht",    flag: "https://flagcdn.com/w40/gb.png", speechLang: "en-GB" },
+  fr: { name: "Frëngjisht",  flag: "https://flagcdn.com/w40/fr.png", speechLang: "fr-FR" },
+  tr: { name: "Turqisht",    flag: "https://flagcdn.com/w40/tr.png", speechLang: "tr-TR" },
+  it: { name: "Italisht",    flag: "https://flagcdn.com/w40/it.png", speechLang: "it-IT" },
+}
+
 function QuizScreen({ set, onFinish }) {
+  const { language } = useLanguage();
+  const langConfig = LANG_CONFIG[language] || LANG_CONFIG.de;
   const [matched, setMatched] = useState({});
   const [selectedGerman, setSelectedGerman] = useState(null);
   const [wrongPair, setWrongPair] = useState(null);
@@ -316,9 +363,9 @@ function QuizScreen({ set, onFinish }) {
   const handleGermanClick = (word, index) => {
     if (matched[word.germanWord]) return;
     setIsSpeaking(word.germanWord);
-    speakGerman(word.germanWord, set._id, index, set.level);
+    speakGerman(word.germanWord, set._id, index, set.level, language);
     setSelectedGerman(word);
-    setTimeout(() => setIsSpeaking(null), 1500);
+    setTimeout(() => setIsSpeaking(null), 2000);
   };
 
   const handleAlbanianClick = async (albanianWord) => {
@@ -436,141 +483,145 @@ function QuizScreen({ set, onFinish }) {
 
   const progressPercent = (Object.keys(matched).length / set.words.length) * 100;
 
+  const SoundWave = () => {
+    const bars = [0.4, 0.7, 1, 0.6, 0.9, 0.5, 0.8, 0.4];
+    return (
+      <span className="flex items-center gap-px ml-auto">
+        {bars.map((h, i) => (
+          <motion.span
+            key={i}
+            className="block w-[3px] rounded-full bg-white/90"
+            animate={{ scaleY: [h * 0.4, h, h * 0.5, h * 0.9, h * 0.3] }}
+            transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: i * 0.07 }}
+            style={{ height: 14, transformOrigin: "center" }}
+          />
+        ))}
+      </span>
+    );
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 flex flex-col">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-100 shadow-sm">
-        <div className="flex items-center gap-3 p-3 max-w-4xl mx-auto">
-          <button
-            onClick={() => onFinish(false, false)}
-            className="w-9 h-9 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-500 hover:text-gray-700 transition-all"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <h2 className="font-bold text-gray-900 text-sm truncate">{set.title}</h2>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">{set.level}</span>
-              <span className="text-xs text-gray-400">•</span>
-              <span className="text-xs text-amber-600 font-medium">{set.xp} XP</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-50 to-teal-50 px-3 py-1.5 rounded-xl border border-emerald-200">
-            <Check className="h-3.5 w-3.5 text-emerald-600" />
-            <span className="text-xs font-bold text-emerald-700">{Object.keys(matched).length}/{set.words.length}</span>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-sky-50/30 flex flex-col">
+      {/* Slim top bar */}
+      <div className="flex items-center gap-2 px-3 pt-3 pb-2 max-w-4xl mx-auto w-full">
+        <button
+          onClick={() => onFinish(false, false)}
+          className="w-8 h-8 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-all shadow-sm flex-shrink-0"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+        </button>
         {/* Progress bar */}
-        <div className="h-1 bg-gray-100">
+        <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-emerald-500 to-teal-500"
+            className="h-full bg-gradient-to-r from-blue-500 via-sky-400 to-cyan-400 rounded-full"
             initial={{ width: 0 }}
             animate={{ width: `${progressPercent}%` }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
           />
         </div>
-      </div>
-
-      {/* Instruction banner */}
-      <div className="bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 border-b border-amber-200/50 py-2.5 px-4">
-        <p className="text-xs text-amber-700 font-medium text-center flex items-center justify-center gap-2">
-          <Volume className="h-3.5 w-3.5" />
-          <span>Kliko fjalen Gjermanisht per ta degjuar, pastaj gjej perkthimin Shqip</span>
-        </p>
+        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 flex-shrink-0">
+          {Object.keys(matched).length}/{set.words.length}
+        </span>
       </div>
 
       {/* Quiz Content */}
-      <div className="flex-1 p-4 max-w-4xl mx-auto w-full">
-        <div className="flex flex-row gap-4 h-full">
-          {/* German Column - LEFT */}
-          <div className="flex-1 flex flex-col gap-2 min-w-0">
-            <div className="flex items-center justify-center gap-2 mb-2 py-2 bg-gray-900 rounded-xl">
-              <GermanFlag size={18} />
-              <span className="text-xs font-bold text-white uppercase tracking-wider">Gjermanisht</span>
+      <div className="flex-1 px-3 pb-3 max-w-4xl mx-auto w-full">
+        <div className="flex flex-row gap-2.5 h-full">
+          {/* Language Column - LEFT */}
+          <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+            <div className="flex items-center justify-center gap-1.5 py-2 bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl shadow-sm mb-1">
+              <img src={langConfig.flag} alt="" style={{ width: 16, height: 11, borderRadius: 2 }} />
+              <span className="text-xs font-bold text-white uppercase tracking-wider">{langConfig.name}</span>
             </div>
-            <div className="flex flex-col gap-2">
-              {set.words.map((word, idx) => {
-                const isMatched = !!matched[word.germanWord];
-                const isSelected = selectedGerman?.germanWord === word.germanWord;
-                const isWrong = wrongPair?.german === word.germanWord;
-                const speaking = isSpeaking === word.germanWord;
+            {set.words.map((word, idx) => {
+              const isMatched = !!matched[word.germanWord];
+              const isSelected = selectedGerman?.germanWord === word.germanWord;
+              const isWrong = wrongPair?.german === word.germanWord;
+              const speaking = isSpeaking === word.germanWord;
 
-                return (
-                  <motion.button
-                    key={`ger-${idx}`}
-                    onClick={() => handleGermanClick(word, idx)}
-                    disabled={isMatched}
-                    whileTap={{ scale: 0.98 }}
-                    className={`w-full px-3 py-2.5 rounded-xl border-2 font-semibold text-xs transition-all flex items-center gap-2 ${
-                      isMatched
-                        ? "bg-emerald-50 border-emerald-200 text-emerald-600 opacity-60"
-                        : isWrong
-                        ? "bg-red-50 border-red-300 text-red-600 animate-pulse"
-                        : isSelected
-                        ? "bg-gradient-to-r from-gray-400 to-gray-800 text-white shadow-lg shadow-gray-900/20"
-                        : "bg-white border-gray-200 text-gray-700 hover:border-gray-900 hover:shadow-md cursor-pointer"
-                    } ${speaking ? "ring-2 ring-amber-40 ring-offset-1" : ""}`}
-                  >
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      isMatched ? "bg-emerald-100" : isSelected ? "bg-white/20" : "bg-gray-100"
-                    }`}>
-                      {isMatched ? (
-                        <Check className="h-3.5 w-3.5 text-emerald-600 font-bold" />
-                      ) : (
-                        <Volume className={`h-3.5 w-3.5 ${isSelected ? "text-white" : "text-gray-800"}`} />
-                      )}
-                    </div>
-                    <GermanFlag size={14} />
-                  </motion.button>
-                );
-              })}
-            </div>
+              return (
+                <motion.button
+                  key={`ger-${idx}`}
+                  onClick={() => handleGermanClick(word, idx)}
+                  disabled={isMatched}
+                  whileTap={{ scale: 0.96 }}
+                  className={`w-full px-2.5 py-2 rounded-xl border-2 font-semibold text-xs transition-all duration-200 flex items-center gap-2 relative overflow-hidden ${
+                    isMatched
+                      ? "bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-300 text-emerald-600"
+                      : isWrong
+                      ? "bg-red-50 border-red-400 text-red-600"
+                      : speaking
+                      ? "bg-gradient-to-r from-amber-400 to-orange-400 border-amber-300 text-white shadow-md shadow-amber-400/40"
+                      : isSelected
+                      ? "bg-gradient-to-r from-blue-500 to-cyan-500 border-blue-400 text-white shadow-md shadow-blue-500/30"
+                      : "bg-white border-gray-200 text-gray-700 hover:border-sky-400 hover:shadow-sm cursor-pointer"
+                  }`}
+                >
+                  {speaking && (
+                    <motion.span
+                      className="absolute inset-0 rounded-xl border-2 border-amber-200"
+                      initial={{ opacity: 0.8, scale: 1 }}
+                      animate={{ opacity: 0, scale: 1.06 }}
+                      transition={{ duration: 0.65, repeat: Infinity, ease: "easeOut" }}
+                    />
+                  )}
+                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    isMatched ? "bg-emerald-100" : speaking ? "bg-white/25" : isSelected ? "bg-white/20" : "bg-gray-100"
+                  }`}>
+                    {isMatched ? (
+                      <Check className="h-3 w-3 text-emerald-600" />
+                    ) : (
+                      <Volume className={`h-3 w-3 ${isSelected || speaking ? "text-white" : "text-gray-600"}`} />
+                    )}
+                  </div>
+                  <GermanFlag size={13} />
+                  {speaking && <SoundWave />}
+                </motion.button>
+              );
+            })}
           </div>
 
           {/* Albanian Column - RIGHT */}
-          <div className="flex-1 flex flex-col gap-2 min-w-0">
-            <div className="flex items-center justify-center gap-2 mb-2 py-2 bg-red-600 rounded-xl">
-              <AlbanianFlag size={18} />
+          <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+            <div className="flex items-center justify-center gap-1.5 py-2 bg-gradient-to-r from-red-600 to-red-700 rounded-xl shadow-sm mb-1">
+              <AlbanianFlag size={16} />
               <span className="text-xs font-bold text-white uppercase tracking-wider">Shqip</span>
             </div>
-            <div className="flex flex-col gap-2">
-              {shuffledAlbanian.map((word, idx) => {
-                const isMatched = Object.values(matched).includes(word.albanianWord);
-                const isWrong = wrongPair?.albanian === word.albanianWord;
+            {shuffledAlbanian.map((word, idx) => {
+              const isMatched = Object.values(matched).includes(word.albanianWord);
+              const isWrong = wrongPair?.albanian === word.albanianWord;
 
-                return (
-                  <motion.button
-                    key={`alb-${idx}`}
-                    onClick={() => handleAlbanianClick(word.albanianWord)}
-                    disabled={isMatched}
-                    whileTap={{ scale: 0.98 }}
-                    className={`w-full px-3 py-2.5 rounded-xl border-2 font-bold text-xm transition-all flex items-center gap-2 ${
-                      isMatched
-                        ? "bg-green-200 border-emerald-700 font-bold opacity-60"
-                        : isWrong
-                        ? "bg-red-50 border-red-500 text-red-600 animate-pulse"
-                        : selectedGerman
-                        ? "bg-white border-red-200 text-gray-700 hover:border-red-500 hover:bg-red-50 cursor-pointer hover:shadow-md"
-                        : "bg-gray-50 border-gray-200 text-gray-400"
-                    }`}
-                  >
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      isMatched ? "bg-emerald-100" : selectedGerman ? "bg-red-100" : "bg-gray-100"
-                    }`}>
-                      {isMatched ? (
-                        <Check className="h-3.5 w-3.5 text-green-800 font-bold" />
-                      ) : isWrong ? (
-                        <X className="h-3.5 w-3.5 text-red-500" />
-                      ) : (
-                        <AlbanianFlag size={18} />
-                      )}
-                    </div>
-                    <span className="flex-1 text-left truncate">{word.albanianWord}</span>
-                    
-                  </motion.button>
-                );
-              })}
-            </div>
+              return (
+                <motion.button
+                  key={`alb-${idx}`}
+                  onClick={() => handleAlbanianClick(word.albanianWord)}
+                  disabled={isMatched}
+                  whileTap={{ scale: 0.96 }}
+                  className={`w-full px-2.5 py-2 rounded-xl border-2 font-semibold text-xs transition-all duration-200 flex items-center gap-2 ${
+                    isMatched
+                      ? "bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-300 text-emerald-600"
+                      : isWrong
+                      ? "bg-red-50 border-red-400 text-red-600 animate-pulse"
+                      : selectedGerman
+                      ? "bg-white border-red-300 text-gray-700 hover:border-red-500 hover:bg-red-50 cursor-pointer hover:shadow-sm"
+                      : "bg-gray-50 border-gray-200 text-gray-400 cursor-default"
+                  }`}
+                >
+                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    isMatched ? "bg-emerald-100" : selectedGerman ? "bg-red-100" : "bg-gray-100"
+                  }`}>
+                    {isMatched ? (
+                      <Check className="h-3 w-3 text-emerald-600" />
+                    ) : isWrong ? (
+                      <X className="h-3 w-3 text-red-500" />
+                    ) : (
+                      <AlbanianFlag size={13} />
+                    )}
+                  </div>
+                  <span className="flex-1 text-left truncate">{word.albanianWord}</span>
+                </motion.button>
+              );
+            })}
           </div>
         </div>
       </div>

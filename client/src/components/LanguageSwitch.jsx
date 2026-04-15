@@ -1,9 +1,11 @@
 import { useLanguage } from "../context/LanguageContext"
 
 const LANGUAGES = [
-  { code: "de", flag: "🇩🇪", label: "DE" },
-  { code: "en", flag: "🇬🇧", label: "EN" },
-  { code: "fr", flag: "🇫🇷", label: "FR" },
+  { code: "de", flag: "🇩🇪", label: "Deutsch" },
+  { code: "en", flag: "🇬🇧", label: "English" },
+  { code: "fr", flag: "🇫🇷", label: "Français" },
+  { code: "tr", flag: "🇹🇷", label: "Türkçe" },
+  { code: "it", flag: "🇮🇹", label: "Italiano" },
 ]
 
 const LanguageSwitch = () => {
@@ -15,14 +17,14 @@ const LanguageSwitch = () => {
         <button
           key={lang.code}
           onClick={() => switchLanguage(lang.code)}
-          className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold transition-all duration-200 ${
+          title={lang.label}
+          className={`flex items-center justify-center w-8 h-8 rounded-full text-lg transition-all duration-200 ${
             language === lang.code
-              ? "bg-emerald-500 text-white shadow-md scale-105"
-              : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
+              ? "bg-emerald-500 shadow-md scale-105"
+              : "hover:bg-gray-100"
           }`}
         >
-          <span>{lang.flag}</span>
-          <span>{lang.label}</span>
+          {lang.flag}
         </button>
       ))}
     </div>

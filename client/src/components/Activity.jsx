@@ -28,8 +28,6 @@ const Activity = () => {
       setLoading(true)
       const [heatmapRes, statsRes] = await Promise.all([activityService.getHeatmap(12), activityService.getStats()])
 
-      console.log("[v0] Heatmap data received:", heatmapRes.data)
-
       setActivityData(heatmapRes.data || {})
       setStats(statsRes.data || null)
     } catch (error) {
@@ -87,10 +85,6 @@ const Activity = () => {
         if (currentDate <= endDate) {
           const dateStr = currentDate.toISOString().split("T")[0]
           const hours = activityData[dateStr] || 0
-
-          if (hours > 0) {
-            console.log(`[v0] Date ${dateStr} has ${hours} hours, level: ${getIntensityLevel(hours)}`)
-          }
 
           week.push({
             date: new Date(currentDate),

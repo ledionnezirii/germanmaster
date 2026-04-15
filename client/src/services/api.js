@@ -183,7 +183,7 @@ export const dictionaryService = {
   deleteWord: (id) => api.delete(`/dictionary/${id}`),
 
   // NEW UNLOCK METHODS
-  unlockWord: (wordId) => api.post(`/dictionary/${wordId}/unlock`),
+  unlockWord: (wordId, language = "de") => api.post(`/dictionary/${wordId}/unlock`, { language }),
   getUnlockStats: () => api.get("/dictionary/unlocks/stats"),
   getMyUnlockedWords: (params = {}) =>
     api.get("/dictionary/unlocks/my", { params }),
@@ -201,7 +201,7 @@ export const favoritesService = {
 };
 
 export const categoriesService = {
-  getAllCategories: (params = {}) => api.get("/categories", { params }),
+  getAllCategories: (params = {}, language) => api.get("/categories", { params: { ...params, language } }),
   getCategoryById: (id) => api.get(`/categories/${id}`),
   createCategory: (categoryData) => api.post("/categories", categoryData),
   updateCategory: (id, categoryData) =>
@@ -328,8 +328,8 @@ export const testService = {
   getTestStats: () => api.get("/tests/stats"),
   submitTest: (id, answers, timeSpent, userId) =>
     api.post(`/tests/${id}/submit`, { answers, timeSpent, userId }),
-  getTestAvailability: (userId) =>
-    api.get(`/tests/availability?userId=${userId}`),
+  getTestAvailability: (userId, language = "de") =>
+  api.get(`/tests/availability?userId=${userId}&language=${language}`),
   createTest: (testData) => api.post("/tests", testData),
   updateTest: (id, testData) => api.put(`/tests/${id}`, testData),
   deleteTest: (id) => api.delete(`/tests/${id}`),
@@ -337,8 +337,8 @@ export const testService = {
 };
 
 export const pronunciationService = {
-  getWords: (params = {}) => {
-    return api.get("/pronunciation", { params });
+  getWords: (params = {}, language) => {
+    return api.get("/pronunciation", { params: { ...params, language } });
   },
   addPackage: (packageData) => api.post("/pronunciation", packageData),
   checkPronunciation: (packageId, wordIndex, spokenWord, userId) =>
@@ -351,9 +351,10 @@ export const pronunciationService = {
   getUserCompletedPackages: () => {
     return api.get("/pronunciation/completed-pronunciation-packages");
   },
-  transcribeAudio: async (audioBlob) => {
+  transcribeAudio: async (audioBlob, language = "de") => {
     const formData = new FormData();
     formData.append("audio", audioBlob, "recording.webm");
+    formData.append("language", language);
     const token = localStorage.getItem("authToken");
     const response = await fetch(`${API_BASE_URL}/pronunciation/transcribe`, {
       method: "POST",
@@ -368,7 +369,7 @@ export const pronunciationService = {
 
 
 export const quizService = {
-  getAllQuizzes: () => api.get("/quizes"),
+    getAllQuizzes: (language) => api.get("/quizes", { params: language ? { language } : {} }),
   getQuizById: (id) => api.get(`/quizes/${id}`),
   createQuiz: (quizData) => api.post("/quizes", quizData),
   createBulkQuizzes: (quizzes) => api.post("/quizes/bulk", quizzes),
@@ -382,14 +383,13 @@ export const quizService = {
 
 export const certificatesService = {
   getUserCertificates: () => api.get("/certificates"),
-  issueCertificate: () => api.post("/certificates/issue"),
+  issueCertificate: (data = {}) => api.post("/certificates/issue", data),  // <-- accepts { language }
   downloadCertificate: (certificateId) =>
-    api.get(`/certificates/download/${certificateId}`, {
-      responseType: "blob",
-    }),
-  generateCertificateForLevel: (userId, level) =>
-    api.post("/certificates/generate", { userId, level }),
+    api.get(`/certificates/download/${certificateId}`, { responseType: "blob" }),
+  generateCertificateForLevel: (userId, level, language = "de") =>
+    api.post("/certificates/generate", { userId, level, language }),        // <-- accepts language
 };
+ 
 
 export const achievementsService = {
   updateUserXP: (userId, xpGained) =>
@@ -453,18 +453,21 @@ export const practiceService = {
 };
 
 export const wordsService = {
-  getLearnedWords: () => api.get("/words"),
+  getLearnedWords: (language) =>
+    api.get("/words", { params: language ? { language } : {} }),
   addLearnedWord: (wordData) => api.post("/words", wordData),
+  addBulkLearnedWords: (words, language) => api.post("/words/bulk", { words, language }),
   updateLearnedWord: (id, wordData) => api.put(`/words/${id}`, wordData),
   removeLearnedWord: (id) => api.delete(`/words/${id}`),
-  getWordStats: () => api.get("/words/stats"),
+  getWordStats: (language) =>
+    api.get("/words/stats", { params: language ? { language } : {} }),
   addQuizXp: (xp) => api.post("/words/quiz-xp", { xp }),
-};
+}
 
 export const phraseService = {
   getAllPhrases: (params = {}) => api.get("/phrases", { params }),
-  getPhrasesByLevel: (level, params = {}) =>
-    api.get(`/phrases/level/${level}`, { params }),
+  getPhrasesByLevel: (level, params = {}, language) =>
+    api.get(`/phrases/level/${level}`, { params: { ...params, language } }),
   getPhraseById: (id) => api.get(`/phrases/${id}`),
   markPhraseAsFinished: (phraseId) => api.post(`/phrases/${phraseId}/finish`),
   unmarkPhraseAsFinished: (phraseId) =>
@@ -486,14 +489,14 @@ export const ttsService = {
       .post(`/tts/audio/${testId}`, { text, level })
       .then((res) => res.data.url),
 
-  getDictionaryAudio: (wordId, text, level) =>
+  getDictionaryAudio: (wordId, text, level, language = "de") =>
     api
-      .post(`/tts/dictionary/${wordId}`, { text, level })
+      .post(`/tts/dictionary/${wordId}`, { text, level, language })
       .then((res) => res.data.url),
 
-  getPhraseAudio: (phraseId, text, level) =>
+  getPhraseAudio: (phraseId, text, level, language = "de") =>
     api
-      .post(`/tts/phrase/${phraseId}`, { text, level })
+      .post(`/tts/phrase/${phraseId}`, { text, level, language })
       .then((res) => res.data.url),
   // Exam audio - listening and writing sections
   getExamAudio: (examId, questionIndex, text, level, section) =>
@@ -523,9 +526,9 @@ export const ttsService = {
       items,
       level,
     }),
-      getWordAudioAudio: (setId, wordIndex, text, level) =>
+      getWordAudioAudio: (setId, wordIndex, text, level, language = "de") =>
     api
-      .post(`/tts/wordaudio/${setId}/${wordIndex}`, { text, level })
+      .post(`/tts/wordaudio/${setId}/${wordIndex}`, { text, level, language })
       .then((res) => res.data.url),
 
   preGenerateWordAudioAudio: (setId, words, level) =>
@@ -534,13 +537,13 @@ export const ttsService = {
       words,
       level,
     }),
-  getCategoryAudio: (categoryId, wordIndex, text, level) =>
+  getCategoryAudio: (categoryId, wordIndex, text, level, language = "de") =>
     api
-      .post(`/tts/category/${categoryId}/${wordIndex}`, { text, level })
+      .post(`/tts/category/${categoryId}/${wordIndex}`, { text, level, language })
       .then((res) => res.data.url),
-  getPronunciationAudio: (wordId, text, level) =>
+  getPronunciationAudio: (wordId, text, level, language = "de") =>
     api
-      .post(`/tts/pronunciation/${wordId}`, { text, level })
+      .post(`/tts/pronunciation/${wordId}`, { text, level, language })
       .then((res) => res.data.url),
 
   // Pre-generate all dialogue lines (admin use)
@@ -751,75 +754,7 @@ export const subscriptionService = {
     }
   },
 };
-export const academyService = {
-  // Academy operations
-  getAllAcademies: (params = {}) => api.get("/academies", { params }),
-  getAcademyById: (id) => api.get(`/academies/${id}`),
-  createAcademy: (academyData) => api.post("/academies", academyData),
-  updateAcademy: (id, academyData) => api.put(`/academies/${id}`, academyData),
-  deleteAcademy: (id) => api.delete(`/academies/${id}`),
-  getMyAcademies: () => api.get("/academies/my/list"),
 
-  // Group operations
-  createGroup: (academyId, groupData) =>
-    api.post(`/academies/${academyId}/groups`, groupData),
-  updateGroup: (academyId, groupId, groupData) =>
-    api.put(`/academies/${academyId}/groups/${groupId}`, groupData),
-  deleteGroup: (academyId, groupId) =>
-    api.delete(`/academies/${academyId}/groups/${groupId}`),
-  getGroupById: (academyId, groupId) =>
-    api.get(`/academies/${academyId}/groups/${groupId}`),
-  getMyGroups: () => api.get("/academies/groups/my"),
-  getGroupInviteInfo: (academyId, groupId) =>
-    api.get(`/academies/${academyId}/groups/${groupId}/invite-info`),
-
-  unlockGroupWithPin: (academyId, groupId, teacherPin) =>
-    api.post(`/academies/${academyId}/groups/${groupId}/unlock`, {
-      teacherPin,
-    }),
-  // NEW: Join a group using the teacher code
-  joinByTeacherCode: (teacherCode) =>
-    api.post("/academies/join-by-code", { teacherCode }),
-
-  // Task operations
-  createTask: (academyId, groupId, taskData) =>
-    api.post(`/academies/${academyId}/groups/${groupId}/tasks`, taskData),
-  updateTask: (academyId, groupId, taskId, taskData) =>
-    api.put(
-      `/academies/${academyId}/groups/${groupId}/tasks/${taskId}`,
-      taskData,
-    ),
-  deleteTask: (academyId, groupId, taskId) =>
-    api.delete(`/academies/${academyId}/groups/${groupId}/tasks/${taskId}`),
-  completeTask: (academyId, groupId, taskId) =>
-    api.post(
-      `/academies/${academyId}/groups/${groupId}/tasks/${taskId}/complete`,
-    ),
-  getMyTasks: () => api.get("/academies/tasks/my"),
-
-  // Invitation operations
-  inviteStudent: (academyId, groupId, email) =>
-    api.post(`/academies/${academyId}/groups/${groupId}/invite`, { email }),
-  getMyInvitations: () => api.get("/academies/invitations/my"),
-  acceptInvitation: (academyId, groupId) =>
-    api.post(`/academies/${academyId}/groups/${groupId}/accept`),
-  rejectInvitation: (invitationId) =>
-    api.post(`/academies/invitations/${invitationId}/reject`),
-
-  // Leaderboard
-  getGroupLeaderboard: (academyId, groupId) =>
-    api.get(`/academies/${academyId}/groups/${groupId}/leaderboard`),
-  getAcademyLeaderboard: (academyId) =>
-    api.get(`/academies/${academyId}/leaderboard`),
-
-  // Member management
-  removeMember: (academyId, groupId, userId) =>
-    api.delete(`/academies/${academyId}/groups/${groupId}/members/${userId}`),
-  addGroupAdmin: (academyId, groupId, userId) =>
-    api.post(`/academies/${academyId}/groups/${groupId}/admins`, { userId }),
-  removeGroupAdmin: (academyId, groupId, userId) =>
-    api.delete(`/academies/${academyId}/groups/${groupId}/admins/${userId}`),
-};
 
 export const raceService = {
   getAvailableRooms: (params = {}) => api.get("/race/rooms", { params }),
@@ -928,8 +863,14 @@ export const createWordService = {
     api.post("/createword/submit", { lessonId, answers }),
   getFinishedLessons: () => api.get("/createword/finished"),
 
+  // Personal word list (free)
+  getMyWords: () => api.get("/createword/my-words"),
+  addMyWord: (german, translation) => api.post("/createword/my-words", { german, translation }),
+  deleteMyWord: (id) => api.delete(`/createword/my-words/${id}`),
+  submitMyWordsQuiz: (answers) => api.post("/createword/my-words/quiz", { answers }),
+
   // Admin
-  createLesson: (lessonData) => api.post("/createword", lessonData),
+  createLesson: (lessonData) => api.post("/createword/admin", lessonData),
   updateLesson: (id, lessonData) => api.put(`/createword/${id}`, lessonData),
   deleteLesson: (id) => api.delete(`/createword/${id}`),
 };
@@ -966,6 +907,8 @@ export const adminService = {
     api.put(`/admin/users/${userId}/role`, { role }),
   toggleUserStatus: (userId) => api.put(`/admin/users/${userId}/toggle-status`),
   deleteUser: (userId) => api.delete(`/admin/users/${userId}`),
+  getVisitorStats: (days = 30) => api.get("/admin/visitor-stats", { params: { days } }),
+  getVisitorsByDate: (date) => api.get("/admin/visitor-stats/users", { params: { date } }),
 };
 
 export const videoService = {
@@ -984,7 +927,7 @@ export const storyService = {
 };
 
 export const wordAudioService = {
-  getAllSets: (params = {}) => api.get("/wordaudio", { params }),
+  getAllSets: (params = {}, language) => api.get("/wordaudio", { params: { ...params, language } }),
   getSetById: (id) => api.get(`/wordaudio/${id}`),
   submitQuiz: (setId, score, totalQuestions) =>
     api.post("/wordaudio/submit", { setId, score, totalQuestions }),
@@ -1006,5 +949,73 @@ export const giveawayService = {
   deleteGiveaway: (id) => api.delete(`/giveaways/${id}`),
   pickWinners: (id) => api.post(`/giveaways/${id}/pick-winners`),
   getAuditLog: (id) => api.get(`/giveaways/${id}/audit`), 
+};
+
+// ─────────────────────────────────────────────────────────────
+// Add this block to your existing api.js file
+// ─────────────────────────────────────────────────────────────
+
+export const academyService = {
+  // ── ACADEMY (admin only) ──────────────────────────────────
+
+  // Create a new academy
+  createAcademy: (data) => api.post("/academy", data),
+
+  // Get all academies (admin sees all; academyAdmin sees theirs)
+  getAllAcademies: () => api.get("/academy"),
+
+  // Get one academy by id
+  getAcademyById: (id) => api.get(`/academy/${id}`),
+
+  // Update academy details
+  updateAcademy: (id, data) => api.put(`/academy/${id}`, data),
+
+  // Delete academy
+  deleteAcademy: (id) => api.delete(`/academy/${id}`),
+
+  // Assign an academyAdmin user to an academy
+  // body: { userId }
+  assignAcademyAdmin: (academyId, userId) =>
+    api.post(`/academy/${academyId}/assign-admin`, { userId }),
+
+  // ── GROUPS (academyAdmin / teacher) ──────────────────────
+
+  // Create a group inside the teacher's academy
+  // body: { name, level }  e.g. { name: "A1 16:30", level: "A1" }
+  createGroup: (data) => api.post("/academy/groups", data),
+
+  // Get all groups that belong to the logged-in teacher
+  getMyGroups: () => api.get("/academy/groups"),
+
+  // Get one group with full student list
+  getGroupById: (groupId) => api.get(`/academy/groups/${groupId}`),
+
+  // Update group name / level / isActive
+  updateGroup: (groupId, data) => api.put(`/academy/groups/${groupId}`, data),
+
+  // Delete a group
+  deleteGroup: (groupId) => api.delete(`/academy/groups/${groupId}`),
+
+  // Add a student to a group
+  // body: { email } OR { userId }
+  addStudentToGroup: (groupId, data) =>
+    api.post(`/academy/groups/${groupId}/students`, data),
+
+  // Remove a student from a group
+  removeStudentFromGroup: (groupId, studentId) =>
+    api.delete(`/academy/groups/${groupId}/students/${studentId}`),
+joinGroupByCode: (joinCode) => api.post("/academy/groups/join", { joinCode }),
+getMyGroup: () => api.get("/academy/groups/mine"), // for students
+  // Get the leaderboard for a group
+  // Returns: { groupName, level, totalStudents, leaderboard[] }
+  // Each leaderboard entry has: rank, name, xp, weeklyXp, monthlyXp,
+  //   streakCount, studyHours, sentencesFinished, textsTranslated,
+  //   listenTestsPassed, pronunciationPackages, grammarTopics,
+  //   quizzesCompleted, wordsLearned, phrasesFinished, puzzlesCompleted,
+  //   dialoguesFinished, videosFinished, storiesFinished, wordAudioFinished,
+  //   categoriesFinished, structuresCompleted, createWordFinished,
+  //   quizStats, wordRaceStats
+  getGroupLeaderboard: (groupId) =>
+    api.get(`/academy/groups/${groupId}/leaderboard`),
 };
 export default api;

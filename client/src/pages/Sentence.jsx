@@ -3,12 +3,15 @@
 import { useState, useEffect } from "react";
 import { sentenceService, authService } from "../services/api";
 import { useLanguage } from "../context/LanguageContext";
-import { Star, Zap, TrendingUp, LogOut, Check, X, Lock, Crown } from "lucide-react";
+import { Star, Zap, LogOut, Check, X, Lock, Crown, ChevronLeft, ChevronRight, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const FREE_SENTENCE_LIMIT = 5;
 
-function PaywallModal({ onClose }) {
+/* ─────────────────────────────────────────
+   PAYWALL MODAL
+───────────────────────────────────────── */
+function PaywallModal({ onClose, isExpired }) {
   return (
     <AnimatePresence>
       <motion.div
@@ -19,32 +22,55 @@ function PaywallModal({ onClose }) {
         onClick={onClose}
       >
         <motion.div
-          initial={{ scale: 0.85, opacity: 0, y: 20 }}
+          initial={{ scale: 0.85, opacity: 0, y: 24 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.85, opacity: 0, y: 20 }}
-          transition={{ type: "spring", stiffness: 350, damping: 28 }}
-          className="bg-white rounded-3xl shadow-2xl border-2 border-orange-200 p-8 max-w-sm w-full text-center"
+          exit={{ scale: 0.85, opacity: 0, y: 24 }}
+          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+          className="bg-white rounded-3xl shadow-2xl border border-orange-100 p-8 max-w-sm w-full text-center"
           onClick={e => e.stopPropagation()}
         >
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 flex items-center justify-center mx-auto mb-5">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 flex items-center justify-center mx-auto mb-5 shadow-inner">
             <Crown className="h-10 w-10 text-amber-500" />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Limit i Arritur</h2>
-          <p className="text-gray-500 text-sm mb-2 leading-relaxed">
-            Versioni falas lejon vetëm <span className="font-bold text-orange-600">{FREE_SENTENCE_LIMIT} kuize</span> të përfunduara.
-          </p>
-          <p className="text-gray-400 text-xs mb-6 leading-relaxed">
-            Kaloni në planin Premium për të pasur akses të pakufizuar.
-          </p>
-          <button
-            onClick={() => { window.location.href = "/payments"; }}
-            className="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-600 text-white rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl transition-all border-none cursor-pointer mb-3"
-          >
-            Shiko Planet Premium
-          </button>
+
+          {isExpired ? (
+            <>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Abonimi ka Skaduar</h2>
+              <p className="text-gray-500 text-sm mb-2 leading-relaxed">
+                Abonimi juaj <span className="font-bold text-orange-500">Premium</span> ka skaduar.
+              </p>
+              <p className="text-gray-400 text-xs mb-7 leading-relaxed">
+                Rinovoni tani për të rifituar akses të plotë të pakufizuar.
+              </p>
+              <button
+                onClick={() => { window.location.href = "/payments"; }}
+                className="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-2xl font-semibold text-sm shadow-lg shadow-orange-200 hover:shadow-orange-300 hover:brightness-105 active:scale-[0.98] transition-all mb-3"
+              >
+                Rinovo Abonimin Premium
+              </button>
+            </>
+          ) : (
+            <>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Limit i Arritur</h2>
+              <p className="text-gray-500 text-sm mb-2 leading-relaxed">
+                Versioni falas lejon vetëm{" "}
+                <span className="font-bold text-orange-500">{FREE_SENTENCE_LIMIT} kuize</span> të përfunduara.
+              </p>
+              <p className="text-gray-400 text-xs mb-7 leading-relaxed">
+                Kaloni në planin Premium për akses të pakufizuar.
+              </p>
+              <button
+                onClick={() => { window.location.href = "/payments"; }}
+                className="w-full py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-2xl font-semibold text-sm shadow-lg shadow-orange-200 hover:shadow-orange-300 hover:brightness-105 active:scale-[0.98] transition-all mb-3"
+              >
+                Shiko Planet Premium
+              </button>
+            </>
+          )}
+
           <button
             onClick={onClose}
-            className="w-full py-2.5 bg-gray-50 text-gray-500 rounded-xl font-medium text-sm border border-gray-200 hover:bg-gray-100 transition-all cursor-pointer"
+            className="w-full py-2.5 bg-gray-50 text-gray-500 rounded-2xl font-medium text-sm border border-gray-200 hover:bg-gray-100 active:scale-[0.98] transition-all"
           >
             Mbyll
           </button>
@@ -54,50 +80,88 @@ function PaywallModal({ onClose }) {
   );
 }
 
+/* ─────────────────────────────────────────
+   LEVEL COLOR MAP
+───────────────────────────────────────── */
+const levelColorMap = {
+  A1: "from-emerald-50 to-teal-50 text-emerald-600 border-emerald-200",
+  A2: "from-blue-50 to-cyan-50 text-blue-600 border-blue-200",
+  B1: "from-violet-50 to-purple-50 text-violet-600 border-violet-200",
+  B2: "from-amber-50 to-orange-50 text-amber-600 border-amber-200",
+  C1: "from-rose-50 to-pink-50 text-rose-600 border-rose-200",
+  C2: "from-indigo-50 to-blue-50 text-indigo-600 border-indigo-200",
+};
+const getLevelColor = (lvl) =>
+  `bg-gradient-to-br ${levelColorMap[lvl] || levelColorMap.A1}`;
+
+/* ─────────────────────────────────────────
+   BACK BUTTON — reusable
+───────────────────────────────────────── */
+function BackButton({ onClick, label = "Kthehu" }) {
+  return (
+    <motion.button
+      onClick={onClick}
+      whileHover={{ x: -3 }}
+      whileTap={{ scale: 0.95 }}
+      className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 text-gray-600 font-medium text-sm shadow-sm hover:shadow-md hover:border-orange-200 hover:text-orange-600 transition-all"
+    >
+      <ArrowLeft className="h-4 w-4" />
+      {label}
+    </motion.button>
+  );
+}
+
+/* ─────────────────────────────────────────
+   SENTENCE PAGE (main)
+───────────────────────────────────────── */
 export default function SentencePage() {
   const [selectedQuizId, setSelectedQuizId] = useState(null);
-  const [selectedLevel, setSelectedLevel] = useState("all");
+  const [selectedLevel, setSelectedLevel] = useState("A1");
   const [quizTitle, setQuizTitle] = useState("");
-  const [isPaid, setIsPaid] = useState(true);
+  const [isPaid, setIsPaid] = useState(false);
+  const [hadPaid, setHadPaid] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
-
-  // 👇 language from context
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const { language } = useLanguage();
 
-  const levels = ["all", "A1", "A2", "B1", "B2", "C1", "C2"];
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const levels = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
   useEffect(() => {
-    document.title = "Ndërto Fjali Gjermanisht - Praktiko Strukturën e Fjalive | Ushtrime Interaktive"
-    let metaDescription = document.querySelector('meta[name="description"]')
-    if (!metaDescription) { metaDescription = document.createElement('meta'); metaDescription.name = 'description'; document.head.appendChild(metaDescription); }
-    metaDescription.content = "Praktiko ndërtimin e fjalive gjermane duke rregulluar fjalët në rendin e saktë. Përmirësoni sintaksën nga A1 deri C2. Fillo sot!"
+    document.title = "Ndërto Fjali Gjermanisht - Praktiko Strukturën e Fjalive | Ushtrime Interaktive";
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.name = 'description';
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.content =
+      "Praktiko ndërtimin e fjalive gjermane duke rregulluar fjalët në rendin e saktë. Përmirësoni sintaksën nga A1 deri C2. Fillo sot!";
 
     const loadUser = async () => {
       try {
         const res = await authService.getProfile();
         const user = res.data?.user || res.data || res;
         setIsPaid(user?.isPaid === true);
-      } catch (e) {
+        setHadPaid(user?.hadPaid === true || user?.isPaid === true);
+      } catch {
         try {
           const stored = localStorage.getItem("user");
-          if (stored) setIsPaid(JSON.parse(stored)?.isPaid === true);
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            setIsPaid(parsed?.isPaid === true);
+            setHadPaid(parsed?.hadPaid === true || parsed?.isPaid === true);
+          }
         } catch {}
       }
     };
     loadUser();
   }, []);
-
-  const getLevelColor = (level) => {
-    const map = {
-      A1: "bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 border-emerald-200",
-      A2: "bg-gradient-to-br from-blue-50 to-cyan-50 text-blue-600 border-blue-200",
-      B1: "bg-gradient-to-br from-violet-50 to-purple-50 text-violet-600 border-violet-200",
-      B2: "bg-gradient-to-br from-amber-50 to-orange-50 text-amber-600 border-amber-200",
-      C1: "bg-gradient-to-br from-rose-50 to-pink-50 text-rose-600 border-rose-200",
-      C2: "bg-gradient-to-br from-indigo-50 to-blue-50 text-indigo-600 border-indigo-200",
-    };
-    return map[level] || map.A1;
-  };
 
   if (selectedQuizId) {
     return (
@@ -113,51 +177,89 @@ export default function SentencePage() {
 
   return (
     <div className="min-h-screen p-4 flex flex-col">
-      {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+      {showPaywall && (
+        <PaywallModal
+          onClose={() => setShowPaywall(false)}
+          isExpired={hadPaid && !isPaid}
+        />
+      )}
+
       <div className="max-w-6xl mx-auto w-full">
-        <header className="mb-4 flex-shrink-0">
-          <div className="bg-white rounded-2xl shadow-xl border border-orange-100 p-6 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-orange-100 to-amber-100 rounded-full transform translate-x-16 -translate-y-16 opacity-50" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-amber-100 to-orange-100 rounded-full transform -translate-x-8 translate-y-8 opacity-50" />
-            <div className="relative z-10">
-              <div className="flex items-center justify-between">
+        {/* HEADER */}
+        <header className="mb-5">
+          <div style={{
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 24,
+            background: "linear-gradient(135deg, #6d28d9 0%, #7c3aed 40%, #8b5cf6 75%, #a78bfa 100%)",
+            borderRadius: 20,
+            padding: isMobile ? "20px" : "28px 32px",
+            position: "relative",
+            overflow: "hidden",
+          }}>
+            <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }} />
+            <div style={{ position: "absolute", bottom: -60, right: 80, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+
+            <div style={{ flex: 1, position: "relative", zIndex: 1 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.8)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+                <Zap size={14} />
+                Praktikë Gjuhësore
+              </div>
+              <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 28 : 38, fontWeight: 400, color: "#fff", letterSpacing: -0.5, lineHeight: 1.1, margin: "0 0 8px" }}>
+                Ndërto Fjali
+              </h1>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", margin: 0, maxWidth: 380, lineHeight: 1.5 }}>
+                Rregulloni fjalët në rendin e saktë dhe fitoni XP
+              </p>
+            </div>
+
+            <div style={{ display: "flex", gap: 12, flexShrink: 0, position: "relative", zIndex: 1, alignSelf: "center", width: isMobile ? "100%" : "auto" }}>
+              <div style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, flex: isMobile ? 1 : "unset", minWidth: isMobile ? 0 : 130 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(255,255,255,0.2)" }}>
+                  <Star size={16} color="#fff" />
+                </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 mb-2">Ndërto Fjali</h1>
-                  <p className="text-gray-600">Ndërto fjali duke rregulluar fjalët në rendin e saktë</p>
+                  <div style={{ fontSize: 22, fontWeight: 600, color: "#fff", lineHeight: 1, marginBottom: 2 }}>{selectedLevel}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>Niveli Aktual</div>
                 </div>
               </div>
             </div>
           </div>
         </header>
 
-        <div className="bg-white border border-orange-100 p-4 rounded-2xl mb-4 shadow-lg flex-shrink-0">
-          <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-sm font-semibold text-gray-800">Filtro sipas Nivelit</h2>
-          </div>
+        {/* LEVEL FILTER */}
+        <div className="bg-white border border-orange-100 p-4 rounded-2xl mb-5 shadow-sm">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Filtro sipas Nivelit</p>
           <div className="flex flex-wrap gap-2">
-            {levels.map((level) => (
-              <button
-                key={level}
-                onClick={() => setSelectedLevel(level)}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border shadow-sm hover:shadow-md hover:scale-105 active:scale-95 ${
-                  selectedLevel === level
-                    ? level === "all"
-                      ? "bg-gradient-to-r from-orange-500 to-amber-600 text-white border-orange-500 shadow-orange-500/30"
-                      : getLevelColor(level) + " border-2"
-                    : "bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200"
-                }`}
-              >
-                {level === "all" ? "Të gjitha" : level}
-              </button>
-            ))}
+            {levels.map((level) => {
+              const active = selectedLevel === level;
+              return (
+                <button
+                  key={level}
+                  onClick={() => setSelectedLevel(level)}
+                  className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm hover:shadow-md ${
+                    active
+                      ? level === "all"
+                        ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-transparent shadow-orange-200"
+                        : `${getLevelColor(level)} border-2 shadow-sm`
+                      : "bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100"
+                  }`}
+                >
+                  {level === "all" ? "Të gjitha" : level}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* 👇 pass language to SentenceList */}
+        {/* QUIZ LIST */}
         <SentenceList
           level={selectedLevel}
           language={language}
           isPaid={isPaid}
+          hadPaid={hadPaid}
           onSelectQuiz={(quizId, title) => {
             setSelectedQuizId(quizId);
             setQuizTitle(title);
@@ -169,7 +271,10 @@ export default function SentencePage() {
   );
 }
 
-export function SentenceQuiz({ quizId, quizTitle, selectedLevel, onComplete, onBack }) {
+/* ─────────────────────────────────────────
+   SENTENCE QUIZ
+───────────────────────────────────────── */
+export function SentenceQuiz({ quizId, quizTitle, onComplete, onBack }) {
   const [quiz, setQuiz] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedWords, setSelectedWords] = useState([]);
@@ -190,9 +295,8 @@ export function SentenceQuiz({ quizId, quizTitle, selectedLevel, onComplete, onB
         const response = await sentenceService.getSentenceById(quizId);
         const quizData = response.data?.data || response.data || response;
         setQuiz(quizData);
-        if (quizData.questions && quizData.questions.length > 0) {
-          const shuffled = [...quizData.questions[0].options].sort(() => Math.random() - 0.5);
-          setAvailableWords(shuffled);
+        if (quizData.questions?.length > 0) {
+          setAvailableWords([...quizData.questions[0].options].sort(() => Math.random() - 0.5));
         }
         setLoading(false);
       } catch (err) {
@@ -206,15 +310,16 @@ export function SentenceQuiz({ quizId, quizTitle, selectedLevel, onComplete, onB
 
   const currentQuestion = quiz?.questions?.[currentQuestionIndex];
   const totalQuestions = quiz?.questions?.length || 0;
+  const progress = ((currentQuestionIndex + 1) / totalQuestions) * 100;
 
   const handleWordSelect = (word, index) => {
-    setSelectedWords([...selectedWords, word]);
-    setAvailableWords(availableWords.filter((_, i) => i !== index));
+    setSelectedWords(prev => [...prev, word]);
+    setAvailableWords(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleWordRemove = (word, index) => {
-    setAvailableWords([...availableWords, word]);
-    setSelectedWords(selectedWords.filter((_, i) => i !== index));
+    setAvailableWords(prev => [...prev, word]);
+    setSelectedWords(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleCheckAnswer = () => {
@@ -225,8 +330,7 @@ export function SentenceQuiz({ quizId, quizTitle, selectedLevel, onComplete, onB
       const nextIndex = currentQuestionIndex + 1;
       setCurrentQuestionIndex(nextIndex);
       setSelectedWords([]);
-      const shuffled = [...quiz.questions[nextIndex].options].sort(() => Math.random() - 0.5);
-      setAvailableWords(shuffled);
+      setAvailableWords([...quiz.questions[nextIndex].options].sort(() => Math.random() - 0.5));
     } else {
       handleSubmit(newAnswers);
     }
@@ -253,35 +357,39 @@ export function SentenceQuiz({ quizId, quizTitle, selectedLevel, onComplete, onB
   const handleRetry = () => {
     setCurrentQuestionIndex(0);
     setSelectedWords([]);
-    const shuffled = [...quiz.questions[0].options].sort(() => Math.random() - 0.5);
-    setAvailableWords(shuffled);
+    setAvailableWords([...quiz.questions[0].options].sort(() => Math.random() - 0.5));
     setAnswers([]);
     setResults(null);
     setError(null);
   };
 
+  /* ── Loading ── */
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
+      <div className="flex items-center justify-center min-h-48">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500" />
       </div>
     );
   }
 
-  if (error) {
+  /* ── Error ── */
+  if (error && !results) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
-        <div className="text-red-500 text-lg">{error}</div>
-        <button onClick={onBack} className="px-6 py-2 rounded-lg bg-gray-600 text-white transition-colors">Kthehu</button>
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 px-4">
+        <div className="text-5xl">😕</div>
+        <p className="text-red-500 text-center">{error}</p>
+        <BackButton onClick={onBack} label="Kthehu te Kuizet" />
       </div>
     );
   }
 
+  /* ── Results ── */
   if (results) {
     const correctCount = results.correctCount || 0;
     const incorrectCount = totalQuestions - correctCount;
     return (
       <div className="min-h-screen p-4 flex flex-col">
+        {/* XP pop */}
         <AnimatePresence>
           {showXpAnimation && (
             <motion.div
@@ -292,90 +400,133 @@ export function SentenceQuiz({ quizId, quizTitle, selectedLevel, onComplete, onB
               className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
             >
               <motion.div
-                className="bg-gradient-to-r from-orange-50 to-amber-50 text-orange-700 px-8 py-6 rounded-2xl shadow-2xl border-2 border-orange-500"
-                animate={{ boxShadow: ["0 0 20px rgba(249,115,22,0.3)", "0 0 40px rgba(249,115,22,0.5)", "0 0 20px rgba(249,115,22,0.3)"] }}
-                transition={{ duration: 1, repeat: Infinity }}
+                className="bg-white text-orange-600 px-8 py-6 rounded-2xl shadow-2xl border-2 border-orange-300"
+                animate={{ boxShadow: ["0 0 20px rgba(249,115,22,0.2)", "0 0 40px rgba(249,115,22,0.4)", "0 0 20px rgba(249,115,22,0.2)"] }}
+                transition={{ duration: 1.2, repeat: Infinity }}
               >
                 <div className="flex items-center gap-3">
                   <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, ease: "easeInOut" }}>
-                    <Star className="h-10 w-10 text-orange-600" />
+                    <Star className="h-9 w-9 text-orange-500" />
                   </motion.div>
                   <div>
                     <div className="text-3xl font-bold">+{xpGained} XP</div>
-                    <div className="text-sm font-medium">Urime!</div>
+                    <div className="text-sm font-medium text-gray-500">Urime!</div>
                   </div>
-                  <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.5, repeat: Infinity }}>
-                    <Zap className="h-10 w-10 text-orange-600" />
+                  <motion.div animate={{ scale: [1, 1.25, 1] }} transition={{ duration: 0.6, repeat: Infinity }}>
+                    <Zap className="h-9 w-9 text-orange-500" />
                   </motion.div>
                 </div>
               </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
-        <div className="max-w-6xl mx-auto w-full">
-          <header className="mb-4 flex-shrink-0">
-            <div className="bg-white rounded-2xl shadow-xl border border-orange-100 p-6 overflow-hidden relative">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-orange-100 to-amber-100 rounded-full transform translate-x-16 -translate-y-16 opacity-50" />
-              <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-amber-100 to-orange-100 rounded-full transform -translate-x-8 translate-y-8 opacity-50" />
-              <div className="relative z-10">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">{quizTitle || quiz?.title || "Ndërto Fjali"}</h1>
-                    <p className="text-gray-600">Rezultatet e kuizit</p>
-                  </div>
-                  <button onClick={onComplete || onBack} className="text-orange-600 hover:text-orange-700 p-1 transition-colors">
-                    <LogOut className="h-5 w-5 sm:h-6 sm:w-6 cursor-pointer" />
-                  </button>
-                </div>
+
+        <div className="max-w-3xl mx-auto w-full">
+          {/* Results header */}
+          <header className="mb-5">
+            <div className="bg-white rounded-2xl shadow-lg border border-orange-100 p-5 flex items-center justify-between">
+              <div>
+                <h1 className="text-lg font-bold text-gray-900">{quizTitle || quiz?.title}</h1>
+                <p className="text-gray-400 text-sm">Rezultatet e kuizit</p>
               </div>
+              <button
+                onClick={onComplete || onBack}
+                className="p-2 rounded-xl text-gray-400 hover:text-orange-500 hover:bg-orange-50 transition-all"
+                title="Mbyll"
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
             </div>
           </header>
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-xl border border-orange-100 p-6 mb-4">
-            <div className="text-center mb-6">
-              <div className="text-6xl mb-4">{results.passed ? "🎉" : "💪"}</div>
-              <h2 className="text-2xl font-bold mb-2" style={{ color: '#1a1a2e' }}>{results.passed ? "Shkëlqyeshëm!" : "Vazhdo të Praktikosh!"}</h2>
-              <p className="text-gray-600">{results.message}</p>
+
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-lg border border-orange-100 p-6 mb-4">
+            {/* Hero */}
+            <div className="text-center mb-7">
+              <div className="text-6xl mb-3">{results.passed ? "🎉" : "💪"}</div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                {results.passed ? "Shkëlqyeshëm!" : "Vazhdo të Praktikosh!"}
+              </h2>
+              <p className="text-gray-500 text-sm">{results.message}</p>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-              <div className="rounded-xl p-4 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200">
-                <div className="flex items-center justify-center gap-2"><Check className="w-5 h-5 text-green-600" /><div className="text-2xl font-bold text-green-600">{correctCount}</div></div>
-                <div className="text-sm text-gray-600 text-center mt-1">Saktë</div>
-              </div>
-              <div className="rounded-xl p-4 bg-gradient-to-br from-red-50 to-rose-50 border border-red-200">
-                <div className="flex items-center justify-center gap-2"><X className="w-5 h-5 text-red-600" /><div className="text-2xl font-bold text-red-600">{incorrectCount}</div></div>
-                <div className="text-sm text-gray-600 text-center mt-1">Gabim</div>
-              </div>
-              <div className="rounded-xl p-4 bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200">
-                <div className="text-2xl font-bold text-blue-600 text-center">{results.accuracy}%</div>
-                <div className="text-sm text-gray-600 text-center mt-1">Saktësia</div>
-              </div>
-              <div className="rounded-xl p-4 bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200">
-                <div className="flex items-center justify-center gap-1"><Star className="w-5 h-5 text-orange-600" /><div className="text-2xl font-bold text-orange-600">+{results.xpAwarded || 0}</div></div>
-                <div className="text-sm text-gray-600 text-center mt-1">XP Fituar</div>
-              </div>
+
+            {/* Stats grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-7">
+              {[
+                { icon: <Check className="w-5 h-5 text-emerald-600" />, value: correctCount, label: "Saktë", bg: "from-emerald-50 to-teal-50 border-emerald-200", text: "text-emerald-600" },
+                { icon: <X className="w-5 h-5 text-red-500" />, value: incorrectCount, label: "Gabim", bg: "from-red-50 to-rose-50 border-red-200", text: "text-red-500" },
+                { value: `${results.accuracy}%`, label: "Saktësia", bg: "from-blue-50 to-cyan-50 border-blue-200", text: "text-blue-600" },
+                { icon: <Star className="w-4 h-4 text-orange-500" />, value: `+${results.xpAwarded || 0}`, label: "XP Fituar", bg: "from-orange-50 to-amber-50 border-orange-200", text: "text-orange-600" },
+              ].map((stat, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.07 }}
+                  className={`rounded-2xl p-4 bg-gradient-to-br ${stat.bg} border`}
+                >
+                  <div className={`flex items-center justify-center gap-1.5 ${stat.text} text-2xl font-bold mb-1`}>
+                    {stat.icon}{stat.value}
+                  </div>
+                  <div className="text-xs text-gray-500 text-center">{stat.label}</div>
+                </motion.div>
+              ))}
             </div>
-            <div className="space-y-3 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Rezultatet e Detajuara:</h3>
+
+            {/* Detailed results */}
+            <h3 className="text-base font-semibold text-gray-800 mb-3">Rezultatet e Detajuara</h3>
+            <div className="space-y-3 mb-7">
               {results.results?.map((result, index) => (
-                <motion.div key={index} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.1 }}
-                  className={`p-4 rounded-xl border-2 ${result.isCorrect ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300' : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-300'}`}>
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: -16 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.06 }}
+                  className={`p-4 rounded-xl border-2 ${result.isCorrect ? "bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-200" : "bg-gradient-to-r from-red-50 to-rose-50 border-red-200"}`}
+                >
                   <div className="flex items-start gap-3">
-                    <div className={`p-1.5 rounded-full ${result.isCorrect ? 'bg-green-100' : 'bg-red-100'}`}>
-                      {result.isCorrect ? <Check className="w-4 h-4 text-green-600" /> : <X className="w-4 h-4 text-red-600" />}
+                    <div className={`p-1.5 rounded-full mt-0.5 ${result.isCorrect ? "bg-emerald-100" : "bg-red-100"}`}>
+                      {result.isCorrect ? <Check className="w-4 h-4 text-emerald-600" /> : <X className="w-4 h-4 text-red-500" />}
                     </div>
-                    <div className="flex-1">
-                      <div className="text-sm text-gray-500 mb-1">Pyetja {index + 1}</div>
-                      <div className="font-medium text-gray-900 mb-2">{result.question}</div>
-                      <div className="text-sm"><span className="text-gray-500">Përgjigja jote: </span><span className={result.isCorrect ? 'text-green-700' : 'text-red-700'}>{result.userAnswer || "(bosh)"}</span></div>
-                      {!result.isCorrect && <div className="text-sm mt-1"><span className="text-gray-500">Përgjigja e saktë: </span><span className="text-green-700 font-medium">{result.correctAnswer}</span></div>}
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-gray-400 mb-0.5">Pyetja {index + 1}</div>
+                      <div className="font-medium text-gray-800 text-sm mb-1.5">{result.question}</div>
+                      <div className="text-sm">
+                        <span className="text-gray-400">Përgjigja jote: </span>
+                        <span className={result.isCorrect ? "text-emerald-700 font-medium" : "text-red-600 font-medium"}>
+                          {result.userAnswer || "(bosh)"}
+                        </span>
+                      </div>
+                      {!result.isCorrect && (
+                        <div className="text-sm mt-0.5">
+                          <span className="text-gray-400">E sakta: </span>
+                          <span className="text-emerald-700 font-medium">{result.correctAnswer}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </motion.div>
               ))}
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <motion.button onClick={handleRetry} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-lg shadow-orange-500/30 hover:from-orange-600 hover:to-amber-700 transition-all">Provo Përsëri</motion.button>
-              <motion.button onClick={onComplete || onBack} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="px-6 py-3 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-all border border-gray-200">Kthehu te Kuizet</motion.button>
+
+            {/* Action buttons */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <motion.button
+                onClick={handleRetry}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                className="flex-1 py-3 rounded-xl font-semibold bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-200 hover:brightness-105 transition-all"
+              >
+                Provo Përsëri
+              </motion.button>
+              <motion.button
+                onClick={onComplete || onBack}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                className="flex-1 py-3 rounded-xl font-semibold bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200 transition-all flex items-center justify-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Kthehu te Kuizet
+              </motion.button>
             </div>
           </motion.div>
         </div>
@@ -383,58 +534,115 @@ export function SentenceQuiz({ quizId, quizTitle, selectedLevel, onComplete, onB
     );
   }
 
+  /* ── Active quiz ── */
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: '#FFF8F0', fontFamily: 'Poppins, sans-serif' }}>
+    <div className="min-h-screen bg-[#FFF8F0] p-4 sm:p-6">
       <div className="max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <button onClick={onBack} className="p-2 transition-colors rounded-lg" style={{ color: '#666' }}>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-          </button>
-          <div className="flex-1 mx-4">
-            <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: '#e5e7eb' }}>
-              <div className="h-full transition-all duration-300" style={{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%`, backgroundColor: '#F97316' }} />
+
+        {/* TOP BAR */}
+        <div className="flex items-center gap-4 mb-8">
+          <BackButton onClick={onBack} label="Kuizet" />
+          <div className="flex-1 flex items-center gap-3">
+            <div className="flex-1 h-2.5 rounded-full bg-gray-200 overflow-hidden shadow-inner">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-400"
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+              />
             </div>
+            <span className="text-sm font-semibold text-gray-500 whitespace-nowrap tabular-nums">
+              {currentQuestionIndex + 1} / {totalQuestions}
+            </span>
           </div>
-          <div className="text-sm" style={{ color: '#666' }}>{currentQuestionIndex + 1} / {totalQuestions}</div>
         </div>
+
+        {/* Quiz meta */}
         <div className="text-center mb-8">
-          <h1 className="text-xl font-bold mb-2" style={{ color: '#1a1a2e' }}>{quiz?.title}</h1>
-          <div className="flex items-center justify-center gap-4 text-sm">
-            <span className="px-3 py-1 rounded-full" style={{ backgroundColor: '#eff6ff', color: '#3b82f6' }}>Niveli: {quiz?.level}</span>
-            <span className="px-3 py-1 rounded-full" style={{ backgroundColor: '#FFF7ED', color: '#F97316' }}>+{quiz?.xp} XP</span>
+          <h1 className="text-xl font-bold text-gray-900 mb-3">{quiz?.title}</h1>
+          <div className="flex items-center justify-center gap-2 flex-wrap">
+            <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-semibold border border-blue-100">
+              Niveli: {quiz?.level}
+            </span>
+            <span className="px-3 py-1 rounded-full bg-orange-50 text-orange-600 text-xs font-semibold border border-orange-100 flex items-center gap-1">
+              <Star className="h-3 w-3" /> +{quiz?.xp} XP
+            </span>
           </div>
         </div>
-        <div className="rounded-2xl p-6 mb-6" style={{ backgroundColor: '#fff', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-          <p className="text-sm mb-2" style={{ color: '#666' }}>Përkthe këtë fjali:</p>
-          <h2 className="text-xl font-medium" style={{ color: '#1a1a2e' }}>{currentQuestion?.question}</h2>
+
+        {/* Question card */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentQuestionIndex}
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -24 }}
+            transition={{ duration: 0.25 }}
+            className="bg-white rounded-2xl p-6 mb-5 shadow-md border border-gray-100"
+          >
+            <p className="text-xs text-gray-400 mb-2 font-medium uppercase tracking-wide">Përkthe këtë fjali:</p>
+            <h2 className="text-xl font-semibold text-gray-900 leading-relaxed">{currentQuestion?.question}</h2>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Answer area */}
+        <div className="bg-white rounded-2xl p-4 mb-5 min-h-[72px] border-2 border-dashed border-gray-200 shadow-sm">
+          {selectedWords.length === 0 ? (
+            <p className="text-sm text-gray-300 select-none">Kliko fjalët më poshtë për të formuar fjalinë…</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {selectedWords.map((word, index) => (
+                <button
+                  key={`sel-${index}`}
+                  onClick={() => handleWordRemove(word, index)}
+                  className="px-4 py-2 rounded-xl font-medium text-sm bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm shadow-orange-200 hover:brightness-110 active:scale-95 transition-all"
+                >
+                  {word}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-        <div className="rounded-2xl p-4 mb-6 min-h-[80px]" style={{ backgroundColor: '#fff', border: '2px dashed #e5e7eb' }}>
-          <div className="flex flex-wrap gap-2">
-            {selectedWords.length === 0 ? (
-              <p className="text-sm" style={{ color: '#999' }}>Kliko fjalët më poshtë për të formuar fjali...</p>
-            ) : (
-              selectedWords.map((word, index) => (
-                <button key={`selected-${index}`} onClick={() => handleWordRemove(word, index)} className="px-4 py-2 rounded-lg font-medium transition-colors" style={{ backgroundColor: '#F97316', color: '#fff' }}>{word}</button>
-              ))
-            )}
-          </div>
-        </div>
-        <div className="flex flex-wrap justify-center gap-3 mb-8">
+
+        {/* Word bank */}
+        <div className="flex flex-wrap justify-center gap-2.5 mb-8">
           {availableWords.map((word, index) => (
-            <button key={`available-${index}`} onClick={() => handleWordSelect(word, index)} className="px-4 py-2 rounded-lg font-medium transition-colors" style={{ backgroundColor: '#fff', color: '#333', border: '1px solid #e5e7eb' }}>{word}</button>
+            <button
+              key={`avail-${index}`}
+              onClick={() => handleWordSelect(word, index)}
+              className="px-4 py-2 rounded-xl font-medium text-sm bg-white text-gray-700 border border-gray-200 shadow-sm hover:border-orange-300 hover:text-orange-600 hover:shadow-md active:scale-95 transition-all"
+            >
+              {word}
+            </button>
           ))}
         </div>
-        <button onClick={handleCheckAnswer} disabled={selectedWords.length === 0 || isSubmitting} className="w-full py-4 rounded-xl font-bold text-lg transition-colors"
-          style={{ backgroundColor: selectedWords.length === 0 ? '#e5e7eb' : '#F97316', color: selectedWords.length === 0 ? '#999' : '#fff', cursor: selectedWords.length === 0 ? 'not-allowed' : 'pointer' }}>
-          {isSubmitting ? "Duke dërguar..." : currentQuestionIndex === totalQuestions - 1 ? "Përfundo" : "Kontrollo"}
-        </button>
+
+        {/* Check / Submit button */}
+        <motion.button
+          onClick={handleCheckAnswer}
+          disabled={selectedWords.length === 0 || isSubmitting}
+          whileTap={selectedWords.length > 0 ? { scale: 0.97 } : {}}
+          className={`w-full py-4 rounded-2xl font-bold text-base transition-all shadow-lg ${
+            selectedWords.length === 0 || isSubmitting
+              ? "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
+              : "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-orange-200 hover:brightness-105 cursor-pointer"
+          }`}
+        >
+          {isSubmitting
+            ? "Duke dërguar…"
+            : currentQuestionIndex === totalQuestions - 1
+            ? "✓ Përfundo"
+            : "Kontrollo →"}
+        </motion.button>
       </div>
     </div>
   );
 }
 
-// 👇 language prop added
-export function SentenceList({ level, language, onSelectQuiz, isPaid, onLimitReached }) {
+/* ─────────────────────────────────────────
+   SENTENCE LIST + PAGINATION
+───────────────────────────────────────── */
+export function SentenceList({ level, language, onSelectQuiz, isPaid, hadPaid, onLimitReached }) {
   const [quizzes, setQuizzes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -443,30 +651,17 @@ export function SentenceList({ level, language, onSelectQuiz, isPaid, onLimitRea
   const [finishedIds, setFinishedIds] = useState([]);
   const itemsPerPage = 30;
 
-  const getLevelColor = (lvl) => {
-    const map = {
-      A1: "bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600 border-emerald-200",
-      A2: "bg-gradient-to-br from-blue-50 to-cyan-50 text-blue-600 border-blue-200",
-      B1: "bg-gradient-to-br from-violet-50 to-purple-50 text-violet-600 border-violet-200",
-      B2: "bg-gradient-to-br from-amber-50 to-orange-50 text-amber-600 border-amber-200",
-      C1: "bg-gradient-to-br from-rose-50 to-pink-50 text-rose-600 border-rose-200",
-      C2: "bg-gradient-to-br from-indigo-50 to-blue-50 text-indigo-600 border-indigo-200",
-    };
-    return map[lvl] || map.A1;
-  };
-
   useEffect(() => {
     const fetchFinished = async () => {
       try {
         const response = await sentenceService.getFinishedSentences();
         const finished = response.data?.data || response.data || response || [];
         setFinishedIds(finished.map(s => s._id));
-      } catch (err) {}
+      } catch {}
     };
     fetchFinished();
   }, []);
 
-  // 👇 re-fetch when language changes
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
@@ -474,15 +669,9 @@ export function SentenceList({ level, language, onSelectQuiz, isPaid, onLimitRea
         setError(null);
         let response;
         if (level && level !== "all") {
-          // 👇 pass language to level-filtered call
           response = await sentenceService.getSentencesByLevel(level, language);
         } else {
-          // 👇 pass language to all-sentences call
-          response = await sentenceService.getAllSentences({
-            page: currentPage,
-            limit: itemsPerPage,
-            language,
-          });
+          response = await sentenceService.getAllSentences({ page: currentPage, limit: itemsPerPage, language });
         }
         const data = response.data?.data || response.data || response;
         const quizzesArray = data.sentences || data || [];
@@ -497,109 +686,202 @@ export function SentenceList({ level, language, onSelectQuiz, isPaid, onLimitRea
       }
     };
     fetchQuizzes();
-  }, [level, currentPage, language]); // 👈 language in deps
+  }, [level, currentPage, language]);
 
-  // 👇 reset page on level OR language change
   useEffect(() => { setCurrentPage(1); }, [level, language]);
 
   const handleQuizClick = (quiz) => {
-    const isFinished = finishedIds.includes(quiz._id) || quiz.isCompleted;
-    if (!isPaid && !isFinished && finishedIds.length >= FREE_SENTENCE_LIMIT) {
-      onLimitReached?.();
-      return;
+    if (!isPaid) {
+      const isWithinFreeLimit = finishedIds.length < FREE_SENTENCE_LIMIT && !finishedIds.includes(quiz._id);
+      const alreadyInFreeSlot = finishedIds.includes(quiz._id) && finishedIds.length <= FREE_SENTENCE_LIMIT;
+
+      if (!alreadyInFreeSlot && finishedIds.length >= FREE_SENTENCE_LIMIT) {
+        onLimitReached?.();
+        return;
+      }
+      if (!finishedIds.includes(quiz._id) && finishedIds.length >= FREE_SENTENCE_LIMIT) {
+        onLimitReached?.();
+        return;
+      }
     }
+
     onSelectQuiz(quiz._id, quiz.title);
   };
 
-  if (loading) return <div className="flex items-center justify-center min-h-[200px]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div></div>;
-  if (error) return <div className="text-center py-8 text-red-500">{error}</div>;
-  if (quizzes.length === 0) return (
-    <div className="text-center py-12">
-      <div className="text-6xl mb-4">📝</div>
-      <p className="text-lg text-gray-600">Asnjë kuiz nuk është i disponueshëm</p>
-    </div>
-  );
+  /* ── Loading — matches Phrase spinner ── */
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-48">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500" />
+      </div>
+    );
+  }
+
+  if (error) return <div className="text-center py-8 text-red-400">{error}</div>;
+
+  if (quizzes.length === 0) {
+    return (
+      <div className="text-center py-16">
+        <div className="text-6xl mb-4">📝</div>
+        <p className="text-gray-400">Asnjë kuiz nuk është i disponueshëm</p>
+      </div>
+    );
+  }
+
+  /* ── Pagination helpers ── */
+  const getPageNumbers = () => {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages = [];
+    if (currentPage <= 4) {
+      for (let i = 1; i <= 5; i++) pages.push(i);
+      pages.push("...");
+      pages.push(totalPages);
+    } else if (currentPage >= totalPages - 3) {
+      pages.push(1);
+      pages.push("...");
+      for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      pages.push("...");
+      for (let i = currentPage - 1; i <= currentPage + 1; i++) pages.push(i);
+      pages.push("...");
+      pages.push(totalPages);
+    }
+    return pages;
+  };
 
   return (
     <div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
-        {quizzes.map((quiz) => {
+      {/* Quiz cards */}
+      <motion.div
+        key={currentPage}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8"
+      >
+        {quizzes.map((quiz, idx) => {
           const isFinished = finishedIds.includes(quiz._id) || quiz.isCompleted;
-          const isLocked = !isPaid && !isFinished && finishedIds.length >= FREE_SENTENCE_LIMIT;
+
+          const strictLocked = !isPaid && !(
+            isFinished && finishedIds.indexOf(quiz._id) < FREE_SENTENCE_LIMIT
+          );
+
           return (
-            <div
+            <motion.div
               key={quiz._id}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.03, duration: 0.25 }}
               onClick={() => handleQuizClick(quiz)}
-              className={`p-4 rounded-2xl shadow-lg border-2 transition-all duration-200 cursor-pointer overflow-hidden relative group h-fit hover:-translate-y-1 ${
-                isLocked
+              className={`relative p-4 rounded-2xl border-2 cursor-pointer overflow-hidden group transition-all duration-200 hover:-translate-y-1 ${
+                strictLocked
                   ? "bg-gradient-to-br from-gray-50 to-slate-50 border-gray-200 hover:border-gray-300"
                   : isFinished
-                    ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-amber-300 hover:border-amber-400"
-                    : "bg-white border-gray-100 hover:border-orange-300"
+                  ? "bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200 hover:border-amber-300 shadow-sm shadow-amber-100"
+                  : "bg-white border-gray-100 hover:border-orange-200 shadow-sm hover:shadow-md"
               }`}
             >
-              <div className={`absolute top-3 right-3 ${getLevelColor(quiz.level)} px-2 py-1 rounded-lg text-xs font-bold shadow-sm border`}>
+              {/* Level badge */}
+              <div className={`absolute top-3 left-3 ${getLevelColor(quiz.level)} px-2 py-0.5 rounded-lg text-xs font-bold border`}>
                 {quiz.level}
               </div>
-              {isLocked && (
-                <div className="absolute top-3 left-3 z-10">
-                  <Lock className="h-4 w-4 text-gray-400" />
+
+              {/* Lock icon */}
+              {strictLocked && (
+                <div className="absolute top-3 right-3">
+                  <Lock className="h-4 w-4 text-gray-300" />
                 </div>
               )}
-              <div className="relative z-10">
-                <h3 className={`text-sm font-bold mb-2 pr-14 truncate ${isLocked ? "text-gray-400" : isFinished ? "text-amber-700 group-hover:text-amber-800" : "text-gray-800 group-hover:text-orange-700"}`}>
+
+              <div className="mt-8">
+                <h3 className={`text-sm font-bold mb-2 truncate ${
+                  strictLocked ? "text-gray-300" : isFinished ? "text-amber-700" : "text-gray-800 group-hover:text-orange-700"
+                }`}>
                   {quiz.title}
                 </h3>
-                <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
-                  <span className={`text-xs font-medium ${isLocked ? "text-gray-300" : isFinished ? "text-amber-500" : "text-gray-400"}`}>
+
+                <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                  <span className={`text-xs ${strictLocked ? "text-gray-300" : "text-gray-400"}`}>
                     {quiz.questions?.length || 0} pyetje
                   </span>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1 shadow-sm border ${isLocked ? "bg-gray-100 text-gray-400 border-gray-200" : "bg-gradient-to-r from-orange-50 to-amber-50 text-orange-700 border-orange-200"}`}>
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-bold flex items-center gap-0.5 border ${
+                      strictLocked
+                        ? "bg-gray-100 text-gray-300 border-gray-200"
+                        : "bg-orange-50 text-orange-600 border-orange-100"
+                    }`}>
                       <Star className="h-3 w-3" />{quiz.xp || 10}
                     </span>
-                    <span className={`text-xs px-3 py-1 rounded-full font-semibold shadow-sm ${
-                      isLocked ? "bg-gradient-to-r from-gray-400 to-slate-500 text-white"
-                      : isFinished ? "bg-gradient-to-r from-amber-400 to-orange-400 text-white"
-                      : "bg-gradient-to-r from-orange-500 to-amber-500 text-white"
+                    <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
+                      strictLocked
+                        ? "bg-gray-200 text-gray-400"
+                        : isFinished
+                        ? "bg-gradient-to-r from-amber-400 to-orange-400 text-white"
+                        : "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-sm"
                     }`}>
-                      {isLocked ? "Premium" : isFinished ? "✓ Kryer" : "Fillo"}
+                      {strictLocked ? "Premium" : isFinished ? "✓ Kryer" : "Fillo"}
                     </span>
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           );
         })}
-      </div>
+      </motion.div>
 
+      {/* PAGINATION */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          <button onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}
-            className="px-4 py-2 rounded-lg font-medium transition-colors"
-            style={{ backgroundColor: currentPage === 1 ? '#e5e7eb' : '#F97316', color: currentPage === 1 ? '#999' : '#fff', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}>
-            Mbrapa
-          </button>
-          <div className="flex items-center gap-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              let pageNum;
-              if (totalPages <= 5) pageNum = i + 1;
-              else if (currentPage <= 3) pageNum = i + 1;
-              else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-              else pageNum = currentPage - 2 + i;
-              return (
-                <button key={pageNum} onClick={() => setCurrentPage(pageNum)} className="w-10 h-10 rounded-lg font-medium transition-colors"
-                  style={{ backgroundColor: currentPage === pageNum ? '#F97316' : '#fff', color: currentPage === pageNum ? '#fff' : '#333', border: '1px solid #e5e7eb' }}>
-                  {pageNum}
-                </button>
-              );
-            })}
-          </div>
-          <button onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}
-            className="px-4 py-2 rounded-lg font-medium transition-colors"
-            style={{ backgroundColor: currentPage === totalPages ? '#e5e7eb' : '#F97316', color: currentPage === totalPages ? '#999' : '#fff', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}>
-            Para
-          </button>
+        <div className="flex items-center justify-center gap-1.5 flex-wrap">
+          <motion.button
+            whileHover={currentPage > 1 ? { scale: 1.05 } : {}}
+            whileTap={currentPage > 1 ? { scale: 0.95 } : {}}
+            onClick={() => currentPage > 1 && setCurrentPage(p => p - 1)}
+            disabled={currentPage === 1}
+            className={`flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-semibold border transition-all ${
+              currentPage === 1
+                ? "bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed"
+                : "bg-white text-gray-600 border-gray-200 hover:border-orange-300 hover:text-orange-600 shadow-sm hover:shadow-md cursor-pointer"
+            }`}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Mbrapa</span>
+          </motion.button>
+
+          {getPageNumbers().map((page, i) =>
+            page === "..." ? (
+              <span key={`ellipsis-${i}`} className="px-2 py-2 text-gray-400 text-sm select-none">…</span>
+            ) : (
+              <motion.button
+                key={page}
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.93 }}
+                onClick={() => setCurrentPage(page)}
+                className={`w-10 h-10 rounded-xl text-sm font-semibold border transition-all ${
+                  currentPage === page
+                    ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white border-transparent shadow-md shadow-orange-200"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-orange-300 hover:text-orange-600 shadow-sm hover:shadow-md"
+                }`}
+              >
+                {page}
+              </motion.button>
+            )
+          )}
+
+          <motion.button
+            whileHover={currentPage < totalPages ? { scale: 1.05 } : {}}
+            whileTap={currentPage < totalPages ? { scale: 0.95 } : {}}
+            onClick={() => currentPage < totalPages && setCurrentPage(p => p + 1)}
+            disabled={currentPage === totalPages}
+            className={`flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-semibold border transition-all ${
+              currentPage === totalPages
+                ? "bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed"
+                : "bg-white text-gray-600 border-gray-200 hover:border-orange-300 hover:text-orange-600 shadow-sm hover:shadow-md cursor-pointer"
+            }`}
+          >
+            <span className="hidden sm:inline">Para</span>
+            <ChevronRight className="h-4 w-4" />
+          </motion.button>
         </div>
       )}
     </div>

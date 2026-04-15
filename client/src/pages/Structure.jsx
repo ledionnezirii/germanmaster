@@ -14,8 +14,15 @@ export default function StructurePage() {
   const [showQuiz, setShowQuiz] = useState(false);
   const [quizMode, setQuizMode] = useState('write');
   const [loading, setLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
 
   const levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   useEffect(() => {
     fetchStructures();
@@ -108,29 +115,51 @@ export default function StructurePage() {
       <div className="max-w-6xl mx-auto w-full">
         {/* Header */}
         <header className="mb-4 flex-shrink-0">
-          <div className="bg-white rounded-2xl shadow-xl border border-indigo-100 p-6 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full transform translate-x-16 -translate-y-16 opacity-50" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-purple-100 to-indigo-100 rounded-full transform -translate-x-8 translate-y-8 opacity-50" />
-            <div className="relative z-10">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="bg-gradient-to-br from-indigo-500 to-purple-600 p-2.5 rounded-xl shadow-lg">
-                    <BookOpen className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h1 className="text-xl font-bold text-gray-900">Struktura e Gjuhës</h1>
-                    <p className="text-gray-600 text-sm">Mëso gjermanishten hap pas hapi</p>
-                  </div>
+          <div style={{
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 24,
+            background: "linear-gradient(135deg, #1e1b4b 0%, #3730a3 40%, #4f46e5 75%, #818cf8 100%)",
+            borderRadius: 20,
+            padding: isMobile ? "20px" : "28px 32px",
+            position: "relative",
+            overflow: "hidden",
+          }}>
+            <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }} />
+            <div style={{ position: "absolute", bottom: -60, right: 80, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+
+            <div style={{ flex: 1, position: "relative", zIndex: 1 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.8)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+                <List size={14} />
+                Praktikë Gjuhësore
+              </div>
+              <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 28 : 38, fontWeight: 400, color: "#fff", letterSpacing: -0.5, lineHeight: 1.1, margin: "0 0 8px" }}>
+                Struktura e Gjuhës
+              </h1>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", margin: 0, maxWidth: 380, lineHeight: 1.5 }}>
+                Mëso gjermanishten hap pas hapi
+              </p>
+            </div>
+
+            <div style={{ display: "flex", gap: 12, flexShrink: 0, position: "relative", zIndex: 1, alignSelf: "center", width: isMobile ? "100%" : "auto" }}>
+              <div style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, flex: isMobile ? 1 : "unset", minWidth: isMobile ? 0 : 130 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(255,255,255,0.2)" }}>
+                  <Zap size={16} color="#fff" />
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200">
-                    <Trophy className="w-4 h-4 text-amber-600" />
-                    <span className="font-bold text-amber-700 text-sm">{user?.xp || 0} XP</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 bg-green-50 px-3 py-1.5 rounded-full border border-green-200">
-                    <Award className="w-4 h-4 text-green-600" />
-                    <span className="font-semibold text-green-700 text-sm">{completedStructures.length}</span>
-                  </div>
+                <div>
+                  <div style={{ fontSize: 22, fontWeight: 600, color: "#fff", lineHeight: 1, marginBottom: 2 }}>{user?.xp || 0}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>Pikë XP</div>
+                </div>
+              </div>
+              <div style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, flex: isMobile ? 1 : "unset", minWidth: isMobile ? 0 : 130 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(255,255,255,0.2)" }}>
+                  <Trophy size={16} color="#fff" />
+                </div>
+                <div>
+                  <div style={{ fontSize: 22, fontWeight: 600, color: "#fff", lineHeight: 1, marginBottom: 2 }}>{completedStructures.length}</div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>Të Përfunduara</div>
                 </div>
               </div>
             </div>
@@ -164,7 +193,7 @@ export default function StructurePage() {
         {/* Structure List */}
         {loading ? (
           <div className="flex items-center justify-center min-h-[200px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
           </div>
         ) : structures.length === 0 ? (
           <div className="text-center py-12">

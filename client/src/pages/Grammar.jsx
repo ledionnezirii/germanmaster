@@ -23,7 +23,69 @@ import {
   Clock,
   Lock,
   X,
+  Crown,
+  Zap,
 } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+
+function GrammarPaywallModal({ onClose }) {
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.85, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.85, opacity: 0, y: 20 }}
+          transition={{ type: "spring", stiffness: 350, damping: 28 }}
+          className="bg-white rounded-3xl shadow-2xl border-2 border-blue-100 p-8 max-w-sm w-full text-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-300 flex items-center justify-center mx-auto mb-5">
+            <Crown className="h-10 w-10 text-blue-500" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Nevojitet Premium</h2>
+          <p className="text-gray-500 text-sm mb-2 leading-relaxed">
+            Plani falas lejon vetëm <span className="font-bold text-blue-600">2 tema gramatikore</span> në ditë.
+          </p>
+          <p className="text-gray-400 text-xs mb-6 leading-relaxed">
+            Kaloni në <span className="font-bold text-amber-500">Premium</span> për akses të <span className="font-bold">pakufizuar</span> në të gjitha temat.
+          </p>
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-gray-400">2</div>
+              <div className="text-xs text-gray-400">Falas/ditë</div>
+            </div>
+            <div className="text-gray-300 text-xl">→</div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">∞</div>
+              <div className="text-xs text-blue-500 font-semibold">Premium</div>
+            </div>
+          </div>
+          <button
+            onClick={() => { window.location.href = "/payments" }}
+            className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all border-none cursor-pointer mb-3"
+          >
+            <span className="flex items-center justify-center gap-2">
+              <Zap className="w-4 h-4" /> Shiko Planet Premium
+            </span>
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 bg-gray-50 text-gray-500 rounded-xl font-medium text-sm border border-gray-200 hover:bg-gray-100 transition-all cursor-pointer"
+          >
+            Mbyll
+          </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
 
 // Helper function to parse **text** and render in yellow
 const parseHighlightedText = (text) => {
@@ -229,6 +291,8 @@ const Grammar = () => {
   const [finishedTopics, setFinishedTopics] = useState([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [dailyLimit, setDailyLimit] = useState(null)
+  const [isPaid, setIsPaid] = useState(false)
+  const [showPaywall, setShowPaywall] = useState(false)
   const [showMoreInfo, setShowMoreInfo] = useState(false)
 
   // SEO Effect
@@ -327,23 +391,21 @@ const Grammar = () => {
   const fetchDailyLimit = async () => {
     try {
       const response = await grammarService.getDailyLimitStatus()
-      console.log("[v0] Daily limit response:", response)
-
       const data = response.data || response
 
-      console.log("[v0] Daily limit data:", data)
-
+      setIsPaid(data.isPaid || false)
       setDailyLimit({
-        topicsAccessedToday: data.topicsAccessedToday,
+        topicsAccessed: data.topicsAccessed || 0,
         canAccessMore: data.canAccessMore,
         remainingTopics: data.remainingTopics,
         limit: data.limit,
         accessedTopicIds: data.accessedTopicIds || [],
+        isPaid: data.isPaid || false,
       })
     } catch (error) {
       console.error("[v0] Error fetching daily limit:", error)
       setDailyLimit({
-        topicsAccessedToday: 0,
+        topicsAccessed: 0,
         canAccessMore: true,
         remainingTopics: 2,
         limit: 2,
@@ -392,16 +454,16 @@ const Grammar = () => {
     return finishedTopics.includes(topicIdString)
   }
 
-  const canAccessTopic = (topic) => {
-    if (!dailyLimit) return true
-
+  const canAccessTopic = (topic, index) => {
+    if (isPaid) return true
     if (isTopicFinished(topic._id)) return true
+    if (index < 2) return true
 
     const topicIdString = String(topic._id)
-    const accessedToday = dailyLimit.accessedTopicIds || []
-    if (accessedToday.includes(topicIdString)) return true
+    const accessed = dailyLimit?.accessedTopicIds || []
+    if (accessed.includes(topicIdString)) return true
 
-    return dailyLimit.remainingTopics > 0
+    return false
   }
 
   const fetchTopics = async () => {
@@ -438,7 +500,6 @@ const Grammar = () => {
     try {
       setTopicLoading(true)
       const response = await grammarService.getTopicById(topicId)
-      console.log("[v0] Topic details response:", response)
       setSelectedTopic(response.data || response)
       setActiveTab("content")
       setSelectedAnswers({})
@@ -472,15 +533,15 @@ const Grammar = () => {
   }, [topics])
 
   const handleTopicClick = useCallback(
-    (topic) => {
-      if (!canAccessTopic(topic)) {
-        alert(`Keni arritur limitin ditor (2 tema). Provoni përsëri nesër në 00:01.`)
+    (topic, index) => {
+      if (!canAccessTopic(topic, index)) {
+        setShowPaywall(true)
         return
       }
       fetchTopicDetails(topic._id)
       window.scrollTo({ top: 0, behavior: "smooth" })
     },
-    [dailyLimit, finishedTopics],
+    [dailyLimit, finishedTopics, isPaid],
   )
 
   const handleBackToTopics = useCallback(() => {
@@ -590,16 +651,17 @@ const Grammar = () => {
   }
 
   const renderTopicGrid = useMemo(() => {
-    return filteredTopics.map((topic) => (
+    return filteredTopics.map((topic, index) => (
       <TopicCard
         key={topic._id}
         topic={topic}
+        index={index}
         onClick={handleTopicClick}
         isFinished={isTopicFinished(topic._id)}
-        canAccess={canAccessTopic(topic)}
+        canAccess={canAccessTopic(topic, index)}
       />
     ))
-  }, [filteredTopics, handleTopicClick, finishedTopics, dailyLimit])
+  }, [filteredTopics, handleTopicClick, finishedTopics, dailyLimit, isPaid])
 
   if (selectedTopic) {
     return (
@@ -615,7 +677,7 @@ const Grammar = () => {
           </button>
 
           {topicLoading ? (
-            <div className="flex items-center justify-center min-h-96">
+            <div className="flex items-center justify-center min-h-48">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
             </div>
           ) : (
@@ -1211,36 +1273,65 @@ const Grammar = () => {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4 p-4">
-      {dailyLimit && (
-        <div
-          className={`rounded-lg p-3 sm:p-4 border ${
-            dailyLimit.remainingTopics > 0 ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            {dailyLimit.remainingTopics > 0 ? (
-              <>
-                <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="font-semibold text-green-900 text-sm sm:text-base break-words">
-                    {dailyLimit.remainingTopics} nga 2 tema të disponueshme sot
-                  </p>
-                  <p className="text-xs sm:text-sm text-green-700">
-                    Përdorni pjesën tjetër ose provoni deri nesër në 00:01
-                  </p>
+      {showPaywall && <GrammarPaywallModal onClose={() => setShowPaywall(false)} />}
+
+      {/* Free plan banner */}
+      {!isPaid && (
+        dailyLimit && dailyLimit.remainingTopics <= 0 ? (
+          /* all 2 free topics used — permanent lock */
+          <div className="rounded-2xl overflow-hidden shadow-lg border border-blue-200">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 flex items-center gap-3">
+              <Crown className="w-5 h-5 text-white flex-shrink-0" />
+              <span className="text-white font-bold text-sm">Keni hapur 2 temat falas</span>
+              <span className="ml-auto text-white/80 text-xs">Nevojitet Premium</span>
+            </div>
+            <div className="bg-white px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex-1">
+                <p className="text-gray-800 font-semibold text-sm mb-1">
+                  Plani falas lejon vetëm <span className="text-blue-600">2 tema</span>. Temat e tjera janë të bllokuara.
+                </p>
+                <p className="text-gray-500 text-xs leading-relaxed">
+                  Me <span className="font-bold text-amber-500">Premium</span> keni akses <span className="font-bold">të pakufizuar</span> në të gjitha temat — pa asnjë kufizim.
+                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="text-xs text-gray-400">Falas:</span>
+                  {[0,1].map(i => (
+                    <div key={i} className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
+                      <CheckCircle className="w-3 h-3 text-white" />
+                    </div>
+                  ))}
+                  <span className="text-xs text-gray-300 mx-1">|</span>
+                  <span className="text-xs text-gray-400">Premium:</span>
+                  <span className="text-lg font-bold text-indigo-600">∞</span>
                 </div>
-              </>
-            ) : (
-              <>
-                <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 flex-shrink-0" />
-                <div className="min-w-0">
-                  <p className="font-semibold text-red-900 text-sm sm:text-base">Keni arritur limitin ditor</p>
-                  <p className="text-xs sm:text-sm text-red-700">Provoni përsëri nesër në 00:01</p>
-                </div>
-              </>
-            )}
+              </div>
+              <button
+                onClick={() => { window.location.href = "/payments" }}
+                className="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold text-sm shadow-md shadow-blue-500/30 hover:shadow-blue-500/50 transition-all active:scale-95 border-none cursor-pointer"
+              >
+                <Zap className="w-4 h-4" /> Shiko Premium
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          /* still has free topics left */
+          <div className="rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-3 sm:p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                  <BookOpen className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-bold text-gray-900 text-sm">Plan Falas · 2 tema falas</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Kutitë e para 2 janë gjithmonë falas. Të tjerat kërkojnë Premium.</p>
+                </div>
+              </div>
+              <a href="/payments" className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold hover:bg-blue-100 transition-all">
+                <Crown className="w-3.5 h-3.5" /> Premium →∞
+              </a>
+            </div>
+          </div>
+        )
       )}
 
       <div className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4">
@@ -1298,7 +1389,7 @@ const Grammar = () => {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center min-h-96">
+        <div className="flex items-center justify-center min-h-48">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
         </div>
       ) : (
@@ -1329,9 +1420,9 @@ const Grammar = () => {
   )
 }
 
-const TopicCard = React.memo(({ topic, onClick, isFinished, canAccess }) => (
+const TopicCard = React.memo(({ topic, index, onClick, isFinished, canAccess }) => (
   <div
-    onClick={() => onClick(topic)}
+    onClick={() => onClick(topic, index)}
     className={`rounded-lg p-3 sm:p-4 hover:shadow-lg transition-all ${
       !canAccess ? "cursor-not-allowed opacity-60" : "cursor-pointer"
     } relative overflow-hidden group ${
@@ -1351,9 +1442,9 @@ const TopicCard = React.memo(({ topic, onClick, isFinished, canAccess }) => (
           </div>
         )}
         {!canAccess && !isFinished && (
-          <div className="flex items-center gap-1 bg-red-500 text-white px-2 sm:px-2.5 py-1 rounded-full text-xs font-bold shadow-md ml-auto">
-            <Lock className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
-            <span className="hidden sm:inline">E Bllokuar</span>
+          <div className="flex items-center gap-1 bg-gray-200 text-gray-500 px-2 sm:px-2.5 py-1 rounded-full text-xs font-bold ml-auto">
+            <Crown className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
+            <span className="hidden sm:inline">Premium</span>
           </div>
         )}
         <div

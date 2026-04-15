@@ -13,4 +13,24 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React core — cached separately, changes rarely
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // Heavy 3D library — only loads on pages that use it
+          'vendor-three': ['@react-three/fiber', '@react-three/drei'],
+          // Animation library
+          'vendor-motion': ['framer-motion'],
+          // Audio waveform library
+          'vendor-audio': ['wavesurfer.js'],
+          // UI utilities
+          'vendor-ui': ['lucide-react', 'react-icons', 'react-hot-toast'],
+          // Data / networking
+          'vendor-data': ['axios', '@tanstack/react-query', 'socket.io-client'],
+        },
+      },
+    },
+  },
 })

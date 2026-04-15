@@ -35,13 +35,7 @@ const SignIn = () => {
       await login(formData)
       navigate("/")
     } catch (err) {
-      console.log("[v0] Login error:", err)
-      console.log("[v0] Error response:", err.response)
-      console.log("[v0] Error response data:", err.response?.data)
-
       const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || ""
-
-      console.log("[v0] Extracted error message:", errorMessage)
 
       if (
         errorMessage.toLowerCase().includes("device") ||

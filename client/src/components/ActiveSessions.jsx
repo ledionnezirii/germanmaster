@@ -17,9 +17,7 @@ const ActiveSessions = () => {
     try {
       setLoading(true)
       const response = await sessionService.getSessions()
-      console.log("[v0] Sessions API response:", response)
       const sessionsData = response.data?.sessions || response.data || []
-      console.log("[v0] Parsed sessions data:", sessionsData)
       setSessions(Array.isArray(sessionsData) ? sessionsData : [])
     } catch (err) {
       console.error("[v0] Error fetching sessions:", err)

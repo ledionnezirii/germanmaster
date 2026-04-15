@@ -1,310 +1,336 @@
 "use client"
 
-import { useState } from "react"
+import { BookOpen, Headphones, CheckCircle, Zap, ArrowRight, Star, Users, PenLine, Target, Trophy } from "lucide-react"
+
+const FLOATING_WORDS = [
+  { word: "Hallo",    top: "8%",  left: "4%",  size: 18, delay: 0,    dur: 6 },
+  { word: "Danke",    top: "15%", left: "88%", size: 15, delay: 1.2,  dur: 7 },
+  { word: "Wasser",   top: "28%", left: "92%", size: 13, delay: 0.5,  dur: 8 },
+  { word: "Freund",   top: "42%", left: "2%",  size: 14, delay: 2,    dur: 7.5 },
+  { word: "Schule",   top: "55%", left: "90%", size: 16, delay: 0.8,  dur: 6.5 },
+  { word: "Liebe",    top: "68%", left: "5%",  size: 13, delay: 1.5,  dur: 8 },
+  { word: "Haus",     top: "78%", left: "87%", size: 17, delay: 0.3,  dur: 7 },
+  { word: "Arbeit",   top: "20%", left: "7%",  size: 12, delay: 2.5,  dur: 9 },
+  { word: "Sprache",  top: "60%", left: "93%", size: 14, delay: 1,    dur: 7.5 },
+  { word: "Lernen",   top: "85%", left: "10%", size: 16, delay: 0.6,  dur: 6 },
+  { word: "Buch",     top: "35%", left: "5%",  size: 20, delay: 1.8,  dur: 8.5 },
+  { word: "Zeit",     top: "72%", left: "88%", size: 19, delay: 0.4,  dur: 7 },
+  { word: "Musik",    top: "90%", left: "80%", size: 13, delay: 2.2,  dur: 6.5 },
+  { word: "Küche",    top: "48%", left: "94%", size: 15, delay: 1.6,  dur: 8 },
+  { word: "Nacht",    top: "12%", left: "78%", size: 12, delay: 3,    dur: 9 },
+]
+
+const features = [
+  { icon: BookOpen,    title: "Mësime Interaktive", desc: "Ushtrime dinamike që përshtaten me tempin tuaj.",  bg: "#eef2ff", border: "#c7d2fe", gradient: "from-indigo-500 to-violet-600" },
+  { icon: Headphones,  title: "Dëgjim & Shqiptim",  desc: "Audio nga folës amtarë gjermanë.",                bg: "#ecfeff", border: "#a5f3fc", gradient: "from-cyan-500 to-blue-600" },
+  { icon: CheckCircle, title: "Teste të Nivelit",   desc: "Provoni njohuritë nga A1 deri C2.",               bg: "#fff1f2", border: "#fecdd3", gradient: "from-rose-500 to-pink-600" },
+  { icon: Zap,         title: "Progres i Shpejtë",  desc: "XP dhe seria ditore ju mbajnë motivuar.",         bg: "#fffbeb", border: "#fde68a", gradient: "from-amber-500 to-orange-500" },
+]
+
+const avatars = [
+  { letter: "A", from: "#f43f5e", to: "#e11d48" },
+  { letter: "B", from: "#8b5cf6", to: "#7c3aed" },
+  { letter: "L", from: "#06b6d4", to: "#0891b2" },
+  { letter: "E", from: "#f59e0b", to: "#d97706" },
+  { letter: "M", from: "#10b981", to: "#059669" },
+]
+
+const testimonials = [
+  { name: "Arta K.",    city: "Tiranë",    text: "Brenda 3 muajsh arrita nivelin A2! Platforma është shumë e lehtë për t'u përdorur.", from: "#f43f5e", to: "#e11d48", letter: "A" },
+  { name: "Besnik M.", city: "Prishtinë", text: "Kuizet dhe testet e nivelit më ndihmuan shumë për provimin Goethe. Rekomandoj!",     from: "#8b5cf6", to: "#7c3aed", letter: "B" },
+  { name: "Lora S.",   city: "Shkodër",   text: "Seria ditore dhe XP-ja më mbajnë të motivuar çdo ditë. Nuk e lë dot!",              from: "#06b6d4", to: "#0891b2", letter: "L" },
+]
 
 const NoAuth = () => {
-  const [email, setEmail] = useState("")
-
-  const handleGetStarted = (e) => {
-    e.preventDefault()
-    window.location.href = "/signup"
-  }
-
-  const handleSignIn = () => {
-    window.location.href = "/signin"
-  }
+  const handleGetStarted = () => { window.location.href = "/signup" }
+  const handleSignIn    = () => { window.location.href = "/signin" }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-cyan-50 rounded-3xl">
-      {/* Hero Section */}
-      <div className="max-w-7xl mx-auto px-6 pt-20 pb-32">
-        <div className="text-center max-w-4xl mx-auto">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-100 to-cyan-100 border-2 border-blue-300 text-blue-700 px-6 py-3 rounded-full text-sm font-semibold mb-8 shadow-lg">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-            </svg>
-            Filloni udhëtimin tuaj gjuhësor sot
+    <div style={{ background: "#fafafa", minHeight: "100vh", color: "#0f172a", position: "relative", overflowX: "hidden" }}>
+
+      {/* ── keyframes ── */}
+      <style>{`
+        @keyframes floatWord {
+          0%   { transform: translateY(0px) rotate(-2deg);  opacity: 0.55; }
+          50%  { transform: translateY(-18px) rotate(2deg); opacity: 0.85; }
+          100% { transform: translateY(0px) rotate(-2deg);  opacity: 0.55; }
+        }
+        @keyframes fadeUp {
+          from { opacity:0; transform:translateY(24px); }
+          to   { opacity:1; transform:translateY(0); }
+        }
+      `}</style>
+
+      {/* ── floating German words ── */}
+      {FLOATING_WORDS.map((w, i) => (
+        <div key={i} style={{
+          position: "fixed",
+          top: w.top, left: w.left,
+          fontSize: w.size,
+          fontWeight: 800,
+          letterSpacing: "-0.01em",
+          color: "#f59e0b",
+          textShadow: "0 2px 12px rgba(245,158,11,0.45), 0 0 30px rgba(251,191,36,0.2)",
+          animation: `floatWord ${w.dur}s ease-in-out ${w.delay}s infinite`,
+          userSelect: "none",
+          pointerEvents: "none",
+          zIndex: 0,
+          fontFamily: "monospace",
+        }}>{w.word}</div>
+      ))}
+
+      {/* top glow */}
+      <div style={{
+        position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
+        width: 800, height: 400, pointerEvents: "none", zIndex: 1,
+        background: "radial-gradient(ellipse at top, rgba(139,92,246,0.07) 0%, transparent 70%)",
+      }} />
+
+      {/* ═══════ HERO ═══════ */}
+      <section style={{ position: "relative", zIndex: 2, paddingTop: 96, paddingBottom: 88, paddingLeft: 24, paddingRight: 24 }}>
+        <div style={{ maxWidth: 860, margin: "0 auto", textAlign: "center", animation: "fadeUp 0.7s ease both" }}>
+
+          {/* Social proof pill */}
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 12,
+            background: "#fff", border: "1px solid #e2e8f0",
+            boxShadow: "0 4px 20px rgba(0,0,0,0.07)",
+            borderRadius: 999, padding: "8px 18px", marginBottom: 36,
+          }}>
+            <div style={{ display: "flex", marginRight: 2 }}>
+              {avatars.map((a, i) => (
+                <div key={i} style={{
+                  background: `linear-gradient(135deg,${a.from},${a.to})`,
+                  border: "2px solid #fafafa",
+                  width: 27, height: 27, borderRadius: "50%", marginLeft: i === 0 ? 0 : -8,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 10, fontWeight: 700, color: "#fff",
+                }}>{a.letter}</div>
+              ))}
+            </div>
+            <span style={{ width: 1, height: 14, background: "#e2e8f0" }} />
+            <span style={{ fontSize: 13, color: "#64748b", fontWeight: 500 }}>
+              <span style={{ color: "#7c3aed", fontWeight: 800 }}>3,000+</span> nxënës të regjistruar
+            </span>
+            <div style={{ display: "flex", gap: 2 }}>
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} size={12} style={{ fill: "#fbbf24", color: "#fbbf24" }} />
+              ))}
+            </div>
           </div>
 
-          {/* Main Heading */}
-          <h1 className="text-6xl md:text-7xl font-bold text-gray-900 mb-8 leading-tight tracking-tight">
-            Mësoni Gjermanisht
-            <br />
-            <span className="bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 bg-clip-text text-transparent">
-              në mënyrë inteligjente
+          {/* Headline */}
+          <h1 style={{ fontSize: "clamp(2.6rem,6vw,4.2rem)", fontWeight: 900, lineHeight: 1.08, letterSpacing: "-0.03em", marginBottom: "1.1rem" }}>
+            <span style={{ color: "#0f172a" }}>Mëso Gjermanisht</span><br />
+            <span style={{ background: "linear-gradient(90deg,#7c3aed,#6366f1,#8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              si një profesionist
             </span>
           </h1>
 
-          <p className="text-xl text-gray-700 mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
-            Mësoni gjermanisht me mësime interaktive, praktika në kohë reale dhe rrugë mësimore të personalizuara të
-            dizajnuara vetëm për ju.
+          <p style={{ fontSize: "1.1rem", color: "#64748b", maxWidth: 520, margin: "0 auto 2.25rem", lineHeight: 1.75 }}>
+            Platforma nr.1 shqiptare për gjuhën gjermane. Mësime interaktive, kuize, teste të nivelit dhe shumë më tepër — falas.
           </p>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-            <button
-              onClick={handleGetStarted}
-              className="group relative inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 text-white px-10 py-5 rounded-2xl font-bold text-lg hover:shadow-2xl hover:shadow-blue-500/50 transition-all duration-300 hover:scale-105 shadow-xl"
+          {/* CTAs */}
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 32 }}>
+            <button onClick={handleGetStarted} style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: "linear-gradient(135deg,#7c3aed,#6366f1)",
+              color: "#fff", fontWeight: 700, fontSize: "1rem",
+              padding: "14px 32px", borderRadius: 16, border: "none", cursor: "pointer",
+              boxShadow: "0 8px 28px rgba(124,58,237,0.38), 0 2px 8px rgba(124,58,237,0.2)",
+              transition: "transform 0.15s, box-shadow 0.15s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; e.currentTarget.style.boxShadow = "0 12px 36px rgba(124,58,237,0.48), 0 4px 12px rgba(124,58,237,0.25)" }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)";    e.currentTarget.style.boxShadow = "0 8px 28px rgba(124,58,237,0.38), 0 2px 8px rgba(124,58,237,0.2)" }}
             >
-              Filloni falas
-              <svg
-                className="w-6 h-6 group-hover:translate-x-1 transition-transform"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              Fillo falas tani <ArrowRight size={18} />
+            </button>
+            <button onClick={handleSignIn} style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: "#fff", color: "#475569", fontWeight: 600, fontSize: "1rem",
+              padding: "14px 32px", borderRadius: 16, cursor: "pointer",
+              border: "1.5px solid #e2e8f0",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.07)",
+              transition: "transform 0.15s, box-shadow 0.15s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.1)" }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)";    e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.07)" }}
+            >
+              Kam llogari — Kyçu
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ═══════ STATS ═══════ */}
+      <section style={{ position: "relative", zIndex: 2, padding: "0 24px 72px" }}>
+        <div style={{ maxWidth: 860, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 16 }}>
+          {[
+            { value: "3,000+", label: "Nxënës aktivë",     icon: Users,    color: "#7c3aed", bg: "#eef2ff" },
+            { value: "5,000+", label: "Ushtrime",           icon: PenLine,  color: "#0891b2", bg: "#ecfeff" },
+            { value: "A1–C2",  label: "Të gjitha nivelet",  icon: Target,   color: "#e11d48", bg: "#fff1f2" },
+            { value: "95%",    label: "Shkalla e suksesit", icon: Trophy,   color: "#d97706", bg: "#fffbeb" },
+          ].map((s, i) => {
+            const Icon = s.icon
+            return (
+            <div key={i} style={{
+              background: "#fff", border: "1.5px solid #f1f5f9",
+              borderRadius: 20, padding: "24px 16px", textAlign: "center",
+              boxShadow: "0 4px 20px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)",
+              transition: "transform 0.15s, box-shadow 0.15s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 10px 32px rgba(0,0,0,0.1)" }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)";    e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)" }}
+            >
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+                <Icon size={22} style={{ color: s.color }} />
+              </div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#0f172a", marginBottom: 4 }}>{s.value}</div>
+              <div style={{ fontSize: "0.75rem", color: "#94a3b8", fontWeight: 500 }}>{s.label}</div>
+            </div>
+          )})}
+        </div>
+      </section>
+
+      {/* ═══════ FEATURES ═══════ */}
+      <section style={{ position: "relative", zIndex: 2, padding: "0 24px 72px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 44 }}>
+            <h2 style={{ fontSize: "1.9rem", fontWeight: 800, color: "#0f172a", marginBottom: 8 }}>Gjithçka që nevojitet për sukses</h2>
+            <p style={{ color: "#94a3b8", fontSize: "1rem" }}>Mjete profesionale për mësimin e gjuhës gjermane</p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 16 }}>
+            {features.map((f, i) => {
+              const Icon = f.icon
+              return (
+                <div key={i} style={{
+                  background: f.bg, border: `1.5px solid ${f.border}`,
+                  borderRadius: 20, padding: 24,
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
+                  transition: "transform 0.15s, box-shadow 0.15s",
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 36px rgba(0,0,0,0.1)" }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)";    e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.05)" }}
+                >
+                  <div className={`bg-gradient-to-br ${f.gradient}`} style={{
+                    width: 44, height: 44, borderRadius: 12,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    color: "#fff", marginBottom: 16,
+                    boxShadow: "0 6px 18px rgba(0,0,0,0.15)",
+                  }}>
+                    <Icon size={22} />
+                  </div>
+                  <h3 style={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a", marginBottom: 6 }}>{f.title}</h3>
+                  <p style={{ fontSize: "0.85rem", color: "#64748b", lineHeight: 1.65 }}>{f.desc}</p>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════ TESTIMONIALS ═══════ */}
+      <section style={{ position: "relative", zIndex: 2, padding: "0 24px 72px" }}>
+        <div style={{ maxWidth: 900, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 44 }}>
+            <h2 style={{ fontSize: "1.9rem", fontWeight: 800, color: "#0f172a", marginBottom: 8 }}>Çfarë thonë nxënësit tanë</h2>
+            <p style={{ color: "#94a3b8" }}>Rezultate reale nga nxënës realë</p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))", gap: 16 }}>
+            {testimonials.map((t, i) => (
+              <div key={i} style={{
+                background: "#fff", border: "1.5px solid #f1f5f9",
+                borderRadius: 20, padding: 24,
+                boxShadow: "0 4px 20px rgba(0,0,0,0.06)",
+                transition: "transform 0.15s, box-shadow 0.15s",
+              }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)"; e.currentTarget.style.boxShadow = "0 12px 32px rgba(0,0,0,0.09)" }}
+                onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)";    e.currentTarget.style.boxShadow = "0 4px 20px rgba(0,0,0,0.06)" }}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
-            </button>
-            <button
-              onClick={handleSignIn}
-              className="inline-flex items-center justify-center gap-2 bg-white text-gray-900 px-10 py-5 rounded-2xl font-bold text-lg border-3 border-gray-300 hover:bg-gray-50 hover:border-blue-400 transition-all duration-300 shadow-lg hover:shadow-xl"
-            >
-              Identifikohu
-            </button>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-8 max-w-3xl mx-auto">
-            <div className="text-center bg-white/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-blue-200 shadow-lg">
-              <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-2">
-                50K+
-              </div>
-              <div className="text-sm text-gray-700 font-semibold">Nxënës aktivë</div>
-            </div>
-            <div className="text-center bg-white/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-cyan-200 shadow-lg">
-              <div className="text-4xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent mb-2">
-                1M+
-              </div>
-              <div className="text-sm text-gray-700 font-semibold">Mësime të përfunduara</div>
-            </div>
-            <div className="text-center bg-white/60 backdrop-blur-sm rounded-2xl p-6 border-2 border-blue-200 shadow-lg">
-              <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-2">
-                95%
-              </div>
-              <div className="text-sm text-gray-700 font-semibold">Shkalla e suksesit</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Features Grid */}
-      <div className="max-w-7xl mx-auto px-6 py-20 bg-gradient-to-b from-white/80 to-blue-50/80 backdrop-blur-sm rounded-3xl border-2 border-blue-200 shadow-2xl mb-12">
-        <div className="text-center mb-16">
-          <h2 className="text-5xl font-bold text-gray-900 mb-4">Gjithçka që ju nevojitet për sukses</h2>
-          <p className="text-gray-700 text-xl font-medium">Veçori të fuqishme për të përshpejtuar mësimin tuaj</p>
-        </div>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <FeatureCard
-            icon={
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />
-              </svg>
-            }
-            title="Mësime interaktive"
-            description="Mësoni me mësime të shkurtra që përshtaten me ritmin dhe stilin tuaj të të mësuarit."
-            color="from-blue-600 via-cyan-600 to-blue-700"
-          />
-          <FeatureCard
-            icon={
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
-                />
-              </svg>
-            }
-            title="Praktikë audio"
-            description="Përmirësoni të kuptuarit tuaj të dëgjimit me audio nga folës amtarë dhe udhëzime për shqiptimin."
-            color="from-emerald-600 via-teal-600 to-cyan-700"
-          />
-          <FeatureCard
-            icon={
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-                />
-              </svg>
-            }
-            title="Mjete përkthimi"
-            description="Praktikoni përkthime në kohë reale me reagim të menjëhershëm dhe korrigjime."
-            color="from-amber-600 via-orange-600 to-red-600"
-          />
-          <FeatureCard
-            icon={
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
-                />
-              </svg>
-            }
-            title="Gjurmoni përparimin"
-            description="Fitoni XP, ngrihuni në klasifikime dhe zhbllokoni arritje ndërsa mësoni."
-            color="from-indigo-600 via-blue-600 to-cyan-600"
-          />
-        </div>
-      </div>
-
-      {/* Benefits Section */}
-      <div className="max-w-7xl mx-auto px-6 py-20">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <h2 className="text-5xl font-bold text-gray-900 mb-8 leading-tight">Pse të zgjidhni platformën tonë?</h2>
-            <div className="space-y-6">
-              <BenefitItem
-                title="Mësim i personalizuar"
-                description="Mësime të drejtuara nga AI që përshtaten me nivelin tuaj dhe shpejtësinë e të mësuarit."
-              />
-              <BenefitItem
-                title="Folës amtarë"
-                description="Mësoni shqiptimin e saktë dhe kontekstin kulturor nga burime autentike."
-              />
-              <BenefitItem
-                title="Rezultate të dëshmuara"
-                description="95% e përdoruesve arrijnë aftësi bisedore brenda 6 muajsh."
-              />
-              <BenefitItem
-                title="Mësoni kudo"
-                description="Hyni në mësimet tuaja në çdo pajisje, online ose offline."
-              />
-            </div>
-          </div>
-          <div className="relative">
-            <div className="bg-gradient-to-br from-blue-100 via-cyan-50 to-blue-100 rounded-3xl p-10 border-4 border-blue-300 shadow-2xl">
-              <div className="bg-white rounded-2xl p-8 mb-6 shadow-lg border-2 border-blue-200">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-gray-700 text-sm font-semibold">Seria ditore</span>
-                  <svg className="w-8 h-8 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                <div style={{ display: "flex", gap: 2, marginBottom: 14 }}>
+                  {[...Array(5)].map((_, j) => <Star key={j} size={14} style={{ fill: "#fbbf24", color: "#fbbf24" }} />)}
                 </div>
-                <div className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-3">
-                  47 ditë
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
-                  <div
-                    className="bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 h-3 rounded-full shadow-md transition-all duration-300"
-                    style={{ width: "78%" }}
-                  ></div>
+                <p style={{ fontSize: "0.9rem", color: "#64748b", lineHeight: 1.7, marginBottom: 18 }}>"{t.text}"</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{
+                    background: `linear-gradient(135deg,${t.from},${t.to})`,
+                    width: 36, height: 36, borderRadius: "50%",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0,
+                    boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
+                  }}>{t.letter}</div>
+                  <div>
+                    <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "#0f172a" }}>{t.name}</div>
+                    <div style={{ fontSize: "0.75rem", color: "#94a3b8" }}>{t.city}</div>
+                  </div>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-4">
-                <StatBox
-                  label="Niveli"
-                  value="12"
-                  icon={
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  }
-                />
-                <StatBox
-                  label="XP"
-                  value="2.840"
-                  icon={
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z" />
-                      <path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z" />
-                      <path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z" />
-                    </svg>
-                  }
-                />
-                <StatBox
-                  label="Fjalë"
-                  value="380"
-                  icon={
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
-                    </svg>
-                  }
-                />
-              </div>
-            </div>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Bottom CTA */}
-      <div className="max-w-5xl mx-auto px-6 py-20">
-        <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-700 rounded-3xl p-16 text-center border-4 border-blue-400 shadow-2xl">
-          {/* Decorative elements */}
-          <div className="absolute top-0 right-0 w-72 h-72 bg-white/20 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-72 h-72 bg-white/20 rounded-full blur-3xl"></div>
+      {/* ═══════ BOTTOM CTA ═══════ */}
+      <section style={{ position: "relative", zIndex: 2, padding: "0 24px 88px" }}>
+        <div style={{
+          maxWidth: 700, margin: "0 auto",
+          background: "linear-gradient(135deg,#7c3aed,#6366f1)",
+          borderRadius: 28, padding: "56px 40px", textAlign: "center",
+          boxShadow: "0 24px 64px rgba(124,58,237,0.32), 0 8px 24px rgba(124,58,237,0.2)",
+          overflow: "hidden", position: "relative",
+        }}>
+          <div style={{ position: "absolute", top: -60, right: -60, width: 220, height: 220, borderRadius: "50%", background: "radial-gradient(circle,rgba(255,255,255,0.12) 0%,transparent 70%)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", bottom: -60, left: -60, width: 220, height: 220, borderRadius: "50%", background: "radial-gradient(circle,rgba(255,255,255,0.08) 0%,transparent 70%)", pointerEvents: "none" }} />
 
-          <div className="relative z-10">
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">Gati për të filluar?</h2>
-            <p className="text-blue-50 text-xl mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
-              Bashkohuni me mijëra nxënës që tashmë janë në rrugën drejt rrjedhshmërisë.
+          <div style={{ position: "relative" }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+              <div style={{ display: "flex" }}>
+                {avatars.map((a, i) => (
+                  <div key={i} style={{
+                    background: `linear-gradient(135deg,${a.from},${a.to})`,
+                    border: "2px solid #7c3aed",
+                    width: 34, height: 34, borderRadius: "50%", marginLeft: i === 0 ? 0 : -10,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: 12, fontWeight: 700, color: "#fff",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+                  }}>{a.letter}</div>
+                ))}
+                <div style={{
+                  background: "rgba(255,255,255,0.2)", border: "2px solid #7c3aed",
+                  width: 34, height: 34, borderRadius: "50%", marginLeft: -10,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.9)",
+                }}>+3K</div>
+              </div>
+            </div>
+
+            <h2 style={{ fontSize: "clamp(1.5rem,4vw,2.2rem)", fontWeight: 900, color: "#fff", marginBottom: 12, lineHeight: 1.2 }}>
+              Gati të bashkoheni me 3,000+ nxënës?
+            </h2>
+            <p style={{ color: "rgba(255,255,255,0.72)", marginBottom: 28, fontSize: "1rem" }}>
+              Regjistrohuni sot — pa kartë krediti, falas.
             </p>
-            <button
-              onClick={handleGetStarted}
-              className="inline-flex items-center gap-3 bg-white text-blue-600 px-10 py-5 rounded-2xl font-bold text-lg hover:bg-blue-50 transition-all duration-300 hover:scale-105 shadow-2xl"
+            <button onClick={handleGetStarted} style={{
+              display: "inline-flex", alignItems: "center", gap: 8,
+              background: "#fff", color: "#7c3aed",
+              fontWeight: 700, fontSize: "1rem",
+              padding: "14px 36px", borderRadius: 16, border: "none", cursor: "pointer",
+              boxShadow: "0 6px 24px rgba(0,0,0,0.18)",
+              transition: "transform 0.15s, box-shadow 0.15s",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.04)"; e.currentTarget.style.boxShadow = "0 10px 32px rgba(0,0,0,0.22)" }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)";    e.currentTarget.style.boxShadow = "0 6px 24px rgba(0,0,0,0.18)" }}
             >
-              Krijoni llogari falas
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
+              Krijoni llogari falas <ArrowRight size={18} />
             </button>
           </div>
         </div>
-      </div>
+      </section>
+
     </div>
   )
 }
-
-const FeatureCard = ({ icon, title, description, color }) => (
-  <div className="group bg-white rounded-2xl p-8 border-3 border-blue-200 hover:border-blue-400 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-2xl">
-    <div
-      className={`bg-gradient-to-r ${color} w-14 h-14 rounded-2xl flex items-center justify-center mb-5 text-white group-hover:scale-110 transition-transform duration-300 shadow-lg`}
-    >
-      {icon}
-    </div>
-    <h3 className="text-xl font-bold text-gray-900 mb-3">{title}</h3>
-    <p className="text-gray-700 leading-relaxed font-medium">{description}</p>
-  </div>
-)
-
-const BenefitItem = ({ title, description }) => (
-  <div className="flex gap-5">
-    <div className="flex-shrink-0">
-      <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-600 via-cyan-600 to-blue-600 flex items-center justify-center shadow-lg">
-        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-        </svg>
-      </div>
-    </div>
-    <div>
-      <h3 className="text-xl font-bold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-700 font-medium leading-relaxed">{description}</p>
-    </div>
-  </div>
-)
-
-const StatBox = ({ label, value, icon }) => (
-  <div className="bg-white rounded-2xl p-5 text-center shadow-lg border-2 border-blue-200 hover:scale-105 transition-transform duration-300">
-    <div className="text-blue-600 mb-2 flex justify-center">{icon}</div>
-    <div className="text-2xl font-bold text-gray-900 mb-2">{value}</div>
-    <div className="text-xs text-gray-700 font-semibold">{label}</div>
-  </div>
-)
 
 export default NoAuth

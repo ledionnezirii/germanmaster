@@ -18,11 +18,67 @@ import {
   Sparkles,
   Trophy,
   AlertTriangle,
+  Globe,
+  Crown,
 } from "lucide-react"
 import { wordsService } from "../services/api"
 import { useAuth } from "../context/AuthContext"
 
-export default function Words() {
+function PaywallModal({ onClose }) {
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.85, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.85, opacity: 0, y: 20 }}
+          transition={{ type: "spring", stiffness: 350, damping: 28 }}
+          className="bg-white rounded-3xl shadow-2xl border-2 border-emerald-200 p-8 max-w-sm w-full text-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 flex items-center justify-center mx-auto mb-5">
+            <Crown className="h-10 w-10 text-amber-500" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Premium i Nevojshëm</h2>
+          <p className="text-gray-500 text-sm mb-2 leading-relaxed">
+            Shtimi i fjalëve është <span className="font-bold text-emerald-600">falas</span> dhe pa limit.
+          </p>
+          <p className="text-gray-400 text-xs mb-6 leading-relaxed">
+            Kaloni në planin Premium për të luajtur kuizin me fjalët tuaja të personalizuara.
+          </p>
+          <button
+            onClick={() => { window.location.href = "/payments" }}
+            className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all border-none cursor-pointer mb-3"
+          >
+            Shiko Planet Premium
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 bg-gray-50 text-gray-500 rounded-xl font-medium text-sm border border-gray-200 hover:bg-gray-100 transition-all cursor-pointer"
+          >
+            Mbyll
+          </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
+const LANGUAGES = [
+  { code: "de", label: "Gjermanisht", flag: "🇩🇪" },
+  { code: "en", label: "Anglisht",    flag: "🇬🇧" },
+  { code: "fr", label: "Frëngjisht",  flag: "🇫🇷" },
+  { code: "tr", label: "Turqisht",    flag: "🇹🇷" },
+  { code: "it", label: "Italisht",    flag: "🇮🇹" },
+]
+
+export default function Words({ selectedLanguage = "de" }) {
   const { user } = useAuth()
   const [words, setWords] = useState([])
   const [filteredWords, setFilteredWords] = useState([])
@@ -30,6 +86,7 @@ export default function Words() {
   const [newWord, setNewWord] = useState("")
   const [translation, setTranslation] = useState("")
   const [adding, setAdding] = useState(false)
+  const [bulkRows, setBulkRows] = useState([{ word: "", translation: "" }, { word: "", translation: "" }])
   const [stats, setStats] = useState({ totalWords: 0, wordsThisWeek: 0, wordsThisMonth: 0 })
   const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
@@ -41,7 +98,7 @@ export default function Words() {
   const [selectedAnswer, setSelectedAnswer] = useState(null)
   const [quizResult, setQuizResult] = useState(null)
   const [quizScore, setQuizScore] = useState({ correct: 0, total: 0 })
-  const [quizXpEarned, setQuizXpEarned] = useState(0) // NEW: Track XP earned during quiz
+  const [quizXpEarned, setQuizXpEarned] = useState(0)
   const [notification, setNotification] = useState(null)
   const [quizCycle, setQuizCycle] = useState([])
   const [quizCycleIndex, setQuizCycleIndex] = useState(0)
@@ -50,96 +107,95 @@ export default function Words() {
   const [savingXp, setSavingXp] = useState(false)
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false)
   const [deletingAll, setDeletingAll] = useState(false)
+  const [isPaid, setIsPaid] = useState(false)
+  const [showPaywall, setShowPaywall] = useState(false)
 
   const newWordInputRef = useRef(null)
 
   // SEO Effect
   useEffect(() => {
-    // Update page title
     document.title = "Fjalët Gjermane - Mësoni dhe Praktikoni Fjalorin | Kuize dhe Përkthime"
-    
-    // Update or create meta description
+
     let metaDescription = document.querySelector('meta[name="description"]')
     if (!metaDescription) {
-      metaDescription = document.createElement('meta')
-      metaDescription.name = 'description'
+      metaDescription = document.createElement("meta")
+      metaDescription.name = "description"
       document.head.appendChild(metaDescription)
     }
-    metaDescription.content = "Mësoni fjalët gjermane me kuize interaktive dhe përkthime. Shtoni fjalë të reja, praktikoni dhe fitoni XP. Fillo sot!"
-    
-    // Update or create meta keywords
+    metaDescription.content =
+      "Mësoni fjalët gjermane me kuize interaktive dhe përkthime. Shtoni fjalë të reja, praktikoni dhe fitoni XP. Fillo sot!"
+
     let metaKeywords = document.querySelector('meta[name="keywords"]')
     if (!metaKeywords) {
-      metaKeywords = document.createElement('meta')
-      metaKeywords.name = 'keywords'
+      metaKeywords = document.createElement("meta")
+      metaKeywords.name = "keywords"
       document.head.appendChild(metaKeywords)
     }
-    metaKeywords.content = "fjalët gjermane, vokabular gjermanisht, deutsche wörter, mësim fjalësh, fjalori gjermanisht, kuize fjalësh, përkthim fjalësh"
-    
-    // Update canonical URL
+    metaKeywords.content =
+      "fjalët gjermane, vokabular gjermanisht, deutsche wörter, mësim fjalësh, fjalori gjermanisht, kuize fjalësh, përkthim fjalësh"
+
     let canonicalLink = document.querySelector('link[rel="canonical"]')
     if (!canonicalLink) {
-      canonicalLink = document.createElement('link')
-      canonicalLink.rel = 'canonical'
+      canonicalLink = document.createElement("link")
+      canonicalLink.rel = "canonical"
       document.head.appendChild(canonicalLink)
     }
     canonicalLink.href = `${window.location.origin}/words`
-    
-    // Update Open Graph meta tags
-    updateMetaTag('og:title', 'Fjalët Gjermane - Mësoni dhe Praktikoni Fjalorin')
-    updateMetaTag('og:description', 'Mësoni fjalët gjermane me kuize interaktive dhe përkthime. Shtoni fjalë të reja, praktikoni dhe fitoni XP.')
-    updateMetaTag('og:url', `${window.location.origin}/words`)
-    updateMetaTag('og:type', 'website')
-    
-    // Update Twitter meta tags
-    updateMetaTag('twitter:title', 'Fjalët Gjermane - Mësoni dhe Praktikoni Fjalorin')
-    updateMetaTag('twitter:description', 'Mësoni fjalët gjermane me kuize interaktive dhe përkthime. Shtoni fjalë të reja, praktikoni dhe fitoni XP.')
-    
-    // Add structured data for words page
+
+    updateMetaTag("og:title", "Fjalët Gjermane - Mësoni dhe Praktikoni Fjalorin")
+    updateMetaTag(
+      "og:description",
+      "Mësoni fjalët gjermane me kuize interaktive dhe përkthime. Shtoni fjalë të reja, praktikoni dhe fitoni XP.",
+    )
+    updateMetaTag("og:url", `${window.location.origin}/words`)
+    updateMetaTag("og:type", "website")
+    updateMetaTag("twitter:title", "Fjalët Gjermane - Mësoni dhe Praktikoni Fjalorin")
+    updateMetaTag(
+      "twitter:description",
+      "Mësoni fjalët gjermane me kuize interaktive dhe përkthime. Shtoni fjalë të reja, praktikoni dhe fitoni XP.",
+    )
+
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "LearningResource",
-      "name": "Fjalët Gjermane",
-      "description": "Mësoni dhe praktikoni fjalët gjermane me kuize interaktive, përkthime dhe menaxhim fjalorish",
-      "url": `${window.location.origin}/words`,
-      "educationalLevel": ["Beginner", "Intermediate", "Advanced"],
-      "inLanguage": ["de", "sq"],
-      "learningResourceType": "Vocabulary Builder",
-      "offers": {
-        "@type": "Offer",
-        "category": "Educational Services"
-      }
+      name: "Fjalët Gjermane",
+      description:
+        "Mësoni dhe praktikoni fjalët gjermane me kuize interaktive, përkthime dhe menaxhim fjalorish",
+      url: `${window.location.origin}/words`,
+      educationalLevel: ["Beginner", "Intermediate", "Advanced"],
+      inLanguage: ["de", "sq"],
+      learningResourceType: "Vocabulary Builder",
+      offers: { "@type": "Offer", category: "Educational Services" },
     }
-    
+
     let structuredDataScript = document.querySelector('script[type="application/ld+json"][data-words]')
     if (!structuredDataScript) {
-      structuredDataScript = document.createElement('script')
-      structuredDataScript.type = 'application/ld+json'
-      structuredDataScript.setAttribute('data-words', 'true')
+      structuredDataScript = document.createElement("script")
+      structuredDataScript.type = "application/ld+json"
+      structuredDataScript.setAttribute("data-words", "true")
       document.head.appendChild(structuredDataScript)
     }
     structuredDataScript.textContent = JSON.stringify(structuredData)
-    
-    // Cleanup function
+
     return () => {
-      // Remove the structured data script when component unmounts
       const script = document.querySelector('script[type="application/ld+json"][data-words]')
       if (script) script.remove()
     }
   }, [])
-  
-  // Helper function to update meta tags
+
   const updateMetaTag = (property, content) => {
-    let metaTag = document.querySelector(`meta[property="${property}"]`) || 
-                  document.querySelector(`meta[name="${property}"]`)
+    let metaTag =
+      document.querySelector(`meta[property="${property}"]`) ||
+      document.querySelector(`meta[name="${property}"]`)
     if (!metaTag) {
-      metaTag = document.createElement('meta')
-      metaTag.setAttribute(property.startsWith('og:') ? 'property' : 'name', property)
+      metaTag = document.createElement("meta")
+      metaTag.setAttribute(property.startsWith("og:") ? "property" : "name", property)
       document.head.appendChild(metaTag)
     }
     metaTag.content = content
   }
 
+  // German umlauts only shown when language is de
   const insertUmlaut = (char) => {
     const input = newWordInputRef.current
     if (!input) return
@@ -155,17 +211,32 @@ export default function Words() {
 
   const umlauts = ["ä", "ö", "ü", "ß", "Ä", "Ö", "Ü"]
 
+  // Re-fetch whenever selectedLanguage changes
   useEffect(() => {
+    setCurrentPage(1)
+    setSearchQuery("")
+    setActiveView("words")
     if (user) {
       fetchWords()
       fetchStats()
+      checkSubscription()
     }
-  }, [user])
+  }, [user, selectedLanguage])
+
+  const checkSubscription = async () => {
+    try {
+      const { subscriptionService } = await import("../services/api")
+      const status = await subscriptionService.checkStatus()
+      setIsPaid(status.active || false)
+    } catch (e) {
+      console.error("Error checking subscription:", e)
+    }
+  }
 
   const fetchWords = async () => {
     try {
       setLoading(true)
-      const response = await wordsService.getLearnedWords()
+      const response = await wordsService.getLearnedWords(selectedLanguage)
       setWords(response.data || [])
       setFilteredWords(response.data || [])
     } catch (error) {
@@ -178,7 +249,7 @@ export default function Words() {
 
   const fetchStats = async () => {
     try {
-      const response = await wordsService.getWordStats()
+      const response = await wordsService.getWordStats(selectedLanguage)
       setStats(response.data || { totalWords: 0, wordsThisWeek: 0, wordsThisMonth: 0 })
     } catch (error) {
       console.error("Error fetching stats:", error)
@@ -232,6 +303,7 @@ export default function Words() {
       const response = await wordsService.addLearnedWord({
         word: newWord,
         translation,
+        language: selectedLanguage,
       })
       setWords([response.data, ...words])
       setNewWord("")
@@ -242,6 +314,34 @@ export default function Words() {
     } catch (error) {
       console.error("Error adding word:", error)
       showNotification(error.response?.data?.message || "Dështoi shtimi i fjalës", "error")
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  const handleBulkAddWords = async (e) => {
+    e.preventDefault()
+    const validRows = bulkRows.filter((r) => r.word.trim())
+    if (validRows.length === 0) {
+      showNotification("Shtoni të paktën një fjalë", "error")
+      return
+    }
+    try {
+      setAdding(true)
+      const response = await wordsService.addBulkLearnedWords(validRows, selectedLanguage)
+      const added = response.data.data || []
+      setWords((prev) => [...added, ...prev])
+      if (response.data.skipped?.length > 0) {
+        showNotification(`${added.length} fjalë u shtuan, ${response.data.skipped.length} ekzistonin tashmë`, "success")
+      } else {
+        showNotification(`${added.length} fjalë u shtuan me sukses!`, "success")
+      }
+      setBulkRows([{ word: "", translation: "" }, { word: "", translation: "" }])
+      setShowAddForm(false)
+      fetchStats()
+    } catch (error) {
+      console.error("Error bulk adding words:", error)
+      showNotification("Dështoi shtimi i fjalëve", "error")
     } finally {
       setAdding(false)
     }
@@ -280,13 +380,17 @@ export default function Words() {
   }
 
   const startQuiz = () => {
+    if (!isPaid) {
+      setShowPaywall(true)
+      return
+    }
     if (words.length < 4) {
       showNotification("Ju nevojiten të paktën 4 fjalë!", "error")
       return
     }
     setActiveView("quiz")
     setQuizScore({ correct: 0, total: 0 })
-    setQuizXpEarned(0) // NEW: Reset XP earned
+    setQuizXpEarned(0)
     setShowQuizResults(false)
     const shuffledWords = shuffleArray(words)
     setQuizCycle(shuffledWords)
@@ -321,20 +425,15 @@ export default function Words() {
     setSelectedAnswer(option)
     const isCorrect = option._id === currentQuizWord._id
     setQuizResult(isCorrect)
-    
-    // Update score
+
     setQuizScore((prev) => ({
       correct: prev.correct + (isCorrect ? 1 : 0),
       total: prev.total + 1,
     }))
 
-    // NEW: Update XP earned (can't go below 0)
     setQuizXpEarned((prev) => {
-      if (isCorrect) {
-        return prev + 1 // +1 XP for correct answer
-      } else {
-        return Math.max(0, prev - 1) // -1 XP for wrong answer, but can't go below 0
-      }
+      if (isCorrect) return prev + 1
+      return Math.max(0, prev - 1)
     })
 
     setTimeout(() => loadNextQuizWord(), 1500)
@@ -343,7 +442,6 @@ export default function Words() {
   const finishQuiz = async () => {
     setShowQuizResults(true)
 
-    // NEW: Send the earned XP to backend (only if positive)
     if (quizXpEarned > 0) {
       setSavingXp(true)
       try {
@@ -358,6 +456,8 @@ export default function Words() {
     }
   }
 
+  const currentLang = LANGUAGES.find((l) => l.code === selectedLanguage)
+
   const indexOfLastWord = currentPage * wordsPerPage
   const indexOfFirstWord = indexOfLastWord - wordsPerPage
   const currentWords = filteredWords.slice(indexOfFirstWord, indexOfLastWord)
@@ -365,7 +465,7 @@ export default function Words() {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-96">
+      <div className="flex items-center justify-center min-h-48">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
       </div>
     )
@@ -385,6 +485,7 @@ export default function Words() {
 
   return (
     <div className="w-full mx-auto px-4 py-6">
+      {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
       {/* Notification */}
       <AnimatePresence>
         {notification && (
@@ -402,12 +503,13 @@ export default function Words() {
         )}
       </AnimatePresence>
 
+      {/* Tab Bar */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex justify-center mb-8">
         <div className="inline-flex bg-gradient-to-r from-purple-50 to-blue-50 p-1.5 rounded-2xl gap-1 shadow-sm">
           {[
-            { id: "words", icon: BookOpen, label: "Fjalët", color: "from-purple-500 to-pink-500" },
-            { id: "quiz", icon: Brain, label: "Kuizi", color: "from-blue-500 to-cyan-500" },
-            { id: "help", icon: HelpCircle, label: "Ndihmë", color: "from-orange-500 to-amber-500" },
+            { id: "words", icon: BookOpen, label: "Fjalët",  color: "from-purple-500 to-pink-500" },
+            { id: "quiz",  icon: Brain,    label: "Kuizi",   color: "from-blue-500 to-cyan-500", premium: true },
+            { id: "help",  icon: HelpCircle, label: "Ndihmë", color: "from-orange-500 to-amber-500" },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -420,13 +522,14 @@ export default function Words() {
             >
               <tab.icon size={16} />
               {tab.label}
+              {tab.premium && !isPaid && <Crown size={12} className="text-amber-400" />}
             </button>
           ))}
         </div>
       </motion.div>
 
-      {/* Help View */}
       <AnimatePresence mode="wait">
+        {/* ── HELP VIEW ── */}
         {activeView === "help" && (
           <motion.div
             key="help"
@@ -445,9 +548,15 @@ export default function Words() {
             <div className="space-y-4">
               {[
                 {
+                  icon: Globe,
+                  title: "Zgjidhni Gjuhën",
+                  desc: "Zgjidhni gjuhën që doni të mësoni nga shiriti i gjuhëve në krye.",
+                  color: "from-teal-500 to-emerald-500",
+                },
+                {
                   icon: Plus,
                   title: "Shtoni Fjalë",
-                  desc: "Klikoni butonin + për të shtuar fjalë të reja gjermane.",
+                  desc: "Klikoni butonin + për të shtuar fjalë të reja në gjuhën e zgjedhur.",
                   color: "from-purple-500 to-pink-500",
                 },
                 {
@@ -471,7 +580,7 @@ export default function Words() {
                   className="flex gap-4 p-4 bg-white rounded-2xl shadow-sm"
                 >
                   <div
-                    className={`w-10 h-10 bg-gradient-to-br ${item.color} rounded-xl flex items-center justify-center shadow-md`}
+                    className={`w-10 h-10 bg-gradient-to-br ${item.color} rounded-xl flex items-center justify-center shadow-md flex-shrink-0`}
                   >
                     <item.icon size={18} className="text-white" />
                   </div>
@@ -492,7 +601,7 @@ export default function Words() {
           </motion.div>
         )}
 
-        {/* Quiz View */}
+        {/* ── QUIZ VIEW ── */}
         {activeView === "quiz" && currentQuizWord && (
           <motion.div
             key="quiz"
@@ -536,8 +645,6 @@ export default function Words() {
                           {quizScore.total > 0 ? Math.round((quizScore.correct / quizScore.total) * 100) : 0}%
                         </span>
                       </div>
-
-                      {/* NEW: Show XP earned */}
                       <div className="border-t pt-4">
                         <motion.div
                           initial={{ scale: 0 }}
@@ -577,16 +684,15 @@ export default function Words() {
               )}
             </AnimatePresence>
 
-            {/* Quiz Stats - UPDATED to show XP */}
+            {/* Quiz Stats */}
             <div className="flex justify-between items-center mb-4">
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <div className="bg-white px-3 py-1.5 rounded-xl shadow-sm border border-blue-100">
                   <span className="text-xs text-gray-500">Rezultati: </span>
                   <span className="font-semibold text-sm bg-gradient-to-r from-blue-500 to-cyan-500 bg-clip-text text-transparent">
                     {quizScore.correct}/{quizScore.total}
                   </span>
                 </div>
-                {/* NEW: Show current XP during quiz */}
                 <div className="bg-white px-3 py-1.5 rounded-xl shadow-sm border border-amber-100 flex items-center gap-1">
                   <Zap size={14} className="text-amber-500" />
                   <span className="font-semibold text-sm text-amber-600">{quizXpEarned} XP</span>
@@ -607,7 +713,7 @@ export default function Words() {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              {multipleChoiceOptions.map((option, idx) => {
+              {multipleChoiceOptions.map((option) => {
                 const isSelected = selectedAnswer?._id === option._id
                 const isCorrect = option._id === currentQuizWord._id
                 const showResult = quizResult !== null
@@ -615,11 +721,8 @@ export default function Words() {
                 const textContent = option.translation || option.word
                 const textLength = textContent.length
                 let fontSize = "text-xs sm:text-sm"
-                if (textLength > 40) {
-                  fontSize = "text-[10px] sm:text-xs"
-                } else if (textLength > 25) {
-                  fontSize = "text-[11px] sm:text-xs"
-                }
+                if (textLength > 40) fontSize = "text-[10px] sm:text-xs"
+                else if (textLength > 25) fontSize = "text-[11px] sm:text-xs"
 
                 return (
                   <button
@@ -660,7 +763,6 @@ export default function Words() {
               })}
             </div>
 
-            {/* Result Feedback */}
             {quizResult !== null && (
               <div
                 className={`mt-3 p-3 rounded-xl flex items-center justify-center gap-2 ${
@@ -677,7 +779,7 @@ export default function Words() {
           </motion.div>
         )}
 
-        {/* Words View - keeping the rest unchanged */}
+        {/* ── WORDS VIEW ── */}
         {activeView === "words" && (
           <motion.div
             key="words"
@@ -685,22 +787,12 @@ export default function Words() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
           >
-            {/* Rest of the Words view code remains the same... */}
+            {/* Stats */}
             <div className="grid grid-cols-3 gap-4 mb-6">
               {[
-                { icon: Sparkles, label: "Totali", value: stats.totalWords, gradient: "from-purple-500 to-pink-500" },
-                {
-                  icon: Calendar,
-                  label: "Këtë Javë",
-                  value: stats.wordsThisWeek,
-                  gradient: "from-blue-500 to-cyan-500",
-                },
-                {
-                  icon: Zap,
-                  label: "Këtë Muaj",
-                  value: stats.wordsThisMonth,
-                  gradient: "from-amber-500 to-yellow-500",
-                },
+                { icon: Sparkles, label: "Totali",      value: stats.totalWords,      gradient: "from-purple-500 to-pink-500"  },
+                { icon: Calendar, label: "Këtë Javë",   value: stats.wordsThisWeek,   gradient: "from-blue-500 to-cyan-500"    },
+                { icon: Zap,      label: "Këtë Muaj",   value: stats.wordsThisMonth,  gradient: "from-amber-500 to-yellow-500" },
               ].map((stat, i) => (
                 <div key={i} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
                   <div
@@ -714,6 +806,7 @@ export default function Words() {
               ))}
             </div>
 
+            {/* Search + actions */}
             <div className="flex gap-3 mb-6">
               <div className="flex-1 relative">
                 <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -742,6 +835,7 @@ export default function Words() {
               </button>
             </div>
 
+            {/* Delete All Confirm Modal */}
             <AnimatePresence>
               {showDeleteAllConfirm && (
                 <motion.div
@@ -763,13 +857,11 @@ export default function Words() {
                         <AlertTriangle size={32} className="text-rose-600" />
                       </div>
                     </div>
-
                     <h3 className="text-xl font-bold text-gray-800 text-center mb-2">Fshi të gjitha fjalët?</h3>
                     <p className="text-sm text-gray-500 text-center mb-6">
-                      Kjo veprim do të fshijë të gjitha {words.length} fjalët tuaja. Ky veprim nuk mund të kthehet
-                      mbrapsht.
+                      Kjo veprim do të fshijë të gjitha {words.length} fjalët tuaja në{" "}
+                      <span className="font-semibold">{currentLang?.label}</span>. Ky veprim nuk mund të kthehet mbrapsht.
                     </p>
-
                     <div className="flex gap-3">
                       <button
                         onClick={() => setShowDeleteAllConfirm(false)}
@@ -813,63 +905,89 @@ export default function Words() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-                  onClick={() => setShowAddForm(false)}
+                  onClick={() => { setShowAddForm(false); setBulkRows([{ word: "", translation: "" }, { word: "", translation: "" }]) }}
                 >
                   <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.9, opacity: 0 }}
                     onClick={(e) => e.stopPropagation()}
-                    className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-6 w-full max-w-md shadow-2xl"
+                    className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-6 w-full max-w-lg shadow-2xl"
                   >
-                    <div className="flex justify-between items-center mb-6">
-                      <h3 className="text-lg font-semibold text-gray-800">Shto Fjalë të Re</h3>
+                    <div className="flex justify-between items-center mb-5">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-800">Shto Fjalë të Reja</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">Mund të shtoni sa fjalë të dëshironi</p>
+                      </div>
                       <button
-                        onClick={() => setShowAddForm(false)}
+                        onClick={() => { setShowAddForm(false); setBulkRows([{ word: "", translation: "" }, { word: "", translation: "" }]) }}
                         className="p-2 hover:bg-white/50 rounded-xl transition-colors"
                       >
                         <XCircle size={18} className="text-gray-400" />
                       </button>
                     </div>
 
-                    <form onSubmit={handleAddWord} className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Fjala Gjermane</label>
-                        <input
-                          ref={newWordInputRef}
-                          type="text"
-                          value={newWord}
-                          onChange={(e) => setNewWord(e.target.value)}
-                          placeholder="p.sh. Haus"
-                          className="w-full px-4 py-3 bg-white border border-purple-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 text-sm"
-                        />
-                        <div className="flex gap-1.5 mt-2 flex-wrap">
-                          {umlauts.map((char) => (
-                            <button
-                              key={char}
-                              type="button"
-                              onClick={() => insertUmlaut(char)}
-                              className="px-2.5 py-1.5 text-xs font-medium bg-white hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 hover:text-purple-700 rounded-lg transition-all border border-purple-100"
-                            >
-                              {char}
-                            </button>
-                          ))}
-                        </div>
+                    <form onSubmit={handleBulkAddWords}>
+                      {/* Column headers */}
+                      <div className="grid grid-cols-2 gap-2 mb-2 px-1">
+                        <span className="text-xs font-medium text-gray-500">{currentLang?.flag} {currentLang?.label}</span>
+                        <span className="text-xs font-medium text-gray-500">Përkthimi (Shqip)</span>
                       </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Përkthimi (Shqip)</label>
-                        <input
-                          type="text"
-                          value={translation}
-                          onChange={(e) => setTranslation(e.target.value)}
-                          placeholder="p.sh. Shtëpi"
-                          className="w-full px-4 py-3 bg-white border border-purple-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 text-sm"
-                        />
+
+                      {/* Scrollable rows */}
+                      <div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1 mb-3">
+                        {bulkRows.map((row, i) => (
+                          <div key={i} className="grid grid-cols-2 gap-2 items-center">
+                            <input
+                              type="text"
+                              value={row.word}
+                              onChange={(e) => {
+                                const updated = [...bulkRows]
+                                updated[i] = { ...updated[i], word: e.target.value }
+                                setBulkRows(updated)
+                              }}
+                              placeholder="p.sh. Haus"
+                              className="px-3 py-2.5 bg-white border border-purple-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 text-sm"
+                            />
+                            <div className="flex gap-1.5">
+                              <input
+                                type="text"
+                                value={row.translation}
+                                onChange={(e) => {
+                                  const updated = [...bulkRows]
+                                  updated[i] = { ...updated[i], translation: e.target.value }
+                                  setBulkRows(updated)
+                                }}
+                                placeholder="p.sh. Shtëpi"
+                                className="flex-1 px-3 py-2.5 bg-white border border-purple-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-400 text-sm"
+                              />
+                              {bulkRows.length > 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => setBulkRows(bulkRows.filter((_, idx) => idx !== i))}
+                                  className="p-2 text-gray-300 hover:text-red-400 transition-colors flex-shrink-0"
+                                >
+                                  <XCircle size={16} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
+
+                      {/* Add row button */}
+                      <button
+                        type="button"
+                        onClick={() => setBulkRows([...bulkRows, { word: "", translation: "" }])}
+                        className="w-full py-2 mb-4 border-2 border-dashed border-purple-200 text-purple-500 rounded-xl text-sm font-medium hover:border-purple-400 hover:bg-purple-50 transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <Plus size={15} />
+                        Shto Rresht
+                      </button>
 
                       <button
                         type="submit"
-                        disabled={adding || !newWord.trim()}
+                        disabled={adding || bulkRows.every((r) => !r.word.trim())}
                         className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-200 disabled:to-gray-200 disabled:text-gray-400 text-white rounded-2xl font-medium transition-all flex items-center justify-center gap-2 shadow-lg"
                       >
                         {adding ? (
@@ -881,7 +999,7 @@ export default function Words() {
                         ) : (
                           <>
                             <Plus size={18} />
-                            Shto Fjalën
+                            Shto {bulkRows.filter((r) => r.word.trim()).length || ""} Fjalë
                           </>
                         )}
                       </button>
@@ -898,7 +1016,7 @@ export default function Words() {
                   <BookOpen size={24} className="text-purple-500" />
                 </div>
                 <p className="text-gray-500 font-medium">
-                  {searchQuery ? "Nuk u gjet asnjë fjalë" : "Nuk keni shtuar ende fjalë"}
+                  {searchQuery ? "Nuk u gjet asnjë fjalë" : `Nuk keni shtuar ende fjalë në ${currentLang?.label}`}
                 </p>
                 <p className="text-gray-400 text-sm mt-1">
                   {searchQuery ? "Provoni një kërkim tjetër" : "Klikoni + për të filluar"}

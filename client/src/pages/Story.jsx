@@ -949,7 +949,7 @@ export default function Stories() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center min-h-96">
+          <div className="flex items-center justify-center min-h-48">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500" />
           </div>
         ) : stories.length === 0 ? (

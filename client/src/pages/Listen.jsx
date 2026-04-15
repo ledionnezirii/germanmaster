@@ -2,8 +2,55 @@
 import { useState, useEffect, useRef } from "react"
 // Import your API services here
 import { listenService, ttsService } from "../services/api"
-import { Volume2, Play, Pause, Check, X, LogOut, Star, Zap, TrendingUp } from "lucide-react"
+import { useLanguage } from "../context/LanguageContext"
+import { Volume2, Play, Pause, Check, X, LogOut, Star, Zap, TrendingUp, Headphones, Crown, Lock } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+
+function PaywallModal({ onClose }) {
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.85, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.85, opacity: 0, y: 20 }}
+          transition={{ type: "spring", stiffness: 350, damping: 28 }}
+          className="bg-white rounded-3xl shadow-2xl border-2 border-emerald-200 p-8 max-w-sm w-full text-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 flex items-center justify-center mx-auto mb-5">
+            <Crown className="h-10 w-10 text-amber-500" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Limit i Arritur</h2>
+          <p className="text-gray-500 text-sm mb-2 leading-relaxed">
+            Versioni falas lejon vetëm <span className="font-bold text-emerald-600">5</span> teste të përfunduara.
+          </p>
+          <p className="text-gray-400 text-xs mb-6 leading-relaxed">
+            Kaloni në planin Premium për të pasur akses të pakufizuar në të gjitha testet.
+          </p>
+          <button
+            onClick={() => { window.location.href = "/payments" }}
+            className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all border-none cursor-pointer mb-3"
+          >
+            Shiko Planet Premium
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 bg-gray-50 text-gray-500 rounded-xl font-medium text-sm border border-gray-200 hover:bg-gray-100 transition-all cursor-pointer"
+          >
+            Mbyll
+          </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
 
 const Listen = () => {
   const [tests, setTests] = useState([])
@@ -20,8 +67,19 @@ const Listen = () => {
   const [xpGained, setXpGained] = useState(0)
   const [showXpAnimation, setShowXpAnimation] = useState(false)
   const [totalXp, setTotalXp] = useState(0)
+  const [showPaywall, setShowPaywall] = useState(false)
+  const [isPaid, setIsPaid] = useState(false)
+  const [freeLimit, setFreeLimit] = useState(5)
 
   const audioRef = useRef(null)
+  const { language } = useLanguage()
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640)
+    window.addEventListener("resize", check)
+    return () => window.removeEventListener("resize", check)
+  }, [])
 
   // SEO Effect
   useEffect(() => {
@@ -113,7 +171,7 @@ const Listen = () => {
   useEffect(() => {
     fetchTests()
     fetchUserProgress()
-  }, [selectedLevel])
+  }, [selectedLevel, language])
 
   useEffect(() => {
     if (selectedTest) {
@@ -152,7 +210,7 @@ const Listen = () => {
   const fetchTests = async () => {
     try {
       setLoading(true)
-      const params = { page: 1, limit: 100 }
+      const params = { page: 1, limit: 100, language }
       if (selectedLevel !== "all") {
         params.level = selectedLevel
       }
@@ -208,6 +266,8 @@ const Listen = () => {
       // console.log("Final completed tests set:", Array.from(completedTests))
       setTotalXp(progressData.xp || 0)
       setUserProgress({ completedTests })
+      setIsPaid(progressData.isPaid || false)
+      setFreeLimit(progressData.freeLimit || 5)
     } catch (error) {
       console.error("Error fetching user progress:", error)
       // console.log("Setting empty completed tests due to error")
@@ -268,12 +328,8 @@ const Listen = () => {
     try {
       setIsPlaying(true)
 
-      // console.log("[TTS] Requesting audio for test:", selectedTest._id)
-
       // Get the signed URL from GCS (no longer a blob)
       const audioUrl = await ttsService.getAudio(selectedTest._id, selectedTest.text, selectedTest.level)
-
-      // console.log("[TTS] Audio URL received:", audioUrl)
 
       if (!audioRef.current) {
         audioRef.current = new Audio()
@@ -307,6 +363,11 @@ const Listen = () => {
       // console.log("Check answer response:", response.data)
       setResult(response.data)
       setShowResult(true)
+
+      if (response.data.limitReached) {
+        setShowPaywall(true)
+        return
+      }
 
       if (response.data.correct || response.data.score >= 80) {
         // console.log("Test completed successfully, updating local state")
@@ -377,6 +438,14 @@ const Listen = () => {
   if (selectedTest) {
     return (
       <div className="h-[750px] bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 p-2 sm:p-4 rounded-xl shadow-lg border-2 border-emerald-200 overflow-hidden">
+        {showPaywall && (
+          <PaywallModal
+            onClose={() => {
+              setShowPaywall(false)
+              resetTest()
+            }}
+          />
+        )}
         <AnimatePresence>
           {showXpAnimation && (
             <motion.div
@@ -736,23 +805,53 @@ const Listen = () => {
     )
   }
 
+  const completedCount = userProgress.completedTests?.size || 0
+
   return (
     <div className="min-h-screen p-4 flex flex-col">
+      {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
       <div className="max-w-6xl mx-auto w-full">
         <header className="mb-4 flex-shrink-0">
-          <div className="bg-white rounded-2xl shadow-xl border border-emerald-100 p-6 overflow-hidden relative">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-br from-emerald-100 to-teal-100 rounded-full transform translate-x-16 -translate-y-16 opacity-50" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-teal-100 to-emerald-100 rounded-full transform -translate-x-8 translate-y-8 opacity-50" />
-            <div className="relative z-10">
-              <div className="flex items-center justify-between">
+          <div style={{
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+            gap: 20,
+            background: "linear-gradient(135deg, #065f46 0%, #059669 40%, #10b981 75%, #6ee7b7 100%)",
+            borderRadius: 20,
+            padding: isMobile ? "20px" : "28px 32px",
+            position: "relative",
+            overflow: "hidden",
+          }}>
+            <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.07)" }} />
+            <div style={{ position: "absolute", bottom: -60, right: 80, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
+
+            <div style={{ flex: 1, position: "relative", zIndex: 1 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.8)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>
+                <Headphones size={14} />
+                Praktikë Gjuhësore
+              </div>
+              <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 28 : 38, fontWeight: 400, color: "#fff", letterSpacing: -0.5, lineHeight: 1.1, margin: "0 0 8px" }}>
+                Praktika e Dëgjimit
+              </h1>
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", margin: 0, maxWidth: 380, lineHeight: 1.5 }}>
+                Dëgjoni audio dhe shkruani atë që dëgjuat — nga A1 deri C2
+              </p>
+            </div>
+
+            <div style={{ display: "flex", gap: 12, flexShrink: 0, position: "relative", zIndex: 1, alignSelf: isMobile ? "stretch" : "center", width: isMobile ? "100%" : "auto" }}>
+              <div style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, flex: isMobile ? 1 : "unset", minWidth: isMobile ? 0 : 130 }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(255,255,255,0.2)" }}>
+                  <Check size={16} color="#fff" />
+                </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900 mb-2">Praktikë Dëgjimi</h1>
-                  <p className="text-gray-600">Përmirësoni aftësitë tuaja të dëgjimit në gjermanisht me ushtrime audio</p>
+                  <div style={{ fontSize: 22, fontWeight: 600, color: "#fff", lineHeight: 1, marginBottom: 2 }}>
+                    {userProgress.completedTests ? userProgress.completedTests.size : 0}
+                  </div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>Të Përfunduara</div>
                 </div>
               </div>
-              <p className="text-xs text-gray-400 mt-2">
-                Teste të përfunduara: {userProgress.completedTests ? userProgress.completedTests.size : 0}
-              </p>
             </div>
           </div>
         </header>
@@ -780,7 +879,7 @@ const Listen = () => {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center min-h-96">
+          <div className="flex items-center justify-center min-h-48">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
           </div>
         ) : (
@@ -788,53 +887,67 @@ const Listen = () => {
             {tests.length > 0 ? (
               tests.map((test) => {
                 const isCompleted = userProgress.completedTests && userProgress.completedTests.has(test._id)
+                const isLocked = !isCompleted && !isPaid && completedCount >= freeLimit
                 const potentialXP = test.xpReward || getBaseXP(test.level)
                 return (
                   <div
                     key={test._id}
                     className={`p-4 rounded-2xl shadow-lg border-2 transition-all duration-200 cursor-pointer overflow-hidden relative group h-fit hover:-translate-y-1 ${isCompleted
                         ? "bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 border-amber-300 hover:border-amber-400"
-                        : "bg-white border-gray-100 hover:border-emerald-300"
+                        : isLocked
+                          ? "bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 hover:border-gray-300"
+                          : "bg-white border-gray-100 hover:border-emerald-300"
                       }`}
-                    onClick={() => setSelectedTest(test)}
+                    onClick={() => isLocked ? setShowPaywall(true) : setSelectedTest(test)}
                   >
+                    {isLocked && (
+                      <div className="absolute top-3 left-3 z-20">
+                        <Lock className="w-4 h-4 text-gray-400" />
+                      </div>
+                    )}
                     <div
                       className={`absolute top-3 right-3 ${getLevelColor(test.level)} px-2 py-1 rounded-lg text-xs font-bold shadow-sm border`}
                     >
                       {test.level}
                     </div>
                     <Volume2
-                      className={`absolute -bottom-4 -right-4 w-20 h-20 ${isCompleted ? "text-amber-100" : "text-gray-100"
+                      className={`absolute -bottom-4 -right-4 w-20 h-20 ${isCompleted ? "text-amber-100" : isLocked ? "text-gray-100" : "text-gray-100"
                         } transition-transform group-hover:scale-110`}
                     />
                     <div className="relative z-10">
                       <h3
                         className={`text-sm font-bold mb-2 pr-14 truncate ${isCompleted
                             ? "text-amber-700 group-hover:text-amber-800"
-                            : "text-gray-800 group-hover:text-emerald-700"
+                            : isLocked
+                              ? "text-gray-400"
+                              : "text-gray-800 group-hover:text-emerald-700"
                           }`}
                       >
                         {test.title}
                       </h3>
-                      <p className={`text-xs line-clamp-2 leading-relaxed ${isCompleted ? "text-amber-600" : "text-gray-500"}`}>
+                      <p className={`text-xs line-clamp-2 leading-relaxed ${isCompleted ? "text-amber-600" : isLocked ? "text-gray-300" : "text-gray-500"}`}>
                         {test.text ? test.text.substring(0, 80) + "..." : "Ushtrim Audio"}
                       </p>
                       <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
-                        <span className={`text-xs font-medium ${isCompleted ? "text-amber-500" : "text-gray-400"}`}>
+                        <span className={`text-xs font-medium ${isCompleted ? "text-amber-500" : isLocked ? "text-gray-300" : "text-gray-400"}`}>
                           Gjermanisht • Audio
                         </span>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 px-2.5 py-1 rounded-full font-bold flex items-center gap-1 shadow-sm border border-emerald-200">
-                            <Star className="h-3 w-3" />
-                            {isCompleted ? "2" : potentialXP}
-                          </span>
+                          {!isLocked && (
+                            <span className="text-xs bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 px-2.5 py-1 rounded-full font-bold flex items-center gap-1 shadow-sm border border-emerald-200">
+                              <Star className="h-3 w-3" />
+                              {isCompleted ? "2" : potentialXP}
+                            </span>
+                          )}
                           <span
                             className={`text-xs px-3 py-1 rounded-full font-semibold shadow-sm ${isCompleted
                                 ? "bg-gradient-to-r from-amber-400 to-orange-400 text-white"
-                                : "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
+                                : isLocked
+                                  ? "bg-gray-200 text-gray-400"
+                                  : "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
                               }`}
                           >
-                            {isCompleted ? "✓ Kryer" : "Dëgjo"}
+                            {isCompleted ? "✓ Kryer" : isLocked ? "Premium" : "Dëgjo"}
                           </span>
                         </div>
                       </div>

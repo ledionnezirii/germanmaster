@@ -59,7 +59,6 @@ export default function Community() {
     });
 
     socketRef.current.on('connect', () => {
-      console.log('Lidhur me komunitetin');
       socketRef.current.emit('joinCommunity');
     });
 

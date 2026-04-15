@@ -1,14 +1,60 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Trophy, Crown, Zap, Medal, Flame } from "lucide-react"
+import { Trophy, Crown, Zap, Medal, Flame, Clock } from "lucide-react"
 import { io } from "socket.io-client"
 import { motion } from "framer-motion"
 import api, { SOCKET_URL, generateDicebearUrl } from "../services/api"
 import { useAuth } from "../context/AuthContext"
 import SEO from "../components/SEO"
 
-const VISIBLE_ROWS = 19 // ranks 4–22 shown in the list
+const VISIBLE_ROWS = 19
+
+const TIME_FRAMES = [
+  { key: "all-time", label: "Gjithë kohës" },
+  // { key: "weekly",   label: "Javore" }, // commented out — re-enable when weekly XP is ready
+  { key: "monthly",  label: "Mujore" },
+]
+
+const getPeriodEnd = (type) => {
+  const now = new Date()
+  if (type === "weekly") {
+    const daysUntilMonday = (8 - now.getDay()) % 7 || 7
+    const end = new Date(now)
+    end.setDate(now.getDate() + daysUntilMonday)
+    end.setHours(0, 0, 0, 0)
+    return end
+  }
+  if (type === "monthly") {
+    return new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0)
+  }
+  return null
+}
+
+const useCountdown = (type) => {
+  const [timeLeft, setTimeLeft] = useState("")
+
+  useEffect(() => {
+    if (type !== "weekly" && type !== "monthly") { setTimeLeft(""); return }
+
+    const update = () => {
+      const end = getPeriodEnd(type)
+      const diff = end - Date.now()
+      if (diff <= 0) { setTimeLeft("0d 0h 0m 0s"); return }
+      const d = Math.floor(diff / 86400000)
+      const h = Math.floor((diff % 86400000) / 3600000)
+      const m = Math.floor((diff % 3600000) / 60000)
+      const s = Math.floor((diff % 60000) / 1000)
+      setTimeLeft(d > 0 ? `${d}d ${h}h ${m}m` : `${h}h ${m}m ${s}s`)
+    }
+
+    update()
+    const id = setInterval(update, 1000)
+    return () => clearInterval(id)
+  }, [type])
+
+  return timeLeft
+}
 
 const UserRow = ({ user, isCurrentUser, index }) => (
   <motion.div
@@ -83,13 +129,13 @@ const Leaderboard = () => {
   const [leaderboardData, setLeaderboardData] = useState([])
   const [myRank, setMyRank] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [timeFrame] = useState("all-time")
+  const [timeFrame, setTimeFrame] = useState("all-time")
+  const countdown = useCountdown(timeFrame)
 
   const fetchLeaderboard = useCallback(async (period) => {
     setLoading(true)
     try {
       const response = await api.get(`/leaderboard/${period}`)
-      // interceptor already unwraps: response.data is the array
       const data = Array.isArray(response.data) ? response.data : response.data?.data ?? []
       setLeaderboardData(data)
     } catch (error) {
@@ -99,12 +145,10 @@ const Leaderboard = () => {
     }
   }, [])
 
-  const fetchMyRank = useCallback(async () => {
+  const fetchMyRank = useCallback(async (period) => {
     try {
-      const response = await api.get("/leaderboard/my-rank")
-      // interceptor unwraps { success, data: {...} } → response.data is the rank object
-      const rankData = response.data
-      setMyRank(rankData)
+      const response = await api.get(`/leaderboard/my-rank?timeFrame=${period}`)
+      setMyRank(response.data?.data ?? response.data)
     } catch (error) {
       console.error("Gabim gjatë marrjes së renditjes personale:", error)
     }
@@ -112,9 +156,8 @@ const Leaderboard = () => {
 
   useEffect(() => {
     fetchLeaderboard(timeFrame)
-    fetchMyRank()
+    fetchMyRank(timeFrame)
 
-    // Pass auth token so the server doesn't reject the socket with 400
     const socket = io(SOCKET_URL, {
       auth: { token: localStorage.getItem("authToken") },
     })
@@ -135,23 +178,20 @@ const Leaderboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-96">
+      <div className="flex items-center justify-center min-h-48">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500" />
       </div>
     )
   }
 
   const topThree = leaderboardData.slice(0, 3)
-  const listRows = leaderboardData.slice(3, 3 + VISIBLE_ROWS) // ranks 4–22
-
+  const listRows = leaderboardData.slice(3, 3 + VISIBLE_ROWS)
   const currentUserId = authUser?.id?.toString()
 
-  // Check if the logged-in user is already visible (podium or list)
   const isUserVisible =
     topThree.some((u) => u._id?.toString() === currentUserId) ||
     listRows.some((u) => u._id?.toString() === currentUserId)
 
-  // Normalise _id to string for generateDicebearUrl
   const myRankRow = myRank ? { ...myRank, _id: myRank._id?.toString() } : null
 
   return (
@@ -166,7 +206,7 @@ const Leaderboard = () => {
 
       <div className="w-full space-y-4 p-3 sm:p-6 md:space-y-6">
 
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
@@ -184,18 +224,35 @@ const Leaderboard = () => {
                 Shiko si renditesh krahas përdoruesve të tjerë.
               </p>
             </div>
-            <div className="flex gap-2">
-              <button
-                className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all bg-teal-500 text-white shadow-sm"
-                style={{ fontFamily: "Inter, sans-serif" }}
-              >
-                Gjithë kohës
-              </button>
+
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex gap-2">
+                {TIME_FRAMES.map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => setTimeFrame(key)}
+                    className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
+                      timeFrame === key
+                        ? "bg-teal-500 text-white shadow-sm"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                    style={{ fontFamily: "Inter, sans-serif" }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              {countdown && (
+                <div className="flex items-center gap-1.5 text-xs text-gray-500 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-full" style={{ fontFamily: "Inter, sans-serif" }}>
+                  <Clock className="h-3 w-3 text-teal-500" />
+                  <span>Riset në <span className="font-semibold text-teal-600">{countdown}</span></span>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* ── Podium ── */}
+        {/* Podium */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
           <h2
             className="text-base sm:text-lg font-semibold text-gray-900 mb-6 sm:mb-8 text-center"
@@ -224,16 +281,10 @@ const Leaderboard = () => {
                   />
                 </div>
                 <div className="bg-gray-200 w-16 sm:w-20 h-20 sm:h-24 rounded-t-xl flex items-center justify-center">
-                  <span className="text-3xl sm:text-4xl font-bold text-gray-600" style={{ fontFamily: "Poppins, sans-serif" }}>
-                    2
-                  </span>
+                  <span className="text-3xl sm:text-4xl font-bold text-gray-600" style={{ fontFamily: "Poppins, sans-serif" }}>2</span>
                 </div>
-                <p className="mt-2 sm:mt-3 text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 text-center" style={{ fontFamily: "Inter, sans-serif" }}>
-                  {topThree[1]?.name}
-                </p>
-                <p className="text-xs text-gray-500" style={{ fontFamily: "Inter, sans-serif" }}>
-                  {topThree[1]?.xp?.toLocaleString()} XP
-                </p>
+                <p className="mt-2 sm:mt-3 text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 text-center">{topThree[1]?.name}</p>
+                <p className="text-xs text-gray-500">{topThree[1]?.xp?.toLocaleString()} XP</p>
               </motion.div>
 
               {/* 1st place */}
@@ -253,16 +304,10 @@ const Leaderboard = () => {
                   />
                 </div>
                 <div className="bg-gradient-to-b from-yellow-300 to-yellow-400 w-16 sm:w-24 h-24 sm:h-32 rounded-t-xl flex items-center justify-center shadow-md">
-                  <span className="text-4xl sm:text-5xl font-bold text-yellow-700" style={{ fontFamily: "Poppins, sans-serif" }}>
-                    1
-                  </span>
+                  <span className="text-4xl sm:text-5xl font-bold text-yellow-700" style={{ fontFamily: "Poppins, sans-serif" }}>1</span>
                 </div>
-                <p className="mt-2 sm:mt-3 text-sm sm:text-base font-bold text-gray-900 line-clamp-2 text-center" style={{ fontFamily: "Inter, sans-serif" }}>
-                  {topThree[0]?.name}
-                </p>
-                <p className="text-xs sm:text-sm text-teal-600 font-semibold" style={{ fontFamily: "Inter, sans-serif" }}>
-                  {topThree[0]?.xp?.toLocaleString()} XP
-                </p>
+                <p className="mt-2 sm:mt-3 text-sm sm:text-base font-bold text-gray-900 line-clamp-2 text-center">{topThree[0]?.name}</p>
+                <p className="text-xs sm:text-sm text-teal-600 font-semibold">{topThree[0]?.xp?.toLocaleString()} XP</p>
               </motion.div>
 
               {/* 3rd place */}
@@ -282,23 +327,17 @@ const Leaderboard = () => {
                   />
                 </div>
                 <div className="bg-pink-200 w-16 sm:w-20 h-16 sm:h-20 rounded-t-xl flex items-center justify-center">
-                  <span className="text-3xl sm:text-4xl font-bold text-pink-600" style={{ fontFamily: "Poppins, sans-serif" }}>
-                    3
-                  </span>
+                  <span className="text-3xl sm:text-4xl font-bold text-pink-600" style={{ fontFamily: "Poppins, sans-serif" }}>3</span>
                 </div>
-                <p className="mt-2 sm:mt-3 text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 text-center" style={{ fontFamily: "Inter, sans-serif" }}>
-                  {topThree[2]?.name}
-                </p>
-                <p className="text-xs text-gray-500" style={{ fontFamily: "Inter, sans-serif" }}>
-                  {topThree[2]?.xp?.toLocaleString()} XP
-                </p>
+                <p className="mt-2 sm:mt-3 text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 text-center">{topThree[2]?.name}</p>
+                <p className="text-xs text-gray-500">{topThree[2]?.xp?.toLocaleString()} XP</p>
               </motion.div>
 
             </div>
           )}
         </div>
 
-        {/* ── Full Rankings List ── */}
+        {/* Full Rankings List */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-4 sm:p-6 border-b border-gray-100">
             <h2
@@ -311,8 +350,6 @@ const Leaderboard = () => {
           </div>
 
           <div className="divide-y divide-gray-100">
-
-            {/* Column header */}
             <div className="px-4 sm:px-6 py-3 bg-gray-50">
               <div
                 className="flex items-center justify-between text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -326,7 +363,6 @@ const Leaderboard = () => {
               </div>
             </div>
 
-            {/* Ranks 4–22 */}
             {listRows.map((user, index) => (
               <UserRow
                 key={user.rank}
@@ -336,24 +372,16 @@ const Leaderboard = () => {
               />
             ))}
 
-            {/* Pinned current-user row — only shown when outside the visible range */}
             {!isUserVisible && myRankRow && (
               <>
-                {/* Dotted separator */}
                 <div className="px-4 sm:px-6 py-2 flex items-center gap-3 bg-white">
                   <div className="flex-1 border-t border-dashed border-gray-200" />
                   <span className="text-gray-300 text-xs tracking-widest select-none">• • •</span>
                   <div className="flex-1 border-t border-dashed border-gray-200" />
                 </div>
-
-                <UserRow
-                  user={myRankRow}
-                  isCurrentUser={true}
-                  index={0}
-                />
+                <UserRow user={myRankRow} isCurrentUser={true} index={0} />
               </>
             )}
-
           </div>
         </div>
 

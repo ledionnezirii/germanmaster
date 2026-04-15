@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { adminService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
@@ -11,6 +12,11 @@ const Admin = () => {
   const [users, setUsers] = useState([]);
   const [paidUsers, setPaidUsers] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [visitorStats, setVisitorStats] = useState(null);
+  const [visitorDays, setVisitorDays] = useState(30);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [dateVisitors, setDateVisitors] = useState(null);
+  const [dateVisitorsLoading, setDateVisitorsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,7 +36,12 @@ const Admin = () => {
     if (activeTab === "all-users") fetchAllUsers();
     if (activeTab === "paid-users") fetchPaidUsers();
     if (activeTab === "online-users") fetchOnlineUsers();
+    if (activeTab === "visitors") fetchVisitorStats(visitorDays);
   }, [activeTab, currentPage, searchTerm]);
+
+  useEffect(() => {
+    if (activeTab === "visitors") fetchVisitorStats(visitorDays);
+  }, [visitorDays]);
 
   const fetchStats = async () => {
     try {
@@ -70,6 +81,30 @@ const Admin = () => {
       console.error("Failed to fetch paid users:", err);
     }
     setLoading(false);
+  };
+
+  const fetchVisitorStats = async (days) => {
+    setLoading(true);
+    try {
+      const res = await adminService.getVisitorStats(days);
+      setVisitorStats(res.data);
+    } catch (err) {
+      console.error("Failed to fetch visitor stats:", err);
+    }
+    setLoading(false);
+  };
+
+  const fetchVisitorsByDate = async (date) => {
+    if (selectedDate === date) { setSelectedDate(null); setDateVisitors(null); return; }
+    setSelectedDate(date);
+    setDateVisitorsLoading(true);
+    try {
+      const res = await adminService.getVisitorsByDate(date);
+      setDateVisitors(res.data);
+    } catch (err) {
+      console.error("Failed to fetch visitors by date:", err);
+    }
+    setDateVisitorsLoading(false);
   };
 
   const fetchOnlineUsers = async () => {
@@ -123,6 +158,14 @@ const Admin = () => {
     });
   };
 
+  const formatRevenue = (amount) => {
+    if (amount === undefined || amount === null) return "€0";
+    return `€${Number(amount).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen" style={{ backgroundColor: "#FDFBF7" }}>
@@ -139,26 +182,41 @@ const Admin = () => {
   }
 
   const tabs = [
-    { id: "dashboard", label: "Dashboard", icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
-      </svg>
-    )},
-    { id: "all-users", label: "All Users", icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-      </svg>
-    )},
-    { id: "paid-users", label: "Paid Users", icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
-      </svg>
-    )},
-    { id: "online-users", label: "Online", icon: (
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.348 14.651a3.75 3.75 0 010-5.303m5.304 0a3.75 3.75 0 010 5.303m-7.425 2.122a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.546M5.106 18.894c-3.808-3.808-3.808-9.98 0-13.789m13.788 0c3.808 3.808 3.808 9.981 0 13.79M12 12.75h.008v.008H12v-.008z" />
-      </svg>
-    )},
+    {
+      id: "dashboard", label: "Dashboard", icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+        </svg>
+      )
+    },
+    {
+      id: "all-users", label: "All Users", icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+        </svg>
+      )
+    },
+    {
+      id: "paid-users", label: "Paid Users", icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+        </svg>
+      )
+    },
+    {
+      id: "online-users", label: "Online", icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.348 14.651a3.75 3.75 0 010-5.303m5.304 0a3.75 3.75 0 010 5.303m-7.425 2.122a6.75 6.75 0 010-9.546m9.546 0a6.75 6.75 0 010 9.546M5.106 18.894c-3.808-3.808-3.808-9.98 0-13.789m13.788 0c3.808 3.808 3.808 9.981 0 13.79M12 12.75h.008v.008H12v-.008z" />
+        </svg>
+      )
+    },
+    {
+      id: "visitors", label: "Visitors", icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+        </svg>
+      )
+    },
   ];
 
   const statConfig = [
@@ -177,6 +235,33 @@ const Admin = () => {
     <svg key="3" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" /></svg>,
     <svg key="4" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
     <svg key="5" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" /></svg>,
+  ];
+
+  const revenueCards = [
+    {
+      label: "This month",
+      value: stats?.revenue?.thisMonth,
+      bg: "bg-teal-50/50",
+      accent: "text-teal-700",
+      border: "border-teal-100",
+      iconBg: "bg-teal-100",
+    },
+    {
+      label: "Previous month",
+      value: stats?.revenue?.prevMonth,
+      bg: "bg-amber-50/50",
+      accent: "text-amber-700",
+      border: "border-amber-100",
+      iconBg: "bg-amber-100",
+    },
+    {
+      label: "Total revenue",
+      value: stats?.revenue?.total,
+      bg: "bg-stone-50",
+      accent: "text-stone-800",
+      border: "border-stone-200",
+      iconBg: "bg-stone-100",
+    },
   ];
 
   return (
@@ -215,9 +300,7 @@ const Admin = () => {
                 setCurrentPage(1);
               }}
               className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
-                activeTab === tab.id
-                  ? "shadow-sm"
-                  : "hover:opacity-80"
+                activeTab === tab.id ? "shadow-sm" : "hover:opacity-80"
               }`}
               style={
                 activeTab === tab.id
@@ -231,9 +314,11 @@ const Admin = () => {
           ))}
         </div>
 
-        {/* Dashboard Stats */}
+        {/* ── DASHBOARD TAB ── */}
         {activeTab === "dashboard" && stats && (
           <div className="space-y-6 sm:space-y-8">
+
+            {/* Stats grid */}
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5">
               {statConfig.map((stat, index) => (
                 <div
@@ -255,6 +340,49 @@ const Admin = () => {
               ))}
             </div>
 
+            {/* ── Revenue Box ── */}
+            {stats.revenue && (
+              <div
+                className="rounded-2xl border p-4 sm:p-6"
+                style={{ backgroundColor: "#FFFFFF", borderColor: "#EDE8DF" }}
+              >
+                <div className="flex items-center gap-2 mb-4 sm:mb-5">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#F5F0E8" }}>
+                    <svg className="w-4 h-4" style={{ color: "#44403C" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-semibold" style={{ color: "#1C1917" }}>Revenue</h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
+                  {revenueCards.map((r) => (
+                    <div
+                      key={r.label}
+                      className={`rounded-2xl border p-4 sm:p-5 transition-all duration-200 hover:shadow-md ${r.bg} ${r.border}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-xs sm:text-sm font-medium" style={{ color: "#78716C" }}>
+                            {r.label}
+                          </p>
+                          <p className={`text-xl sm:text-3xl font-bold mt-2 tracking-tight ${r.accent}`}>
+                            {formatRevenue(r.value)}
+                          </p>
+                        </div>
+                        <div className={`w-8 h-8 rounded-xl ${r.iconBg} flex items-center justify-center ${r.accent}`}>
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Subscription breakdown */}
             {stats.subscriptionBreakdown?.length > 0 && (
               <div className="rounded-2xl border p-4 sm:p-6" style={{ backgroundColor: "#FFFFFF", borderColor: "#EDE8DF" }}>
                 <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-5" style={{ color: "#1C1917" }}>Subscription Breakdown</h3>
@@ -268,7 +396,10 @@ const Admin = () => {
                     </thead>
                     <tbody>
                       {stats.subscriptionBreakdown.map((item, idx) => (
-                        <tr key={item._id} className="transition-colors" style={{ borderTop: idx > 0 ? "1px solid #EDE8DF" : "none" }}
+                        <tr
+                          key={item._id}
+                          className="transition-colors"
+                          style={{ borderTop: idx > 0 ? "1px solid #EDE8DF" : "none" }}
                           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#FAF8F4"}
                           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                         >
@@ -288,7 +419,7 @@ const Admin = () => {
           </div>
         )}
 
-        {/* All Users Tab */}
+        {/* ── ALL USERS TAB ── */}
         {activeTab === "all-users" && (
           <div className="space-y-4 sm:space-y-5">
             <div className="flex items-center gap-4">
@@ -457,7 +588,7 @@ const Admin = () => {
           </div>
         )}
 
-        {/* Paid Users Tab */}
+        {/* ── PAID USERS TAB ── */}
         {activeTab === "paid-users" && (
           <div>
             {loading ? (
@@ -527,7 +658,217 @@ const Admin = () => {
           </div>
         )}
 
-        {/* Online Users Tab */}
+        {/* ── VISITORS TAB ── */}
+        {activeTab === "visitors" && (
+          <div className="space-y-5 sm:space-y-6">
+
+            {/* Summary cards + day selector */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex gap-3">
+                {[
+                  { label: "Today", value: visitorStats?.today ?? "–", accent: "text-sky-700", bg: "bg-sky-50/60", border: "border-sky-100" },
+                  { label: `Last ${visitorDays}d total`, value: visitorStats?.total ?? "–", accent: "text-stone-800", bg: "bg-stone-50", border: "border-stone-200" },
+                ].map((c) => (
+                  <div key={c.label} className={`rounded-2xl border px-5 py-3.5 ${c.bg} ${c.border}`}>
+                    <p className="text-xs font-medium" style={{ color: "#78716C" }}>{c.label}</p>
+                    <p className={`text-2xl font-bold mt-1 tracking-tight ${c.accent}`}>{c.value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                {[7, 14, 30, 60].map((d) => (
+                  <button
+                    key={d}
+                    onClick={() => setVisitorDays(d)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
+                    style={
+                      visitorDays === d
+                        ? { backgroundColor: "#1C1917", color: "#FFFFFF", borderColor: "#1C1917" }
+                        : { backgroundColor: "#FFFFFF", color: "#78716C", borderColor: "#EDE8DF" }
+                    }
+                  >
+                    {d}d
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Bar chart */}
+            {loading ? (
+              <div className="flex items-center justify-center py-20">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-8 h-8 rounded-full border-2 border-stone-200 border-t-stone-500 animate-spin" />
+                  <p className="text-sm" style={{ color: "#A8A29E" }}>Loading visitor data...</p>
+                </div>
+              </div>
+            ) : visitorStats?.data ? (() => {
+              const maxV = Math.max(...visitorStats.data.map((r) => r.visitors), 1);
+              return (
+                <div className="rounded-2xl border p-4 sm:p-6" style={{ backgroundColor: "#FFFFFF", borderColor: "#EDE8DF" }}>
+                  <div className="flex items-center gap-2 mb-5">
+                    <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#F5F0E8" }}>
+                      <svg className="w-4 h-4" style={{ color: "#44403C" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-base font-semibold" style={{ color: "#1C1917" }}>Daily Active Visitors</h3>
+                  </div>
+
+                  {/* Chart area */}
+                  <div className="flex items-end gap-0.5 sm:gap-1 h-40 sm:h-52 overflow-x-auto pb-2">
+                    {visitorStats.data.map((row) => {
+                      const pct = maxV > 0 ? (row.visitors / maxV) * 100 : 0;
+                      const isToday = row.date === new Date().toISOString().slice(0, 10);
+                      const label = row.date.slice(5); // MM-DD
+                      return (
+                        <div
+                          key={row.date}
+                          className="group relative flex-1 min-w-[10px] flex flex-col items-center justify-end h-full"
+                          title={`${row.date}: ${row.visitors} visitors`}
+                        >
+                          {/* Tooltip */}
+                          <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
+                            <div className="rounded-lg px-2 py-1 text-xs font-semibold whitespace-nowrap shadow-md" style={{ backgroundColor: "#1C1917", color: "#FFFFFF" }}>
+                              {row.visitors}
+                            </div>
+                          </div>
+                          {/* Bar */}
+                          <div
+                            className="w-full rounded-t-sm transition-all duration-300"
+                            style={{
+                              height: `${Math.max(pct, row.visitors > 0 ? 2 : 0)}%`,
+                              backgroundColor: isToday ? "#0EA5E9" : "#D6CFC3",
+                              minHeight: row.visitors > 0 ? "4px" : "0",
+                            }}
+                          />
+                          {/* Date label — only every ~7 days to avoid clutter */}
+                          {visitorDays <= 14 && (
+                            <span className="mt-1.5 text-[9px] sm:text-[10px] rotate-0 whitespace-nowrap" style={{ color: "#A8A29E" }}>{label}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* X-axis labels for wider ranges */}
+                  {visitorDays > 14 && (
+                    <div className="flex justify-between mt-2 px-0.5">
+                      <span className="text-[10px]" style={{ color: "#A8A29E" }}>{visitorStats.data[0]?.date.slice(5)}</span>
+                      <span className="text-[10px]" style={{ color: "#A8A29E" }}>
+                        {visitorStats.data[Math.floor(visitorStats.data.length / 2)]?.date.slice(5)}
+                      </span>
+                      <span className="text-[10px]" style={{ color: "#0EA5E9", fontWeight: 600 }}>Today</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })() : null}
+
+            {/* Table */}
+            {!loading && visitorStats?.data && (() => {
+              const maxV = Math.max(...visitorStats.data.map((r) => r.visitors), 1);
+              return (
+                <div className="rounded-2xl border overflow-hidden" style={{ backgroundColor: "#FFFFFF", borderColor: "#EDE8DF" }}>
+                  <table className="w-full">
+                    <thead style={{ backgroundColor: "#FAF8F4" }}>
+                      <tr>
+                        <th className="text-left py-3 px-5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#A8A29E" }}>Date</th>
+                        <th className="text-right py-3 px-5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#A8A29E" }}>Visitors</th>
+                        <th className="py-3 px-5 text-xs font-semibold uppercase tracking-wider" style={{ color: "#A8A29E" }}>Bar</th>
+                        <th className="py-3 px-5 w-8" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...visitorStats.data].reverse().map((row, idx) => {
+                        const pct = Math.round((row.visitors / maxV) * 100);
+                        const isToday = row.date === new Date().toISOString().slice(0, 10);
+                        const isOpen = selectedDate === row.date;
+                        return (
+                          <React.Fragment key={row.date}>
+                            <tr
+                              className="transition-colors cursor-pointer"
+                              style={{ borderTop: idx > 0 ? "1px solid #EDE8DF" : "none", backgroundColor: isOpen ? "#F0F9FF" : isToday ? "#F0F9FF" : "transparent" }}
+                              onClick={() => row.visitors > 0 && fetchVisitorsByDate(row.date)}
+                              onMouseEnter={(e) => { if (!isOpen) e.currentTarget.style.backgroundColor = "#FDFBF7"; }}
+                              onMouseLeave={(e) => { if (!isOpen) e.currentTarget.style.backgroundColor = isToday ? "#F0F9FF" : "transparent"; }}
+                            >
+                              <td className="py-2.5 px-5 text-sm" style={{ color: isToday ? "#0284C7" : "#44403C", fontWeight: isToday ? 600 : 400 }}>
+                                {row.date}{isToday ? " (today)" : ""}
+                              </td>
+                              <td className="text-right py-2.5 px-5">
+                                <span className="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-sm font-semibold" style={{ backgroundColor: row.visitors > 0 ? "#F0F9FF" : "#F5F5F4", color: row.visitors > 0 ? "#0369A1" : "#A8A29E" }}>
+                                  {row.visitors}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-5 w-48">
+                                <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: "#F5F0E8" }}>
+                                  <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: isToday ? "#0EA5E9" : "#A8A29E" }} />
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-4">
+                                {row.visitors > 0 && (
+                                  <svg className="w-4 h-4 transition-transform duration-200" style={{ color: "#A8A29E", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                                  </svg>
+                                )}
+                              </td>
+                            </tr>
+
+                            {/* Expanded user list */}
+                            {isOpen && (
+                              <tr style={{ borderTop: "1px solid #EDE8DF" }}>
+                                <td colSpan={4} className="px-5 py-4" style={{ backgroundColor: "#FDFBF7" }}>
+                                  {dateVisitorsLoading ? (
+                                    <div className="flex items-center gap-2 py-2">
+                                      <div className="w-4 h-4 rounded-full border-2 border-stone-200 border-t-stone-500 animate-spin" />
+                                      <span className="text-xs" style={{ color: "#A8A29E" }}>Loading...</span>
+                                    </div>
+                                  ) : dateVisitors?.users?.length > 0 ? (
+                                    <div className="space-y-2">
+                                      <p className="text-xs font-semibold mb-3" style={{ color: "#78716C" }}>
+                                        {dateVisitors.count} user{dateVisitors.count !== 1 ? "s" : ""} visited on {row.date}
+                                      </p>
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                        {dateVisitors.users.map((u) => (
+                                          <div key={u._id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl border" style={{ backgroundColor: "#FFFFFF", borderColor: "#EDE8DF" }}>
+                                            <img
+                                              src={`https://api.dicebear.com/9.x/${u.avatarStyle || "adventurer"}/svg?seed=${u._id}`}
+                                              alt="avatar"
+                                              className="w-8 h-8 rounded-full flex-shrink-0"
+                                              style={{ backgroundColor: "#F5F0E8" }}
+                                            />
+                                            <div className="min-w-0">
+                                              <p className="text-sm font-medium truncate" style={{ color: "#1C1917" }}>{u.emri} {u.mbiemri}</p>
+                                              <p className="text-xs truncate" style={{ color: "#A8A29E" }}>{u.email}</p>
+                                            </div>
+                                            <div className="ml-auto flex-shrink-0 flex items-center gap-1.5">
+                                              {u.isPaid && (
+                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: "#ECFDF5", color: "#065F46" }}>PRO</span>
+                                              )}
+                                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: "#EFF6FF", color: "#1E40AF" }}>{u.xp || 0} XP</span>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <p className="text-xs py-1" style={{ color: "#A8A29E" }}>No user data found for this date.</p>
+                                  )}
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* ── ONLINE USERS TAB ── */}
         {activeTab === "online-users" && (
           <div className="space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">

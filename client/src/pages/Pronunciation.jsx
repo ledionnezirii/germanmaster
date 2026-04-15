@@ -4,59 +4,117 @@ import {
   Mic,
   MicOff,
   Volume2,
-  Check,
+  CheckCircle2,
   ArrowLeft,
-  ArrowRight,
-  Filter,
   ChevronLeft,
   ChevronRight,
-  Target,
-  X,
+  RotateCcw,
+  Star,
+  Trophy,
+  Zap,
   AlertTriangle,
+  Flame,
+  Crown,
+  Lock,
 } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+
+function PaywallModal({ onClose }) {
+  return (
+    <AnimatePresence>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+        onClick={onClose}
+      >
+        <motion.div
+          initial={{ scale: 0.85, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.85, opacity: 0, y: 20 }}
+          transition={{ type: "spring", stiffness: 350, damping: 28 }}
+          className="bg-white rounded-3xl shadow-2xl border-2 border-emerald-200 p-8 max-w-sm w-full text-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-300 flex items-center justify-center mx-auto mb-5">
+            <Crown className="h-10 w-10 text-amber-500" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Limit i Arritur</h2>
+          <p className="text-gray-500 text-sm mb-2 leading-relaxed">
+            Versioni falas lejon vetëm <span className="font-bold text-emerald-600">5</span> paketa të përfunduara.
+          </p>
+          <p className="text-gray-400 text-xs mb-6 leading-relaxed">
+            Kaloni në planin Premium për të pasur akses të pakufizuar në të gjitha paketat.
+          </p>
+          <button
+            onClick={() => { window.location.href = "/payments" }}
+            className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold text-sm shadow-lg shadow-emerald-500/30 hover:shadow-xl hover:shadow-emerald-500/40 transition-all border-none cursor-pointer mb-3"
+          >
+            Shiko Planet Premium
+          </button>
+          <button
+            onClick={onClose}
+            className="w-full py-2.5 bg-gray-50 text-gray-500 rounded-xl font-medium text-sm border border-gray-200 hover:bg-gray-100 transition-all cursor-pointer"
+          >
+            Mbyll
+          </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
 import { pronunciationService, ttsService } from "../services/api.js"
+import { useLanguage } from "../context/LanguageContext"
+import { useAuth } from "../context/AuthContext"
 
 const PronunciationPractice = () => {
+  const { language } = useLanguage()
+  const { user } = useAuth()
   const [packages, setPackages] = useState([])
   const [filteredPackages, setFilteredPackages] = useState([])
   const [selectedPackage, setSelectedPackage] = useState(null)
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
   const [isListening, setIsListening] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
   const [audioCache, setAudioCache] = useState({})
+  // userStats removed — using user.xp from AuthContext instead
   const [sessionStats, setSessionStats] = useState({
     correctAnswers: 0,
     totalAttempts: 0,
     completedWords: [],
     totalXP: 0,
   })
-  const [feedback, setFeedback] = useState("")
+  const [feedback, setFeedback] = useState(null)
   const [showResults, setShowResults] = useState(false)
   const [loading, setLoading] = useState(false)
   const [completedPackages, setCompletedPackages] = useState(new Set())
+  const [isPaid, setIsPaid] = useState(false)
+  const [freeLimit, setFreeLimit] = useState(5)
+  const [showPaywall, setShowPaywall] = useState(false)
+  const [loadingPackage, setLoadingPackage] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedLevel, setSelectedLevel] = useState("all")
   const [isMobile, setIsMobile] = useState(false)
-  const [skipsUsed, setSkipsUsed] = useState(0)
+  const [listeningSeconds, setListeningSeconds] = useState(0)
   const currentAudioRef = useRef(null)
   const mediaRecorderRef = useRef(null)
   const audioChunksRef = useRef([])
-  const maxSkips = 2
+  const timerRef = useRef(null)
 
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
     checkMobile()
     window.addEventListener("resize", checkMobile)
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
-  const itemsPerPage = isMobile ? 8 : 20
+  const itemsPerPage = isMobile ? 12 : 24
 
   useEffect(() => {
     loadPackages()
     loadCompletedPackages()
-  }, [])
+  }, [language])
 
   useEffect(() => {
     if (selectedLevel === "all") {
@@ -67,22 +125,21 @@ const PronunciationPractice = () => {
     setCurrentPage(1)
   }, [packages, selectedLevel])
 
+
   const loadCompletedPackages = async () => {
     try {
       const response = await pronunciationService.getUserCompletedPackages()
-      const completedIds = response.data?.completedPronunciationPackages || []
+      const data = response.data || {}
+      const completedIds = data.completedPronunciationPackages || []
       const completedIdStrings = completedIds.map((pkg) => {
-        if (typeof pkg === "object" && pkg._id) {
-          return pkg._id.toString()
-        } else if (typeof pkg === "string") {
-          return pkg
-        } else {
-          return pkg.toString()
-        }
+        if (typeof pkg === "object" && pkg._id) return pkg._id.toString()
+        if (typeof pkg === "string") return pkg
+        return pkg.toString()
       })
       setCompletedPackages(new Set(completedIdStrings))
-    } catch (error) {
-      console.error("Error loading completed packages:", error)
+      setIsPaid(data.isPaid || false)
+      setFreeLimit(data.freeLimit || 5)
+    } catch {
       setCompletedPackages(new Set())
     }
   }
@@ -90,24 +147,18 @@ const PronunciationPractice = () => {
   const loadPackages = async () => {
     try {
       setLoading(true)
-      const response = await pronunciationService.getWords()
+      const response = await pronunciationService.getWords({}, language)
       const packagesData = response.data
-
-      if (packagesData && typeof packagesData === "object") {
-        if (Array.isArray(packagesData)) {
-          setPackages(packagesData)
-        } else if (packagesData.packages && Array.isArray(packagesData.packages)) {
-          setPackages(packagesData.packages)
-        } else if (packagesData.data && Array.isArray(packagesData.data)) {
-          setPackages(packagesData.data)
-        } else {
-          setPackages([])
-        }
+      if (Array.isArray(packagesData)) {
+        setPackages(packagesData)
+      } else if (packagesData?.packages) {
+        setPackages(packagesData.packages)
+      } else if (packagesData?.data) {
+        setPackages(packagesData.data)
       } else {
         setPackages([])
       }
-    } catch (error) {
-      console.error("Error loading packages:", error)
+    } catch {
       setPackages([])
     } finally {
       setLoading(false)
@@ -116,12 +167,18 @@ const PronunciationPractice = () => {
 
   const startListening = async () => {
     if (sessionStats.completedWords.includes(currentWordIndex)) return
-
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       setIsListening(true)
-      setFeedback("")
+      setFeedback(null)
+      setListeningSeconds(0)
       audioChunksRef.current = []
+
+      let secs = 0
+      timerRef.current = setInterval(() => {
+        secs += 1
+        setListeningSeconds(secs)
+      }, 1000)
 
       const mediaRecorder = new MediaRecorder(stream)
       mediaRecorderRef.current = mediaRecorder
@@ -131,31 +188,33 @@ const PronunciationPractice = () => {
       }
 
       mediaRecorder.onstop = async () => {
+        clearInterval(timerRef.current)
         stream.getTracks().forEach((t) => t.stop())
         const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" })
         try {
-          const transcript = await pronunciationService.transcribeAudio(audioBlob)
+          const transcript = await pronunciationService.transcribeAudio(audioBlob, language)
           checkPronunciation(transcript)
-        } catch (err) {
-          setFeedback("Gabim me njohjen e zërit. Ju lutem provoni përsëri.")
+        } catch {
+          setFeedback({ type: "error", text: "Nuk u njoh zëri. Provo përsëri." })
           setIsListening(false)
         }
       }
 
       mediaRecorder.start()
-      // Auto stop after 4 seconds
       setTimeout(() => {
         if (mediaRecorderRef.current?.state === "recording") {
           mediaRecorderRef.current.stop()
         }
+        setIsListening(false)
       }, 4000)
-    } catch (err) {
+    } catch {
       setIsListening(false)
-      setFeedback("Nuk mund të aksesohet mikrofoni. Ju lutem jepni leje.")
+      setFeedback({ type: "error", text: "Aksesi në mikrofon u refuzua." })
     }
   }
 
   const stopListening = () => {
+    clearInterval(timerRef.current)
     if (mediaRecorderRef.current?.state === "recording") {
       mediaRecorderRef.current.stop()
     }
@@ -164,156 +223,126 @@ const PronunciationPractice = () => {
 
   const checkPronunciation = async (spokenText) => {
     if (!selectedPackage) return
-
     try {
-      const response = await pronunciationService.checkPronunciation(selectedPackage._id, currentWordIndex, spokenText)
-      const { correct, xpAdded } = response.data
+      const response = await pronunciationService.checkPronunciation(
+        selectedPackage._id,
+        currentWordIndex,
+        spokenText,
+      )
+      const { correct, xpAdded, similarity: simScore } = response.data
 
-      setSessionStats((prev) => ({
-        ...prev,
-        totalAttempts: prev.totalAttempts + 1,
-        correctAnswers: correct ? prev.correctAnswers + 1 : prev.correctAnswers,
-        completedWords:
+      let newCompletedWords = null
+      setSessionStats((prev) => {
+        const updatedCompleted =
           correct && !prev.completedWords.includes(currentWordIndex)
             ? [...prev.completedWords, currentWordIndex]
-            : prev.completedWords,
-        totalXP: prev.totalXP + xpAdded,
-      }))
+            : prev.completedWords
+        newCompletedWords = updatedCompleted
+        return {
+          ...prev,
+          totalAttempts: prev.totalAttempts + 1,
+          correctAnswers: correct ? prev.correctAnswers + 1 : prev.correctAnswers,
+          completedWords: updatedCompleted,
+          totalXP: prev.totalXP + (xpAdded || 0),
+        }
+      })
 
       if (correct) {
-        setFeedback(`Shkëlqyeshëm! +${xpAdded} XP`)
+        const isPerfect = simScore >= 85
+        setFeedback({
+          type: "correct",
+          text: isPerfect ? "Perfekt!" : "Mirë — mjaft afër!",
+          xp: xpAdded,
+          score: simScore,
+        })
         setTimeout(() => {
-          nextWord()
-        }, 1500)
+          advanceWord(newCompletedWords)
+        }, 800)
       } else {
-        setFeedback("Provoni përsëri! Dëgjoni shqiptimin.")
+        setFeedback({
+          type: "wrong",
+          text: "Jo saktë — provo përsëri!",
+          score: simScore,
+        })
       }
-    } catch (error) {
-      console.error("Error checking pronunciation:", error)
-      setFeedback("Gabim në kontrollimin e shqiptimit. Ju lutem provoni përsëri.")
+    } catch {
+      setFeedback({ type: "error", text: "Gabim gjatë kontrollit. Provo përsëri." })
     }
   }
 
   const playPronunciation = async (word, wordId, level) => {
+    if (isPlaying) return
     try {
       if (currentAudioRef.current) {
         currentAudioRef.current.pause()
         currentAudioRef.current.currentTime = 0
       }
-
+      setIsPlaying(true)
       const cacheKey = `${wordId}_${level}`
-      if (audioCache[cacheKey]) {
-        const audio = new Audio(audioCache[cacheKey])
-        currentAudioRef.current = audio
-        audio.play()
-        return
+      let audioUrl = audioCache[cacheKey]
+      if (!audioUrl) {
+        audioUrl = await ttsService.getPronunciationAudio(wordId, word, level, language)
+        setAudioCache((prev) => ({ ...prev, [cacheKey]: audioUrl }))
       }
-
-      const audioUrl = await ttsService.getPronunciationAudio(wordId, word, level)
-      setAudioCache((prev) => ({ ...prev, [cacheKey]: audioUrl }))
-
       const audio = new Audio(audioUrl)
       currentAudioRef.current = audio
+      audio.onended = () => setIsPlaying(false)
       audio.play()
-    } catch (error) {
-      console.error("Error playing pronunciation audio:", error)
-      setFeedback("Error playing audio. Please try again.")
+    } catch {
+      setIsPlaying(false)
+      setFeedback({ type: "error", text: "Gabim gjatë luajtjes së audios." })
     }
   }
 
-  const nextWord = () => {
+  const advanceWord = (newCompletedWords) => {
     if (!selectedPackage) return
+    const completedCount = newCompletedWords ? newCompletedWords.length : sessionStats.completedWords.length
     if (currentWordIndex < selectedPackage.words.length - 1) {
       setCurrentWordIndex(currentWordIndex + 1)
-      setFeedback("")
+      setFeedback(null)
     } else {
-      const passThreshold = Math.ceil(selectedPackage.words.length * 0.7)
-      if (sessionStats.completedWords.length >= passThreshold) {
+      const allDone = completedCount >= selectedPackage.words.length
+      if (allDone) {
         setCompletedPackages((prev) => new Set([...Array.from(prev), selectedPackage._id.toString()]))
       }
       setShowResults(true)
     }
   }
 
-  const prevWord = () => {
-    if (currentWordIndex > 0) {
-      setCurrentWordIndex(currentWordIndex - 1)
-      setFeedback("")
-    }
-  }
-
   const resetSession = () => {
     setCurrentWordIndex(0)
-    setSessionStats({
-      correctAnswers: 0,
-      totalAttempts: 0,
-      completedWords: [],
-      totalXP: 0,
-    })
-    setFeedback("")
+    setSessionStats({ correctAnswers: 0, totalAttempts: 0, completedWords: [], totalXP: 0 })
+    setFeedback(null)
     setShowResults(false)
-    setSkipsUsed(0)
   }
 
   const selectPackage = (pkg) => {
+    const isCompleted = completedPackages.has(pkg._id.toString())
+    const isLocked = !isCompleted && !isPaid && completedPackages.size >= freeLimit
+    if (isLocked) {
+      setShowPaywall(true)
+      return
+    }
     setSelectedPackage(pkg)
     resetSession()
   }
 
-  const resetTest = () => {
+  const backToPackages = () => {
     setSelectedPackage(null)
     resetSession()
     window.scrollTo({ top: 0, behavior: "smooth" })
   }
 
-  const skipWord = () => {
-    if (!selectedPackage) return
-
-    if (skipsUsed >= maxSkips) {
-      setFeedback(`Keni përdorur të gjitha ${maxSkips} anashkalimet për këtë paketë!`)
-      return
-    }
-
-    setSkipsUsed((prev) => prev + 1)
-    setFeedback(`Fjalë e anashkaluar. Anashkalime të mbetura: ${maxSkips - skipsUsed - 1}`)
-
-    if (!sessionStats.completedWords.includes(currentWordIndex)) {
-      setSessionStats((prev) => ({
-        ...prev,
-        completedWords: [...prev.completedWords, currentWordIndex],
-      }))
-    }
-
-    setTimeout(() => {
-      nextWord()
-    }, 1000)
-  }
-
-  const finishQuiz = () => {
-    const passThreshold = Math.ceil(selectedPackage.words.length * 0.7)
-    if (sessionStats.completedWords.length >= passThreshold) {
-      setCompletedPackages((prev) => new Set([...Array.from(prev), selectedPackage._id.toString()]))
-    }
-    setShowResults(true)
-  }
-
   const getLevelColor = (level) => {
-    switch (level) {
-      case "A1":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200"
-      case "A2":
-        return "bg-yellow-200 text-yellow-800 border-yellow-300"
-      case "B1":
-        return "bg-orange-200 text-orange-800 border-orange-300"
-      case "B2":
-        return "bg-orange-300 text-orange-900 border-orange-400"
-      case "C1":
-        return "bg-orange-400 text-white border-orange-500"
-      case "C2":
-        return "bg-orange-500 text-white border-orange-600"
-      default:
-        return "bg-gray-200 text-gray-800 border-gray-300"
+    const map = {
+      A1: "level-A1",
+      A2: "level-A2",
+      B1: "level-B1",
+      B2: "level-B2",
+      C1: "level-C1",
+      C2: "level-C2",
     }
+    return map[level] || "level-default"
   }
 
   const uniqueLevels = Array.from(new Set(packages.map((pkg) => pkg.level))).sort()
@@ -321,423 +350,1114 @@ const PronunciationPractice = () => {
   const startIndex = (currentPage - 1) * itemsPerPage
   const currentPackages = filteredPackages.slice(startIndex, startIndex + itemsPerPage)
 
-  const Pagination = () => {
-    if (totalPages <= 1) return null
-
-    return (
-      <div className="flex justify-center items-center gap-2 mt-8">
-        <button
-          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-          disabled={currentPage === 1}
-          className={`p-2 rounded-lg border transition-colors ${
-            currentPage === 1
-              ? "border-gray-200 text-gray-400 cursor-not-allowed"
-              : "border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400"
-          }`}
-        >
-          <ChevronLeft size={16} />
-        </button>
-
-        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-          const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i
-          if (pageNum > totalPages) return null
-
-          return (
-            <button
-              key={pageNum}
-              onClick={() => setCurrentPage(pageNum)}
-              className={`px-4 py-2 text-sm rounded-lg border transition-colors ${
-                currentPage === pageNum
-                  ? "bg-orange-500 text-white border-orange-600 shadow-sm"
-                  : "border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400"
-              }`}
-            >
-              {pageNum}
-            </button>
-          )
-        })}
-
-        <button
-          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-          disabled={currentPage === totalPages}
-          className={`p-2 rounded-lg border transition-colors ${
-            currentPage === totalPages
-              ? "border-gray-200 text-gray-400 cursor-not-allowed"
-              : "border-gray-300 text-gray-600 hover:bg-gray-50 hover:border-gray-400"
-          }`}
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
-    )
-  }
-
   const progressPercentage = selectedPackage
     ? (sessionStats.completedWords.length / selectedPackage.words.length) * 100
     : 0
 
-  const passThreshold = selectedPackage ? Math.ceil(selectedPackage.words.length * 0.7) : 0
+  const currentWord = selectedPackage?.words[currentWordIndex]
+  const isWordDone = sessionStats.completedWords.includes(currentWordIndex)
 
+  // ─── RESULTS SCREEN ───────────────────────────────────────────────────────
+  if (selectedPackage && showResults) {
+    const accuracy = sessionStats.totalAttempts
+      ? Math.round((sessionStats.correctAnswers / sessionStats.totalAttempts) * 100)
+      : 0
+    const allPerfect = sessionStats.completedWords.length === selectedPackage.words.length
+
+    return (
+      <div className="pp-results-bg">
+        <style>{styles}</style>
+        <div className="results-wrap">
+          <div className="results-card">
+            <div className={`results-hero ${allPerfect ? "" : "results-hero--gray"}`}>
+              <div className="results-trophy">
+                {allPerfect ? <Trophy size={28} color="#fff" /> : <Star size={28} color="#fff" />}
+              </div>
+              <h2 className="results-title">{allPerfect ? "Paketa e Përfunduar!" : "Sesioni Mbaroi"}</h2>
+              <p className="results-subtitle">{selectedPackage.title}</p>
+            </div>
+
+            <div className="results-stats">
+              <div className="results-stat">
+                <div className="results-stat-num">{sessionStats.completedWords.length}</div>
+                <div className="results-stat-label">Fjalë të mësuara</div>
+              </div>
+              <div className="results-stat">
+                <div className="results-stat-num">{accuracy}%</div>
+                <div className="results-stat-label">Saktësi</div>
+              </div>
+              <div className="results-stat">
+                <div className="results-stat-num">+{sessionStats.totalXP}</div>
+                <div className="results-stat-label">XP fituar</div>
+              </div>
+            </div>
+
+            <div className="results-actions">
+              {!allPerfect && (
+                <button onClick={resetSession} className="btn-primary">
+                  <RotateCcw size={15} />
+                  Provo përsëri — arrij 100%
+                </button>
+              )}
+              <button onClick={backToPackages} className="btn-secondary">
+                <ArrowLeft size={15} />
+                Kthehu tek paketat
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ─── PRACTICE SCREEN ──────────────────────────────────────────────────────
   if (selectedPackage) {
-    if (showResults) {
-      return (
-        <div className="h-[700px] bg-white p-2 sm:p-4 rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-          <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 h-full">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-6 text-center">
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">Rezultatet e Kuizit</h1>
-              <div className="space-y-4">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <h3 className="text-lg font-semibold text-yellow-800 mb-2">Përfunduar!</h3>
-                  <p className="text-yellow-700">
-                    Përfunduat {sessionStats.completedWords.length} nga {selectedPackage.words.length} fjalë
-                  </p>
-                  <p className="text-yellow-700">XP e fituar: {sessionStats.totalXP}</p>
-                  <p className="text-yellow-700">
-                    Saktësia: {Math.round((sessionStats.correctAnswers / sessionStats.totalAttempts) * 100) || 0}%
-                  </p>
-                </div>
-                <button
-                  onClick={resetTest}
-                  className="bg-orange-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors"
-                >
-                  Kthehu te Paketat
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    }
-
     return (
-      <div className="h-[700px] bg-white p-2 sm:p-4 rounded-xl shadow-lg border border-gray-200 overflow-hidden">
-        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 h-full">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-6">
-            <div className="flex items-center justify-between mb-3 sm:mb-4">
-              <h1 className="text-lg sm:text-xl font-bold text-gray-900 leading-tight">{selectedPackage.title}</h1>
-              <button
-                onClick={resetTest}
-                className="text-gray-600 hover:text-gray-900 p-1"
-                aria-label="Kthehu te Paketat"
-              >
-                <X className="h-5 w-5 sm:h-6 sm:w-6" />
-              </button>
-            </div>
-            <div className="space-y-4 sm:space-y-6">
-              <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <Target className="w-5 h-5 text-orange-500" />
-                      <span className="font-medium text-gray-700 text-sm sm:text-base">
-                        Progresi: {sessionStats.completedWords.length}/{selectedPackage.words.length}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <X className="w-4 h-4 text-orange-600" />
-                      <span className="font-medium text-gray-700 text-sm">
-                        Anashkalime: {skipsUsed}/{maxSkips}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-gray-600 font-medium text-sm sm:text-base">
-                    {Math.round(progressPercentage)}% E përfunduar
-                  </div>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div
-                    className="bg-orange-500 h-3 rounded-full transition-all duration-500"
-                    style={{ width: `${progressPercentage}%` }}
-                  />
-                </div>
-              </div>
+      <div className="pp-root">
+        <style>{styles}</style>
+        <div className="practice-wrap">
 
-              {selectedPackage.words[currentWordIndex] && (
-                <div className="text-center space-y-4">
-                  <h2 className="text-3xl sm:text-5xl font-bold text-gray-900">
-                    {selectedPackage.words[currentWordIndex].word}
-                  </h2>
-                  <p className="text-lg sm:text-xl text-gray-600 font-medium">
-                    [{selectedPackage.words[currentWordIndex].pronunciation}]
-                  </p>
-                  <p className="text-base sm:text-lg text-gray-600">
-                    {selectedPackage.words[currentWordIndex].translation}
-                  </p>
-                </div>
-              )}
-
-              <div className="flex justify-center gap-4 sm:gap-6">
-                <button
-                  onClick={() =>
-                    playPronunciation(
-                      selectedPackage.words[currentWordIndex]?.word,
-                      selectedPackage.words[currentWordIndex]?._id || `${selectedPackage._id}_${currentWordIndex}`,
-                      selectedPackage.level,
-                    )
-                  }
-                  className="w-12 h-12 sm:w-16 sm:h-16 bg-orange-500 hover:bg-orange-600 text-white rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 shadow-lg active:scale-95"
-                >
-                  <Volume2 className="w-5 h-5 sm:w-6 sm:h-6" />
-                </button>
-
-                <button
-                  onClick={isListening ? stopListening : startListening}
-                  disabled={sessionStats.completedWords.includes(currentWordIndex)}
-                  className={`w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 shadow-lg active:scale-95 ${
-                    isListening
-                      ? "bg-red-500 hover:bg-red-600 text-white animate-pulse"
-                      : sessionStats.completedWords.includes(currentWordIndex)
-                        ? "bg-green-500 text-white cursor-default"
-                        : "bg-green-500 hover:bg-green-600 text-white"
-                  }`}
-                >
-                  {sessionStats.completedWords.includes(currentWordIndex) ? (
-                    <Check className="w-6 h-6 sm:w-7 sm:h-7" />
-                  ) : isListening ? (
-                    <MicOff className="w-6 h-6 sm:w-7 sm:h-7" />
-                  ) : (
-                    <Mic className="w-6 h-6 sm:w-7 sm:h-7" />
-                  )}
-                </button>
-
-                <button
-                  onClick={skipWord}
-                  disabled={sessionStats.completedWords.includes(currentWordIndex) || skipsUsed >= maxSkips}
-                  className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 shadow-lg active:scale-95 ${
-                    sessionStats.completedWords.includes(currentWordIndex) || skipsUsed >= maxSkips
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-orange-500 hover:bg-orange-600 text-white"
-                  }`}
-                  title={skipsUsed >= maxSkips ? "Nuk keni më anashkalime" : "Anashkalo fjalën"}
-                >
-                  <X className="w-5 h-5 sm:w-6 sm:h-6" />
-                </button>
-              </div>
-
-              {isListening && (
-                <div className="text-center text-sm text-orange-600 font-medium animate-pulse">
-                  🎙️ Duke dëgjuar... (4 sekonda)
-                </div>
-              )}
-
-              {feedback && (
-                <div
-                  className={`p-3 sm:p-4 rounded-lg text-center font-medium ${
-                    feedback.includes("Shkëlqyeshëm") || feedback.includes("correct")
-                      ? "bg-green-50 border border-green-200 text-green-800"
-                      : feedback.includes("anashkalime") || feedback.includes("Anashkalime")
-                        ? "bg-orange-50 border border-orange-200 text-orange-800"
-                        : "bg-red-50 border border-red-200 text-red-800"
-                  }`}
-                >
-                  <p className="text-sm sm:text-base">{feedback}</p>
-                </div>
-              )}
-
-              <div className="flex justify-between">
-                <button
-                  onClick={prevWord}
-                  disabled={currentWordIndex === 0}
-                  className={`flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-medium transition-colors text-sm sm:text-base ${
-                    currentWordIndex === 0
-                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  <ArrowLeft className="w-4 h-4" />E mëparshme
-                </button>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={finishQuiz}
-                    className="flex items-center gap-2 bg-red-600 text-white px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-medium hover:bg-red-700 transition-colors text-sm sm:text-base"
-                  >
-                    Përfundo
-                  </button>
-
-                  <button
-                    onClick={nextWord}
-                    className="flex items-center gap-2 bg-orange-500 text-white px-3 sm:px-6 py-2 sm:py-3 rounded-lg font-medium hover:bg-orange-600 transition-colors text-sm sm:text-base"
-                  >
-                    Tjetër
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (loading) {
-    return (
-      <div className="h-min-screen p-4 flex flex-col">
-        <div className="max-w-6xl mx-auto w-full">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center min-h-96">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500"></div>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-gray-100 animate-pulse h-32 rounded-lg"></div>
-            ))}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="h-min-screen p-4 flex flex-col">
-      <div className="max-w-6xl mx-auto w-full">
-        {isMobile && (
-          <div
-            style={{
-              backgroundColor: "#FEF3C7",
-              border: "2px solid #F59E0B",
-              borderRadius: "12px",
-              padding: "16px",
-              marginBottom: "16px",
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-            }}
-          >
-            <AlertTriangle style={{ color: "#F59E0B", minWidth: "24px", minHeight: "24px" }} />
-            <div>
-              <p style={{ fontWeight: "bold", color: "#92400E", margin: "0 0 4px 0" }}>Kujdes</p>
-              <p style={{ color: "#78350F", margin: 0, fontSize: "14px" }}>
-                Ky seksion për praktikimin e shqiptimit funksionon më mirë në pajisje desktop. Njohja e zërit mund të
-                mos funksionojë si duhet në telefonat celularë
-              </p>
-            </div>
-          </div>
-        )}
-
-        <header className="mb-4 flex-shrink-0">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Praktikë Shqiptimi</h1>
-            <p className="text-gray-600">Përmirësoni aftësitë tuaja të shqiptimit në gjermanisht me ushtrime audio</p>
-            <p className="text-xs text-gray-400 mt-2">Paketa të përfunduara: {completedPackages.size}</p>
-          </div>
-        </header>
-
-        <div className="bg-gray-50 p-3 rounded-lg mb-4 border border-gray-200 flex-shrink-0">
-          <div className="flex items-center gap-2 mb-2">
-            <Filter size={16} className="text-orange-500" />
-            <h2 className="text-sm font-medium text-gray-800">Filtro sipas Nivelit</h2>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setSelectedLevel("all")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
-                selectedLevel === "all"
-                  ? "bg-orange-500 text-white border-orange-600"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200"
-              }`}
-            >
-              Të gjitha Nivelet
-              {selectedLevel === "all" && (
-                <span className="ml-1 inline-flex items-center justify-center w-4 h-4 bg-white/50 rounded-full text-xs">
-                  ✓
-                </span>
-              )}
+          <div className="practice-topbar">
+            <button onClick={backToPackages} className="practice-back-btn">
+              <ArrowLeft size={18} />
             </button>
-            {uniqueLevels.map((level) => (
-              <button
-                key={level}
-                onClick={() => setSelectedLevel(level)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
-                  selectedLevel === level
-                    ? getLevelColor(level)
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-200"
-                }`}
-              >
-                {level}
-                {selectedLevel === level && (
-                  <span className="ml-1 inline-flex items-center justify-center w-4 h-4 bg-white/50 rounded-full text-xs">
-                    ✓
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 flex-1 overflow-y-auto">
-          {currentPackages.length > 0 ? (
-            currentPackages.map((pkg) => {
-              const isCompleted = completedPackages.has(pkg._id.toString())
-              const wordCount = pkg.words?.length || 0
-              return (
-                <div
-                  key={pkg._id}
-                  className={`p-3 rounded-lg shadow-sm border transition-all cursor-pointer overflow-hidden relative group h-fit ${
-                    isCompleted
-                      ? "bg-gradient-to-br from-green-50 to-emerald-50 border-green-300 hover:border-green-400 hover:shadow-lg"
-                      : "bg-white border-gray-200 hover:border-orange-300 hover:shadow-md"
-                  }`}
-                  onClick={() => selectPackage(pkg)}
-                >
-                  <div
-                    className={`absolute top-2 right-2 ${getLevelColor(pkg.level)} px-1.5 py-0.5 rounded text-xs font-medium`}
-                  >
-                    {pkg.level}
-                  </div>
-                  <Mic
-                    className={`absolute -bottom-4 -right-4 w-16 h-16 ${
-                      isCompleted ? "text-green-200" : "text-gray-200"
-                    }`}
-                  />
-                  <div className="relative z-10">
-                    <h3
-                      className={`text-sm font-semibold mb-1 pr-12 truncate ${
-                        isCompleted
-                          ? "text-green-800 group-hover:text-green-900"
-                          : "text-gray-800 group-hover:text-orange-700"
-                      }`}
-                    >
-                      {pkg.title}
-                    </h3>
-                    <p className={`text-xs line-clamp-2 ${isCompleted ? "text-green-700" : "text-gray-600"}`}>
-                      {wordCount} fjalë për praktikë shqiptimi
-                    </p>
-                    <div className="mt-2 pt-2 border-t border-gray-100 flex justify-between items-center">
-                      <span className={`text-xs ${isCompleted ? "text-green-600" : "text-gray-500"}`}>
-                        Gjermanisht • Ushtrim Shqiptimi
-                      </span>
-                      <span
-                        className={`text-xs px-1.5 py-0.5 rounded font-medium ${
-                          isCompleted ? "bg-green-200 text-green-800" : "bg-yellow-100 text-yellow-800"
-                        }`}
-                      >
-                        {isCompleted ? "Përfunduar" : "Praktiko"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )
-            })
-          ) : (
-            <div className="col-span-full text-center py-8">
-              <div className="bg-gray-50 rounded-lg p-6 inline-block">
-                <Mic className="text-orange-500 w-10 h-10 mx-auto mb-3" />
-                <h3 className="text-sm font-medium text-gray-800 mb-2">Nuk u gjetën paketa</h3>
-                <p className="text-gray-500 text-xs">
-                  Provoni të zgjidhni nivele të ndryshme ose kontrolloni më vonë
-                </p>
+            <div className="practice-progress-wrap">
+              <div className="practice-pkg-name">{selectedPackage.title} · {selectedPackage.level}</div>
+              <div className="practice-prog-track">
+                <div className="practice-prog-fill" style={{ width: `${progressPercentage}%` }} />
               </div>
             </div>
-          )}
-        </div>
+            <div className="practice-word-counter">
+              {currentWordIndex + 1}/{selectedPackage.words.length}
+            </div>
+          </div>
 
-        <Pagination />
+          <div className="practice-dots">
+            {selectedPackage.words.map((_, i) => (
+              <div
+                key={i}
+                className={`practice-dot ${
+                  sessionStats.completedWords.includes(i)
+                    ? "practice-dot--done"
+                    : i === currentWordIndex
+                    ? "practice-dot--current"
+                    : ""
+                }`}
+              />
+            ))}
+          </div>
+
+          <div className="word-card">
+            {isWordDone && (
+              <div className="word-done-badge">
+                <CheckCircle2 size={13} />
+                Përfunduar
+              </div>
+            )}
+            <div className="word-main">{currentWord?.word}</div>
+            <div className="word-phonetic">[{currentWord?.pronunciation}]</div>
+            <div className="word-translation">{currentWord?.translation}</div>
+            <button
+              onClick={() =>
+                playPronunciation(
+                  currentWord?.word,
+                  currentWord?._id || `${selectedPackage._id}_${currentWordIndex}`,
+                  selectedPackage.level,
+                )
+              }
+              disabled={isPlaying}
+              className="listen-btn"
+            >
+              <Volume2 size={14} />
+              {isPlaying ? "Po luhet..." : "Dëgjo"}
+            </button>
+          </div>
+
+          <div className="mic-card">
+            <p className="mic-instruction">
+              {isWordDone
+                ? "Fjala u përfundua — kalo tek tjetra"
+                : isListening
+                ? "Po dëgjon..."
+                : "Shtyp mikrofonin dhe thuaj fjalën me zë"}
+            </p>
+
+            <div className="mic-outer">
+              {isListening && (
+                <>
+                  <span className="mic-ring mic-ring--1" />
+                  <span className="mic-ring mic-ring--2" />
+                  <span className="mic-ring mic-ring--3" />
+                </>
+              )}
+              <button
+                onClick={isListening ? stopListening : startListening}
+                disabled={isWordDone}
+                className={`mic-btn ${isListening ? "mic-btn--listening" : ""} ${isWordDone ? "mic-btn--done" : ""}`}
+              >
+                {isListening ? <MicOff size={26} color="#fff" /> : <Mic size={26} color="#fff" />}
+              </button>
+            </div>
+
+            {isListening && (
+              <div className="waveform">
+                {[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.2].map((delay, i) => (
+                  <div key={i} className="wave-bar" style={{ animationDelay: `${delay}s` }} />
+                ))}
+              </div>
+            )}
+
+            {feedback && (
+              <div className={`feedback-box feedback-box--${feedback.type}`}>
+                {feedback.type === "correct" && (
+                  <>
+                    <CheckCircle2 size={15} />
+                    <span>
+                      {feedback.text}
+                      {feedback.xp > 0 && (
+                        <span className="feedback-xp">
+                          <Zap size={13} />+{feedback.xp} XP
+                        </span>
+                      )}
+                    </span>
+                    {feedback.score != null && (
+                      <span className="feedback-score">{feedback.score}%</span>
+                    )}
+                  </>
+                )}
+                {feedback.type === "wrong" && (
+                  <>
+                    <RotateCcw size={15} />
+                    <span>{feedback.text}</span>
+                    {feedback.score != null && (
+                      <span className="feedback-score feedback-score--wrong">{feedback.score}%</span>
+                    )}
+                  </>
+                )}
+                {feedback.type === "error" && <span>{feedback.text}</span>}
+              </div>
+            )}
+          </div>
+
+        </div>
       </div>
+    )
+  }
+
+  // ─── PACKAGE LIST ─────────────────────────────────────────────────────────
+  return (
+    <div className="pp-root">
+      {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+      <style>{styles}</style>
+
+      {/* ── HERO HEADER ── */}
+      <div className="pp-hero">
+        <div className="pp-hero-left">
+          <div className="pp-hero-eyebrow">
+            <Flame size={14} />
+            Praktikë Gjuhësore
+          </div>
+          <h1 className="pp-hero-title">Shqiptimi</h1>
+          <p className="pp-hero-sub">
+            Dëgjo çdo fjalë, regjistro zërin tënd — arrij 100% për të përfunduar një paketë.
+          </p>
+        </div>
+        <div className="pp-hero-stats">
+          <div className="pp-stat-card">
+            <div className="pp-stat-icon pp-stat-icon--trophy">
+              <Trophy size={16} color="#fff" />
+            </div>
+            <div>
+              <div className="pp-stat-num">{completedPackages.size}</div>
+              <div className="pp-stat-label">Paketa të Përfunduara</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* level filter */}
+      <div className="pp-filters">
+        <button
+          onClick={() => setSelectedLevel("all")}
+          className={`pp-filter-btn ${selectedLevel === "all" ? "pp-filter-btn--active" : ""}`}
+        >
+          Të gjitha
+        </button>
+        {uniqueLevels.map((level) => (
+          <button
+            key={level}
+            onClick={() => setSelectedLevel(level)}
+            className={`pp-filter-btn ${selectedLevel === level ? "pp-filter-btn--active" : ""}`}
+          >
+            {level}
+          </button>
+        ))}
+      </div>
+
+      {/* package grid */}
+{loading ? (
+        <div className="flex items-center justify-center min-h-48">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500" />
+        </div>
+      ) : currentPackages.length > 0 ? (
+        <div className="pp-grid">
+          {currentPackages.map((pkg) => {
+            const isCompleted = completedPackages.has(pkg._id.toString())
+            const isLocked = !isCompleted && !isPaid && completedPackages.size >= freeLimit
+            return (
+              <button
+                key={pkg._id}
+                onClick={() => selectPackage(pkg)}
+                className={`pp-card ${isCompleted ? "pp-card--completed" : isLocked ? "pp-card--locked" : ""}`}
+              >
+                <div className="pp-card-top">
+                  <span className={`pp-level-tag ${getLevelColor(pkg.level)}`}>{pkg.level}</span>
+                  {isCompleted && <CheckCircle2 size={16} className="pp-card-check" />}
+                  {isLocked && <Lock size={16} className="pp-card-lock" />}
+                </div>
+                <h3 className={`pp-card-title ${isLocked ? "pp-card-title--locked" : ""}`}>{pkg.title}</h3>
+                <p className={`pp-card-meta ${isLocked ? "pp-card-meta--locked" : ""}`}>{pkg.words?.length || 0} fjalë</p>
+                <div className="pp-card-footer">
+                  <span className={`pp-start-label ${isCompleted ? "pp-start-label--done" : isLocked ? "pp-start-label--locked" : ""}`}>
+                    {!isLocked && <span className="pp-mic-dot" />}
+                    {isCompleted ? "Përfunduar" : isLocked ? "Premium" : "Fillo praktikën"}
+                  </span>
+                  <span className="pp-arrow">→</span>
+                </div>
+              </button>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="pp-empty">
+          <Mic size={36} className="pp-empty-icon" />
+          <p>Nuk u gjetën paketa për këtë nivel</p>
+        </div>
+      )}
+
+
+      {/* pagination */}
+      {totalPages > 1 && (
+        <div className="pp-pagination">
+          <button
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+            className="pp-page-btn"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i
+            if (pageNum > totalPages) return null
+            return (
+              <button
+                key={pageNum}
+                onClick={() => setCurrentPage(pageNum)}
+                className={`pp-page-btn ${currentPage === pageNum ? "pp-page-btn--active" : ""}`}
+              >
+                {pageNum}
+              </button>
+            )
+          })}
+          <button
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+            className="pp-page-btn"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
     </div>
   )
 }
+
+const styles = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap');
+
+  .pp-root {
+    font-family: 'DM Sans', sans-serif;
+    background: #f9f7f5;
+    min-height: 100vh;
+    padding: 28px 32px;
+    color: #1a1a1a;
+  }
+
+  .pp-results-bg {
+    font-family: 'DM Sans', sans-serif;
+    background: #f9f7f5;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .pp-loading {
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    background: #f9f7f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pp-grid-loader {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 64px 0;
+  }
+
+  .pp-overlay-loader {
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.65);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+  }
+
+  .pp-spinner-blue {
+    width: 36px;
+    height: 36px;
+    border: 3px solid #dbeafe;
+    border-top-color: #1d4ed8;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  .pp-spinner {
+    width: 32px;
+    height: 32px;
+    border: 2px solid #dbeafe;
+    border-top-color: #1d4ed8;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ─── HERO HEADER ─── */
+  .pp-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    background: linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 40%, #3b82f6 75%, #93c5fd 100%);
+    border-radius: 20px;
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pp-hero::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+
+  .pp-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; right: 80px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
+
+  .pp-hero-left { flex: 1; position: relative; z-index: 1; }
+
+  .pp-hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.8);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .pp-hero-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 38px;
+    font-weight: 400;
+    color: #fff;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+    margin: 0 0 8px;
+  }
+
+  .pp-hero-sub {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    margin: 0;
+    max-width: 380px;
+    line-height: 1.5;
+  }
+
+  .pp-hero-stats {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    align-self: center;
+  }
+
+  .pp-stat-card {
+    background: rgba(0,0,0,0.15);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 14px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 130px;
+  }
+
+  .pp-stat-icon {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.2);
+  }
+
+  .pp-stat-num {
+    font-size: 22px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+
+  .pp-stat-label {
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    font-weight: 500;
+  }
+
+  /* ─── FILTERS ─── */
+  .pp-filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+  }
+
+  .pp-filter-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid #e5ddd8;
+    background: #fff;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .pp-filter-btn:hover { border-color: #1d4ed8; color: #1d4ed8; }
+  .pp-filter-btn--active { background: #1d4ed8 !important; color: #fff !important; border-color: #1d4ed8 !important; }
+
+  /* ─── GRID ─── */
+  .pp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+  }
+
+  .pp-card {
+    text-align: left;
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #ede8e3;
+    padding: 18px 20px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pp-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #1e3a5f, #1d4ed8, #3b82f6);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .pp-card:hover {
+    border-color: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(29,78,216,0.13);
+  }
+
+  .pp-card:hover::before { opacity: 1; }
+
+  .pp-card--completed { border-color: #b6dfc5; background: #fafff9; }
+  .pp-card--completed::before { background: linear-gradient(90deg, #2d8a50, #7dd4a8); opacity: 1; }
+
+  .pp-card--locked { border-color: #e5e7eb; background: #f9fafb; }
+  .pp-card--locked:hover { border-color: #d1d5db; box-shadow: none; transform: none; }
+  .pp-card--locked::before { display: none; }
+  .pp-card-lock { color: #9ca3af; flex-shrink: 0; }
+  .pp-card-title--locked { color: #9ca3af; }
+  .pp-card-meta--locked { color: #d1d5db; }
+  .pp-start-label--locked { color: #9ca3af; }
+
+  .pp-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .pp-level-tag {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 6px;
+    letter-spacing: 0.3px;
+  }
+
+  .level-A1 { background: #fff0eb; color: #c9200a; }
+  .level-A2 { background: #fff5e6; color: #b55e00; }
+  .level-B1 { background: #e8eeff; color: #2d4fd1; }
+  .level-B2 { background: #efe8ff; color: #6b36d4; }
+  .level-C1 { background: #fff0f0; color: #c43030; }
+  .level-C2 { background: #c9200a; color: #fff; }
+  .level-default { background: #f1f0ec; color: #555; }
+
+  .pp-card-check { color: #2d8a50; flex-shrink: 0; }
+
+  .pp-card-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a1a1a;
+    line-height: 1.4;
+    margin: 0 0 5px;
+  }
+
+  .pp-card-meta {
+    font-size: 12px;
+    color: #aaa;
+    margin: 0 0 14px;
+  }
+
+  .pp-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .pp-start-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #1d4ed8;
+  }
+
+  .pp-start-label--done { color: #2d8a50; }
+
+  .pp-mic-dot {
+    width: 6px; height: 6px;
+    background: currentColor;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .pp-arrow {
+    font-size: 13px;
+    color: #ddd;
+    transition: color 0.2s, transform 0.2s;
+  }
+
+  .pp-card:hover .pp-arrow { color: #1d4ed8; transform: translateX(3px); }
+
+  /* ─── EMPTY ─── */
+  .pp-empty {
+    text-align: center;
+    padding: 64px 0;
+    color: #bbb;
+  }
+
+  .pp-empty-icon { margin: 0 auto 12px; display: block; opacity: 0.3; }
+  .pp-empty p { font-size: 14px; font-weight: 500; }
+
+  /* ─── PAGINATION ─── */
+  .pp-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 32px;
+  }
+
+  .pp-page-btn {
+    font-family: 'DM Sans', sans-serif;
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    border: 1px solid #e5ddd8;
+    background: #fff;
+    color: #555;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .pp-page-btn:hover:not(:disabled) { border-color: #1d4ed8; color: #1d4ed8; }
+  .pp-page-btn--active { background: #1d4ed8 !important; color: #fff !important; border-color: #1d4ed8 !important; }
+  .pp-page-btn:disabled { opacity: 0.35; cursor: default; }
+
+  /* ─── MOBILE WARNING ─── */
+  .mobile-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #92400e;
+  }
+
+  .mobile-warning-icon { flex-shrink: 0; margin-top: 1px; color: #d97706; }
+
+  /* ─── PRACTICE SCREEN ─── */
+  .practice-wrap { max-width: 560px; margin: 0 auto; }
+
+  .practice-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+
+  .practice-back-btn {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    border: 1px solid #e5ddd8;
+    background: #fff;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: #555;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .practice-back-btn:hover { border-color: #1d4ed8; color: #1d4ed8; }
+
+  .practice-progress-wrap { flex: 1; }
+
+  .practice-pkg-name {
+    font-size: 12px;
+    color: #888;
+    font-weight: 500;
+    margin-bottom: 5px;
+  }
+
+  .practice-prog-track {
+    height: 5px;
+    background: #dbeafe;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .practice-prog-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #1e3a5f, #1d4ed8, #3b82f6);
+    border-radius: 10px;
+    transition: width 0.6s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  .practice-word-counter {
+    font-size: 12px;
+    color: #aaa;
+    font-weight: 500;
+    flex-shrink: 0;
+    text-align: right;
+  }
+
+  .practice-dots {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .practice-dot {
+    height: 5px;
+    border-radius: 10px;
+    background: #ede9e3;
+    width: 8px;
+    transition: all 0.3s;
+  }
+
+  .practice-dot--current { background: #93c5fd; width: 14px; }
+  .practice-dot--done { background: #1d4ed8; width: 14px; }
+
+  /* ─── WORD CARD ─── */
+  .word-card {
+    background: #fff;
+    border-radius: 20px;
+    border: 1px solid #ede8e3;
+    padding: 36px 32px;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+
+  .word-done-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #edf7f0;
+    color: #2d8a50;
+    border: 1px solid #b6dfc5;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 11px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+  }
+
+  .word-main {
+    font-family: 'DM Serif Display', serif;
+    font-size: 52px;
+    font-weight: 400;
+    color: #111;
+    letter-spacing: -1px;
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+
+  .word-phonetic {
+    font-size: 16px;
+    color: #1d4ed8;
+    font-style: italic;
+    margin-bottom: 5px;
+  }
+
+  .word-translation {
+    font-size: 14px;
+    color: #aaa;
+    margin-bottom: 20px;
+  }
+
+  .listen-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1d4ed8;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    padding: 8px 18px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .listen-btn:hover { background: #dbeafe; border-color: #1d4ed8; }
+  .listen-btn:disabled { opacity: 0.5; cursor: default; }
+
+  /* ─── MIC CARD ─── */
+  .mic-card {
+    background: #fff;
+    border-radius: 20px;
+    border: 1px solid #ede8e3;
+    padding: 28px 24px;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+
+  .mic-instruction {
+    font-size: 13px;
+    color: #aaa;
+    margin-bottom: 22px;
+  }
+
+  .mic-outer {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+
+  .mic-ring {
+    position: absolute;
+    border-radius: 50%;
+    border: 1.5px solid #1d4ed8;
+    opacity: 0;
+    animation: pulse-ring 1.8s ease-out infinite;
+  }
+
+  .mic-ring--1 { width: 80px; height: 80px; animation-delay: 0s; }
+  .mic-ring--2 { width: 100px; height: 100px; animation-delay: 0.4s; }
+  .mic-ring--3 { width: 120px; height: 120px; animation-delay: 0.8s; }
+
+  @keyframes pulse-ring {
+    0% { opacity: 0.7; transform: scale(0.85); }
+    100% { opacity: 0; transform: scale(1); }
+  }
+
+  .mic-btn {
+    position: relative;
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e3a5f, #1d4ed8, #3b82f6);
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    z-index: 1;
+    box-shadow: 0 4px 18px rgba(29,78,216,0.4);
+  }
+
+  .mic-btn:hover { transform: scale(1.07); box-shadow: 0 6px 24px rgba(29,78,216,0.5); }
+  .mic-btn--listening { background: linear-gradient(135deg, #1e3a5f, #1e40af) !important; }
+  .mic-btn--done { background: #ddd !important; cursor: default; transform: none !important; box-shadow: none !important; }
+
+  .waveform {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 4px;
+    height: 28px;
+    margin-top: 12px;
+  }
+
+  .wave-bar {
+    width: 4px;
+    background: linear-gradient(to top, #1d4ed8, #93c5fd);
+    border-radius: 4px;
+    height: 8px;
+    animation: wave-anim 0.6s ease-in-out infinite alternate;
+  }
+
+  @keyframes wave-anim {
+    from { height: 6px; }
+    to { height: 22px; }
+  }
+
+  .feedback-box {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 16px;
+    padding: 11px 16px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid;
+  }
+
+  .feedback-box--correct { background: #edf7f0; color: #2d8a50; border-color: #b6dfc5; }
+  .feedback-box--wrong { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+  .feedback-box--error { background: #f8f8f8; color: #888; border-color: #e0e0e0; }
+
+  .feedback-score {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 700;
+    background: rgba(45,138,80,0.12);
+    color: #2d8a50;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  .feedback-score--wrong {
+    background: rgba(185,28,28,0.1);
+    color: #b91c1c;
+  }
+
+  .feedback-xp {
+    margin-left: 8px;
+    color: #1d4ed8;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .xp-pill-wrap { text-align: center; }
+
+  .xp-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 16px;
+    border-radius: 20px;
+  }
+
+  .xp-dot {
+    width: 7px; height: 7px;
+    background: #1d4ed8;
+    border-radius: 50%;
+    animation: xp-pulse 1.2s ease-in-out infinite;
+    display: inline-block;
+  }
+
+  @keyframes xp-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.65); }
+  }
+
+  /* ─── RESULTS ─── */
+  .results-wrap { max-width: 420px; width: 100%; }
+
+  .results-card {
+    background: #fff;
+    border-radius: 24px;
+    border: 1px solid #ede8e3;
+    overflow: hidden;
+  }
+
+  .results-hero {
+    background: linear-gradient(135deg, #1e3a5f, #1d4ed8, #3b82f6);
+    padding: 36px 28px;
+    text-align: center;
+  }
+
+  .results-hero--gray { background: linear-gradient(135deg, #666, #999); }
+
+  .results-trophy {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 14px;
+  }
+
+  .results-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 24px;
+    font-weight: 400;
+    color: #fff;
+    margin: 0 0 5px;
+  }
+
+  .results-subtitle {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    margin: 0;
+  }
+
+  .results-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    padding: 22px 20px;
+    border-bottom: 1px solid #f0ece6;
+    gap: 4px;
+  }
+
+  .results-stat { text-align: center; }
+
+  .results-stat-num {
+    font-size: 24px;
+    font-weight: 600;
+    color: #1d4ed8;
+    line-height: 1;
+  }
+
+  .results-stat-label {
+    font-size: 11px;
+    color: #bbb;
+    margin-top: 4px;
+  }
+
+  .results-actions {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn-primary {
+    font-family: 'DM Sans', sans-serif;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    background: linear-gradient(135deg, #1e3a5f, #1d4ed8, #3b82f6);
+    color: #fff;
+    border: none;
+    padding: 13px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    width: 100%;
+    box-shadow: 0 4px 14px rgba(29,78,216,0.3);
+  }
+
+  .skip-btn {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    color: #6b7280;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: color 0.15s;
+  }
+  .skip-btn:hover { color: #1d4ed8; }
+
+  .btn-primary:hover { opacity: 0.9; }
+
+  .btn-secondary {
+    font-family: 'DM Sans', sans-serif;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    background: #f5f3ef;
+    color: #555;
+    border: none;
+    padding: 13px 20px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+    width: 100%;
+  }
+
+  .btn-secondary:hover { background: #ede9e3; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 640px) {
+    .pp-root { padding: 16px; }
+    .pp-hero { flex-direction: column; padding: 20px; }
+    .pp-hero-title { font-size: 28px; }
+    .pp-hero-stats { width: 100%; }
+    .pp-stat-card { flex: 1; min-width: 0; }
+    .word-main { font-size: 38px; }
+  }
+`
 
 export default PronunciationPractice

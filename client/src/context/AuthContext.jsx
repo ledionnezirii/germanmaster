@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
-    const interval = setInterval(checkSessionValidity, 30000)
+    const interval = setInterval(checkSessionValidity, 300000) // every 5 min instead of every 30s
 
     return () => clearInterval(interval)
   }, [user, setUser])
@@ -104,12 +104,16 @@ export const AuthProvider = ({ children }) => {
             firstName: userDataFromResponse.firstName || userDataFromResponse.emri,
             lastName: userDataFromResponse.lastName || userDataFromResponse.mbiemri,
             email: userDataFromResponse.email,
-            role: userDataFromResponse.role, 
+            role: userDataFromResponse.role,
             profilePicture: userDataFromResponse.profilePicture,
             xp: userDataFromResponse.xp,
             level: userDataFromResponse.level,
+            languageProgress: userDataFromResponse.languageProgress || [],
+            learnedWordsCounts: userDataFromResponse.learnedWordsCounts || {},
+            dictionaryUnlockedCounts: userDataFromResponse.dictionaryUnlockedCounts || {},
             studyHours: userDataFromResponse.studyHours,
             completedTests: userDataFromResponse.completedTests,
+            completedTranslations: userDataFromResponse.passedTranslatedTexts?.length || 0,
             achievements: userDataFromResponse.achievements,
             streakCount: userDataFromResponse.streakCount,
             avatarStyle: userDataFromResponse.avatarStyle || "adventurer",
@@ -159,8 +163,12 @@ export const AuthProvider = ({ children }) => {
         profilePicture: userData.profilePicture,
         xp: userData.xp,
         level: userData.level,
+        languageProgress: userData.languageProgress || [],
+        learnedWordsCounts: userData.learnedWordsCounts || {},
+        dictionaryUnlockedCounts: userData.dictionaryUnlockedCounts || {},
         studyHours: userData.studyHours,
         completedTests: userData.completedTests,
+        completedTranslations: userData.passedTranslatedTexts?.length || 0,
         achievements: userData.achievements,
         streakCount: userData.streakCount,
         avatarStyle: userData.avatarStyle || "adventurer",

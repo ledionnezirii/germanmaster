@@ -42,6 +42,7 @@ import {
   Camera,
   ChevronDownSquare,
   Gift,
+  Mic2,
 } from "lucide-react"
 import { ChatBubbleLeftIcon, MicrophoneIcon } from "@heroicons/react/24/outline"
 
@@ -76,25 +77,36 @@ const Sidebar = () => {
   // Add "en" or "fr" to an item when you have content for it
   const menuItems = [
     { icon: Home, label: "Kryefaqja", path: "/", requireAuth: false, languages: ["de", "en", "fr"] },
-    { icon: Languages, label: "Përkthe", path: "/translate", languages: ["de"] },
-    { icon: Headphones, label: "Dëgjo", path: "/listen", languages: ["de"] }, // 👈 all languages
-    { icon: BookUser, label: "Fjalori", path: "/dictionary", languages: ["de"] },
-    { icon: InfinityIcon, label: "Baza Gjuhësore", path: "/category", languages: ["de"] },
-    { icon: Star, label: "Strukturat e gjuhes", path: "/structure", languages: ["de"] },
-    { icon: BrickWallIcon, label: "Formo Fjale", path: "/createword", languages: ["de"] },
+    { icon: Languages, label: "Përkthe", path: "/translate", languages: ["de","en"] },
+    { icon: Headphones, label: "Dëgjo", path: "/listen", languages: ["de","en","fr"] }, // 👈 all languages
+    { icon: BookUser, label: "Fjalori", path: "/dictionary", languages: ["de","en","fr"] },
+    { icon: InfinityIcon, label: "Baza Gjuhësore", path: "/category", languages: ["de", "en", "fr"] },
+    { icon: UserRoundPen, label: "Formo Fjali", path: "/sentences", languages: ["de", "en", "fr", "tr", "it"] },
+
+    { icon: ChevronDownSquare, label: "Zgjedh fjalen duhur", path: "/wordaudio", languages: ["de", "en", "fr"] },
+
+    { icon: BrickWallIcon, label: "Formo Fjale", path: "/createword", languages: ["de","en"] },
+
+    { icon: Mic2, label: "Shqipto", path: "/pronunciation", requireAuth: true, languages: ["de", "en", "fr"] },
+
+    { icon: NotebookPenIcon, label: "Fraza te ndryshme", path: "/phrases", languages: ["de","en","fr"] },
+
+
+
+    //{ icon: Star, label: "Strukturat e gjuhes", path: "/structure", languages: ["de"] },
     { icon: File, label: "Pergatitu per provime", path: "/exam", languages: ["de"] },
     { icon: UniversityIcon, label: "Mëso Gramatiken", path: "/grammar", languages: ["de"] },
-    { icon: ChatBubbleLeftIcon, label: "worti", path: "/question", languages: ["de", "en", "fr"] },
+    { icon: ChatBubbleLeftIcon, label: "worti", path: "/question", languages: ["de", "en"] },
     { icon: User, label: "Admin Panel", path: "/admin", requireAuth: true, adminOnly: true, languages: ["de", "en", "fr"] },
-    { icon: FilmIcon, label: "Video te ndryshme", path: "/videos", languages: ["de"] },
-    { icon: ChevronDownSquare, label: "Zgjedh fjalen duhur", path: "/wordaudio", languages: ["de"] },
-    { icon: LightbulbIcon, label: "Kuizet", path: "/quizes", languages: ["de"] },
-    { icon: NotebookPenIcon, label: "Fraza te ndryshme", path: "/phrases", languages: ["de"] },
-{ icon: UserRoundPen, label: "Formo Fjali", path: "/sentences", languages: ["de", "en", "fr"] },    
-{ icon: BookHeartIcon, label: "Fjalori Personal", path: "/words", languages: ["de"] },
-    { icon: TestTube2Icon, label: "Testet e Nivelit", path: "/tests", languages: ["de"] },
-    { icon: Calendar, label: "PlanProgrami", path: "/plan", requireAuth: true, languages: ["de"] },
+    //{ icon: FilmIcon, label: "Video te ndryshme", path: "/videos", languages: ["de"] },
+    { icon: LightbulbIcon, label: "Kuizet", path: "/quizes", languages: ["de","en"] },
+    { icon: BookHeartIcon, label: "Fjalori Personal", path: "/words", languages: ["de","en"] },
+    { icon: TestTube2Icon, label: "Testet e Nivelit", path: "/tests", languages: ["de","en"] },
+   // { icon: Calendar, label: "PlanProgrami", path: "/plan", requireAuth: true, languages: ["de"] },
     { icon: BarChart, label: "Renditja", path: "/leaderboard", requireAuth: false, languages: ["de", "en", "fr"] },
+    //{ icon: UniversityIcon, label: "Akademia", path: "/academies", requireAuth: true, languages: ["de", "en", "fr"] },
+
+
     { icon: User, label: "Llogaria", path: "/account", requireAuth: true, languages: ["de", "en", "fr"] },
   ]
 
@@ -213,19 +225,17 @@ const Sidebar = () => {
                   <li key={item.label}>
                     <button
                       onClick={() => toggleMenu(item.label)}
-                      className={`w-full relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 overflow-hidden ${
-                        isActive || isExpanded ? "text-white" : "text-slate-300 hover:bg-white/5 hover:text-white"
-                      } ${isCollapsed ? "justify-center" : "justify-between"}`}
+                      className={`w-full relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 overflow-hidden ${isActive || isExpanded ? "text-white" : "text-slate-300 hover:bg-white/5 hover:text-white"
+                        } ${isCollapsed ? "justify-center" : "justify-between"}`}
                       title={isCollapsed ? item.label : ""}
                     >
                       <div className="flex items-center">
                         <div className={`relative flex items-center ${isCollapsed ? "" : "mr-3"}`}>
                           <Icon
-                            className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${
-                              isActive
+                            className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${isActive
                                 ? "text-emerald-400"
                                 : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
-                            }`}
+                              }`}
                           />
                           {isActive && <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-md"></div>}
                         </div>
@@ -239,9 +249,8 @@ const Sidebar = () => {
                     </button>
 
                     <div
-                      className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                        isExpanded && !isCollapsed ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-                      }`}
+                      className={`overflow-hidden transition-all duration-300 ease-in-out ${isExpanded && !isCollapsed ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+                        }`}
                     >
                       <ul className="mt-1 space-y-1 pl-4 relative">
                         <div className="absolute left-5 top-0 bottom-0 w-px bg-white/10"></div>
@@ -253,16 +262,14 @@ const Sidebar = () => {
                               <Link
                                 to={subItem.path}
                                 onClick={handleLinkClick}
-                                className={`relative group flex items-center rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 ${
-                                  isSubActive
+                                className={`relative group flex items-center rounded-lg px-3 py-2 text-xs font-medium transition-all duration-200 ${isSubActive
                                     ? "text-emerald-400 bg-emerald-500/10"
                                     : "text-slate-400 hover:text-slate-200 hover:bg-white/5"
-                                }`}
+                                  }`}
                               >
                                 <SubIcon
-                                  className={`h-4 w-4 mr-3 ${
-                                    isSubActive ? "text-emerald-400" : "text-slate-500 group-hover:text-emerald-400"
-                                  }`}
+                                  className={`h-4 w-4 mr-3 ${isSubActive ? "text-emerald-400" : "text-slate-500 group-hover:text-emerald-400"
+                                    }`}
                                 />
                                 <span className="truncate">{subItem.label}</span>
                               </Link>
@@ -280,11 +287,10 @@ const Sidebar = () => {
                   <Link
                     to={item.path}
                     onClick={handleLinkClick}
-                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 overflow-hidden ${
-                      isActive
+                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-200 overflow-hidden ${isActive
                         ? "bg-gradient-to-r from-emerald-500/15 to-teal-500/15 text-white shadow-lg shadow-emerald-500/10"
                         : "text-slate-300 hover:bg-white/5 hover:text-white"
-                    } ${isCollapsed ? "justify-center" : "justify-start"}`}
+                      } ${isCollapsed ? "justify-center" : "justify-start"}`}
                     title={isCollapsed ? item.label : ""}
                     aria-current={isActive ? "page" : undefined}
                   >
@@ -293,11 +299,10 @@ const Sidebar = () => {
                     )}
                     <div className={`relative flex items-center ${isCollapsed ? "" : "mr-3"}`}>
                       <Icon
-                        className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${
-                          isActive
+                        className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${isActive
                             ? "text-emerald-400"
                             : "text-slate-400 group-hover:text-emerald-400 group-hover:scale-110"
-                        }`}
+                          }`}
                       />
                       {isActive && <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-md"></div>}
                     </div>
@@ -322,20 +327,18 @@ const Sidebar = () => {
                   <Link
                     to={item.path}
                     onClick={item.action || handleLinkClick}
-                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-200 overflow-hidden ${
-                      isActive
+                    className={`relative group flex items-center rounded-xl px-3 py-2.5 text-sm font-bold transition-all duration-200 overflow-hidden ${isActive
                         ? "bg-gradient-to-r from-amber-500/15 to-orange-500/15 text-white shadow-lg shadow-amber-500/10"
                         : "bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-300 hover:from-amber-500/20 hover:to-orange-500/20 hover:text-amber-200 border border-amber-500/20 hover:border-amber-500/30"
-                    } ${isCollapsed ? "justify-center" : "justify-start"}`}
+                      } ${isCollapsed ? "justify-center" : "justify-start"}`}
                     title={isCollapsed ? item.label : ""}
                     aria-current={isActive ? "page" : undefined}
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-orange-500/5 to-amber-500/5"></div>
                     <div className={`relative flex items-center ${isCollapsed ? "" : "mr-3"}`}>
                       <Icon
-                        className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${
-                          isActive ? "text-amber-400" : "group-hover:scale-110"
-                        }`}
+                        className={`h-5 w-5 flex-shrink-0 transition-all duration-200 ${isActive ? "text-amber-400" : "group-hover:scale-110"
+                          }`}
                       />
                       {isActive && <div className="absolute inset-0 bg-amber-400/20 rounded-full blur-md"></div>}
                     </div>
