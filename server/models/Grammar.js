@@ -113,6 +113,11 @@ const grammarSchema = new mongoose.Schema(
         trim: true,
       },
     ],
+    language: {
+      type: String,
+      enum: ["de", "en", "fr", "tr", "it"],
+      default: "de",
+    },
     isActive: {
       type: Boolean,
       default: true,

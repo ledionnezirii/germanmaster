@@ -222,15 +222,6 @@ const checkAnswer = asyncHandler(async (req, res) => {
   const PASSING_THRESHOLD = 65; // Reduced from 75 to 65
   const isCorrect = score >= PASSING_THRESHOLD;
 
-  console.log("User answer (normalized):", normalizeText(userAnswer));
-  console.log("Correct answer (normalized):", normalizeText(test.correctText));
-  console.log(
-    "Final score (Enhanced Jaccard):",
-    score,
-    "Is correct:",
-    isCorrect,
-  );
-
   let xpAwarded = 0;
   if (isCorrect) {
     const existingCompletion = test.listenTestsPassed.find(
@@ -331,6 +322,26 @@ const markAsListened = asyncHandler(async (req, res) => {
   await test.save();
 
   res.json(new ApiResponse(200, null, "Test marked as listened"));
+});
+
+// @desc    Bulk create listening tests
+// @route   POST /api/listen/bulk
+// @access  Private (Admin)
+const bulkCreateTests = asyncHandler(async (req, res) => {
+  const { tests } = req.body;
+
+  if (!Array.isArray(tests) || tests.length === 0) {
+    throw new ApiError(400, "tests array is required");
+  }
+
+  const testsWithCreator = tests.map((t) => ({
+    ...t,
+    createdBy: req.user.id,
+  }));
+
+  const created = await Listen.insertMany(testsWithCreator);
+
+  res.status(201).json(new ApiResponse(201, created, `${created.length} listening tests created successfully`));
 });
 
 // @desc    Create new listening test
@@ -536,6 +547,7 @@ module.exports = {
   checkAnswer,
   markAsListened,
   createTest,
+  bulkCreateTests,
   updateTest,
   deleteTest,
   getUserProgress,

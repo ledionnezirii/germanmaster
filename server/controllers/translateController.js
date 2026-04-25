@@ -279,11 +279,12 @@ const getUserProgress = asyncHandler(async (req, res) => {
 // @route   POST /api/translate
 // @access  Private (Admin)
 const createText = asyncHandler(async (req, res) => {
-  const { title, level, text, questions, difficulty, estimatedTime, xpReward, tags } = req.body
+  const { title, level, language, text, questions, difficulty, estimatedTime, xpReward, tags } = req.body
 
   const newText = await Translate.create({
     title,
     level,
+    language,
     text,
     questions,
     difficulty,
@@ -330,6 +331,25 @@ const deleteText = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, null, "Text deleted successfully"))
 })
 
+const bulkCreateTexts = asyncHandler(async (req, res) => {
+  const items = req.body
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new ApiError(400, "Send an array of translation texts")
+  }
+
+  const inserted = []
+  const skipped = []
+
+  for (const item of items) {
+    const exists = await Translate.findOne({ title: item.title, language: item.language || "de" })
+    if (exists) { skipped.push(item.title); continue }
+    const newText = await Translate.create({ ...item, createdBy: req.user.id })
+    inserted.push(newText)
+  }
+
+  res.status(201).json(new ApiResponse(201, { inserted: inserted.length, skipped: skipped.length, skippedTitles: skipped, data: inserted }, `Created: ${inserted.length}, Skipped: ${skipped.length}`))
+})
+
 module.exports = {
   getAllTexts,
   getTextById,
@@ -337,6 +357,7 @@ module.exports = {
   getTextProgress,
   getUserProgress,
   createText,
+  bulkCreateTexts,
   updateText,
   deleteText,
 }

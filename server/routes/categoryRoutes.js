@@ -3,12 +3,14 @@ const {
   getAllCategories,
   getCategoryById,
   createCategory,
+  bulkCreateCategories,
   updateCategory,
   deleteCategory,
   addWordToCategory,
   removeWordFromCategory,
   finishCategory,
-  getFinishedCategories
+  getFinishedCategories,
+  getFinishedCategoriesWords,
 } = require("../controllers/categoryController")
 const  auth  = require("../middleware/auth")
 const isAdmin = require("../middleware/isAdmin")
@@ -22,10 +24,12 @@ router.get("/:id", getCategoryById)
 
 
 router.get("/user/finished", auth, getFinishedCategories)
+router.get("/user/finished-words", auth, getFinishedCategoriesWords)
 
 router.post("/:id/finish", auth, finishCategory)
 
 // Protected admin routes
+router.post("/bulk", auth, isAdmin, bulkCreateCategories)
 router.post("/", auth, isAdmin, validateCategory, createCategory)
 router.put("/:id", auth, isAdmin, updateCategory)
 router.delete("/:id", auth, isAdmin, deleteCategory)

@@ -265,20 +265,21 @@ await addUserXp(userId, xpGained)
   );
 });
 const getFinishedCategories = asyncHandler(async (req, res) => {
+  const { language } = req.query;
   const userId = req.user.id;
 
-  // Find the user and populate finished categories
+  const langMatch = language ? buildLanguageQuery(language) : {};
+
   const user = await User.findById(userId).populate({
     path: "categoryFinished",
-    select: "category description level icon color type",
-    match: { isActive: true },
+    select: "category description level icon color type language",
+    match: { isActive: true, ...langMatch },
   });
 
   if (!user) {
     throw new ApiError(404, "User not found");
   }
 
-  // Return array of category IDs for easy comparison
   const finishedCategoryIds = user.categoryFinished.map((cat) =>
     cat._id.toString()
   );
@@ -287,18 +288,78 @@ const getFinishedCategories = asyncHandler(async (req, res) => {
     new ApiResponse(200, {
       finishedCategories: user.categoryFinished,
       finishedCategoryIds: finishedCategoryIds,
+      isPaid: user.isPaid || false,
     })
   );
+});
+
+// @desc    Bulk create categories
+// @route   POST /api/categories/bulk
+// @access  Private (Admin)
+const bulkCreateCategories = asyncHandler(async (req, res) => {
+  const { categories } = req.body;
+
+  if (!Array.isArray(categories) || categories.length === 0) {
+    throw new ApiError(400, "categories array is required");
+  }
+
+  const results = { created: [], skipped: [], errors: [] };
+
+  for (const cat of categories) {
+    try {
+      const existing = await Category.findOne({
+        category: { $regex: new RegExp(`^${cat.category}$`, "i") },
+      });
+      if (existing) {
+        results.skipped.push(cat.category);
+        continue;
+      }
+      const created = await Category.create({ ...cat, createdBy: req.user.id });
+      results.created.push(created.category);
+    } catch (err) {
+      results.errors.push({ category: cat.category, error: err.message });
+    }
+  }
+
+  res.status(201).json(new ApiResponse(201, results, `Created: ${results.created.length}, Skipped: ${results.skipped.length}, Errors: ${results.errors.length}`));
+});
+
+const getFinishedCategoriesWords = asyncHandler(async (req, res) => {
+  const { language } = req.query;
+  const userId = req.user.id;
+
+  const user = await User.findById(userId).populate({
+    path: "categoryFinished",
+    select: "words language",
+    match: { isActive: true },
+  });
+
+  if (!user) throw new ApiError(404, "User not found");
+
+  let cats = user.categoryFinished || [];
+  if (language) {
+    const langQuery = buildLanguageQuery(language);
+    if (language === "de") {
+      cats = cats.filter(c => !c.language || c.language === "de");
+    } else {
+      cats = cats.filter(c => c.language === language);
+    }
+  }
+
+  const words = cats.flatMap(c => c.words || []);
+  res.json(new ApiResponse(200, { words }));
 });
 
 module.exports = {
   getAllCategories,
   getCategoryById,
   createCategory,
+  bulkCreateCategories,
   updateCategory,
   deleteCategory,
   addWordToCategory,
   removeWordFromCategory,
   finishCategory,
   getFinishedCategories,
+  getFinishedCategoriesWords,
 };

@@ -65,7 +65,8 @@ const adminRoutes = require("./routes/adminRoutes");
 const videoRoutes = require("./routes/videoRoutes");
 const storyRoutes = require("./routes/storyRoutes");
 const wordAudioRoutes = require("./routes/wordAudioRoutes");
-const giveawayRoutes = require("./routes/giveawayRoutes");
+const giveawayRoutes = require("./routes/giveawayRoutes")
+const pathRoutes = require("./routes/pathRoutes");
 
 const { errorHandler, notFound } = require("./middleware/errorMiddleware");
 const { requestLogger } = require("./middleware/loggerMiddleware");
@@ -345,7 +346,8 @@ app.use('/api/admin', adminRoutes);
 app.use("/api/videos", videoRoutes);
 app.use("/api/stories", storyRoutes);
 app.use("/api/wordaudio", wordAudioRoutes);
-app.use("/api/giveaways", giveawayRoutes);
+app.use("/api/giveaways", giveawayRoutes)
+app.use("/api/path", pathRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -440,8 +440,6 @@ const forgotPassword = asyncHandler(async (req, res) => {
   user.resetPasswordExpires = Date.now() + 60 * 60 * 1000 // 1 hour
   await user.save({ validateBeforeSave: false })
 
-  console.log("RESET TOKEN:", resetToken)
-
   // Send reset email with styled button and copyable link
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`
   const message = `

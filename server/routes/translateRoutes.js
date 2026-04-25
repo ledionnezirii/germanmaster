@@ -6,6 +6,7 @@ const {
   getTextProgress,
   getUserProgress,
   createText,
+  bulkCreateTexts,
   updateText,
   deleteText,
 } = require("../controllers/translateController")
@@ -24,6 +25,7 @@ router.post("/:id/submit", auth, submitAnswers)
 router.get("/:id/progress", auth, getTextProgress)
 
 // Protected admin routes
+router.post("/bulk", auth, isAdmin, bulkCreateTexts)
 router.post("/", auth, isAdmin, createText)
 router.put("/:id", auth, isAdmin, updateText)
 router.delete("/:id", auth, isAdmin, deleteText)

@@ -128,6 +128,47 @@ function calculateSimilarity(str1, str2) {
   return Math.max(rawScore, cleanScore);
 }
 
+exports.addWordsBulk = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ success: false, message: "Only admin can add packages" });
+    }
+
+    const packages = req.body;
+
+    if (!Array.isArray(packages) || packages.length === 0) {
+      return res.status(400).json({ success: false, message: "Body must be a non-empty array of packages" });
+    }
+
+    for (let i = 0; i < packages.length; i++) {
+      const { title, words } = packages[i];
+      if (!title || !Array.isArray(words) || words.length === 0) {
+        return res.status(400).json({ success: false, message: `Package at index ${i} is missing title or words` });
+      }
+    }
+
+    const docs = packages.map((p) => ({
+      title: p.title,
+      level: p.level || "A1",
+      language: p.language || "de",
+      isDefault: true,
+      words: p.words.map((w) => ({
+        word: w.word,
+        pronunciation: w.pronunciation,
+        translation: w.translation,
+        xp: w.xp || 5,
+        notes: w.notes || "",
+      })),
+    }));
+
+    const created = await PronunciationPackage.insertMany(docs);
+
+    res.status(201).json({ success: true, message: `${created.length} packages added`, data: created });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
 exports.checkPronunciation = async (req, res) => {
   try {
     const { packageId, wordIndex, spokenWord } = req.body;

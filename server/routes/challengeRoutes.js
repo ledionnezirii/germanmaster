@@ -1,5 +1,6 @@
 const express = require("express")
 const router = express.Router()
+const protect = require("../middleware/auth")
 const Challenge = require("../models/Challenge")
 const {
   getRandomQuestions,
@@ -168,7 +169,7 @@ router.get("/difficulties", (req, res) => {
 })
 
 // GET /api/challenge/challengeHistory/:username
-router.get("/challengeHistory/:username", async (req, res) => {
+router.get("/challengeHistory/:username", protect, async (req, res) => {
   try {
     const { username } = req.params
     const limit = Number.parseInt(req.query.limit) || 10

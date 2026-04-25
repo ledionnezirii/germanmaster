@@ -4,6 +4,7 @@ const {
   getAllLessons,
   getLessonById,
   createLesson,
+  bulkCreateLessons,
   updateLesson,
   deleteLesson,
   submitLesson,
@@ -29,6 +30,7 @@ router.get("/:id", protect, getLessonById);
 router.post("/submit", protect, submitLesson);
 
 // Admin routes
+router.post("/admin/bulk", protect, adminOnly, bulkCreateLessons);
 router.post("/admin", protect, adminOnly, createLesson);
 router.put("/:id", protect, adminOnly, updateLesson);
 router.delete("/:id", protect, adminOnly, deleteLesson);

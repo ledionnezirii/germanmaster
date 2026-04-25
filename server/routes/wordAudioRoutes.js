@@ -6,6 +6,7 @@ const {
   getAllSets,
   getSetById,
   submitQuiz,
+  submitMixedQuiz,
   getFinishedSets,
   createSet,
   createBulkSets,
@@ -17,6 +18,7 @@ router.get("/", protect, checkSubscription, getAllSets);
 router.get("/finished", protect, checkSubscription, getFinishedSets);
 router.get("/:id", protect, checkSubscription, getSetById);
 router.post("/submit", protect, checkSubscription, submitQuiz);
+router.post("/submit-mixed", protect, submitMixedQuiz);
 
 // Admin
 router.post("/admin", protect, createSet);

@@ -46,7 +46,7 @@ const getAllQuizes = async (req, res) => {
         filter.language = req.query.language
       }
     }
-    const quizzes = await Quiz.find(filter).sort({ createdAt: 1 })
+    const quizzes = await Quiz.find(filter).sort({ createdAt: -1 })
     res.status(200).json({ success: true, data: quizzes })
   } catch (error) {
     res.status(500).json({ success: false, error: "Server Error" })

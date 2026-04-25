@@ -66,7 +66,7 @@ const resetDailyTopicsIfNewDay = (user) => {
 // @route   GET /api/grammar
 // @access  Public
 const getAllTopics = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 60, level, difficulty } = req.query
+  const { page = 1, limit = 60, level, difficulty, language } = req.query
 
   const query = { isActive: true }
 
@@ -76,6 +76,14 @@ const getAllTopics = asyncHandler(async (req, res) => {
 
   if (difficulty) {
     query.difficulty = Number.parseInt(difficulty)
+  }
+
+  if (language) {
+    if (language === "de") {
+      query.$or = [{ language: "de" }, { language: { $exists: false } }, { language: null }]
+    } else {
+      query.language = language
+    }
   }
 
   const topics = await Grammar.find(query)
@@ -103,18 +111,28 @@ const getAllTopics = asyncHandler(async (req, res) => {
 // @access  Public
 const getTopicsByLevel = asyncHandler(async (req, res) => {
   const { level } = req.params
-  const { page = 1, limit = 40 } = req.query
+  const { page = 1, limit = 40, language } = req.query
 
   if (!["A1", "A2", "B1", "B2", "C1", "C2"].includes(level)) {
     throw new ApiError(400, "Invalid level")
   }
 
-  const topics = await Grammar.find({ level, isActive: true })
+  const query = { level, isActive: true }
+
+  if (language) {
+    if (language === "de") {
+      query.$or = [{ language: "de" }, { language: { $exists: false } }, { language: null }]
+    } else {
+      query.language = language
+    }
+  }
+
+  const topics = await Grammar.find(query)
     .sort({ difficulty: 1, createdAt: -1 })
     .limit(limit * 1)
     .skip((page - 1) * limit)
 
-  const total = await Grammar.countDocuments({ level, isActive: true })
+  const total = await Grammar.countDocuments(query)
 
   res.json(
     new ApiResponse(200, {
@@ -174,7 +192,7 @@ const getTopicById = asyncHandler(async (req, res) => {
 // @route   POST /api/grammar
 // @access  Private (Admin)
 const createTopic = asyncHandler(async (req, res) => {
-  const { name, description, moreInfo, level, content, rules, examples, exercises, difficulty, tags, numbers } =
+  const { name, description, moreInfo, level, content, rules, examples, exercises, difficulty, tags, numbers, language } =
     req.body
 
   const topic = await Grammar.create({
@@ -189,6 +207,7 @@ const createTopic = asyncHandler(async (req, res) => {
     numbers: numbers || [],
     difficulty,
     tags: tags || [],
+    language: language || "de",
     createdBy: req.user.id,
   })
 
@@ -218,6 +237,7 @@ const updateTopic = asyncHandler(async (req, res) => {
     "difficulty",
     "tags",
     "isActive",
+    "language",
   ]
 
   const updates = {}
@@ -355,11 +375,43 @@ const getDailyLimitStatus = asyncHandler(async (req, res) => {
   )
 })
 
+// @desc    Bulk create grammar topics
+// @route   POST /api/grammar/bulk
+// @access  Private (Admin)
+const bulkCreateTopics = asyncHandler(async (req, res) => {
+  const topics = req.body
+
+  if (!Array.isArray(topics) || topics.length === 0) {
+    throw new ApiError(400, "Request body must be a non-empty array of grammar topics")
+  }
+
+  const docsToInsert = topics.map((t) => ({
+    name: t.name,
+    description: t.description,
+    moreInfo: t.moreInfo || "",
+    level: t.level,
+    content: t.content,
+    rules: t.rules || [],
+    examples: t.examples || [],
+    exercises: t.exercises || [],
+    numbers: t.numbers || [],
+    difficulty: t.difficulty,
+    tags: t.tags || [],
+    language: t.language || "de",
+    createdBy: req.user.id,
+  }))
+
+  const created = await Grammar.insertMany(docsToInsert, { ordered: false })
+
+  res.status(201).json(new ApiResponse(201, { count: created.length, topics: created }, "Grammar topics created successfully"))
+})
+
 module.exports = {
   getAllTopics,
   getTopicsByLevel,
   getTopicById,
   createTopic,
+  bulkCreateTopics,
   updateTopic,
   deleteTopic,
   markTopicAsFinished,

@@ -6,6 +6,7 @@ const {
   checkAnswer,
   markAsListened,
   createTest,
+  bulkCreateTests,
   updateTest,
   deleteTest,
   getUserProgress,
@@ -26,6 +27,7 @@ router.post("/:id/mark-listened", auth, markAsListened)
 router.get("/user/progress", auth, getUserProgress)
 
 // Protected admin routes
+router.post("/bulk", auth, isAdmin, bulkCreateTests)
 router.post("/", auth, isAdmin, createTest)
 router.put("/:id", auth, isAdmin, updateTest)
 router.delete("/:id", auth, isAdmin, deleteTest)

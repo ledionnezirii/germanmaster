@@ -4,6 +4,7 @@ const multer = require("multer")
 const {
   getWords,
   addWord,
+  addWordsBulk,
   checkPronunciation,
   getUserCompletedPackages,
   transcribeAudio,
@@ -15,6 +16,7 @@ const upload = multer({ storage: multer.memoryStorage() })
 
 router.get("/", protect, getWords)
 router.post("/", protect, isAdmin, addWord)
+router.post("/bulk", protect, isAdmin, addWordsBulk)
 router.post("/check", protect, checkPronunciation)
 router.get("/completed-pronunciation-packages", protect, getUserCompletedPackages)
 router.post("/transcribe", protect, upload.single("audio"), transcribeAudio)

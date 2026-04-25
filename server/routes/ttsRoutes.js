@@ -41,4 +41,7 @@ router.post('/wordaudio/:setId/:wordIndex', protect, ttsController.getWordAudioA
 router.post('/wordaudio/pre-generate', protect, ttsController.preGenerateWordAudioAudio);
 
 
+// Path exercise audio
+router.post('/path/:exerciseId', protect, ttsController.getPathAudio);
+
 module.exports = router;

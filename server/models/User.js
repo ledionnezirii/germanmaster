@@ -21,9 +21,12 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters"],
       select: false,
+    },
+    googleId: {
+      type: String,
+      default: null,
     },
     role: {
       type: String,
@@ -413,6 +416,34 @@ learningActivity: [
             type: Date,
           },
         },
+      },
+    ],
+    pathProgress: [
+      {
+        pathId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Path",
+        },
+        language: {
+          type: String,
+          enum: ["de", "en", "fr", "tr", "it"],
+          default: "de",
+        },
+        level: {
+          type: String,
+          enum: ["A1", "A2", "B1", "B2", "C1", "C2"],
+        },
+        completedRounds: [
+          {
+            roundIndex: { type: Number },
+            completedAt: { type: Date, default: Date.now },
+            xpAwarded: { type: Number, default: 0 },
+            score: { type: Number, default: 0 },
+          },
+        ],
+        currentRoundIndex: { type: Number, default: 0 },
+        startedAt: { type: Date, default: Date.now },
+        lastActivityAt: { type: Date, default: Date.now },
       },
     ],
   },

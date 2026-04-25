@@ -4,6 +4,7 @@ const {
   getTopicsByLevel,
   getTopicById,
   createTopic,
+  bulkCreateTopics,
   updateTopic,
   deleteTopic,
   markTopicAsFinished,
@@ -26,6 +27,7 @@ router.get("/:id", auth, getTopicById)
 router.post("/:id/finish", auth, markTopicAsFinished)
 
 // Protected admin routes
+router.post("/bulk", auth, isAdmin, bulkCreateTopics)
 router.post("/", auth, isAdmin, createTopic)
 router.put("/:id", auth, isAdmin, updateTopic)
 router.delete("/:id", auth, isAdmin, deleteTopic)

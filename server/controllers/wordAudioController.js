@@ -104,8 +104,18 @@ exports.submitQuiz = async (req, res) => {
 // Get finished sets for current user
 exports.getFinishedSets = async (req, res) => {
   try {
+    const { language } = req.query;
     const user = await User.findById(req.user._id).select("finishedWordAudio isPaid");
-    const finishedIds = user.finishedWordAudio || [];
+    const allFinishedIds = user.finishedWordAudio || [];
+
+    let finishedIds = allFinishedIds;
+    if (language) {
+      const langQuery = buildLanguageQuery(language);
+      const setsInLang = await WordAudioSet.find({ _id: { $in: allFinishedIds }, ...langQuery }).select("_id");
+      const langIdSet = new Set(setsInLang.map(s => s._id.toString()));
+      finishedIds = allFinishedIds.filter(id => langIdSet.has(id.toString()));
+    }
+
     res.json({
       success: true,
       data: {
@@ -115,6 +125,24 @@ exports.getFinishedSets = async (req, res) => {
         freeLimit: FREE_WORD_AUDIO_LIMIT,
       },
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Submit mixed quiz — always awards 10 XP
+exports.submitMixedQuiz = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    const xpAwarded = 10;
+    user.xp = (user.xp || 0) + xpAwarded;
+    user.weeklyXp = (user.weeklyXp || 0) + xpAwarded;
+    user.monthlyXp = (user.monthlyXp || 0) + xpAwarded;
+    await user.save();
+
+    res.json({ success: true, data: { xpAwarded } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

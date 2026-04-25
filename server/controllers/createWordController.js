@@ -53,6 +53,27 @@ exports.createLesson = async (req, res) => {
   }
 };
 
+// Bulk create lessons (Admin)
+exports.bulkCreateLessons = async (req, res) => {
+  try {
+    const items = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, message: "Send an array of lessons" });
+    }
+    const inserted = [];
+    const skipped = [];
+    for (const item of items) {
+      const exists = await CreateWord.findOne({ title: item.title, language: item.language || "de" });
+      if (exists) { skipped.push(item.title); continue; }
+      const lesson = await CreateWord.create(item);
+      inserted.push(lesson);
+    }
+    res.status(201).json({ success: true, inserted: inserted.length, skipped: skipped.length, skippedTitles: skipped, data: inserted });
+  } catch (error) {
+    res.status(400).json({ success: false, message: error.message });
+  }
+};
+
 // Update lesson (Admin)
 exports.updateLesson = async (req, res) => {
   try {
@@ -174,9 +195,11 @@ exports.getFinishedLessons = async (req, res) => {
       user.role === "admin";
     res.status(200).json({
       success: true,
-      data: user.finishedCreateWord,
-      isPaid: hasActiveSubscription,
-      freeLimit: FREE_CREATEWORD_LIMIT,
+      data: {
+        lessons: user.finishedCreateWord,
+        isPaid: hasActiveSubscription,
+        freeLimit: FREE_CREATEWORD_LIMIT,
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

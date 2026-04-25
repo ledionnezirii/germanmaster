@@ -2,7 +2,7 @@ const axios = require("axios")
 const { Storage } = require("@google-cloud/storage")
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY
-const ELEVENLABS_VOICE_ID = "Jvf6TAXwMUVTSR20U0f9"
+const ELEVENLABS_VOICE_ID = "ghgFyr7gmpr57xyTgX9q"
 
 let storage;
 try {
@@ -297,6 +297,36 @@ exports.preGenerateAudio = async (req, res) => {
   } catch (error) {
     console.error("[TTS] Pre-generate error:", error)
     return res.status(500).json({ error: "Failed to pre-generate audio" })
+  }
+}
+
+exports.getPathAudio = async (req, res) => {
+  try {
+    const { exerciseId } = req.params
+    const { text, level } = req.body
+
+    if (!exerciseId) {
+      return res.status(400).json({ error: "Exercise ID is required" })
+    }
+
+    const type = "path"
+    const filePath = getAudioFilePath(exerciseId, level, type)
+
+    if (await audioExists(exerciseId, level, type)) {
+      const url = await getSignedUrl(filePath)
+      return res.json({ url })
+    }
+
+    if (!text) {
+      return res.status(404).json({ error: "Audio not found and no text provided to generate" })
+    }
+
+    await generateAudio(text, exerciseId, level, type)
+    const url = await getSignedUrl(filePath)
+    return res.json({ url })
+  } catch (error) {
+    console.error("[TTS] Path audio controller error:", error)
+    return res.status(500).json({ error: "Failed to get/generate path audio" })
   }
 }
 
