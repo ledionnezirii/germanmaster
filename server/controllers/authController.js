@@ -6,9 +6,7 @@ const { ApiResponse } = require("../utils/ApiResponse")
 const { asyncHandler } = require("../utils/asyncHandler")
 const crypto = require("crypto")
 const sendEmail = require("../utils/sendEmail")
-const { OAuth2Client } = require("google-auth-library")
-
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+const https = require("https")
 
 
 // Add this helper function at the top of authController
@@ -528,16 +526,26 @@ const verifyEmail = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, {}, "Email-i u verifikua me sukses"))
 })
 
-const googleAuth = asyncHandler(async (req, res) => {
-  const { credential } = req.body
-  if (!credential) throw new ApiError(400, "Google credential is required")
-
-  const ticket = await googleClient.verifyIdToken({
-    idToken: credential,
-    audience: process.env.GOOGLE_CLIENT_ID,
+const fetchGoogleUserInfo = (access_token) =>
+  new Promise((resolve, reject) => {
+    const options = {
+      hostname: "www.googleapis.com",
+      path: "/oauth2/v3/userinfo",
+      headers: { Authorization: `Bearer ${access_token}` },
+    }
+    https.get(options, (res) => {
+      let data = ""
+      res.on("data", (chunk) => (data += chunk))
+      res.on("end", () => resolve(JSON.parse(data)))
+    }).on("error", reject)
   })
-  const payload = ticket.getPayload()
-  const { sub: googleId, email, given_name, family_name } = payload
+
+const googleAuth = asyncHandler(async (req, res) => {
+  const { access_token } = req.body
+  if (!access_token) throw new ApiError(400, "Google access token is required")
+
+  const { sub: googleId, email, given_name, family_name, error } = await fetchGoogleUserInfo(access_token)
+  if (error || !googleId) throw new ApiError(401, "Invalid Google token")
 
   let user = await User.findOne({ $or: [{ googleId }, { email }] })
 
@@ -558,20 +566,44 @@ const googleAuth = asyncHandler(async (req, res) => {
     })
   }
 
-  const token = generateToken(user._id)
-  res.cookie("token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+  const token = generateToken(user._id, user.emri)
+
+  const deviceType = detectDeviceType(req.headers["user-agent"])
+  const deviceInfo = extractDeviceInfo(req)
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+
+  await Session.create({
+    userId: user._id,
+    token,
+    deviceType,
+    deviceInfo,
+    expiresAt,
+    isActive: true,
   })
 
+  const subscriptionStatus = calculateSubscriptionStatus(user)
+
   return res.status(200).json(new ApiResponse(200, {
-    _id: user._id,
-    email: user.email,
-    firstName: user.emri,
-    lastName: user.mbiemri,
-    role: user.role,
+    token,
+    user: {
+      id: user._id,
+      firstName: user.emri,
+      lastName: user.mbiemri,
+      emri: user.emri,
+      mbiemri: user.mbiemri,
+      email: user.email,
+      role: user.role,
+      xp: user.xp,
+      level: user.level,
+      avatarStyle: user.avatarStyle || "adventurer",
+      streakCount: user.streakCount || 0,
+      isPaid: user.isPaid,
+      subscriptionType: user.subscriptionType,
+      subscriptionExpiresAt: user.subscriptionExpiresAt,
+      subscriptionCancelled: user.subscriptionCancelled || false,
+      isVerified: user.isVerified,
+      subscription: subscriptionStatus,
+    },
   }, "Google login successful"))
 })
 
