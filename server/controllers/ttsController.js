@@ -2,7 +2,7 @@ const axios = require("axios")
 const { Storage } = require("@google-cloud/storage")
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY
-const ELEVENLABS_VOICE_ID = "ghgFyr7gmpr57xyTgX9q"
+const ELEVENLABS_VOICE_ID = "vxO9F6g9yqYJ4RsWvMbc"
 
 let storage;
 try {
@@ -41,13 +41,8 @@ const getAudioFilePath = (id, level, type = "listenTexts") => {
 const audioExists = async (id, level, type = "listenTexts") => {
   const filePath = getAudioFilePath(id, level, type)
   const file = bucket.file(filePath)
-  try {
-    const [exists] = await file.exists()
-    return exists
-  } catch (error) {
-    console.error("[TTS] Error checking file existence:", error)
-    return false
-  }
+  const [exists] = await file.exists()
+  return exists
 }
 
 const generateAudio = async (text, id, level, type = "listenTexts", voiceId = ELEVENLABS_VOICE_ID) => {
@@ -85,7 +80,11 @@ const generateAudio = async (text, id, level, type = "listenTexts", voiceId = EL
     console.log(`[TTS] Audio uploaded to GCS: ${filePath}`)
     return filePath
   } catch (error) {
-    console.error("[TTS] ElevenLabs error:", error.response?.data || error.message)
+    const raw = error.response?.data
+    const detail = raw instanceof Buffer || raw instanceof ArrayBuffer
+      ? Buffer.from(raw).toString("utf8")
+      : raw
+    console.error("[TTS] ElevenLabs error:", detail || error.message)
     throw error
   }
 }
@@ -613,7 +612,7 @@ exports.getWordAudioAudio = async (req, res) => {
       return res.status(400).json({ error: "Set ID is required" });
     }
 
-    const type = `wordaudio/${language}`;
+    const type = `wordaudio`;
     const audioId = `${setId}_${wordIndex}`;
     const filePath = getAudioFilePath(audioId, level, type);
 
