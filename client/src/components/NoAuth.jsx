@@ -4,25 +4,25 @@ import { BookOpen, Headphones, CheckCircle, Zap, ArrowRight, Star, Users, PenLin
 
 const FLOATING_WORDS = [
   { word: "Hallo",    top: "8%",  left: "4%",  size: 18, delay: 0,    dur: 6 },
-  { word: "Danke",    top: "15%", left: "88%", size: 15, delay: 1.2,  dur: 7 },
-  { word: "Wasser",   top: "28%", left: "92%", size: 13, delay: 0.5,  dur: 8 },
-  { word: "Freund",   top: "42%", left: "2%",  size: 14, delay: 2,    dur: 7.5 },
-  { word: "Schule",   top: "55%", left: "90%", size: 16, delay: 0.8,  dur: 6.5 },
-  { word: "Liebe",    top: "68%", left: "5%",  size: 13, delay: 1.5,  dur: 8 },
-  { word: "Haus",     top: "78%", left: "87%", size: 17, delay: 0.3,  dur: 7 },
-  { word: "Arbeit",   top: "20%", left: "7%",  size: 12, delay: 2.5,  dur: 9 },
+  { word: "Bonjour",  top: "15%", left: "88%", size: 15, delay: 1.2,  dur: 7 },
+  { word: "Ciao",     top: "28%", left: "92%", size: 13, delay: 0.5,  dur: 8 },
+  { word: "Hola",     top: "42%", left: "2%",  size: 14, delay: 2,    dur: 7.5 },
+  { word: "Danke",    top: "55%", left: "90%", size: 16, delay: 0.8,  dur: 6.5 },
+  { word: "Merci",    top: "68%", left: "5%",  size: 13, delay: 1.5,  dur: 8 },
+  { word: "Grazie",   top: "78%", left: "87%", size: 17, delay: 0.3,  dur: 7 },
+  { word: "Amigo",    top: "20%", left: "7%",  size: 12, delay: 2.5,  dur: 9 },
   { word: "Sprache",  top: "60%", left: "93%", size: 14, delay: 1,    dur: 7.5 },
   { word: "Lernen",   top: "85%", left: "10%", size: 16, delay: 0.6,  dur: 6 },
-  { word: "Buch",     top: "35%", left: "5%",  size: 20, delay: 1.8,  dur: 8.5 },
-  { word: "Zeit",     top: "72%", left: "88%", size: 19, delay: 0.4,  dur: 7 },
+  { word: "Língua",   top: "35%", left: "5%",  size: 20, delay: 1.8,  dur: 8.5 },
+  { word: "Hello",    top: "72%", left: "88%", size: 19, delay: 0.4,  dur: 7 },
   { word: "Musik",    top: "90%", left: "80%", size: 13, delay: 2.2,  dur: 6.5 },
-  { word: "Küche",    top: "48%", left: "94%", size: 15, delay: 1.6,  dur: 8 },
-  { word: "Nacht",    top: "12%", left: "78%", size: 12, delay: 3,    dur: 9 },
+  { word: "Langue",   top: "48%", left: "94%", size: 15, delay: 1.6,  dur: 8 },
+  { word: "Mundo",    top: "12%", left: "78%", size: 12, delay: 3,    dur: 9 },
 ]
 
 const features = [
   { icon: BookOpen,    title: "Mësime Interaktive", desc: "Ushtrime dinamike që përshtaten me tempin tuaj.",  bg: "#eef2ff", border: "#c7d2fe", gradient: "from-indigo-500 to-violet-600" },
-  { icon: Headphones,  title: "Dëgjim & Shqiptim",  desc: "Audio nga folës amtarë gjermanë.",                bg: "#ecfeff", border: "#a5f3fc", gradient: "from-cyan-500 to-blue-600" },
+  { icon: Headphones,  title: "Dëgjim & Shqiptim",  desc: "Audio nga folës amtarë natyrorë.",                bg: "#ecfeff", border: "#a5f3fc", gradient: "from-cyan-500 to-blue-600" },
   { icon: CheckCircle, title: "Teste të Nivelit",   desc: "Provoni njohuritë nga A1 deri C2.",               bg: "#fff1f2", border: "#fecdd3", gradient: "from-rose-500 to-pink-600" },
   { icon: Zap,         title: "Progres i Shpejtë",  desc: "XP dhe seria ditore ju mbajnë motivuar.",         bg: "#fffbeb", border: "#fde68a", gradient: "from-amber-500 to-orange-500" },
 ]
@@ -37,7 +37,7 @@ const avatars = [
 
 const testimonials = [
   { name: "Arta K.",    city: "Tiranë",    text: "Brenda 3 muajsh arrita nivelin A2! Platforma është shumë e lehtë për t'u përdorur.", from: "#f43f5e", to: "#e11d48", letter: "A" },
-  { name: "Besnik M.", city: "Prishtinë", text: "Kuizet dhe testet e nivelit më ndihmuan shumë për provimin Goethe. Rekomandoj!",     from: "#8b5cf6", to: "#7c3aed", letter: "B" },
+  { name: "Besnik M.", city: "Prishtinë", text: "Kuizet dhe testet e nivelit më ndihmuan shumë për provimet e gjuhës. Rekomandoj!",     from: "#8b5cf6", to: "#7c3aed", letter: "B" },
   { name: "Lora S.",   city: "Shkodër",   text: "Seria ditore dhe XP-ja më mbajnë të motivuar çdo ditë. Nuk e lë dot!",              from: "#06b6d4", to: "#0891b2", letter: "L" },
 ]
 
@@ -61,7 +61,7 @@ const NoAuth = () => {
         }
       `}</style>
 
-      {/* ── floating German words ── */}
+      {/* ── floating multilingual words ── */}
       {FLOATING_WORDS.map((w, i) => (
         <div key={i} style={{
           position: "fixed",
@@ -121,14 +121,14 @@ const NoAuth = () => {
 
           {/* Headline */}
           <h1 style={{ fontSize: "clamp(2.6rem,6vw,4.2rem)", fontWeight: 900, lineHeight: 1.08, letterSpacing: "-0.03em", marginBottom: "1.1rem" }}>
-            <span style={{ color: "#0f172a" }}>Mëso Gjermanisht</span><br />
+            <span style={{ color: "#0f172a" }}>Mëso Gjuhë të Reja</span><br />
             <span style={{ background: "linear-gradient(90deg,#7c3aed,#6366f1,#8b5cf6)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
               si një profesionist
             </span>
           </h1>
 
           <p style={{ fontSize: "1.1rem", color: "#64748b", maxWidth: 520, margin: "0 auto 2.25rem", lineHeight: 1.75 }}>
-            Platforma nr.1 shqiptare për gjuhën gjermane. Mësime interaktive, kuize, teste të nivelit dhe shumë më tepër — falas.
+            Platforma nr.1 shqiptare për mësimin e gjuhëve të huaja. Mësime interaktive, kuize, teste të nivelit dhe shumë më tepër — falas.
           </p>
 
           {/* CTAs */}
@@ -199,7 +199,7 @@ const NoAuth = () => {
         <div style={{ maxWidth: 900, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 44 }}>
             <h2 style={{ fontSize: "1.9rem", fontWeight: 800, color: "#0f172a", marginBottom: 8 }}>Gjithçka që nevojitet për sukses</h2>
-            <p style={{ color: "#94a3b8", fontSize: "1rem" }}>Mjete profesionale për mësimin e gjuhës gjermane</p>
+            <p style={{ color: "#94a3b8", fontSize: "1rem" }}>Mjete profesionale për mësimin e gjuhëve të huaja</p>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 16 }}>
             {features.map((f, i) => {

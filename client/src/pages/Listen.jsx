@@ -840,17 +840,13 @@ const Listen = () => {
               </p>
             </div>
 
-            <div style={{ display: "flex", gap: 12, flexShrink: 0, position: "relative", zIndex: 1, alignSelf: isMobile ? "stretch" : "center", width: isMobile ? "100%" : "auto" }}>
-              <div style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, flex: isMobile ? 1 : "unset", minWidth: isMobile ? 0 : 130 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(255,255,255,0.2)" }}>
-                  <Check size={16} color="#fff" />
-                </div>
-                <div>
-                  <div style={{ fontSize: 22, fontWeight: 600, color: "#fff", lineHeight: 1, marginBottom: 2 }}>
-                    {userProgress.completedTests ? userProgress.completedTests.size : 0}
-                  </div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>Të Përfunduara</div>
-                </div>
+            <div style={{ display: "flex", gap: 12, flexShrink: 0, position: "relative", zIndex: 1, alignSelf: "center", width: isMobile ? "100%" : "auto" }}>
+              <div style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "center", flex: isMobile ? 1 : "unset", minWidth: isMobile ? 0 : 100 }}>
+                <img
+                  src={{ de: "https://flagcdn.com/w80/de.png", en: "https://flagcdn.com/w80/gb.png", fr: "https://flagcdn.com/w80/fr.png", tr: "https://flagcdn.com/w80/tr.png", it: "https://flagcdn.com/w80/it.png" }[language] || "https://flagcdn.com/w80/de.png"}
+                  alt={language}
+                  style={{ width: 56, height: 38, objectFit: "cover", borderRadius: 6, boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}
+                />
               </div>
             </div>
           </div>

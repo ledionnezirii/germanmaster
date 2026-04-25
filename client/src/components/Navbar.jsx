@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom"
 import { useAuth } from "../context/AuthContext"
 import { useSidebar } from "../context/SidebarContext"
 import { useLanguage } from "../context/LanguageContext"
-import { Menu, User, LogOut, ChevronDown } from "lucide-react"
+import { Menu, User, LogOut, ChevronDown, Languages } from "lucide-react"
 import { generateDicebearUrl } from "../services/api"
 import mainLogo from "../../public/logo.png"
 
@@ -13,11 +13,11 @@ const fonts = {
 }
 
 const LANGUAGES = [
-  { code: "de", flag: "https://flagcdn.com/w40/de.png", label: "Deutsch" },
-  { code: "en", flag: "https://flagcdn.com/w40/gb.png", label: "English" },
-  { code: "fr", flag: "https://flagcdn.com/w40/fr.png", label: "Français" },
-  //{ code: "tr", flag: "https://flagcdn.com/w40/tr.png", label: "Türkçe" },
-  //{ code: "it", flag: "https://flagcdn.com/w40/it.png", label: "Italiano" },
+  { code: "de", flag: "https://flagcdn.com/w40/de.png", label: "Gjermanisht" },
+  { code: "en", flag: "https://flagcdn.com/w40/gb.png", label: "Anglisht" },
+  //{ code: "fr", flag: "https://flagcdn.com/w40/fr.png", label: "Frëngjisht" },
+  //{ code: "tr", flag: "https://flagcdn.com/w40/tr.png", label: "Turqisht" },
+  //{ code: "it", flag: "https://flagcdn.com/w40/it.png", label: "Italisht" },
 ]
 
 const subtitles = {
@@ -34,7 +34,9 @@ const Navbar = () => {
   const { language, switchLanguage } = useLanguage()
   const navigate = useNavigate()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [isLangOpen, setIsLangOpen] = useState(false)
   const dropdownRef = useRef(null)
+  const langRef = useRef(null)
 
   const handleLogout = () => {
     logout()
@@ -53,6 +55,9 @@ const Navbar = () => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsDropdownOpen(false)
+      }
+      if (langRef.current && !langRef.current.contains(event.target)) {
+        setIsLangOpen(false)
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
@@ -183,8 +188,40 @@ const Navbar = () => {
             {isAuthenticated ? (
               <div className="flex items-center space-x-2">
 
+                {/* Language switcher - navbar */}
+                <div className="relative" ref={langRef}>
+                  <button
+                    onClick={() => setIsLangOpen(!isLangOpen)}
+                    className="flex items-center gap-1.5 bg-white/10 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold border border-white/20 hover:bg-white/20 transition-all duration-200"
+                    style={{ fontFamily: fonts.poppins }}
+                  >
+                    <img src={currentLang.flag} alt={currentLang.label} className="w-5 h-3.5 object-cover rounded-sm" />
+                    <span className="text-white hidden sm:inline">{currentLang.label}</span>
+                    <ChevronDown className={`h-3 w-3 text-slate-400 transition-transform duration-200 ${isLangOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {isLangOpen && (
+                    <div className="absolute right-0 mt-2 w-36 bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 overflow-hidden z-50">
+                      {LANGUAGES.map((lang) => (
+                        <button
+                          key={lang.code}
+                          onClick={() => { switchLanguage(lang.code); setIsLangOpen(false) }}
+                          className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-xs font-semibold transition-all duration-200 ${
+                            language === lang.code
+                              ? "bg-emerald-500/20 text-emerald-300"
+                              : "text-slate-300 hover:bg-white/5 hover:text-white"
+                          }`}
+                          style={{ fontFamily: fonts.poppins }}
+                        >
+                          <img src={lang.flag} alt={lang.label} className="w-5 h-3.5 object-cover rounded-sm" />
+                          {lang.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 {/* Giveaways */}
-                <Link
+                {/* <Link
                   to="/giveaways"
                   className="flex items-center space-x-1.5 bg-gradient-to-r from-yellow-500/20 via-orange-500/20 to-yellow-400/15 backdrop-blur-sm px-3 py-1.5 rounded-xl text-xs font-bold border border-orange-400/30 shadow-sm hover:from-yellow-500/35 hover:via-orange-500/35 hover:to-yellow-400/30 hover:border-orange-400/60 hover:shadow-orange-500/20 hover:shadow-md transition-all duration-200 hover:scale-105"
                   style={{ fontFamily: fonts.poppins }}
@@ -199,7 +236,8 @@ const Navbar = () => {
                   <span className="text-white hidden sm:inline drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]">
                     Shpërblime
                   </span>
-                </Link>
+                  <img src={currentLang.flag} alt={currentLang.label} className="w-4 h-3 object-cover rounded-sm opacity-90" />
+                </Link> */}
 
                 {/* User dropdown */}
                 <div className="relative" ref={dropdownRef}>
@@ -247,6 +285,29 @@ const Navbar = () => {
                                 {user.email}
                               </p>
                             )}
+                          </div>
+                        </div>
+
+                        {/* Language switcher */}
+                        <div className="px-4 py-3 border-b border-white/5">
+                          <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider mb-2">
+                            Zgjidh gjuhën që doni të mësoni
+                          </p>
+                          <div className="flex gap-2">
+                            {LANGUAGES.map((lang) => (
+                              <button
+                                key={lang.code}
+                                onClick={() => switchLanguage(lang.code)}
+                                className={`flex-1 flex flex-col items-center gap-1 py-2 px-1 rounded-xl text-xs font-bold transition-all duration-200 border ${
+                                  language === lang.code
+                                    ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-md shadow-emerald-500/10 scale-105"
+                                    : "border-white/10 text-slate-400 hover:bg-white/5 hover:text-slate-200 hover:border-white/20"
+                                }`}
+                              >
+                                <img src={lang.flag} alt={lang.label} className="w-6 h-4 object-cover rounded-sm" />
+                                <span>{lang.label}</span>
+                              </button>
+                            ))}
                           </div>
                         </div>
 

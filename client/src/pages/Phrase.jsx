@@ -3,12 +3,18 @@ import { useState, useEffect, useRef } from "react"
 import { phraseService, ttsService } from "../services/api"
 import { useAuth } from "../context/AuthContext"
 import { useLanguage } from "../context/LanguageContext"
-import { Volume2, BookOpen, ChevronLeft, ChevronRight, LockIcon, Plus, Eye, EyeOff, Clock, Sparkles, Check, Trophy, RotateCcw, X, Crown, Zap, Headphones, Play } from "lucide-react"
+import { Volume2, BookOpen, ChevronLeft, ChevronRight, LockIcon, Plus, Eye, EyeOff, Clock, Sparkles, Check, Trophy, RotateCcw, X, Crown, Zap, Headphones, Play, Pause, ArrowLeft } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import SEO from "../components/SEO"
 
 const FREE_DAILY_LIMIT = 2
 const PAID_DAILY_LIMIT = 10
+
+const LANGUAGES = [
+  { code: "de", flag: "https://flagcdn.com/w40/de.png", label: "Gjermanisht" },
+  { code: "en", flag: "https://flagcdn.com/w40/gb.png", label: "Anglisht" },
+]
+const ALBANIAN_FLAG = "https://flagcdn.com/w40/al.png"
 
 function PaywallModal({ onClose, hoursUntilReset, minutesUntilReset }) {
   return (
@@ -63,6 +69,9 @@ function PaywallModal({ onClose, hoursUntilReset, minutesUntilReset }) {
   )
 }
 
+const WAVE_HEIGHTS = [5, 10, 18, 13, 22, 14, 24, 9, 20, 12, 17, 7, 21, 11, 9]
+const LETTERS = ["A", "B", "C", "D"]
+
 const Phrase = () => {
   const fonts = {
     poppins: ["Poppins", "sans-serif"].join(", "),
@@ -83,6 +92,8 @@ const Phrase = () => {
   const [xpPosition, setXpPosition] = useState({ x: 0, y: 0 })
   const [showGerman, setShowGerman] = useState(true)
   const [showAlbanian, setShowAlbanian] = useState(true)
+
+  // ── Regular (matching) quiz state ─────────────────────────────────────────
   const [quizMode, setQuizMode] = useState(false)
   const [quizPhrases, setQuizPhrases] = useState([])
   const [selectedGerman, setSelectedGerman] = useState(null)
@@ -92,6 +103,10 @@ const Phrase = () => {
   const [quizComplete, setQuizComplete] = useState(false)
   const [quizScore, setQuizScore] = useState(0)
   const [wrongPair, setWrongPair] = useState(null)
+  const [streak, setStreak] = useState(0)
+  const [maxStreak, setMaxStreak] = useState(0)
+  const [wrongCount, setWrongCount] = useState(0)
+
   const [playingPhraseId, setPlayingPhraseId] = useState(null)
   const audioRef = useRef(null)
   const listenAudioRef = useRef(null)
@@ -117,7 +132,6 @@ const Phrase = () => {
     minutesUntilReset: 0,
     isPaid: false,
   })
-  const [showLimitWarning, setShowLimitWarning] = useState(false)
   const [showPaywallModal, setShowPaywallModal] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640)
 
@@ -179,7 +193,7 @@ const Phrase = () => {
 
   const fetchPhrases = async () => {
     try {
-      const response = await phraseService.getPhrasesByLevel(selectedLevel, { limit: 100 }, language)
+      const response = await phraseService.getPhrasesByLevel(selectedLevel, { limit: 500 }, language)
       setPhrases(response.data || [])
     } catch (error) {
       console.error("Error fetching phrases:", error)
@@ -264,6 +278,7 @@ const Phrase = () => {
     }
   }
 
+  // ── Regular matching quiz ──────────────────────────────────────────────────
   const startQuiz = () => {
     if (!dailyLimitInfo.isPaid) {
       setShowPaywallModal(true)
@@ -285,6 +300,9 @@ const Phrase = () => {
     setWrongPair(null)
     setQuizComplete(false)
     setQuizScore(0)
+    setStreak(0)
+    setMaxStreak(0)
+    setWrongCount(0)
     setQuizMode(true)
   }
 
@@ -292,7 +310,10 @@ const Phrase = () => {
     const isCorrectMatch = germanId === albanianId
     if (isCorrectMatch) {
       const newMatches = { ...matches, [germanId]: albanianId }
+      const newStreak = streak + 1
       setMatches(newMatches)
+      setStreak(newStreak)
+      setMaxStreak((prev) => Math.max(prev, newStreak))
       setSelectedGerman(null)
       setSelectedAlbanian(null)
       setWrongPair(null)
@@ -302,6 +323,8 @@ const Phrase = () => {
         setQuizScore((prev) => prev + 1)
       }
     } else {
+      setStreak(0)
+      setWrongCount((prev) => prev + 1)
       setWrongPair({ german: germanId, albanian: albanianId })
       setTimeout(() => {
         setWrongPair(null)
@@ -332,9 +355,12 @@ const Phrase = () => {
     setSelectedGerman(null)
     setSelectedAlbanian(null)
     setWrongPair(null)
+    setStreak(0)
+    setMaxStreak(0)
+    setWrongCount(0)
   }
 
-  // ── Listen Quiz helpers ────────────────────────────────────────────────────
+  // ── Listen Quiz (Dictionary design) ───────────────────────────────────────
   const buildListenOptions = (correct, pool) => {
     const others = pool.filter((p) => (p._id || p.id) !== (correct._id || correct.id))
     const wrong = [...others].sort(() => Math.random() - 0.5).slice(0, 3)
@@ -539,354 +565,476 @@ const Phrase = () => {
     )
   }
 
-  // ─── QUIZ MODE ────────────────────────────────────────────────────────────────
+  // ─── MATCHING QUIZ MODE (gamified redesign) ─────────────────────────────
   if (quizMode) {
     const matchedCount = Object.keys(matches).length
     const totalCount = quizPhrases.length
     const progressPct = totalCount > 0 ? (matchedCount / totalCount) * 100 : 0
+    const stars = wrongCount === 0 ? 3 : wrongCount <= 2 ? 2 : 1
+
+    const pairColors = [
+      { bg: 'rgba(20,184,166,0.22)', border: '#14b8a6', text: '#5eead4' },
+      { bg: 'rgba(139,92,246,0.22)', border: '#8b5cf6', text: '#c4b5fd' },
+      { bg: 'rgba(245,158,11,0.22)', border: '#f59e0b', text: '#fcd34d' },
+      { bg: 'rgba(244,114,182,0.22)', border: '#f472b6', text: '#fbcfe8' },
+      { bg: 'rgba(59,130,246,0.22)', border: '#3b82f6', text: '#93c5fd' },
+      { bg: 'rgba(34,197,94,0.22)', border: '#22c55e', text: '#86efac' },
+      { bg: 'rgba(251,146,60,0.22)', border: '#fb923c', text: '#fed7aa' },
+      { bg: 'rgba(6,182,212,0.22)', border: '#06b6d4', text: '#67e8f9' },
+      { bg: 'rgba(232,121,249,0.22)', border: '#e879f9', text: '#f5d0fe' },
+      { bg: 'rgba(79,70,229,0.22)', border: '#4f46e5', text: '#a5b4fc' },
+    ]
+
+    const currentLang = LANGUAGES.find(l => l.code === language) || LANGUAGES[0]
+
+    const phraseColorMap = {}
+    quizPhrases.forEach((phrase, idx) => {
+      phraseColorMap[phrase._id || phrase.id] = idx % pairColors.length
+    })
+
+    const getAlbanianColorIdx = (aId) => {
+      const matchedGId = Object.keys(matches).find(gId => matches[gId] === aId)
+      return matchedGId !== undefined ? phraseColorMap[matchedGId] : null
+    }
 
     return (
       <>
         <SEO
-          title="Kuiz Fraza Gjermane - Testoni Dijen tuaja"
-          description="Testoni djenë tuaj të frazave gjermane me kuiz interaktiv."
+          title="Kuiz Fraza Gjermane - Testoni Dijen tuaj"
+          description="Testoni njohuritë tuaja të frazave gjermane me kuiz interaktiv."
           keywords="kuiz gjermanisht, test frazash, mesimi gjermanishtes"
         />
-
         <style>{`
-          @keyframes shake {
-            0%,100% { transform: translateX(0); }
-            20%      { transform: translateX(-5px); }
-            40%      { transform: translateX(5px); }
-            60%      { transform: translateX(-3px); }
-            80%      { transform: translateX(3px); }
-          }
-          @keyframes popIn {
-            0%   { transform: scale(0.9); opacity: 0; }
-            60%  { transform: scale(1.03); }
-            100% { transform: scale(1); opacity: 1; }
-          }
-          @keyframes floatUp {
-            0%   { opacity: 1; transform: translateY(0) scale(1); }
-            100% { opacity: 0; transform: translateY(-80px) scale(1.2); }
-          }
-          @keyframes matchPop {
-            0%   { transform: scale(1); }
-            40%  { transform: scale(1.06); }
-            100% { transform: scale(1); }
-          }
-          .quiz-shake { animation: shake 0.4s ease; }
-          .quiz-pop   { animation: popIn 0.25s ease; }
-          .match-pop  { animation: matchPop 0.3s ease; }
+          @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+          @keyframes correctPop { 0%{transform:scale(1)} 40%{transform:scale(1.1)} 100%{transform:scale(1)} }
+          @keyframes floatUp { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-80px) scale(1.2)} }
+          @keyframes starPop { 0%{transform:scale(0) rotate(-30deg);opacity:0} 60%{transform:scale(1.35) rotate(5deg)} 100%{transform:scale(1) rotate(0);opacity:1} }
+          @keyframes pulseGlow { 0%,100%{box-shadow:0 0 12px rgba(6,182,212,0.4)} 50%{box-shadow:0 0 28px rgba(6,182,212,0.7)} }
+          .quiz-shake { animation: shake 0.45s ease; }
+          .correct-pop { animation: correctPop 0.32s ease; }
+          .star-1 { animation: starPop 0.5s ease 0.1s both; }
+          .star-2 { animation: starPop 0.5s ease 0.25s both; }
+          .star-3 { animation: starPop 0.5s ease 0.4s both; }
         `}</style>
 
-        <div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] via-white to-[#CCFBF1] flex items-start justify-center p-3 sm:p-5 pt-4">
-          <div className="w-full max-w-[600px]">
-            {quizComplete ? (
-              <div className="bg-white rounded-2xl shadow-xl overflow-hidden quiz-pop">
-                <div className="bg-gradient-to-r from-amber-400 to-orange-400 px-6 py-6 text-center">
-                  <div className="w-14 h-14 mx-auto mb-2 bg-white/30 rounded-full flex items-center justify-center">
-                    <Trophy className="w-7 h-7 text-white" />
-                  </div>
-                  <h2 className="text-xl font-bold text-white mb-0.5" style={{ fontFamily: fonts.poppins }}>Kuizi Përfundoi!</h2>
-                  <p className="text-white/80 text-xs" style={{ fontFamily: fonts.inter }}>Punë e shkëlqyer!</p>
-                </div>
-                <div className="p-5">
-                  <div className="flex gap-3 justify-center mb-5">
-                    <div className="flex-1 text-center bg-teal-50 rounded-xl py-3 px-2 border border-teal-100">
-                      <div className="text-2xl font-bold text-teal-600" style={{ fontFamily: fonts.poppins }}>{matchedCount}</div>
-                      <div className="text-[11px] text-teal-600/70 mt-0.5" style={{ fontFamily: fonts.inter }}>Çifte Saktë</div>
-                    </div>
-                    <div className="flex-1 text-center bg-amber-50 rounded-xl py-3 px-2 border border-amber-100">
-                      <div className="text-2xl font-bold text-amber-600" style={{ fontFamily: fonts.poppins }}>+{matchedCount} XP</div>
-                      <div className="text-[11px] text-amber-600/70 mt-0.5" style={{ fontFamily: fonts.inter }}>Pikë Fituar</div>
-                    </div>
-                    <div className="flex-1 text-center bg-blue-50 rounded-xl py-3 px-2 border border-blue-100">
-                      <div className="text-2xl font-bold text-blue-600" style={{ fontFamily: fonts.poppins }}>{totalCount}</div>
-                      <div className="text-[11px] text-blue-600/70 mt-0.5" style={{ fontFamily: fonts.inter }}>Gjithsej</div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={startQuiz} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-[#14B8A6] to-[#06B6D4] text-white rounded-xl font-semibold shadow-md shadow-teal-500/20 active:scale-95 transition-transform text-sm" style={{ fontFamily: fonts.poppins }}>
-                      <RotateCcw className="w-3.5 h-3.5" /> Fillo Përsëri
-                    </button>
-                    <button onClick={exitQuiz} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-semibold hover:bg-gray-200 active:scale-95 transition-all text-sm" style={{ fontFamily: fonts.poppins }}>
-                      <X className="w-3.5 h-3.5" /> Dil
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                {/* Compact header */}
-                <div className="bg-gradient-to-r from-[#0F766E] to-[#0891B2] px-4 py-3">
-                  <div className="flex items-center gap-3 mb-2">
-                    <button onClick={exitQuiz} className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors active:scale-90 flex-shrink-0">
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                    <div className="flex-1 bg-white/20 rounded-full h-2 overflow-hidden">
-                      <div className="h-full bg-white rounded-full transition-all duration-500 ease-out" style={{ width: `${progressPct}%` }} />
-                    </div>
-                    <span className="text-white font-bold text-xs flex-shrink-0" style={{ fontFamily: fonts.poppins }}>{matchedCount}/{totalCount}</span>
-                  </div>
-                  <p className="text-white/70 text-[11px] text-center" style={{ fontFamily: fonts.inter }}>
-                    Lidh frazën gjermane me shqipen e saj
-                  </p>
-                </div>
+        <div style={{
+          minHeight: '100vh',
+          background: 'linear-gradient(135deg, #faf9f6 0%, #f5f0eb 50%, #faf9f6 100%)',
+          display: 'flex', flexDirection: 'column',
+        }}>
+          {/* ── Header ── */}
+          <div style={{
+            padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12,
+            background: 'rgba(255,255,255,0.85)', borderBottom: '1px solid rgba(0,0,0,0.07)',
+            backdropFilter: 'blur(8px)',
+          }}>
+            <button
+              onClick={exitQuiz}
+              style={{
+                width: 32, height: 32, borderRadius: '50%',
+                background: 'rgba(0,0,0,0.06)', border: '1px solid rgba(0,0,0,0.1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: '#64748b', flexShrink: 0,
+              }}
+            >
+              <X size={15} />
+            </button>
 
-                {/* Column labels */}
-                <div className="grid grid-cols-2 gap-2 px-3 pt-3 pb-1">
-                  <div className="flex items-center justify-center gap-1.5 bg-blue-50 rounded-lg py-1.5 border border-blue-100">
-                    <span style={{ fontSize: 14 }}>🇩🇪</span>
-                    <span className="font-semibold text-blue-700 text-[11px]" style={{ fontFamily: fonts.poppins }}>Gjermanisht</span>
-                  </div>
-                  <div className="flex items-center justify-center gap-1.5 bg-red-50 rounded-lg py-1.5 border border-red-100">
-                    <span style={{ fontSize: 14 }}>🇦🇱</span>
-                    <span className="font-semibold text-red-700 text-[11px]" style={{ fontFamily: fonts.poppins }}>Shqip</span>
-                  </div>
-                </div>
+            <div style={{ flex: 1, background: 'rgba(0,0,0,0.08)', borderRadius: 99, height: 8, overflow: 'hidden' }}>
+              <div style={{
+                height: '100%', borderRadius: 99,
+                background: 'linear-gradient(90deg, #06b6d4, #818cf8)',
+                width: `${progressPct}%`,
+                transition: 'width 0.6s cubic-bezier(0.34,1.56,0.64,1)',
+                boxShadow: '0 0 14px rgba(129,140,248,0.65)',
+              }} />
+            </div>
 
-                {/* Phrase pairs */}
-                <div className="px-3 pb-3 pt-1 space-y-1.5">
-                  {quizPhrases.map((germanPhrase, idx) => {
-                    const gId = germanPhrase._id || germanPhrase.id
-                    const albanianPhrase = shuffledAlbanian[idx]
-                    const aId = albanianPhrase?._id || albanianPhrase?.id
-                    const gMatched = !!matches[gId]
-                    const aMatched = Object.values(matches).includes(aId)
-                    const gSelected = selectedGerman === gId
-                    const aSelected = selectedAlbanian === aId
-                    const gWrong = wrongPair?.german === gId
-                    const aWrong = wrongPair?.albanian === aId
-                    const maxLen = Math.max(germanPhrase.german.length, albanianPhrase?.albanian?.length ?? 0)
-                    const textSize = maxLen > 50 ? "text-[11px] sm:text-xs" : maxLen > 32 ? "text-xs sm:text-sm" : "text-sm sm:text-sm"
-                    return (
-                      <div key={gId} className="grid grid-cols-2 gap-2 sm:gap-2">
-                        <button
-                          onClick={() => {
-                            if (gMatched) return
-                            if (gSelected) { setSelectedGerman(null); return }
-                            setSelectedGerman(gId)
-                            if (selectedAlbanian) handleMatchClick(gId, selectedAlbanian)
-                          }}
-                          disabled={gMatched}
-                          className={[
-                            "w-full px-3 py-2.5 sm:px-3 sm:py-2.5 rounded-xl border-2 font-medium text-left transition-all duration-150 leading-tight min-h-[2.75rem]",
-                            textSize,
-                            gMatched
-                              ? "bg-emerald-50 border-emerald-300 text-emerald-700 cursor-default match-pop"
-                              : gWrong
-                              ? "bg-red-50 border-red-400 text-red-700 quiz-shake"
-                              : gSelected
-                              ? "bg-blue-50 border-blue-400 text-blue-800 shadow-sm"
-                              : "bg-gray-50 border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50/40 active:scale-[0.97]"
-                          ].join(" ")}
-                          style={{ fontFamily: fonts.inter }}
-                        >
-                          <span className="flex items-start gap-1.5">
-                            {gMatched && <Check className="w-3.5 h-3.5 sm:w-3 sm:h-3 text-emerald-500 flex-shrink-0 mt-0.5" />}
-                            <span>{germanPhrase.german}</span>
-                          </span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (!albanianPhrase || aMatched) return
-                            if (aSelected) { setSelectedAlbanian(null); return }
-                            if (selectedGerman) { handleMatchClick(selectedGerman, aId) } else { setSelectedAlbanian(aId) }
-                          }}
-                          disabled={!albanianPhrase || aMatched}
-                          className={[
-                            "w-full px-3 py-2.5 sm:px-3 sm:py-2.5 rounded-xl border-2 font-medium text-left transition-all duration-150 leading-tight min-h-[2.75rem]",
-                            textSize,
-                            aMatched
-                              ? "bg-emerald-50 border-emerald-300 text-emerald-700 cursor-default match-pop"
-                              : aWrong
-                              ? "bg-red-50 border-red-400 text-red-700 quiz-shake"
-                              : aSelected
-                              ? "bg-purple-50 border-purple-400 text-purple-800 shadow-sm"
-                              : "bg-gray-50 border-gray-200 text-gray-700 hover:border-purple-300 hover:bg-purple-50/40 active:scale-[0.97]"
-                          ].join(" ")}
-                          style={{ fontFamily: fonts.inter }}
-                        >
-                          <span className="flex items-start gap-1.5">
-                            {aMatched && <Check className="w-3.5 h-3.5 sm:w-3 sm:h-3 text-emerald-500 flex-shrink-0 mt-0.5" />}
-                            <span>{albanianPhrase?.albanian}</span>
-                          </span>
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-            {showXpAnimation && (
-              <div className="fixed z-50 pointer-events-none flex items-center gap-2" style={{ left: "50%", top: "40%", transform: "translate(-50%, -50%)", fontFamily: fonts.poppins, animation: "floatUp 1.8s ease-out forwards" }}>
-                <Sparkles className="w-6 h-6 text-amber-500" />
-                <span className="text-4xl font-bold text-amber-500 drop-shadow-lg">+{animatedXp} XP</span>
-              </div>
-            )}
+            {/* Streak chip */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 4,
+              background: streak > 0 ? 'rgba(251,191,36,0.14)' : 'rgba(0,0,0,0.05)',
+              border: `1px solid ${streak > 0 ? 'rgba(251,191,36,0.4)' : 'rgba(0,0,0,0.1)'}`,
+              borderRadius: 99, padding: '4px 10px', transition: 'all 0.3s',
+            }}>
+              <Zap size={12} color={streak > 0 ? '#fbbf24' : 'rgba(255,255,255,0.25)'} />
+              <span style={{ fontSize: 12, fontWeight: 800, color: streak > 0 ? '#d97706' : 'rgba(0,0,0,0.25)', fontFamily: fonts.poppins }}>
+                {streak}
+              </span>
+            </div>
+
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'rgba(0,0,0,0.4)', fontFamily: fonts.poppins, minWidth: 32, textAlign: 'right' }}>
+              {matchedCount}/{totalCount}
+            </span>
           </div>
+
+          {/* ── Body ── */}
+          <div style={{ flex: 1, padding: '20px 16px 40px', display: 'flex', justifyContent: 'center', overflowY: 'auto' }}>
+            <div style={{ width: '100%', maxWidth: 580 }}>
+              {quizComplete ? (
+                /* ── Completion screen ── */
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.88 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+                  style={{
+                    background: '#fff',
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    borderRadius: 28, overflow: 'hidden',
+                    boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
+                  }}
+                >
+                  <div style={{
+                    background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 50%, #0891b2 100%)',
+                    padding: '40px 24px 32px', textAlign: 'center', position: 'relative',
+                  }}>
+                    <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% -20%, rgba(251,191,36,0.28), transparent 65%)' }} />
+                    <div style={{ position: 'relative' }}>
+                      <Trophy size={54} color="white" style={{ filter: 'drop-shadow(0 0 22px rgba(255,255,255,0.45))' }} />
+                      <h2 style={{ fontSize: 27, fontWeight: 900, color: 'white', margin: '14px 0 6px', fontFamily: fonts.poppins }}>
+                        {wrongCount === 0 ? 'Perfekt! 🎉' : wrongCount <= 2 ? 'Shumë Mirë! 🌟' : 'Kualifikuar!'}
+                      </h2>
+                      <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', margin: '0 0 18px', fontFamily: fonts.inter }}>
+                        {wrongCount === 0 ? 'Asnjë gabim — Fenomenal!' : `${wrongCount} gabim${wrongCount > 1 ? 'e' : ''} — Vazhdo të praktikosh!`}
+                      </p>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
+                        {[1,2,3].map(s => (
+                          <span key={s} className={`star-${s}`} style={{ fontSize: 38, filter: s <= stars ? 'drop-shadow(0 0 12px #fbbf24)' : 'grayscale(1) opacity(0.22)' }}>
+                            ⭐
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '20px 20px 18px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 18 }}>
+                      {[
+                        { label: 'Çifte Saktë', value: matchedCount, color: '#34d399', bg: 'rgba(52,211,153,0.09)', border: 'rgba(52,211,153,0.28)' },
+                        { label: 'XP Fituar', value: `+${matchedCount}`, color: '#fbbf24', bg: 'rgba(251,191,36,0.09)', border: 'rgba(251,191,36,0.28)' },
+                        { label: 'Streak Max', value: maxStreak, color: '#f472b6', bg: 'rgba(244,114,182,0.09)', border: 'rgba(244,114,182,0.28)' },
+                      ].map(s => (
+                        <div key={s.label} style={{ textAlign: 'center', padding: '14px 6px', borderRadius: 14, background: s.bg, border: `1px solid ${s.border}` }}>
+                          <div style={{ fontSize: 22, fontWeight: 800, color: s.color, fontFamily: fonts.poppins }}>{s.value}</div>
+                          <div style={{ fontSize: 10, color: 'rgba(0,0,0,0.4)', marginTop: 3, fontFamily: fonts.inter }}>{s.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <button onClick={exitQuiz} style={{
+                        flex: 1, padding: '13px 0',
+                        background: '#f1f5f9', border: '1px solid rgba(0,0,0,0.08)',
+                        borderRadius: 14, cursor: 'pointer',
+                        color: '#64748b', fontSize: 14, fontWeight: 700,
+                        fontFamily: fonts.poppins, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                      }}>
+                        <X size={14} /> Dil
+                      </button>
+                      <button onClick={startQuiz} style={{
+                        flex: 2, padding: '13px 0',
+                        background: 'linear-gradient(135deg, #06b6d4, #818cf8)',
+                        border: 'none', borderRadius: 14, cursor: 'pointer',
+                        color: 'white', fontSize: 14, fontWeight: 700,
+                        fontFamily: fonts.poppins, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                        boxShadow: '0 4px 20px rgba(99,102,241,0.35)',
+                      }}>
+                        <RotateCcw size={14} /> Fillo Përsëri
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                /* ── Active quiz ── */
+                <>
+                  <p style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(0,0,0,0.35)', marginBottom: 18, fontFamily: fonts.inter }}>
+                    Lidh frazën {currentLang.label.toLowerCase()} me shqipen e saj
+                  </p>
+
+                  {/* Column headers */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.3)', borderRadius: 10, padding: '7px 12px' }}>
+                      <img src={currentLang.flag} alt={currentLang.label} style={{ width: 20, height: 14, objectFit: 'cover', borderRadius: 3 }} />
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#0891b2', fontFamily: fonts.poppins }}>{currentLang.label}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 10, padding: '7px 12px' }}>
+                      <img src={ALBANIAN_FLAG} alt="Shqip" style={{ width: 20, height: 14, objectFit: 'cover', borderRadius: 3 }} />
+                      <span style={{ fontSize: 11, fontWeight: 700, color: '#7c3aed', fontFamily: fonts.poppins }}>Shqip</span>
+                    </div>
+                  </div>
+
+                  {/* Pairs */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {quizPhrases.map((germanPhrase, idx) => {
+                      const gId = germanPhrase._id || germanPhrase.id
+                      const albanianPhrase = shuffledAlbanian[idx]
+                      const aId = albanianPhrase?._id || albanianPhrase?.id
+
+                      const gMatched = !!matches[gId]
+                      const aMatched = Object.values(matches).includes(aId)
+                      const gSelected = selectedGerman === gId
+                      const aSelected = selectedAlbanian === aId
+                      const gWrong = wrongPair?.german === gId
+                      const aWrong = wrongPair?.albanian === aId
+
+                      const gColorIdx = gMatched ? phraseColorMap[gId] : null
+                      const aColorIdx = aMatched ? getAlbanianColorIdx(aId) : null
+                      const gColor = gColorIdx !== null ? pairColors[gColorIdx] : null
+                      const aColor = aColorIdx !== null ? pairColors[aColorIdx] : null
+
+                      const maxLen = Math.max(germanPhrase.german.length, albanianPhrase?.albanian?.length ?? 0)
+                      const fs = maxLen > 50 ? 11 : maxLen > 32 ? 12 : 13
+
+                      const gStyle = gMatched && gColor
+                        ? { background: gColor.bg, border: `2px solid ${gColor.border}`, color: '#d97706', boxShadow: `0 0 14px ${gColor.border}55` }
+                        : gWrong
+                        ? { background: 'rgba(239,68,68,0.1)', border: '2px solid rgba(239,68,68,0.7)', color: '#dc2626' }
+                        : gSelected
+                        ? { background: 'rgba(6,182,212,0.12)', border: '2px solid #06b6d4', color: '#0e7490', boxShadow: '0 0 18px rgba(6,182,212,0.25)' }
+                        : { background: '#fff', border: '2px solid rgba(6,182,212,0.3)', color: '#1e293b', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }
+
+                      const aStyle = aMatched && aColor
+                        ? { background: aColor.bg, border: `2px solid ${aColor.border}`, color: '#d97706', boxShadow: `0 0 14px ${aColor.border}55` }
+                        : aWrong
+                        ? { background: 'rgba(239,68,68,0.1)', border: '2px solid rgba(239,68,68,0.7)', color: '#dc2626' }
+                        : aSelected
+                        ? { background: 'rgba(139,92,246,0.12)', border: '2px solid #8b5cf6', color: '#6d28d9', boxShadow: '0 0 18px rgba(139,92,246,0.25)' }
+                        : { background: '#fff', border: '2px solid rgba(139,92,246,0.3)', color: '#1e293b', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }
+
+                      const baseBtn = {
+                        padding: '10px 12px', borderRadius: 12,
+                        fontSize: fs, fontWeight: 600, textAlign: 'left',
+                        lineHeight: 1.35, minHeight: '2.7rem',
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        fontFamily: fonts.inter,
+                        transition: 'background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.15s',
+                        width: '100%',
+                      }
+
+                      return (
+                        <div key={gId} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                          <button
+                            onClick={() => {
+                              if (gMatched) return
+                              if (gSelected) { setSelectedGerman(null); return }
+                              setSelectedGerman(gId)
+                              if (selectedAlbanian) handleMatchClick(gId, selectedAlbanian)
+                            }}
+                            disabled={gMatched}
+                            className={gWrong ? 'quiz-shake' : gMatched ? 'correct-pop' : ''}
+                            style={{ ...baseBtn, ...gStyle, cursor: gMatched ? 'default' : 'pointer', transform: gSelected ? 'scale(1.02)' : 'scale(1)' }}
+                          >
+                            {gMatched ? <Check size={12} style={{ flexShrink: 0 }} /> : null}
+                            <span>{germanPhrase.german}</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (!albanianPhrase || aMatched) return
+                              if (aSelected) { setSelectedAlbanian(null); return }
+                              if (selectedGerman) { handleMatchClick(selectedGerman, aId) } else { setSelectedAlbanian(aId) }
+                            }}
+                            disabled={!albanianPhrase || aMatched}
+                            className={aWrong ? 'quiz-shake' : aMatched ? 'correct-pop' : ''}
+                            style={{ ...baseBtn, ...aStyle, cursor: aMatched ? 'default' : 'pointer', transform: aSelected ? 'scale(1.02)' : 'scale(1)' }}
+                          >
+                            {aMatched ? <Check size={12} style={{ flexShrink: 0 }} /> : null}
+                            <span>{albanianPhrase?.albanian}</span>
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {showXpAnimation && (
+            <div className="fixed z-50 pointer-events-none flex items-center gap-2" style={{ left: '50%', top: '40%', transform: 'translate(-50%,-50%)', fontFamily: fonts.poppins, animation: 'floatUp 1.8s ease-out forwards' }}>
+              <Sparkles className="w-6 h-6 text-amber-500" />
+              <span className="text-4xl font-bold text-amber-500 drop-shadow-lg">+{animatedXp} XP</span>
+            </div>
+          )}
         </div>
       </>
     )
   }
 
-  // ─── LISTEN QUIZ MODE ─────────────────────────────────────────────────────
+  // ─── LISTEN QUIZ MODE (Dictionary design) ────────────────────────────────
   if (listenQuizMode) {
     const currentPhrase = listenPhrases[listenIdx]
     const correctId = currentPhrase?._id || currentPhrase?.id
     const progressPct = listenPhrases.length > 0 ? (listenIdx / listenPhrases.length) * 100 : 0
 
     return (
-      <>
+      <div style={{ minHeight: "100vh", background: "#f3f4f6", display: "flex", flexDirection: "column" }}>
         <style>{`
-          @keyframes floatUp { 0% { opacity:1; transform:translateY(0) scale(1); } 100% { opacity:0; transform:translateY(-80px) scale(1.2); } }
-          @keyframes popIn { 0% { transform:scale(0.9); opacity:0; } 60% { transform:scale(1.03); } 100% { transform:scale(1); opacity:1; } }
-          @keyframes pulse-ring { 0% { transform:scale(1); opacity:0.6; } 100% { transform:scale(1.5); opacity:0; } }
+          @keyframes floatUp { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-80px) scale(1.2)} }
         `}</style>
 
-        <div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] via-white to-[#CCFBF1] flex items-start justify-center p-3 sm:p-5 pt-4">
-          <div className="w-full max-w-[580px]">
+        {/* Top bar */}
+        <div style={{ background: "white", borderBottom: "1px solid #f1f5f9", padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+          <button onClick={exitListenQuiz} style={{ display: "flex", alignItems: "center", gap: 6, color: "#64748b", background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: "inherit" }}>
+            <ArrowLeft size={16} /> Frazat
+          </button>
+          <div style={{ flex: 1, background: "#e2e8f0", borderRadius: 99, height: 6, overflow: "hidden" }}>
+            <div style={{ height: "100%", background: "linear-gradient(90deg, #6366f1, #818cf8)", borderRadius: 99, transition: "width 0.5s ease", width: `${progressPct}%` }} />
+          </div>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#6366f1", minWidth: 36, textAlign: "right" }}>{listenIdx + 1}/{listenPhrases.length}</span>
+        </div>
+
+        <div style={{ flex: 1, display: "flex", justifyContent: "center", padding: "24px 16px 32px" }}>
+          <div style={{ width: "100%", maxWidth: 480 }}>
             {listenComplete ? (
-              <div className="bg-white rounded-2xl shadow-xl overflow-hidden" style={{ animation: "popIn 0.25s ease" }}>
-                <div className="bg-gradient-to-r from-teal-500 to-cyan-500 px-6 py-6 text-center">
-                  <div className="w-14 h-14 mx-auto mb-2 bg-white/30 rounded-full flex items-center justify-center">
-                    <Headphones className="w-7 h-7 text-white" />
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ background: "white", borderRadius: 28, boxShadow: "0 20px 60px rgba(0,0,0,0.12)", overflow: "hidden" }}>
+                <div style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5, #4338ca)", padding: "40px 32px", textAlign: "center" }}>
+                  <div style={{ width: 72, height: 72, background: "rgba(255,255,255,0.15)", borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                    <Headphones size={36} color="white" />
                   </div>
-                  <h2 className="text-xl font-bold text-white mb-0.5" style={{ fontFamily: fonts.poppins }}>Kuizi i Dëgjimit Përfundoi!</h2>
-                  <p className="text-white/80 text-xs" style={{ fontFamily: fonts.inter }}>Punë e shkëlqyer!</p>
-                </div>
-                <div className="p-5">
-                  <div className="flex gap-3 justify-center mb-5">
-                    <div className="flex-1 text-center bg-teal-50 rounded-xl py-3 px-2 border border-teal-100">
-                      <div className="text-2xl font-bold text-teal-600" style={{ fontFamily: fonts.poppins }}>{listenScore}/{listenPhrases.length}</div>
-                      <div className="text-[11px] text-teal-600/70 mt-0.5" style={{ fontFamily: fonts.inter }}>Saktë</div>
-                    </div>
-                    <div className="flex-1 text-center bg-amber-50 rounded-xl py-3 px-2 border border-amber-100">
-                      <div className="text-2xl font-bold text-amber-600" style={{ fontFamily: fonts.poppins }}>+{listenScore} XP</div>
-                      <div className="text-[11px] text-amber-600/70 mt-0.5" style={{ fontFamily: fonts.inter }}>Pikë Fituar</div>
-                    </div>
-                    <div className="flex-1 text-center bg-blue-50 rounded-xl py-3 px-2 border border-blue-100">
-                      <div className="text-2xl font-bold text-blue-600" style={{ fontFamily: fonts.poppins }}>{Math.round((listenScore / listenPhrases.length) * 100)}%</div>
-                      <div className="text-[11px] text-blue-600/70 mt-0.5" style={{ fontFamily: fonts.inter }}>Saktësi</div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={startListenQuiz} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-xl font-semibold shadow-md shadow-teal-500/20 active:scale-95 transition-transform text-sm" style={{ fontFamily: fonts.poppins }}>
-                      <RotateCcw className="w-3.5 h-3.5" /> Fillo Përsëri
-                    </button>
-                    <button onClick={exitListenQuiz} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-semibold hover:bg-gray-200 active:scale-95 transition-all text-sm" style={{ fontFamily: fonts.poppins }}>
-                      <X className="w-3.5 h-3.5" /> Dil
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                {/* Header */}
-                <div className="bg-gradient-to-r from-teal-600 to-cyan-600 px-4 py-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <button onClick={exitListenQuiz} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors active:scale-90 flex-shrink-0">
-                      <X className="w-4 h-4" />
-                    </button>
-                    <div className="flex-1 bg-white/25 rounded-full h-3 overflow-hidden">
-                      <div className="h-full bg-white rounded-full transition-all duration-500 ease-out" style={{ width: `${progressPct}%` }} />
-                    </div>
-                    <span className="text-white font-bold text-sm flex-shrink-0" style={{ fontFamily: fonts.poppins }}>{listenIdx + 1}/{listenPhrases.length}</span>
-                  </div>
-                  <p className="text-white/80 text-xs text-center font-medium" style={{ fontFamily: fonts.inter }}>
-                    Dëgjo dhe gjej frazën e saktë
+                  <h3 style={{ fontSize: 28, fontWeight: 800, color: "white", margin: "0 0 8px" }}>
+                    {listenScore >= Math.ceil(listenPhrases.length * 0.6) ? "Urime! 🎉" : "Provo Përsëri!"}
+                  </h3>
+                  <p style={{ fontSize: 14, color: "rgba(255,255,255,0.75)", margin: 0 }}>
+                    {listenScore >= Math.ceil(listenPhrases.length * 0.6) ? "Kuizi i dëgjimit u krye!" : "Vazhdo të praktikosh dëgjimin."}
                   </p>
                 </div>
-
-                <div className="p-5">
-                  {/* Audio play button */}
-                  <div className="flex flex-col items-center mb-6">
-                    <div className="relative mb-3">
-                      {listenPlaying && (
-                        <>
-                          <span className="absolute inset-0 rounded-full bg-teal-400 opacity-30" style={{ animation: "pulse-ring 1s ease-out infinite" }} />
-                          <span className="absolute inset-0 rounded-full bg-teal-400 opacity-20" style={{ animation: "pulse-ring 1s ease-out infinite", animationDelay: "0.3s" }} />
-                        </>
-                      )}
-                      <button
-                        onClick={() => playListenAudio(currentPhrase)}
-                        disabled={listenPlaying}
-                        className="w-24 h-24 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 text-white flex items-center justify-center shadow-2xl shadow-teal-500/40 active:scale-95 transition-transform disabled:opacity-70"
-                      >
-                        {listenPlaying
-                          ? <Volume2 className="w-10 h-10 animate-pulse" />
-                          : <Play className="w-10 h-10 ml-1" />
-                        }
-                      </button>
-                    </div>
-                    <p className="text-sm font-medium text-gray-500" style={{ fontFamily: fonts.inter }}>
-                      {listenPlaying ? "Duke luajtur..." : "Kliko për të dëgjuar"}
-                    </p>
+                <div style={{ padding: 24 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+                    {[
+                      { label: "Saktë", value: `${listenScore}/${listenPhrases.length}`, color: "#6366f1", bg: "#eef2ff", border: "#c7d2fe" },
+                      { label: "Saktësi", value: `${Math.round((listenScore / listenPhrases.length) * 100)}%`, color: "#0ea5e9", bg: "#f0f9ff", border: "#bae6fd" },
+                      { label: "XP Fituar", value: `+${listenScore}`, color: "#d97706", bg: "#fffbeb", border: "#fde68a" },
+                    ].map((s) => (
+                      <div key={s.label} style={{ textAlign: "center", padding: "16px 8px", borderRadius: 16, background: s.bg, border: `1px solid ${s.border}` }}>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
+                        <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{s.label}</div>
+                      </div>
+                    ))}
                   </div>
-
-                  {/* Options */}
-                  <div className="space-y-3">
-                    {listenOptions.map((option) => {
-                      const optId = option._id || option.id
-                      const isCorrect = optId === correctId
-                      const isSelected = listenSelected === optId
-                      const answered = listenSelected !== null
-
-                      let btnClass = "w-full text-left px-5 py-4 rounded-2xl border-2 font-semibold text-base transition-all duration-200 active:scale-[0.98] "
-                      if (!answered) {
-                        btnClass += "bg-gray-50 border-gray-200 text-gray-700 hover:border-teal-400 hover:bg-teal-50 hover:shadow-md"
-                      } else if (isCorrect) {
-                        btnClass += "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/30"
-                      } else if (isSelected) {
-                        btnClass += "bg-red-500 border-red-500 text-white shadow-lg shadow-red-500/30"
-                      } else {
-                        btnClass += "bg-gray-100 border-gray-200 text-gray-400 opacity-60"
-                      }
-
-                      return (
-                        <button key={optId} onClick={() => handleListenAnswer(option)} disabled={answered} className={btnClass} style={{ fontFamily: fonts.inter }}>
-                          <div className="flex items-center gap-3">
-                            {answered && isCorrect && (
-                              <div className="w-7 h-7 rounded-full bg-white/30 flex items-center justify-center flex-shrink-0">
-                                <Check className="w-4 h-4 text-white" />
-                              </div>
-                            )}
-                            {answered && isSelected && !isCorrect && (
-                              <div className="w-7 h-7 rounded-full bg-white/30 flex items-center justify-center flex-shrink-0">
-                                <X className="w-4 h-4 text-white" />
-                              </div>
-                            )}
-                            {(!answered || (!isCorrect && !isSelected)) && (
-                              <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-xs font-bold text-gray-500">
-                                {listenOptions.indexOf(option) + 1}
-                              </div>
-                            )}
-                            <div className="flex-1">
-                              <div>{option.albanian}</div>
-                              {answered && isCorrect && (
-                                <div className="text-sm text-white/80 mt-0.5 font-normal">{option.german}</div>
-                              )}
-                            </div>
-                          </div>
-                        </button>
-                      )
-                    })}
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button onClick={exitListenQuiz} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px", background: "#f1f5f9", border: "none", borderRadius: 14, fontFamily: "inherit", fontSize: 14, fontWeight: 700, color: "#64748b", cursor: "pointer" }}>
+                      <X size={15} /> Dil
+                    </button>
+                    <button onClick={startListenQuiz} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px", background: "linear-gradient(135deg, #6366f1, #4f46e5)", border: "none", borderRadius: 14, fontFamily: "inherit", fontSize: 14, fontWeight: 700, color: "white", cursor: "pointer", boxShadow: "0 4px 16px rgba(99,102,241,0.35)" }}>
+                      <RotateCcw size={15} /> Provo Përsëri
+                    </button>
                   </div>
-
                 </div>
-              </div>
-            )}
+              </motion.div>
+            ) : (
+              <motion.div key={listenIdx} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25 }}>
+                {/* Instruction */}
+                <p style={{ textAlign: "center", fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", color: "#94a3b8", textTransform: "uppercase", margin: "0 0 20px" }}>
+                  Dëgjo dhe zgjedh frazën e saktë
+                </p>
 
-            {showXpAnimation && (
-              <div className="fixed z-50 pointer-events-none flex items-center gap-2" style={{ left: "50%", top: "40%", transform: "translate(-50%, -50%)", fontFamily: fonts.poppins, animation: "floatUp 1.8s ease-out forwards" }}>
-                <Sparkles className="w-6 h-6 text-amber-500" />
-                <span className="text-4xl font-bold text-amber-500 drop-shadow-lg">+{animatedXp} XP</span>
-              </div>
+                {/* Player card */}
+                <div style={{ background: "white", borderRadius: 24, boxShadow: "0 2px 16px rgba(0,0,0,0.06)", border: "1px solid #f1f5f9", padding: "32px 24px", marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  {/* Waveform bars */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 3, height: 36, marginBottom: 24 }}>
+                    {WAVE_HEIGHTS.map((h, i) => (
+                      <motion.div
+                        key={i}
+                        style={{ width: 3, borderRadius: 99, background: "#a5b4fc" }}
+                        animate={listenPlaying ? { height: [h, Math.min(h * 2.2, 32), h] } : { height: h }}
+                        transition={{ duration: 0.35 + (i % 4) * 0.12, repeat: listenPlaying ? Infinity : 0, ease: "easeInOut", delay: i * 0.04 }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Pill play button */}
+                  <button
+                    onClick={() => playListenAudio(currentPhrase)}
+                    disabled={listenPlaying}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "14px 36px", borderRadius: 99,
+                      background: "linear-gradient(135deg, #4f46e5, #6366f1)",
+                      border: "none", color: "white", fontFamily: "inherit",
+                      fontSize: 16, fontWeight: 800, cursor: listenPlaying ? "default" : "pointer",
+                      boxShadow: "0 8px 28px rgba(99,102,241,0.4)",
+                      transition: "transform 0.15s, opacity 0.15s",
+                      opacity: listenPlaying ? 0.75 : 1,
+                    }}
+                    onMouseEnter={(e) => { if (!listenPlaying) e.currentTarget.style.transform = "scale(1.04)" }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = "" }}
+                  >
+                    {listenPlaying ? <Pause size={18} /> : <Play size={18} style={{ marginLeft: 2 }} />}
+                    {listenPlaying ? "Duke luajtur..." : "Dëgjo"}
+                  </button>
+                </div>
+
+                {/* Answer options — 2×2 grid */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  {listenOptions.map((option, idx) => {
+                    const optId = option._id || option.id
+                    const isCorrect = optId === correctId
+                    const isSelected = listenSelected === optId
+                    const answered = listenSelected !== null
+
+                    let cardStyle = { background: "white", border: "2px solid #e2e8f0", color: "#1e293b" }
+                    let letterColor = "#818cf8"
+                    let icon = null
+
+                    if (answered) {
+                      if (isCorrect) {
+                        cardStyle = { background: "white", border: "2px solid #22c55e", color: "#1e293b", boxShadow: "0 4px 20px rgba(34,197,94,0.15)" }
+                        letterColor = "#22c55e"
+                        icon = <Check size={13} color="#22c55e" />
+                      } else if (isSelected) {
+                        cardStyle = { background: "white", border: "2px solid #ef4444", color: "#94a3b8" }
+                        letterColor = "#ef4444"
+                        icon = <X size={13} color="#ef4444" />
+                      } else {
+                        cardStyle = { background: "white", border: "2px solid #e2e8f0", color: "#cbd5e1", opacity: 0.5 }
+                        letterColor = "#cbd5e1"
+                      }
+                    }
+
+                    return (
+                      <motion.button
+                        key={optId}
+                        initial={{ opacity: 0, scale: 0.94 }}
+                        animate={{ opacity: answered && !isCorrect && !isSelected ? 0.5 : 1, scale: 1 }}
+                        transition={{ delay: idx * 0.06 }}
+                        onClick={() => handleListenAnswer(option)}
+                        disabled={answered}
+                        style={{
+                          ...cardStyle,
+                          padding: "18px 12px",
+                          borderRadius: 18,
+                          display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                          fontFamily: "inherit", fontWeight: 700, fontSize: 14,
+                          cursor: answered ? "default" : "pointer",
+                          transition: "border-color 0.2s, box-shadow 0.2s, transform 0.15s",
+                          textAlign: "center",
+                        }}
+                        onMouseEnter={(e) => { if (!answered) { e.currentTarget.style.borderColor = "#a5b4fc"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(99,102,241,0.12)" } }}
+                        onMouseLeave={(e) => { if (!answered) { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.boxShadow = "" } }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: letterColor }}>{LETTERS[idx]}</span>
+                          {icon}
+                        </div>
+                        <span style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.35 }}>{option.albanian}</span>
+                        {answered && isCorrect && (
+                          <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 500 }}>{option.german}</span>
+                        )}
+                      </motion.button>
+                    )
+                  })}
+                </div>
+              </motion.div>
             )}
           </div>
         </div>
-      </>
+
+        {showXpAnimation && (
+          <div className="fixed z-50 pointer-events-none flex items-center gap-2" style={{ left: "50%", top: "40%", transform: "translate(-50%,-50%)", animation: "floatUp 1.8s ease-out forwards" }}>
+            <Sparkles className="w-6 h-6 text-amber-500" />
+            <span className="text-4xl font-bold text-amber-500 drop-shadow-lg">+{animatedXp} XP</span>
+          </div>
+        )}
+      </div>
     )
   }
 
@@ -967,7 +1115,6 @@ const Phrase = () => {
 
           {/* Daily Limit Banner */}
           {dailyLimitInfo.dailyLimitReached && !dailyLimitInfo.isPaid ? (
-            /* ── LIMIT REACHED — upgrade CTA ── */
             <div className="mb-4 sm:mb-6 rounded-2xl overflow-hidden shadow-lg border border-orange-200">
               <div className="bg-gradient-to-r from-orange-500 to-amber-500 px-4 py-3 flex items-center gap-3">
                 <Crown className="w-5 h-5 text-white flex-shrink-0" />
@@ -984,7 +1131,6 @@ const Phrase = () => {
                   <p className="text-gray-500 text-xs leading-relaxed" style={{ fontFamily: fonts.inter }}>
                     Me Premium hap deri në <span className="font-bold text-amber-600">10 fraza çdo ditë</span> — 5× më shumë akses.
                   </p>
-                  {/* dot indicators */}
                   <div className="flex items-center gap-2 mt-2">
                     <span className="text-xs text-gray-400" style={{ fontFamily: fonts.inter }}>Sot:</span>
                     {Array.from({ length: FREE_DAILY_LIMIT }).map((_, i) => (
@@ -1011,7 +1157,6 @@ const Phrase = () => {
               </div>
             </div>
           ) : (
-            /* ── NORMAL — daily counter ── */
             <div className={`mb-4 sm:mb-6 p-3 sm:p-4 rounded-xl sm:rounded-2xl border-2 ${dailyLimitInfo.isPaid ? "bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200" : "bg-gradient-to-r from-teal-50 to-cyan-50 border-teal-200"}`}>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -1024,7 +1169,6 @@ const Phrase = () => {
                     <p className="font-bold text-slate-800 text-sm" style={{ fontFamily: fonts.poppins }}>
                       {dailyLimitInfo.isPaid ? "Premium" : "Plan Falas"} · {dailyLimitInfo.remainingUnlocks}/{dailyLimitInfo.dailyLimit} fraza sot
                     </p>
-                    {/* dot indicators */}
                     <div className="flex items-center gap-1.5 mt-1">
                       {Array.from({ length: dailyLimitInfo.dailyLimit }).map((_, i) => (
                         <div

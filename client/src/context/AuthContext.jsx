@@ -144,6 +144,52 @@ export const AuthProvider = ({ children }) => {
     initAuth()
   }, [])
 
+  const googleLogin = useCallback(async (access_token) => {
+    try {
+      const response = await authService.googleLogin(access_token)
+      const { token: newToken, user: userData } = response.data
+
+      if (!userData || Object.keys(userData).length === 0) {
+        throw new Error("Google login failed: No user data received.")
+      }
+
+      localStorage.setItem("authToken", newToken)
+      const userToStore = {
+        id: userData.id,
+        firstName: userData.emri,
+        lastName: userData.mbiemri,
+        email: userData.email,
+        role: userData.role,
+        profilePicture: userData.profilePicture,
+        xp: userData.xp,
+        level: userData.level,
+        languageProgress: userData.languageProgress || [],
+        learnedWordsCounts: userData.learnedWordsCounts || {},
+        dictionaryUnlockedCounts: userData.dictionaryUnlockedCounts || {},
+        studyHours: userData.studyHours,
+        completedTests: userData.completedTests,
+        completedTranslations: userData.passedTranslatedTexts?.length || 0,
+        achievements: userData.achievements,
+        streakCount: userData.streakCount,
+        avatarStyle: userData.avatarStyle || "adventurer",
+        isVerified: userData.isVerified || false,
+        subscription: userData.subscription || {
+          active: false,
+          type: "free_trial",
+          expiresAt: null,
+          trialStartedAt: null,
+          daysRemaining: 0,
+        },
+      }
+      localStorage.setItem("user", JSON.stringify(userToStore))
+      setToken(newToken)
+      setUser(userToStore)
+      return response
+    } catch (error) {
+      throw error
+    }
+  }, [])
+
   const login = useCallback(async (credentials) => {
     try {
       const response = await authService.login(credentials)
@@ -218,6 +264,7 @@ export const AuthProvider = ({ children }) => {
     token,
     loading,
     login,
+    googleLogin,
     register: useCallback(async (userData) => {
       try {
         const response = await authService.register(userData)

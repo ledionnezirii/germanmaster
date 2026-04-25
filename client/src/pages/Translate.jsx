@@ -62,7 +62,7 @@ const Translate = () => {
   const [showResult, setShowResult] = useState(false)
   const [quizComplete, setQuizComplete] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [selectedLevel, setSelectedLevel] = useState("all")
+  const [selectedLevel, setSelectedLevel] = useState("A1")
   const [userAnswers, setUserAnswers] = useState([])
   const [userProgress, setUserProgress] = useState({})
   const [quizResults, setQuizResults] = useState(null)
@@ -77,7 +77,7 @@ const Translate = () => {
     return () => window.removeEventListener("resize", check)
   }, [])
 
-  const levels = ["all", "A1", "A2", "B1", "B2", "C1", "C2"]
+  const levels = ["A1", "A2", "B1", "B2", "C1", "C2"]
 
   useEffect(() => {
     document.title = "Praktika e Përkthimit Gjermanisht - Përmirësoni Leximin dhe Kuptimin | Tekste dhe Pyetje"
@@ -571,14 +571,12 @@ const Translate = () => {
             </div>
 
             <div style={{ display: "flex", gap: 12, flexShrink: 0, position: "relative", zIndex: 1, alignSelf: "center", width: isMobile ? "100%" : "auto" }}>
-              <div style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, flex: isMobile ? 1 : "unset", minWidth: isMobile ? 0 : 130 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(255,255,255,0.2)" }}>
-                  <Check size={16} color="#fff" />
-                </div>
-                <div>
-                  <div style={{ fontSize: 22, fontWeight: 600, color: "#fff", lineHeight: 1, marginBottom: 2 }}>{completedCount}</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>Të Përfunduara</div>
-                </div>
+              <div style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "center", flex: isMobile ? 1 : "unset", minWidth: isMobile ? 0 : 100 }}>
+                <img
+                  src={{ de: "https://flagcdn.com/w80/de.png", en: "https://flagcdn.com/w80/gb.png", fr: "https://flagcdn.com/w80/fr.png" }[language] || "https://flagcdn.com/w80/de.png"}
+                  alt={language}
+                  style={{ width: 56, height: 38, objectFit: "cover", borderRadius: 6, boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}
+                />
               </div>
             </div>
           </div>
@@ -596,13 +594,11 @@ const Translate = () => {
                 onClick={() => setSelectedLevel(level)}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border shadow-sm hover:shadow-md hover:scale-105 active:scale-95 ${
                   selectedLevel === level
-                    ? level === "all"
-                      ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-emerald-500 shadow-emerald-500/30"
-                      : getLevelColor(level) + " border-2"
+                    ? getLevelColor(level) + " border-2"
                     : "bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200"
                 }`}
               >
-                {level === "all" ? "Të gjitha" : level}
+                {level}
               </button>
             ))}
           </div>

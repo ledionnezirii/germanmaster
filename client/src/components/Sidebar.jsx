@@ -9,6 +9,7 @@ import {
   Home,
   Headphones,
   Languages,
+  BookOpen,
   User,
   ChevronLeft,
   ChevronRight,
@@ -24,6 +25,7 @@ import {
   BookUser,
   UniversityIcon,
   ChevronDown,
+  LayoutGrid,
   FileTerminal,
   Sword,
   SpeakerIcon,
@@ -43,6 +45,12 @@ import {
   ChevronDownSquare,
   Gift,
   Mic2,
+  MapPin,
+  Target,
+  PenLine,
+  HelpCircle,
+  ClipboardList,
+  MessageCircle,
 } from "lucide-react"
 import { ChatBubbleLeftIcon, MicrophoneIcon } from "@heroicons/react/24/outline"
 
@@ -51,10 +59,11 @@ const fonts = {
   inter: ["Inter", "sans-serif"].join(", "),
 }
 
+
 const Sidebar = () => {
   const { isCollapsed, toggleSidebar } = useSidebar()
   const { isAuthenticated, user } = useAuth()
-  const { language } = useLanguage() // 👈 ADDED
+  const { language } = useLanguage()
   const location = useLocation()
 
   const [expandedMenus, setExpandedMenus] = useState({
@@ -79,13 +88,13 @@ const Sidebar = () => {
     { icon: Home, label: "Kryefaqja", path: "/", requireAuth: false, languages: ["de", "en", "fr"] },
     { icon: Languages, label: "Përkthe", path: "/translate", languages: ["de","en"] },
     { icon: Headphones, label: "Dëgjo", path: "/listen", languages: ["de","en","fr"] }, // 👈 all languages
-    { icon: BookUser, label: "Fjalori", path: "/dictionary", languages: ["de","en","fr"] },
-    { icon: InfinityIcon, label: "Baza Gjuhësore", path: "/category", languages: ["de", "en", "fr"] },
+    { icon: BookOpen, label: "Fjalori", path: "/dictionary", languages: ["de","en","fr"] },
+    { icon: LayoutGrid, label: "Baza Gjuhësore", path: "/category", languages: ["de", "en", "fr"] },
     { icon: UserRoundPen, label: "Formo Fjali", path: "/sentences", languages: ["de", "en", "fr", "tr", "it"] },
 
-    { icon: ChevronDownSquare, label: "Zgjedh fjalen duhur", path: "/wordaudio", languages: ["de", "en", "fr"] },
+    { icon: Target, label: "Zgjedh fjalen duhur", path: "/wordaudio", languages: ["de", "en", "fr"] },
 
-    { icon: BrickWallIcon, label: "Formo Fjale", path: "/createword", languages: ["de","en"] },
+    { icon: PenLine, label: "Formo Fjale", path: "/createword", languages: ["de","en"] },
 
     { icon: Mic2, label: "Shqipto", path: "/pronunciation", requireAuth: true, languages: ["de", "en", "fr"] },
 
@@ -94,15 +103,16 @@ const Sidebar = () => {
 
 
     //{ icon: Star, label: "Strukturat e gjuhes", path: "/structure", languages: ["de"] },
-    { icon: File, label: "Pergatitu per provime", path: "/exam", languages: ["de"] },
-    { icon: UniversityIcon, label: "Mëso Gramatiken", path: "/grammar", languages: ["de"] },
-    { icon: ChatBubbleLeftIcon, label: "worti", path: "/question", languages: ["de", "en"] },
+  //  { icon: File, label: "Pergatitu per provime", path: "/exam", languages: ["de"] },
+    { icon: UniversityIcon, label: "Mëso Gramatiken", path: "/grammar", languages: ["de","en"] },
+    { icon: MessageCircle, label: "worti", path: "/question", languages: ["de", "en"] },
     { icon: User, label: "Admin Panel", path: "/admin", requireAuth: true, adminOnly: true, languages: ["de", "en", "fr"] },
     //{ icon: FilmIcon, label: "Video te ndryshme", path: "/videos", languages: ["de"] },
-    { icon: LightbulbIcon, label: "Kuizet", path: "/quizes", languages: ["de","en"] },
+    { icon: HelpCircle, label: "Kuizet", path: "/quizes", languages: ["de","en"] },
     { icon: BookHeartIcon, label: "Fjalori Personal", path: "/words", languages: ["de","en"] },
-    { icon: TestTube2Icon, label: "Testet e Nivelit", path: "/tests", languages: ["de","en"] },
+    { icon: ClipboardList, label: "Testet e Nivelit", path: "/tests", languages: ["de","en"] },
    // { icon: Calendar, label: "PlanProgrami", path: "/plan", requireAuth: true, languages: ["de"] },
+    //{ icon: MapPin, label: "Rruga e të Nxënit", path: "/path", requireAuth: true, languages: ["de", "en", "fr", "tr", "it"] },
     { icon: BarChart, label: "Renditja", path: "/leaderboard", requireAuth: false, languages: ["de", "en", "fr"] },
     //{ icon: UniversityIcon, label: "Akademia", path: "/academies", requireAuth: true, languages: ["de", "en", "fr"] },
 
@@ -156,10 +166,6 @@ const Sidebar = () => {
       }
     })
   }, [location.pathname, isCollapsed])
-
-  if (!isAuthenticated) {
-    return null
-  }
 
   return (
     <>

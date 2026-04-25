@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
 import React from "react"
 import { grammarService } from "../services/api"
+import { useLanguage } from "../context/LanguageContext"
 import {
   GraduationCap,
   BookOpen,
@@ -276,6 +277,7 @@ const MoreInfoModal = ({ topic, isOpen, onClose }) => {
 }
 
 const Grammar = () => {
+  const { language } = useLanguage()
   const [topics, setTopics] = useState([])
   const [selectedLevel, setSelectedLevel] = useState("all")
   const [loading, setLoading] = useState(true)
@@ -386,7 +388,7 @@ const Grammar = () => {
     fetchTopics()
     fetchFinishedTopics()
     fetchDailyLimit()
-  }, [selectedLevel])
+  }, [selectedLevel, language])
 
   const fetchDailyLimit = async () => {
     try {
@@ -472,8 +474,8 @@ const Grammar = () => {
       setError(null)
       const response =
         selectedLevel === "all"
-          ? await grammarService.getAllTopics()
-          : await grammarService.getTopicsByLevel(selectedLevel)
+          ? await grammarService.getAllTopics({ language })
+          : await grammarService.getTopicsByLevel(selectedLevel, { language })
 
       let topicsData = []
       if (response.data?.topics) {

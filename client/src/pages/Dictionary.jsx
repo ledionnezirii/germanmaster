@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { dictionaryService, favoritesService, ttsService, wordsService } from "../services/api"
 import { useLanguage } from "../context/LanguageContext"
 import SEO from "../components/SEO"
-import { BookOpen, Volume2, Heart, ChevronLeft, ChevronRight, Play, X, CheckCircle, XCircle, Trophy, Lock, Unlock, ArrowLeft, Crown, Headphones, Check, RotateCcw, Sparkles } from 'lucide-react'
+import { BookOpen, Volume2, Heart, ChevronLeft, ChevronRight, Play, Pause, X, CheckCircle, XCircle, Trophy, Lock, Unlock, ArrowLeft, Crown, Headphones, Check, RotateCcw, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from "framer-motion"
 
 const FREE_DAILY_LIMIT = 5
@@ -586,120 +586,102 @@ const Dictionary = () => {
 
   // ── Full-screen quiz view ─────────────────────────────────────────────────
   if (showQuiz) {
+    const progress = quizQuestions.length > 0 ? ((currentQuestionIndex + 1) / quizQuestions.length) * 100 : 0
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50/30 py-8 px-4">
-        <div className="max-w-2xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <button
-              onClick={closeQuiz}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-600 hover:text-slate-900 transition-all shadow-sm border border-slate-200"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="font-medium">Kthehu te Fjalori</span>
-            </button>
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-semibold text-slate-500">Niveli {selectedLevel}</span>
-              <button
-                onClick={finishQuiz}
-                className="px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-sm border border-red-200 transition-all"
-              >
-                Përfundo Kuizin
-              </button>
-            </div>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col">
+        <style>{`@keyframes popIn { 0%{transform:scale(0.92);opacity:0} 60%{transform:scale(1.02)} 100%{transform:scale(1);opacity:1} }`}</style>
+
+        {/* Top bar */}
+        <div className="bg-white/80 backdrop-blur-sm border-b border-gray-100 px-4 py-3 flex items-center gap-4">
+          <button onClick={closeQuiz} className="flex items-center gap-1.5 text-slate-500 hover:text-slate-800 transition-colors text-sm font-medium">
+            <ArrowLeft className="w-4 h-4" /> Fjalori
+          </button>
+          <div className="flex-1 bg-slate-100 rounded-full h-2.5 overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full transition-all duration-500" style={{ width: `${progress}%` }} />
           </div>
+          <span className="text-xs font-bold text-purple-600 w-12 text-right">{currentQuestionIndex + 1}/{quizQuestions.length}</span>
+        </div>
 
-          <div className="bg-white rounded-3xl shadow-xl overflow-hidden">
-            <div className="p-6">
-              {!showResult ? (
-                <>
-                  {/* Progress */}
-                  <div className="flex items-center justify-between text-sm mb-3">
-                    <span className="text-slate-500 font-medium">Pyetja {currentQuestionIndex + 1} nga {quizQuestions.length}</span>
-                    <span className="text-purple-600 font-bold">{Math.round(((currentQuestionIndex + 1) / quizQuestions.length) * 100)}%</span>
+        <div className="flex-1 flex items-start justify-center px-4 pt-4 pb-8">
+          <div className="w-full max-w-lg">
+            {!showResult ? (
+              <motion.div key={currentQuestionIndex} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25 }}>
+                {/* Score badge */}
+                <div className="flex justify-center mb-3">
+                  <div className="inline-flex items-center gap-2 bg-white border border-purple-100 rounded-full px-4 py-1.5 shadow-sm">
+                    <CheckCircle className="w-4 h-4 text-emerald-500" />
+                    <span className="text-sm font-semibold text-slate-700">{correctAnswers} saktë</span>
+                    <span className="text-slate-300">·</span>
+                    <span className="text-xs font-semibold text-purple-500 uppercase tracking-wide">{selectedLevel}</span>
                   </div>
-                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-6">
-                    <div
-                      className="h-full bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full transition-all duration-500"
-                      style={{ width: `${((currentQuestionIndex + 1) / quizQuestions.length) * 100}%` }}
-                    />
-                  </div>
+                </div>
 
-                  {/* Question */}
-                  <div className="text-center mb-8">
-                    <p className="text-sm text-slate-500 mb-2">Çfarë do të thotë:</p>
-                    <h2 className="text-3xl font-bold text-slate-800">
-                      {quizQuestions[currentQuestionIndex]?.word}
-                    </h2>
-                  </div>
+                {/* Word card */}
+                <div className="bg-white rounded-3xl shadow-xl border border-purple-100/50 p-6 mb-4 text-center">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Çfarë do të thotë</p>
+                  <h2 className="text-4xl font-bold text-slate-800 mb-1" style={{ fontFamily: "'DM Serif Display', serif" }}>
+                    {quizQuestions[currentQuestionIndex]?.word}
+                  </h2>
+                </div>
 
-                  {/* Options */}
-                  <div className="space-y-3 mb-6">
-                    {quizQuestions[currentQuestionIndex]?.options.map((option, index) => {
-                      const isCorrect = option === quizQuestions[currentQuestionIndex].correctAnswer
-                      const isSelected = selectedAnswer === option
-                      let cls = "bg-slate-50 border-transparent hover:bg-slate-100 hover:border-slate-200"
-                      if (answerSubmitted) {
-                        if (isCorrect) cls = "bg-emerald-50 border-emerald-500"
-                        else if (isSelected && !isCorrect) cls = "bg-red-50 border-red-400"
-                      }
-                      return (
-                        <button
-                          key={index}
-                          onClick={() => handleAnswerSelect(option)}
-                          disabled={answerSubmitted}
-                          className={`w-full p-4 rounded-2xl border-2 text-left font-medium transition-all duration-300 flex items-center justify-between ${cls} ${answerSubmitted ? "cursor-default" : "cursor-pointer"}`}
-                        >
-                          <span className={isCorrect && answerSubmitted ? "text-emerald-700" : isSelected && !isCorrect && answerSubmitted ? "text-red-600" : "text-slate-700"}>{option}</span>
-                          {answerSubmitted && isCorrect && <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />}
-                          {answerSubmitted && isSelected && !isCorrect && <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />}
-                        </button>
-                      )
-                    })}
+                {/* Options */}
+                <div className="space-y-2.5">
+                  {quizQuestions[currentQuestionIndex]?.options.map((option, index) => {
+                    const isCorrect = option === quizQuestions[currentQuestionIndex].correctAnswer
+                    const isSelected = selectedAnswer === option
+                    let cls = "bg-white border-gray-200 hover:border-purple-300 hover:bg-purple-50 text-slate-700"
+                    if (answerSubmitted) {
+                      if (isCorrect) cls = "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/25"
+                      else if (isSelected) cls = "bg-red-400 border-red-400 text-white"
+                      else cls = "bg-gray-50 border-gray-200 text-gray-400 opacity-60"
+                    }
+                    return (
+                      <motion.button key={index} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.06 }}
+                        onClick={() => handleAnswerSelect(option)}
+                        disabled={answerSubmitted}
+                        className={`w-full px-5 py-4 rounded-2xl border-2 text-left font-semibold transition-all duration-200 flex items-center justify-between ${cls} ${answerSubmitted ? "cursor-default" : "cursor-pointer active:scale-[0.98]"}`}
+                      >
+                        <span>{option}</span>
+                        {answerSubmitted && isCorrect && <CheckCircle className="w-5 h-5 flex-shrink-0" />}
+                        {answerSubmitted && isSelected && !isCorrect && <XCircle className="w-5 h-5 flex-shrink-0" />}
+                      </motion.button>
+                    )
+                  })}
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+                <div className={`px-8 py-10 text-center ${correctAnswers >= 9 ? "bg-gradient-to-br from-purple-600 to-indigo-600" : "bg-gradient-to-br from-amber-500 to-orange-500"}`}>
+                  <div className="w-20 h-20 mx-auto mb-4 bg-white/20 rounded-2xl flex items-center justify-center">
+                    {correctAnswers >= 9 ? <Trophy className="w-10 h-10 text-white" /> : <RotateCcw className="w-10 h-10 text-white" />}
                   </div>
-
-                  <div className="text-center text-sm text-slate-500 mt-4">
-                    Përgjigje të sakta: <span className="font-bold text-emerald-600">{correctAnswers}</span> / {currentQuestionIndex + (answerSubmitted ? 1 : 0)}
+                  <h3 className="text-3xl font-bold text-white mb-2">{correctAnswers >= 9 ? "Urime! 🎉" : "Provo Përsëri!"}</h3>
+                  <p className="text-white/80 text-sm">{correctAnswers >= 9 ? "Punë e shkëlqyer!" : "Nevojiten të paktën 9 të sakta."}</p>
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-3 gap-3 mb-6">
+                    {[
+                      { label: "Saktë", value: `${correctAnswers}/${quizQuestions.length}`, color: "text-purple-600", bg: "bg-purple-50 border-purple-100" },
+                      { label: "Saktësi", value: `${Math.round((correctAnswers / quizQuestions.length) * 100)}%`, color: "text-blue-600", bg: "bg-blue-50 border-blue-100" },
+                      { label: "XP Fituar", value: `+${correctAnswers >= 9 && xpAwarded ? 5 : 0}`, color: "text-amber-600", bg: "bg-amber-50 border-amber-100" },
+                    ].map(s => (
+                      <div key={s.label} className={`text-center py-4 rounded-2xl border ${s.bg}`}>
+                        <div className={`text-2xl font-bold ${s.color}`}>{s.value}</div>
+                        <div className="text-[11px] text-gray-400 mt-0.5">{s.label}</div>
+                      </div>
+                    ))}
                   </div>
-                </>
-              ) : (
-                /* Result screen */
-                <div className="text-center py-6">
-                  <div className={`w-24 h-24 mx-auto mb-6 rounded-3xl flex items-center justify-center ${correctAnswers >= 9 ? "bg-gradient-to-br from-emerald-400 to-teal-500 shadow-lg shadow-emerald-500/30" : "bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg shadow-amber-500/30"}`}>
-                    {correctAnswers >= 9 ? <Trophy className="w-12 h-12 text-white" /> : <XCircle className="w-12 h-12 text-white" />}
-                  </div>
-                  <h3 className="text-3xl font-bold text-slate-800 mb-2">{correctAnswers >= 9 ? "Urime! 🎉" : "Provoni përsëri!"}</h3>
-                  <p className="text-slate-500 mb-6">{correctAnswers >= 9 ? "E kaluat kuizin me sukses!" : "Ju nevojiten të paktën 9 përgjigje të sakta."}</p>
-
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-slate-50 rounded-2xl p-5">
-                      <div className={`text-4xl font-bold mb-1 ${correctAnswers >= 9 ? "text-emerald-500" : "text-amber-500"}`}>{Math.round((correctAnswers / quizQuestions.length) * 100)}%</div>
-                      <div className="text-sm text-slate-500 font-medium">Rezultati</div>
-                    </div>
-                    <div className="bg-slate-50 rounded-2xl p-5">
-                      <div className={`text-4xl font-bold mb-1 ${correctAnswers >= 9 ? "text-emerald-500" : "text-amber-500"}`}>{correctAnswers}/{quizQuestions.length}</div>
-                      <div className="text-sm text-slate-500 font-medium">Sakta</div>
-                    </div>
-                  </div>
-
-                  {correctAnswers >= 9 && xpAwarded && (
-                    <div className="flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-2xl mb-6">
-                      <Trophy className="w-5 h-5 text-amber-500" />
-                      <span className="font-bold text-amber-700">+5 XP të fituara!</span>
-                    </div>
-                  )}
-
-                  <div className="flex gap-3">
-                    <button onClick={closeQuiz} className="flex-1 py-4 rounded-2xl font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-all">
-                      Kthehu
+                  <div className="flex gap-2">
+                    <button onClick={closeQuiz} className="flex-1 flex items-center justify-center gap-2 py-3 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-xl font-semibold text-sm transition-all">
+                      <X className="w-4 h-4" /> Dil
                     </button>
-                    <button onClick={() => { closeQuiz(); startQuiz() }} className="flex-1 py-4 rounded-2xl font-semibold bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg hover:shadow-xl transition-all">
-                      Provo Përsëri
+                    <button onClick={() => { closeQuiz(); startQuiz() }} className="flex-1 flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold text-sm shadow-md shadow-purple-500/20 transition-all">
+                      <RotateCcw className="w-4 h-4" /> Provo Përsëri
                     </button>
                   </div>
                 </div>
-              )}
-            </div>
+              </motion.div>
+            )}
           </div>
         </div>
       </div>
@@ -711,149 +693,181 @@ const Dictionary = () => {
     const currentWord = listenWords[listenIdx]
     const correctId = currentWord?._id
     const progressPct = listenWords.length > 0 ? (listenIdx / listenWords.length) * 100 : 0
+    const LETTERS = ["A", "B", "C", "D"]
+    const WAVE_HEIGHTS = [5, 10, 18, 13, 22, 14, 24, 9, 20, 12, 17, 7, 21, 11, 9]
 
     return (
-      <>
-      <style>{`
-        @keyframes floatUp { 0% { opacity:1; transform:translateY(0) scale(1); } 100% { opacity:0; transform:translateY(-80px) scale(1.2); } }
-        @keyframes popIn { 0% { transform:scale(0.9); opacity:0; } 60% { transform:scale(1.03); } 100% { transform:scale(1); opacity:1; } }
-        @keyframes pulse-ring { 0% { transform:scale(1); opacity:0.6; } 100% { transform:scale(1.5); opacity:0; } }
-      `}</style>
-      <div className="min-h-screen bg-gradient-to-br from-[#F0FDFA] via-white to-[#CCFBF1] flex items-start justify-center p-3 sm:p-5 pt-4">
-        <div className="w-full max-w-[580px]">
-          {listenComplete ? (
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden" style={{ animation: "popIn 0.25s ease" }}>
-              <div className="bg-gradient-to-r from-teal-500 to-cyan-500 px-6 py-6 text-center">
-                <div className="w-14 h-14 mx-auto mb-2 bg-white/30 rounded-full flex items-center justify-center">
-                  <Headphones className="w-7 h-7 text-white" />
-                </div>
-                <h2 className="text-xl font-bold text-white mb-0.5" style={{ fontFamily: fonts.poppins }}>Kuizi i Dëgjimit Përfundoi!</h2>
-                <p className="text-white/80 text-xs" style={{ fontFamily: fonts.inter }}>Punë e shkëlqyer!</p>
-              </div>
-              <div className="p-5">
-                <div className="flex gap-3 justify-center mb-5">
-                  <div className="flex-1 text-center bg-teal-50 rounded-xl py-3 px-2 border border-teal-100">
-                    <div className="text-2xl font-bold text-teal-600" style={{ fontFamily: fonts.poppins }}>{listenScore}/{listenWords.length}</div>
-                    <div className="text-[11px] text-teal-600/70 mt-0.5" style={{ fontFamily: fonts.inter }}>Saktë</div>
-                  </div>
-                  <div className="flex-1 text-center bg-amber-50 rounded-xl py-3 px-2 border border-amber-100">
-                    <div className="text-2xl font-bold text-amber-600" style={{ fontFamily: fonts.poppins }}>+{listenScore} XP</div>
-                    <div className="text-[11px] text-amber-600/70 mt-0.5" style={{ fontFamily: fonts.inter }}>Pikë Fituar</div>
-                  </div>
-                  <div className="flex-1 text-center bg-blue-50 rounded-xl py-3 px-2 border border-blue-100">
-                    <div className="text-2xl font-bold text-blue-600" style={{ fontFamily: fonts.poppins }}>{Math.round((listenScore / listenWords.length) * 100)}%</div>
-                    <div className="text-[11px] text-blue-600/70 mt-0.5" style={{ fontFamily: fonts.inter }}>Saktësi</div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={startListenQuiz} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gradient-to-r from-teal-500 to-cyan-500 text-white rounded-xl font-semibold shadow-md shadow-teal-500/20 active:scale-95 transition-transform text-sm" style={{ fontFamily: fonts.poppins }}>
-                    <RotateCcw className="w-3.5 h-3.5" /> Fillo Përsëri
-                  </button>
-                  <button onClick={closeListenQuiz} className="flex-1 flex items-center justify-center gap-1.5 px-4 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-semibold hover:bg-gray-200 active:scale-95 transition-all text-sm" style={{ fontFamily: fonts.poppins }}>
-                    <X className="w-3.5 h-3.5" /> Dil
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-              {/* Header */}
-              <div className="bg-gradient-to-r from-teal-600 to-cyan-600 px-4 py-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <button onClick={closeListenQuiz} className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-colors active:scale-90 flex-shrink-0">
-                    <X className="w-4 h-4" />
-                  </button>
-                  <div className="flex-1 bg-white/25 rounded-full h-3 overflow-hidden">
-                    <div className="h-full bg-white rounded-full transition-all duration-500 ease-out" style={{ width: `${progressPct}%` }} />
-                  </div>
-                  <span className="text-white font-bold text-sm flex-shrink-0" style={{ fontFamily: fonts.poppins }}>{listenIdx + 1}/{listenWords.length}</span>
-                </div>
-                <p className="text-white/80 text-xs text-center font-medium" style={{ fontFamily: fonts.inter }}>Dëgjo dhe gjej fjalën e saktë</p>
-              </div>
+      <div style={{ minHeight: "100vh", background: "#f3f4f6", display: "flex", flexDirection: "column" }}>
+        <style>{`
+          @keyframes floatUp { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-80px) scale(1.2)} }
+        `}</style>
 
-              <div className="p-5">
-                {/* Play button */}
-                <div className="flex flex-col items-center mb-6">
-                  <div className="relative mb-3">
-                    {listenPlaying && (
-                      <>
-                        <span className="absolute inset-0 rounded-full bg-teal-400 opacity-30" style={{ animation: "pulse-ring 1s ease-out infinite" }} />
-                        <span className="absolute inset-0 rounded-full bg-teal-400 opacity-20" style={{ animation: "pulse-ring 1s ease-out infinite", animationDelay: "0.3s" }} />
-                      </>
-                    )}
-                    <button
-                      onClick={() => playListenAudio(currentWord)}
-                      disabled={listenPlaying}
-                      className="w-24 h-24 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 text-white flex items-center justify-center shadow-2xl shadow-teal-500/40 active:scale-95 transition-transform disabled:opacity-70"
-                    >
-                      {listenPlaying ? <Volume2 className="w-10 h-10 animate-pulse" /> : <Play className="w-10 h-10 ml-1" />}
-                    </button>
+        {/* Top bar */}
+        <div style={{ background: "white", borderBottom: "1px solid #f1f5f9", padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+          <button onClick={closeListenQuiz} style={{ display: "flex", alignItems: "center", gap: 6, color: "#64748b", background: "none", border: "none", cursor: "pointer", fontSize: 14, fontWeight: 600, fontFamily: "inherit" }}>
+            <ArrowLeft size={16} /> Fjalori
+          </button>
+          <div style={{ flex: 1, background: "#e2e8f0", borderRadius: 99, height: 6, overflow: "hidden" }}>
+            <div style={{ height: "100%", background: "linear-gradient(90deg, #6366f1, #818cf8)", borderRadius: 99, transition: "width 0.5s ease", width: `${progressPct}%` }} />
+          </div>
+          <span style={{ fontSize: 12, fontWeight: 700, color: "#6366f1", minWidth: 36, textAlign: "right" }}>{listenIdx + 1}/{listenWords.length}</span>
+        </div>
+
+        <div style={{ flex: 1, display: "flex", justifyContent: "center", padding: "24px 16px 32px" }}>
+          <div style={{ width: "100%", maxWidth: 480 }}>
+            {listenComplete ? (
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} style={{ background: "white", borderRadius: 28, boxShadow: "0 20px 60px rgba(0,0,0,0.12)", overflow: "hidden" }}>
+                <div style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5, #4338ca)", padding: "40px 32px", textAlign: "center" }}>
+                  <div style={{ width: 72, height: 72, background: "rgba(255,255,255,0.15)", borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                    <Headphones size={36} color="white" />
                   </div>
-                  <p className="text-sm font-medium text-gray-500" style={{ fontFamily: fonts.inter }}>
-                    {listenPlaying ? "Duke luajtur..." : "Kliko për të dëgjuar"}
+                  <h3 style={{ fontSize: 28, fontWeight: 800, color: "white", margin: "0 0 8px" }}>
+                    {listenScore >= Math.ceil(listenWords.length * 0.6) ? "Urime! 🎉" : "Provo Përsëri!"}
+                  </h3>
+                  <p style={{ fontSize: 14, color: "rgba(255,255,255,0.75)", margin: 0 }}>
+                    {listenScore >= Math.ceil(listenWords.length * 0.6) ? "Kuizi i dëgjimit u krye!" : "Vazhdo të praktikosh dëgjimin."}
                   </p>
                 </div>
+                <div style={{ padding: 24 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 20 }}>
+                    {[
+                      { label: "Saktë", value: `${listenScore}/${listenWords.length}`, color: "#6366f1", bg: "#eef2ff", border: "#c7d2fe" },
+                      { label: "Saktësi", value: `${Math.round((listenScore / listenWords.length) * 100)}%`, color: "#0ea5e9", bg: "#f0f9ff", border: "#bae6fd" },
+                      { label: "XP Fituar", value: `+${listenScore}`, color: "#d97706", bg: "#fffbeb", border: "#fde68a" },
+                    ].map(s => (
+                      <div key={s.label} style={{ textAlign: "center", padding: "16px 8px", borderRadius: 16, background: s.bg, border: `1px solid ${s.border}` }}>
+                        <div style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</div>
+                        <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{s.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button onClick={closeListenQuiz} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px", background: "#f1f5f9", border: "none", borderRadius: 14, fontFamily: "inherit", fontSize: 14, fontWeight: 700, color: "#64748b", cursor: "pointer" }}>
+                      <X size={15} /> Dil
+                    </button>
+                    <button onClick={startListenQuiz} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px", background: "linear-gradient(135deg, #6366f1, #4f46e5)", border: "none", borderRadius: 14, fontFamily: "inherit", fontSize: 14, fontWeight: 700, color: "white", cursor: "pointer", boxShadow: "0 4px 16px rgba(99,102,241,0.35)" }}>
+                      <RotateCcw size={15} /> Provo Përsëri
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div key={listenIdx} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25 }}>
 
-                {/* Options */}
-                <div className="space-y-3">
+                {/* Instruction */}
+                <p style={{ textAlign: "center", fontSize: 11, fontWeight: 800, letterSpacing: "0.14em", color: "#94a3b8", textTransform: "uppercase", marginBottom: 20, margin: "0 0 20px" }}>
+                  Dëgjo dhe zgjedh frazën e saktë
+                </p>
+
+                {/* Player card */}
+                <div style={{ background: "white", borderRadius: 24, boxShadow: "0 2px 16px rgba(0,0,0,0.06)", border: "1px solid #f1f5f9", padding: "32px 24px", marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  {/* Waveform bars */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 3, height: 36, marginBottom: 24 }}>
+                    {WAVE_HEIGHTS.map((h, i) => (
+                      <motion.div
+                        key={i}
+                        style={{ width: 3, borderRadius: 99, background: "#a5b4fc" }}
+                        animate={listenPlaying ? { height: [h, Math.min(h * 2.2, 32), h] } : { height: h }}
+                        transition={{ duration: 0.35 + (i % 4) * 0.12, repeat: listenPlaying ? Infinity : 0, ease: "easeInOut", delay: i * 0.04 }}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Pill play button */}
+                  <button
+                    onClick={() => playListenAudio(currentWord)}
+                    disabled={listenPlaying}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      padding: "14px 36px", borderRadius: 99,
+                      background: "linear-gradient(135deg, #4f46e5, #6366f1)",
+                      border: "none", color: "white", fontFamily: "inherit",
+                      fontSize: 16, fontWeight: 800, cursor: listenPlaying ? "default" : "pointer",
+                      boxShadow: "0 8px 28px rgba(99,102,241,0.4)",
+                      transition: "transform 0.15s, opacity 0.15s",
+                      opacity: listenPlaying ? 0.75 : 1,
+                    }}
+                    onMouseEnter={e => { if (!listenPlaying) e.currentTarget.style.transform = "scale(1.04)" }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = "" }}
+                  >
+                    {listenPlaying
+                      ? <Pause size={18} />
+                      : <Play size={18} style={{ marginLeft: 2 }} />}
+                    {listenPlaying ? "Duke luajtur..." : "Dëgjo"}
+                  </button>
+                </div>
+
+                {/* Answer options — 2×2 grid */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   {listenOptions.map((option, idx) => {
                     const isCorrect = option._id === correctId
                     const isSelected = listenSelected === option._id
                     const answered = listenSelected !== null
 
-                    let btnClass = "w-full text-left px-5 py-4 rounded-2xl border-2 font-semibold text-base transition-all duration-200 active:scale-[0.98] "
-                    if (!answered) {
-                      btnClass += "bg-gray-50 border-gray-200 text-gray-700 hover:border-teal-400 hover:bg-teal-50 hover:shadow-md"
-                    } else if (isCorrect) {
-                      btnClass += "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/30"
-                    } else if (isSelected) {
-                      btnClass += "bg-red-500 border-red-500 text-white shadow-lg shadow-red-500/30"
-                    } else {
-                      btnClass += "bg-gray-100 border-gray-200 text-gray-400 opacity-60"
+                    let cardStyle = { background: "white", border: "2px solid #e2e8f0", color: "#1e293b" }
+                    let letterColor = "#818cf8"
+                    let icon = null
+
+                    if (answered) {
+                      if (isCorrect) {
+                        cardStyle = { background: "white", border: "2px solid #22c55e", color: "#1e293b", boxShadow: "0 4px 20px rgba(34,197,94,0.15)" }
+                        letterColor = "#22c55e"
+                        icon = <Check size={13} color="#22c55e" />
+                      } else if (isSelected) {
+                        cardStyle = { background: "white", border: "2px solid #ef4444", color: "#94a3b8" }
+                        letterColor = "#ef4444"
+                        icon = <X size={13} color="#ef4444" />
+                      } else {
+                        cardStyle = { background: "white", border: "2px solid #e2e8f0", color: "#cbd5e1", opacity: 0.5 }
+                        letterColor = "#cbd5e1"
+                      }
                     }
 
                     return (
-                      <button key={option._id} onClick={() => handleListenAnswer(option)} disabled={answered} className={btnClass} style={{ fontFamily: fonts.inter }}>
-                        <div className="flex items-center gap-3">
-                          {answered && isCorrect && (
-                            <div className="w-7 h-7 rounded-full bg-white/30 flex items-center justify-center flex-shrink-0">
-                              <Check className="w-4 h-4 text-white" />
-                            </div>
-                          )}
-                          {answered && isSelected && !isCorrect && (
-                            <div className="w-7 h-7 rounded-full bg-white/30 flex items-center justify-center flex-shrink-0">
-                              <X className="w-4 h-4 text-white" />
-                            </div>
-                          )}
-                          {(!answered || (!isCorrect && !isSelected)) && (
-                            <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 text-xs font-bold text-gray-500">
-                              {idx + 1}
-                            </div>
-                          )}
-                          <div className="flex-1">
-                            <div>{option.translation}</div>
-                            {answered && isCorrect && (
-                              <div className="text-sm text-white/80 mt-0.5 font-normal">{option.word}</div>
-                            )}
-                          </div>
+                      <motion.button
+                        key={option._id}
+                        initial={{ opacity: 0, scale: 0.94 }}
+                        animate={{ opacity: answered && !isCorrect && !isSelected ? 0.5 : 1, scale: 1 }}
+                        transition={{ delay: idx * 0.06 }}
+                        onClick={() => handleListenAnswer(option)}
+                        disabled={answered}
+                        style={{
+                          ...cardStyle,
+                          padding: "18px 12px",
+                          borderRadius: 18,
+                          display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+                          fontFamily: "inherit", fontWeight: 700, fontSize: 14,
+                          cursor: answered ? "default" : "pointer",
+                          transition: "border-color 0.2s, box-shadow 0.2s, transform 0.15s",
+                          textAlign: "center",
+                        }}
+                        onMouseEnter={e => { if (!answered) { e.currentTarget.style.borderColor = "#a5b4fc"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(99,102,241,0.12)" } }}
+                        onMouseLeave={e => { if (!answered) { e.currentTarget.style.borderColor = "#e2e8f0"; e.currentTarget.style.boxShadow = "" } }}
+                      >
+                        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: letterColor }}>{LETTERS[idx]}</span>
+                          {icon}
                         </div>
-                      </button>
+                        <span style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.35 }}>{option.translation}</span>
+                        {answered && isCorrect && (
+                          <span style={{ fontSize: 11, color: "#94a3b8", fontWeight: 500 }}>{option.word}</span>
+                        )}
+                      </motion.button>
                     )
                   })}
                 </div>
-              </div>
-            </div>
-          )}
+              </motion.div>
+            )}
+          </div>
         </div>
 
         {showXpAnimation && (
-          <div className="fixed z-50 pointer-events-none flex items-center gap-2" style={{ left: "50%", top: "40%", transform: "translate(-50%, -50%)", fontFamily: fonts.poppins, animation: "floatUp 1.8s ease-out forwards" }}>
+          <div className="fixed z-50 pointer-events-none flex items-center gap-2" style={{ left: "50%", top: "40%", transform: "translate(-50%,-50%)", animation: "floatUp 1.8s ease-out forwards" }}>
             <Sparkles className="w-6 h-6 text-amber-500" />
             <span className="text-4xl font-bold text-amber-500 drop-shadow-lg">+{animatedXp} XP</span>
           </div>
         )}
       </div>
-      </>
     )
   }
 
@@ -1015,60 +1029,81 @@ const Dictionary = () => {
             </div>
           )}
 
-          {/* Level Selection & Quiz Button */}
-          <div className="bg-white/80 backdrop-blur-sm flex flex-col md:flex-row md:items-center gap-3 rounded-xl shadow-sm border border-gray-200/50 p-3 md:p-4">
-            <div className="space-y-2 md:space-y-3 flex-1">
-              <div className="text-xs md:text-sm font-semibold text-gray-700">Niveli i gjuhës</div>
-              <div className="flex flex-wrap gap-1 md:gap-1.5">
-                {levels.map((level) => (
-                  <button
-                    key={level}
-                    onClick={() => handleLevelChange(level)}
-                    className={`px-2.5 md:px-3 py-1.5 md:py-2 rounded-lg text-xs font-semibold transition-all border ${
-                      selectedLevel === level
-                        ? level === "all"
-                          ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-lg shadow-emerald-500/25"
-                          : `${getLevelColor(level)} shadow-md`
-                        : "bg-white text-gray-600 hover:bg-gray-50 border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    {level}
-                  </button>
-                ))}
-              </div>
+          {/* Level Selection */}
+          <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200/50 p-3 md:p-4">
+            <div className="text-xs md:text-sm font-semibold text-gray-700 mb-2">Niveli i gjuhës</div>
+            <div className="flex flex-wrap gap-1 md:gap-1.5">
+              {levels.map((level) => (
+                <button
+                  key={level}
+                  onClick={() => handleLevelChange(level)}
+                  className={`px-2.5 md:px-3 py-1.5 md:py-2 rounded-lg text-xs font-semibold transition-all border ${
+                    selectedLevel === level
+                      ? level === "all"
+                        ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-lg shadow-emerald-500/25"
+                        : `${getLevelColor(level)} shadow-md`
+                      : "bg-white text-gray-600 hover:bg-gray-50 border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  {level}
+                </button>
+              ))}
             </div>
+          </div>
 
-            <button
+          {/* Quiz Cards */}
+          <div className="flex flex-col sm:flex-row gap-2">
+            <motion.button
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
               onClick={startQuiz}
-              disabled={quizLoading || selectedLevel === "all"}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                selectedLevel === "all"
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-                  : "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30"
-              }`}
-            >
-              {quizLoading ? (
-                <div className="w-4 h-4 animate-spin rounded-full border-b-2 border-current"></div>
-              ) : unlockStats.isPaid ? (
-                <Play className="w-4 h-4" />
-              ) : (
-                <Crown className="w-4 h-4 text-amber-300" />
-              )}
-              <span>Fillo Kuizin</span>
-            </button>
-
-            <button
-              onClick={startListenQuiz}
               disabled={selectedLevel === "all"}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
                 selectedLevel === "all"
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200"
-                  : "bg-gradient-to-r from-teal-500 to-cyan-500 text-white shadow-lg shadow-teal-500/25 hover:shadow-xl hover:shadow-teal-500/30"
+                  ? "opacity-40 cursor-not-allowed bg-gray-100 border-gray-200"
+                  : unlockStats.isPaid
+                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 border-transparent text-white shadow-md shadow-purple-500/20 hover:shadow-lg"
+                    : "bg-slate-100 border-slate-200 text-slate-500"
               }`}
             >
-              <Headphones className="w-4 h-4" />
-              <span>Kuizi i Dëgjimit</span>
-            </button>
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${unlockStats.isPaid ? "bg-white/20" : "bg-slate-200"}`}>
+                {quizLoading ? <div className="w-4 h-4 animate-spin rounded-full border-b-2 border-current" /> : unlockStats.isPaid ? <Play className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+              </div>
+              <div className="min-w-0">
+                <div className="font-semibold text-sm flex items-center gap-1.5">
+                  Kuiz Rregullt
+                  {!unlockStats.isPaid && <Crown className="w-3.5 h-3.5 text-amber-400" />}
+                </div>
+                <div className={`text-xs truncate ${unlockStats.isPaid ? "text-white/70" : "text-slate-400"}`}>
+                  {unlockStats.isPaid ? `15 pyetje · ${selectedLevel}` : "Premium"}
+                </div>
+              </div>
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+              onClick={() => unlockStats.isPaid ? startListenQuiz() : setShowDictPaywall(true)}
+              disabled={selectedLevel === "all"}
+              className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${
+                selectedLevel === "all"
+                  ? "opacity-40 cursor-not-allowed bg-gray-100 border-gray-200"
+                  : unlockStats.isPaid
+                    ? "bg-gradient-to-r from-teal-500 to-cyan-600 border-transparent text-white shadow-md shadow-teal-500/20 hover:shadow-lg"
+                    : "bg-slate-100 border-slate-200 text-slate-500"
+              }`}
+            >
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${unlockStats.isPaid ? "bg-white/20" : "bg-slate-200"}`}>
+                {unlockStats.isPaid ? <Headphones className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+              </div>
+              <div className="min-w-0">
+                <div className="font-semibold text-sm flex items-center gap-1.5">
+                  Kuiz Dëgjimi
+                  {!unlockStats.isPaid && <Crown className="w-3.5 h-3.5 text-amber-400" />}
+                </div>
+                <div className={`text-xs truncate ${unlockStats.isPaid ? "text-white/70" : "text-slate-400"}`}>
+                  {unlockStats.isPaid ? `15 pyetje · ${selectedLevel}` : "Premium"}
+                </div>
+              </div>
+            </motion.button>
           </div>
 
           {/* Favorites Toggle */}

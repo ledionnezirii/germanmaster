@@ -1,7 +1,7 @@
 "use client"
 
-import { lazy, Suspense } from "react"
-import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom"
+import { lazy, Suspense, useEffect } from "react"
+import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from "react-router-dom"
 import { SidebarProvider, useSidebar } from "./context/SidebarContext"
 import { AuthProvider, useAuth } from "./context/AuthContext"
 import SubscriptionGate from "./components/SubscriptionGate"
@@ -50,12 +50,34 @@ const Stories = lazy(() => import("./pages/Story"))
 const WordAudio = lazy(() => import("./pages/WordAudio"))
 const Giveaway = lazy(() => import("./components/Giveaway"))
 const Poll = lazy(() => import("./components/Poll"))
+const PathPage = lazy(() => import("./pages/Path"))
+
+const LANG_NAMES_AL = {
+  de: "Gjermanisht",
+  en: "Anglisht",
+  fr: "Frëngjisht",
+  tr: "Turqisht",
+  it: "Italisht",
+}
+
+const LANG_FLAGS = {
+  de: "https://flagcdn.com/w40/de.png",
+  en: "https://flagcdn.com/w40/gb.png",
+  fr: "https://flagcdn.com/w40/fr.png",
+  tr: "https://flagcdn.com/w40/tr.png",
+  it: "https://flagcdn.com/w40/it.png",
+}
 
 const AppContent = () => {
   const { isCollapsed } = useSidebar()
   const { isAuthenticated, loading } = useAuth()
   const location = useLocation()
-  const { language } = useLanguage()
+  const navigate = useNavigate()
+  const { language, switching, pendingLanguage } = useLanguage()
+
+  useEffect(() => {
+    if (switching) navigate("/")
+  }, [switching])
 
   // Routes where Navbar/Sidebar should be hidden
   const hiddenLayoutPaths = ["/signin", "/signup", "/forgotpassword", "/verify/", "/reset-password/"]
@@ -77,6 +99,63 @@ const AppContent = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
+
+      {/* Language switch overlay */}
+      {switching && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          background: "linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)",
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center", gap: 28,
+        }}>
+          <style>{`
+            @keyframes langPulse {
+              0%, 100% { transform: scale(1); opacity: 0.9; }
+              50% { transform: scale(1.12); opacity: 1; }
+            }
+            @keyframes langSpin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+            @keyframes langFadeIn {
+              from { opacity: 0; transform: translateY(16px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+          `}</style>
+
+          <img
+            src={LANG_FLAGS[pendingLanguage]}
+            alt={LANG_NAMES_AL[pendingLanguage]}
+            style={{
+              width: 96, height: 64, objectFit: "cover",
+              borderRadius: 10,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+              animation: "langPulse 1.2s ease-in-out infinite",
+            }}
+          />
+
+          <div style={{
+            width: 56, height: 56,
+            border: "4px solid rgba(139,92,246,0.25)",
+            borderTop: "4px solid #8b5cf6",
+            borderRadius: "50%",
+            animation: "langSpin 0.9s linear infinite",
+          }} />
+
+          <div style={{
+            textAlign: "center", animation: "langFadeIn 0.5s ease both",
+            display: "flex", flexDirection: "column", gap: 10,
+          }}>
+            <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "0.9rem", fontWeight: 500, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              Duke ndërruar gjuhën
+            </p>
+            <p style={{ color: "#fff", fontSize: "1.6rem", fontWeight: 800, letterSpacing: "-0.02em" }}>
+              {LANG_NAMES_AL[pendingLanguage] || pendingLanguage}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Navbar */}
       {!hideLayout && <Navbar />}
 
@@ -159,6 +238,7 @@ const AppContent = () => {
                       <Route path="/flashcards" element={<FlashCard />} />
                       <Route path="/community" element={<Community />} />
                       <Route path="/stories" element={<Stories />} />
+                      <Route path="/path" element={<PathPage />} />
 
                     </Routes>
                   </SubscriptionGate>

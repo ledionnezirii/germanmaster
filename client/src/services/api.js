@@ -126,6 +126,7 @@ export const authService = {
     api.post(`/auth/reset-password/${token}`, { newPassword }),
   verifyEmail: (token) => api.get(`/auth/verify/${token}`),
 
+  googleLogin: (access_token) => api.post("/auth/google", { access_token }),
   requestVerification: () => api.post("/auth/request-verification"),
   getProfile: () => api.get("/auth/me"),
   updateProfile: (data) =>
@@ -212,7 +213,8 @@ export const categoriesService = {
   removeWordFromCategory: (categoryId, wordId) =>
     api.delete(`/categories/${categoryId}/words/${wordId}`),
   finishCategory: (categoryId) => api.post(`/categories/${categoryId}/finish`),
-  getFinishedCategories: () => api.get("/categories/user/finished"),
+  getFinishedCategories: (language) => api.get("/categories/user/finished", { params: language ? { language } : {} }),
+  getFinishedCategoriesWords: (language) => api.get("/categories/user/finished-words", { params: language ? { language } : {} }),
 };
 
 export const listenService = {
@@ -574,6 +576,31 @@ export const sessionService = {
   logoutCurrentDevice: () => api.post("/auth/logout"),
 };
 
+export const pathTtsService = {
+  getExerciseAudio: (exerciseId, text, level) =>
+    api.post(`/tts/path/${exerciseId}`, { text, level }),
+};
+
+export const pathService = {
+  generatePath: (level, language, forceRegenerate = false) =>
+    api.post("/path/generate", { level, language, forceRegenerate }),
+  getAllPaths: (params = {}) => api.get("/path", { params }),
+  getPathById: (id) => api.get(`/path/${id}`),
+  getRound: (pathId, roundIndex) => api.get(`/path/${pathId}/round/${roundIndex}`),
+  completeRound: (pathId, roundIndex, results) =>
+    api.post(`/path/${pathId}/round/${roundIndex}/complete`, { results }),
+  getUserProgress: (params = {}) => api.get("/path/user/progress", { params }),
+  // Admin
+  getAllPathsAdmin: (params = {}) => api.get("/path/admin/all", { params }),
+  createPath: (data) => api.post("/path", data),
+  updatePath: (id, data) => api.put(`/path/${id}`, data),
+  deletePath: (id) => api.delete(`/path/${id}`),
+  addRound: (pathId, roundData) => api.post(`/path/${pathId}/round`, roundData),
+  updateRound: (pathId, roundIndex, roundData) =>
+    api.put(`/path/${pathId}/round/${roundIndex}`, roundData),
+  deleteRound: (pathId, roundIndex) => api.delete(`/path/${pathId}/round/${roundIndex}`),
+};
+
 export const generateAvatarOptions = () => {
   const styles = [
     "adventurer",
@@ -931,7 +958,8 @@ export const wordAudioService = {
   getSetById: (id) => api.get(`/wordaudio/${id}`),
   submitQuiz: (setId, score, totalQuestions) =>
     api.post("/wordaudio/submit", { setId, score, totalQuestions }),
-  getFinishedSets: () => api.get("/wordaudio/finished"),
+  getFinishedSets: (language) => api.get("/wordaudio/finished", { params: language ? { language } : {} }),
+  submitMixedQuiz: () => api.post("/wordaudio/submit-mixed"),
   // Admin
   createSet: (setData) => api.post("/wordaudio/admin", setData),
   createBulkSets: (sets) => api.post("/wordaudio/admin/bulk", { sets }),

@@ -3,7 +3,7 @@ import { createWordService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useLanguage } from "../context/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, XCircle, Trophy, ArrowLeft, Delete, Send, BookOpen, Crown, Lock } from "lucide-react";
+import { CheckCircle, XCircle, Trophy, ArrowLeft, Delete, Send, BookOpen, Crown, Lock, Shuffle, Volume2, X, Check, LogOut } from "lucide-react";
 
 function PaywallModal({ onClose }) {
   return (
@@ -68,9 +68,13 @@ const Createword = () => {
   const [usedIndices, setUsedIndices] = useState([]);
   const [shuffledLettersState, setShuffledLettersState] = useState([]);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
-  const isPaid = user?.subscription?.active || user?.role === "admin" || false;
+  const [isPaid, setIsPaid] = useState(user?.subscription?.active || user?.role === "admin" || false);
   const [freeLimit, setFreeLimit] = useState(5);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [activeMixedQuiz, setActiveMixedQuiz] = useState(false);
+  const [showMixedQuizInfo, setShowMixedQuizInfo] = useState(false);
+  const [mixedQuizWords, setMixedQuizWords] = useState([]);
+  const [finishedLessonsData, setFinishedLessonsData] = useState([]);
 
   const levels = ["A1", "A2", "B1", "B2"];
 
@@ -100,11 +104,25 @@ const Createword = () => {
   const fetchFinishedLessons = async () => {
     try {
       const response = await createWordService.getFinishedLessons();
-      setFinishedLessons(response.data.map((l) => l._id));
-      setFreeLimit(response.freeLimit || 5);
+      const data = response.data || {};
+      const lessons = data.lessons || [];
+      setFinishedLessons(lessons.map((l) => l._id));
+      setFinishedLessonsData(lessons);
+      setFreeLimit(data.freeLimit || 5);
+      if (data.isPaid !== undefined) setIsPaid(data.isPaid);
     } catch (error) {
       console.error("Error fetching finished lessons:", error);
     }
+  };
+
+  const handleOpenMixedQuiz = () => {
+    if (!isPaid) { setShowPaywall(true); return; }
+    const langFinished = finishedLessonsData.filter(l => l.language === language);
+    if (langFinished.length < 2) { setShowMixedQuizInfo(true); return; }
+    const allWords = langFinished.flatMap(l => l.words || []);
+    const mixed = [...allWords].sort(() => Math.random() - 0.5).slice(0, 10);
+    setMixedQuizWords(mixed);
+    setActiveMixedQuiz(true);
   };
 
   const startLesson = (lesson) => {
@@ -211,9 +229,51 @@ const Createword = () => {
   const currentWord = currentLesson?.words[currentWordIndex];
   const progress = currentLesson ? ((currentWordIndex + 1) / currentLesson.words.length) * 100 : 0;
 
+  if (activeMixedQuiz) {
+    return (
+      <CreatewordMixedQuizScreen
+        words={mixedQuizWords}
+        language={language}
+        onFinish={() => setActiveMixedQuiz(false)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen p-4 flex flex-col" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+
+      <AnimatePresence>
+        {showMixedQuizInfo && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            onClick={() => setShowMixedQuizInfo(false)}
+          >
+            <motion.div initial={{ scale: 0.85, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.85, opacity: 0, y: 20 }} transition={{ type: "spring", stiffness: 350, damping: 28 }}
+              className="bg-white rounded-3xl shadow-2xl border-2 border-emerald-200 p-8 max-w-sm w-full text-center"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-300 flex items-center justify-center mx-auto mb-5">
+                <Shuffle className="h-10 w-10 text-emerald-500" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Kuiz me të perziera</h2>
+              <p className="text-gray-600 text-sm mb-3 leading-relaxed">
+                Duhen të paktën <span className="font-bold text-emerald-600">2 mësime</span> të përfunduara.
+              </p>
+              <div className="w-full bg-gray-100 rounded-full h-2 mb-6">
+                <div className="bg-gradient-to-r from-emerald-400 to-teal-500 h-2 rounded-full transition-all"
+                  style={{ width: `${Math.min((finishedLessonsData.filter(l => l.language === language).length / 2) * 100, 100)}%` }} />
+              </div>
+              <button onClick={() => setShowMixedQuizInfo(false)}
+                className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold text-sm shadow-lg border-none cursor-pointer">
+                Kuptova!
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="max-w-6xl mx-auto w-full">
 
         {/* Header — only shown on lesson menu, not during quiz */}
@@ -269,15 +329,77 @@ const Createword = () => {
 
             {/* right stats */}
             <div style={{ display: "flex", gap: 12, flexShrink: 0, position: "relative", zIndex: 1, alignSelf: "center", width: isMobile ? "100%" : "auto" }}>
-              <div style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, flex: isMobile ? 1 : "unset", minWidth: isMobile ? 0 : 130 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(255,255,255,0.2)" }}>
-                  <CheckCircle size={16} color="#fff" />
-                </div>
-                <div>
-                  <div style={{ fontSize: 22, fontWeight: 600, color: "#fff", lineHeight: 1, marginBottom: 2 }}>{finishedLessons.length}</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>Të Përfunduara</div>
-                </div>
-              </div>
+              {(() => {
+                const canQuiz = finishedLessonsData.filter(l => l.language === language).length >= 2;
+                const mixedLocked = !isPaid;
+                return (
+                  <motion.button
+                    onClick={handleOpenMixedQuiz}
+                    whileHover={{ scale: 1.04, y: -2 }}
+                    whileTap={{ scale: 0.97 }}
+                    style={{
+                      position: "relative",
+                      background: mixedLocked
+                        ? "rgba(0,0,0,0.25)"
+                        : canQuiz
+                        ? "linear-gradient(135deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.12) 100%)"
+                        : "rgba(0,0,0,0.18)",
+                      border: `1.5px solid ${canQuiz && !mixedLocked ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.18)"}`,
+                      borderRadius: 18,
+                      padding: "14px 20px",
+                      display: "flex", alignItems: "center", gap: 12,
+                      cursor: "pointer",
+                      flex: isMobile ? 1 : "unset",
+                      backdropFilter: "blur(8px)",
+                      boxShadow: canQuiz && !mixedLocked
+                        ? "0 8px 32px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.25)"
+                        : "0 4px 16px rgba(0,0,0,0.15)",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {/* shimmer stripe on active */}
+                    {canQuiz && !mixedLocked && (
+                      <motion.div
+                        animate={{ x: ["−100%", "200%"] }}
+                        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.5 }}
+                        style={{
+                          position: "absolute", top: 0, left: 0, width: "40%", height: "100%",
+                          background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)",
+                          pointerEvents: "none",
+                        }}
+                      />
+                    )}
+                    <div style={{
+                      width: 40, height: 40, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
+                      flexShrink: 0,
+                      background: mixedLocked
+                        ? "linear-gradient(135deg, rgba(251,191,36,0.35), rgba(245,158,11,0.2))"
+                        : canQuiz
+                        ? "linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.15))"
+                        : "rgba(255,255,255,0.12)",
+                      border: "1px solid rgba(255,255,255,0.25)",
+                      boxShadow: canQuiz && !mixedLocked ? "0 2px 8px rgba(0,0,0,0.15)" : "none",
+                    }}>
+                      {mixedLocked
+                        ? <Crown size={18} color="rgba(251,191,36,1)" />
+                        : canQuiz
+                        ? <Shuffle size={18} color="#fff" />
+                        : <Lock size={18} color="rgba(255,255,255,0.6)" />}
+                    </div>
+                    <div style={{ textAlign: "left" }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", lineHeight: 1, marginBottom: 4, letterSpacing: "-0.01em" }}>
+                        Kuiz me të Përziera
+                      </div>
+                      <div style={{
+                        fontSize: 11, fontWeight: 600, letterSpacing: "0.02em",
+                        color: mixedLocked ? "rgba(251,191,36,0.85)" : canQuiz ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.45)",
+                      }}>
+                        {mixedLocked ? "🔒 Premium" : canQuiz ? "▶ Fillo tani" : `${finishedLessonsData.filter(l => l.language === language).length}/2 mësime`}
+                      </div>
+                    </div>
+                  </motion.button>
+                );
+              })()}
             </div>
           </div>
         </header>
@@ -665,5 +787,234 @@ const Createword = () => {
     </div>
   );
 };
+
+const LANG_SPEECH = { de: "de-DE", en: "en-GB", fr: "fr-FR", tr: "tr-TR", it: "it-IT" };
+const LANG_FLAG = { de: "https://flagcdn.com/w40/de.png", en: "https://flagcdn.com/w40/gb.png", fr: "https://flagcdn.com/w40/fr.png", tr: "https://flagcdn.com/w40/tr.png", it: "https://flagcdn.com/w40/it.png" };
+
+function AlbanianFlagSvg({ size = 16 }) {
+  return (
+    <svg width={size} height={size * 0.7} viewBox="0 0 140 100" className="rounded-sm shadow-sm flex-shrink-0">
+      <rect width="140" height="100" fill="#E41E20"/>
+      <g transform="translate(70,50)">
+        <path d="M0,-35 L5,-25 L15,-25 L7,-17 L10,-7 L0,-13 L-10,-7 L-7,-17 L-15,-25 L-5,-25 Z" fill="#000000" transform="scale(0.8)"/>
+        <ellipse cx="0" cy="5" rx="18" ry="12" fill="#000000"/>
+        <ellipse cx="-12" cy="-5" rx="6" ry="8" fill="#000000"/>
+        <ellipse cx="12" cy="-5" rx="6" ry="8" fill="#000000"/>
+      </g>
+    </svg>
+  );
+}
+
+function CreatewordMixedQuizScreen({ words, language, onFinish }) {
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [currentAnswer, setCurrentAnswer] = useState("");
+  const [usedIndices, setUsedIndices] = useState([]);
+  const [shuffledLetters, setShuffledLetters] = useState(() => {
+    const w = words[0]?.german || "";
+    const arr = w.split("");
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  });
+  const [results, setResults] = useState([]);
+  const [finished, setFinished] = useState(false);
+
+  const shuffleLetters = (word) => {
+    const arr = word.split("");
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  };
+
+  const handleLetterClick = (letter, index) => {
+    setCurrentAnswer((prev) => prev + letter);
+    setUsedIndices((prev) => [...prev, index]);
+  };
+
+  const handleBackspace = () => {
+    setCurrentAnswer((prev) => prev.slice(0, -1));
+    setUsedIndices((prev) => prev.slice(0, -1));
+  };
+
+  const handleSubmit = () => {
+    if (!currentAnswer.trim()) return;
+    const word = words[currentWordIndex];
+    const isCorrect = currentAnswer.trim().toLowerCase() === word.german.toLowerCase();
+    const newResults = [...results, { albanian: word.albanian, german: word.german, userAnswer: currentAnswer, isCorrect }];
+    setResults(newResults);
+
+    if (currentWordIndex < words.length - 1) {
+      const nextIndex = currentWordIndex + 1;
+      setCurrentWordIndex(nextIndex);
+      setCurrentAnswer("");
+      setUsedIndices([]);
+      setShuffledLetters(shuffleLetters(words[nextIndex].german));
+    } else {
+      setFinished(true);
+    }
+  };
+
+  const progress = ((currentWordIndex + 1) / words.length) * 100;
+  const currentWord = words[currentWordIndex];
+
+  if (finished) {
+    const correctCount = results.filter((r) => r.isCorrect).length;
+    const scorePercent = Math.round((correctCount / words.length) * 100);
+    return (
+      <div className="min-h-screen p-4 flex flex-col items-center justify-start pt-8">
+        <div className="bg-white rounded-2xl shadow-xl border-2 border-emerald-200 p-5 sm:p-6 w-full max-w-xl">
+          <div className="text-center mb-6">
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, delay: 0.1 }} className="mb-3">
+              <Trophy size={48} className="mx-auto text-amber-400" />
+            </motion.div>
+            <h2 className="text-2xl font-bold mb-1 text-emerald-600" style={{ letterSpacing: "-0.02em" }}>
+              Kuiz i Përzier Përfunduar!
+            </h2>
+            <p className="text-sm text-gray-500">Rezultati: {scorePercent}%</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-3.5 text-center">
+              <p className="text-[11px] text-gray-500 mb-1 font-medium uppercase tracking-wide">Rezultati</p>
+              <p className="text-xl font-bold text-emerald-600">{scorePercent}%</p>
+            </div>
+            <div className="bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-200 rounded-xl p-3.5 text-center">
+              <p className="text-[11px] text-gray-500 mb-1 font-medium uppercase tracking-wide">Të sakta</p>
+              <p className="text-xl font-bold text-teal-600">{correctCount}/{words.length}</p>
+            </div>
+          </div>
+
+          <div className="mb-5">
+            <p className="text-sm font-semibold text-gray-600 mb-3">Detajet</p>
+            <div className="flex flex-col gap-2">
+              {results.map((result, index) => (
+                <motion.div key={index} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.06 }}
+                  className={`flex items-center gap-3 p-3 rounded-xl border ${result.isCorrect ? "bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200" : "bg-gradient-to-br from-red-50 to-rose-50 border-red-200"}`}>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-sm font-semibold text-gray-800">{result.albanian}</span>
+                      <span className="text-xs text-gray-400">→</span>
+                      <span className={`text-sm font-semibold ${result.isCorrect ? "text-emerald-700" : "text-red-600"}`}
+                        style={{ fontFamily: "'JetBrains Mono', 'SF Mono', monospace" }}>
+                        {result.userAnswer}
+                      </span>
+                    </div>
+                    {!result.isCorrect && (
+                      <p className="text-xs text-emerald-600 opacity-80">
+                        E saktë: <span style={{ fontFamily: "'JetBrains Mono', 'SF Mono', monospace", fontWeight: 600 }}>{result.german}</span>
+                      </p>
+                    )}
+                  </div>
+                  {result.isCorrect ? <CheckCircle size={16} className="text-emerald-500 flex-shrink-0" /> : <XCircle size={16} className="text-red-500 flex-shrink-0" />}
+                </motion.div>
+              ))}
+            </div>
+          </div>
+
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={onFinish}
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-sm font-semibold cursor-pointer flex items-center justify-center gap-2 hover:from-emerald-600 hover:to-teal-700 transition-all shadow-lg shadow-emerald-500/30">
+            <ArrowLeft size={15} />
+            Kthehu te Mësimet
+          </motion.button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen p-4 flex flex-col items-center justify-start pt-8">
+      <div className="w-full max-w-xl mb-3">
+        <button onClick={onFinish}
+          className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-emerald-700 bg-white hover:bg-emerald-50 border border-gray-200 hover:border-emerald-300 px-4 py-2 rounded-xl shadow-sm transition-all cursor-pointer">
+          <ArrowLeft size={16} />
+          Kthehu
+        </button>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-xl border-2 border-emerald-200 p-5 sm:p-6 w-full max-w-xl">
+        {/* Progress bar */}
+        <div className="mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-gray-500 font-medium">Progresi</span>
+            <span className="text-xs font-bold text-emerald-700 bg-gradient-to-r from-emerald-50 to-teal-50 px-3 py-1 rounded-full border border-emerald-200">
+              {currentWordIndex + 1} / {words.length}
+            </span>
+          </div>
+          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+            <motion.div initial={{ width: 0 }} animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full" />
+          </div>
+        </div>
+
+        {/* Albanian word prompt */}
+        <div className="text-center mb-6">
+          <p className="text-sm text-gray-500 mb-1">Formo fjalën gjermane për:</p>
+          <motion.h2 key={currentWord.albanian} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className="text-3xl font-bold text-gray-900" style={{ letterSpacing: "-0.02em" }}>
+            {currentWord.albanian}
+          </motion.h2>
+        </div>
+
+        {/* Answer display */}
+        <div className="bg-gradient-to-br from-slate-50 to-gray-50 rounded-xl p-5 mb-5 min-h-[64px] flex items-center justify-center border-2 border-emerald-100">
+          <motion.p key={currentAnswer} initial={{ scale: 0.95 }} animate={{ scale: 1 }}
+            className="text-2xl font-semibold"
+            style={{ fontFamily: "'JetBrains Mono', 'SF Mono', monospace", letterSpacing: "0.12em", color: currentAnswer ? "#1a1a1a" : "#ccc" }}>
+            {currentAnswer || "..."}
+          </motion.p>
+        </div>
+
+        {/* Letter tiles */}
+        <div className="flex flex-wrap gap-2 justify-center mb-5">
+          {shuffledLetters.map((letter, index) => {
+            const isUsed = usedIndices.includes(index);
+            return (
+              <motion.button key={index}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: isUsed ? 0.25 : 1, scale: isUsed ? 0.85 : 1, y: isUsed ? 4 : 0 }}
+                transition={{ duration: 0.15 }}
+                whileHover={!isUsed ? { scale: 1.1 } : {}}
+                whileTap={!isUsed ? { scale: 0.9 } : {}}
+                onClick={() => !isUsed && handleLetterClick(letter, index)}
+                disabled={isUsed}
+                className={`w-12 h-12 rounded-xl text-lg font-bold flex items-center justify-center transition-all shadow-sm ${
+                  isUsed
+                    ? "bg-gray-100 border-2 border-gray-200 text-gray-300 cursor-default"
+                    : "bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 text-emerald-800 cursor-pointer hover:from-emerald-100 hover:to-teal-100 hover:border-emerald-300 hover:shadow-md"
+                }`}>
+                {letter.toUpperCase()}
+              </motion.button>
+            );
+          })}
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex gap-3">
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={handleBackspace}
+            className="flex-1 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-600 text-sm font-semibold cursor-pointer flex items-center justify-center gap-2 hover:bg-gray-100 transition-all">
+            <Delete size={15} />
+            Fshi
+          </motion.button>
+          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} onClick={handleSubmit}
+            disabled={!currentAnswer.trim()}
+            className={`flex-[2] py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-lg ${
+              currentAnswer.trim()
+                ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white cursor-pointer hover:from-emerald-600 hover:to-teal-700 shadow-emerald-500/30 hover:shadow-emerald-500/40"
+                : "bg-gray-100 text-gray-400 cursor-not-allowed shadow-none"
+            }`}>
+            <Send size={14} />
+            Dërgo
+          </motion.button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default Createword;

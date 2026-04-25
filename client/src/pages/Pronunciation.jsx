@@ -6,13 +6,10 @@ import {
   Volume2,
   CheckCircle2,
   ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
   RotateCcw,
   Star,
   Trophy,
   Zap,
-  AlertTriangle,
   Flame,
   Crown,
   Lock,
@@ -93,9 +90,7 @@ const PronunciationPractice = () => {
   const [freeLimit, setFreeLimit] = useState(5)
   const [showPaywall, setShowPaywall] = useState(false)
   const [loadingPackage, setLoadingPackage] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [selectedLevel, setSelectedLevel] = useState("all")
-  const [isMobile, setIsMobile] = useState(false)
+  const [selectedLevel, setSelectedLevel] = useState("A1")
   const [listeningSeconds, setListeningSeconds] = useState(0)
   const currentAudioRef = useRef(null)
   const mediaRecorderRef = useRef(null)
@@ -103,26 +98,12 @@ const PronunciationPractice = () => {
   const timerRef = useRef(null)
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768)
-    checkMobile()
-    window.addEventListener("resize", checkMobile)
-    return () => window.removeEventListener("resize", checkMobile)
-  }, [])
-
-  const itemsPerPage = isMobile ? 12 : 24
-
-  useEffect(() => {
     loadPackages()
     loadCompletedPackages()
   }, [language])
 
   useEffect(() => {
-    if (selectedLevel === "all") {
-      setFilteredPackages(packages)
-    } else {
-      setFilteredPackages(packages.filter((pkg) => pkg.level === selectedLevel))
-    }
-    setCurrentPage(1)
+    setFilteredPackages(packages.filter((pkg) => pkg.level === selectedLevel))
   }, [packages, selectedLevel])
 
 
@@ -346,9 +327,6 @@ const PronunciationPractice = () => {
   }
 
   const uniqueLevels = Array.from(new Set(packages.map((pkg) => pkg.level))).sort()
-  const totalPages = Math.ceil(filteredPackages.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const currentPackages = filteredPackages.slice(startIndex, startIndex + itemsPerPage)
 
   const progressPercentage = selectedPackage
     ? (sessionStats.completedWords.length / selectedPackage.words.length) * 100
@@ -563,26 +541,18 @@ const PronunciationPractice = () => {
           </p>
         </div>
         <div className="pp-hero-stats">
-          <div className="pp-stat-card">
-            <div className="pp-stat-icon pp-stat-icon--trophy">
-              <Trophy size={16} color="#fff" />
-            </div>
-            <div>
-              <div className="pp-stat-num">{completedPackages.size}</div>
-              <div className="pp-stat-label">Paketa të Përfunduara</div>
-            </div>
+          <div className="pp-stat-card" style={{ minWidth: 100, justifyContent: "center" }}>
+            <img
+              src={{ de: "https://flagcdn.com/w80/de.png", en: "https://flagcdn.com/w80/gb.png", fr: "https://flagcdn.com/w80/fr.png" }[language] || "https://flagcdn.com/w80/de.png"}
+              alt={language}
+              style={{ width: 56, height: 38, objectFit: "cover", borderRadius: 6, boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}
+            />
           </div>
         </div>
       </div>
 
       {/* level filter */}
       <div className="pp-filters">
-        <button
-          onClick={() => setSelectedLevel("all")}
-          className={`pp-filter-btn ${selectedLevel === "all" ? "pp-filter-btn--active" : ""}`}
-        >
-          Të gjitha
-        </button>
         {uniqueLevels.map((level) => (
           <button
             key={level}
@@ -599,9 +569,9 @@ const PronunciationPractice = () => {
         <div className="flex items-center justify-center min-h-48">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500" />
         </div>
-      ) : currentPackages.length > 0 ? (
+      ) : filteredPackages.length > 0 ? (
         <div className="pp-grid">
-          {currentPackages.map((pkg) => {
+          {filteredPackages.map((pkg) => {
             const isCompleted = completedPackages.has(pkg._id.toString())
             const isLocked = !isCompleted && !isPaid && completedPackages.size >= freeLimit
             return (
@@ -636,38 +606,6 @@ const PronunciationPractice = () => {
       )}
 
 
-      {/* pagination */}
-      {totalPages > 1 && (
-        <div className="pp-pagination">
-          <button
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-            className="pp-page-btn"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-            const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i
-            if (pageNum > totalPages) return null
-            return (
-              <button
-                key={pageNum}
-                onClick={() => setCurrentPage(pageNum)}
-                className={`pp-page-btn ${currentPage === pageNum ? "pp-page-btn--active" : ""}`}
-              >
-                {pageNum}
-              </button>
-            )
-          })}
-          <button
-            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
-            className="pp-page-btn"
-          >
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      )}
     </div>
   )
 }

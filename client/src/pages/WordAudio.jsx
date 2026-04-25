@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { wordAudioService, ttsService } from "../services/api";
 import { useLanguage } from "../context/LanguageContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { Crown, Lock, Star, LogOut, Volume, Check, X } from "lucide-react";
+import { Crown, Lock, Star, LogOut, Volume, Check, X, Zap } from "lucide-react";
 
 async function speakGerman(text, setId, wordIndex, level, language = "de") {
   try {
@@ -113,8 +113,10 @@ export default function WordAudio() {
   const [finishedIds, setFinishedIds] = useState([]);
   const [activeSet, setActiveSet] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedLevel, setSelectedLevel] = useState("all");
+  const [selectedLevel, setSelectedLevel] = useState("A1");
   const [showPaywall, setShowPaywall] = useState(false);
+  const [activeMixedQuiz, setActiveMixedQuiz] = useState(false);
+  const [showQuizInfo, setShowQuizInfo] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [freeLimit, setFreeLimit] = useState(3);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
@@ -129,10 +131,9 @@ export default function WordAudio() {
     const load = async () => {
       setLoading(true);
       try {
-        const params = selectedLevel !== "all" ? { level: selectedLevel } : {};
         const [setsRes, finishedRes] = await Promise.all([
-          wordAudioService.getAllSets(params, language),
-          wordAudioService.getFinishedSets(),
+          wordAudioService.getAllSets({ level: selectedLevel }, language),
+          wordAudioService.getFinishedSets(language),
         ]);
 
         setSets(setsRes.data || []);
@@ -151,7 +152,7 @@ export default function WordAudio() {
       setLoading(false);
     };
     load();
-  }, [selectedLevel, language]);
+  }, [language, selectedLevel]);
 
   const handleFinish = (setId, passed, limitReached) => {
     if (limitReached) {
@@ -179,9 +180,73 @@ export default function WordAudio() {
     );
   }
 
+  if (activeMixedQuiz) {
+    const finishedSets = sets.filter(s => finishedIds.includes(s._id));
+    const allWords = finishedSets.flatMap(s =>
+      s.words.map((word, idx) => ({ ...word, setId: s._id, wordIndex: idx, level: s.level }))
+    );
+    const mixed = [...allWords].sort(() => Math.random() - 0.5).slice(0, 10);
+    return (
+      <MixedQuizScreen
+        words={mixed}
+        language={language}
+        onFinish={() => setActiveMixedQuiz(false)}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen p-4 flex flex-col">
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+
+      <AnimatePresence>
+        {showQuizInfo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+            onClick={() => setShowQuizInfo(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.85, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.85, opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 350, damping: 28 }}
+              className="bg-white rounded-3xl shadow-2xl border-2 border-pink-200 p-8 max-w-sm w-full text-center"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-pink-50 to-rose-50 border-2 border-pink-300 flex items-center justify-center mx-auto mb-5">
+                <Zap className="h-10 w-10 text-pink-500" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Quiz Mikst</h2>
+              <p className="text-gray-600 text-sm mb-3 leading-relaxed">
+                Ky quiz mikson fjalët nga <span className="font-bold text-pink-600">të gjitha setet</span> që ke përfunduar dhe të sfidon t'i bashkosh sërish — por të perziera!
+              </p>
+              <p className="text-gray-400 text-xs mb-3 leading-relaxed">
+                {finishedIds.length === 0
+                  ? "Nuk ke përfunduar asnjë set akoma. Fillo me setet e nivelit tënd dhe kthehu këtu!"
+                  : "Ke përfunduar vetëm 1 set. Duhet të paktën 1 set tjetër për të filluar Quiz Mikst."}
+              </p>
+              <p className="text-gray-400 text-xs mb-6 leading-relaxed">
+                Minimumi i kërkuar: <span className="font-bold text-gray-600">2 sete</span> të përfunduara.
+              </p>
+              <div className="w-full bg-gray-100 rounded-full h-2 mb-6">
+                <div
+                  className="bg-gradient-to-r from-pink-400 to-rose-500 h-2 rounded-full transition-all"
+                  style={{ width: `${Math.min((finishedIds.length / 2) * 100, 100)}%` }}
+                />
+              </div>
+              <button
+                onClick={() => setShowQuizInfo(false)}
+                className="w-full py-3 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl transition-all border-none cursor-pointer"
+              >
+                Kuptova!
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="max-w-6xl mx-auto w-full">
         <header className="mb-4 flex-shrink-0">
@@ -214,37 +279,57 @@ export default function WordAudio() {
             </div>
 
             <div style={{ display: "flex", gap: 12, flexShrink: 0, position: "relative", zIndex: 1, alignSelf: "center", width: isMobile ? "100%" : "auto" }}>
-              <div style={{ background: "rgba(0,0,0,0.15)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 14, padding: "14px 18px", display: "flex", alignItems: "center", gap: 12, flex: isMobile ? 1 : "unset", minWidth: isMobile ? 0 : 130 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(255,255,255,0.2)" }}>
-                  <Star size={16} color="#fff" />
-                </div>
-                <div>
-                  <div style={{ fontSize: 22, fontWeight: 600, color: "#fff", lineHeight: 1, marginBottom: 2 }}>{finishedIds.length}</div>
-                  <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>Të Përfunduara</div>
-                </div>
-              </div>
+              {(() => {
+                const canQuiz = finishedIds.length >= 2;
+                const mixedLocked = !isPaid;
+                return (
+                  <button
+                    onClick={() => mixedLocked ? setShowPaywall(true) : canQuiz ? setActiveMixedQuiz(true) : setShowQuizInfo(true)}
+                    style={{
+                      background: mixedLocked ? "rgba(0,0,0,0.2)" : canQuiz ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.15)",
+                      border: `1px solid ${mixedLocked ? "rgba(255,255,255,0.15)" : canQuiz ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.1)"}`,
+                      borderRadius: 14,
+                      padding: "14px 18px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      cursor: "pointer",
+                      flex: isMobile ? 1 : "unset",
+                      transition: "background 0.2s",
+                      opacity: mixedLocked ? 0.7 : canQuiz ? 1 : 0.6,
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.3)"; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = mixedLocked ? "rgba(0,0,0,0.2)" : canQuiz ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.15)"; }}
+                  >
+                    <div style={{ width: 34, height: 34, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, background: "rgba(255,255,255,0.2)" }}>
+                      {mixedLocked ? <Crown size={16} color="rgba(255,215,0,0.9)" /> : canQuiz ? <Zap size={16} color="#fff" /> : <Lock size={16} color="rgba(255,255,255,0.7)" />}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", lineHeight: 1, marginBottom: 2 }}>Quiz Mikst</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", fontWeight: 500 }}>
+                        {mixedLocked ? "Premium" : canQuiz ? "Fillo tani" : `${finishedIds.length}/2 sete`}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })()}
             </div>
           </div>
         </header>
 
         <div className="bg-white border border-emerald-100 p-4 rounded-2xl mb-4 shadow-lg flex-shrink-0">
-          <div className="flex items-center gap-2 mb-3">
-            <h2 className="text-sm font-semibold text-gray-800">Filtro sipas Nivelit</h2>
-          </div>
           <div className="flex flex-wrap gap-2">
-            {levels.map((level) => (
+            {["A1", "A2", "B1", "B2"].map((level) => (
               <button
                 key={level}
                 onClick={() => setSelectedLevel(level)}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border shadow-sm hover:shadow-md hover:scale-105 active:scale-95 ${
                   selectedLevel === level
-                    ? level === "all"
-                      ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-emerald-500 shadow-emerald-500/30"
-                      : getLevelColor(level) + " border-2"
+                    ? getLevelColor(level) + " border-2"
                     : "bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200"
                 }`}
               >
-                {level === "all" ? "Të gjitha" : level}
+                {level}
               </button>
             ))}
           </div>
@@ -345,7 +430,7 @@ const LANG_CONFIG = {
 
 function QuizScreen({ set, onFinish }) {
   const { language } = useLanguage();
-  const langConfig = LANG_CONFIG[language] || LANG_CONFIG.de;
+  const langConfig = LANG_CONFIG[set.language] || LANG_CONFIG[language] || LANG_CONFIG.de;
   const [matched, setMatched] = useState({});
   const [selectedGerman, setSelectedGerman] = useState(null);
   const [wrongPair, setWrongPair] = useState(null);
@@ -574,7 +659,7 @@ function QuizScreen({ set, onFinish }) {
                       <Volume className={`h-3 w-3 ${isSelected || speaking ? "text-white" : "text-gray-600"}`} />
                     )}
                   </div>
-                  <GermanFlag size={13} />
+                  <img src={langConfig.flag} alt="" style={{ width: 13, height: 9, borderRadius: 2, flexShrink: 0 }} />
                   {speaking && <SoundWave />}
                 </motion.button>
               );
@@ -617,6 +702,200 @@ function QuizScreen({ set, onFinish }) {
                     ) : (
                       <AlbanianFlag size={13} />
                     )}
+                  </div>
+                  <span className="flex-1 text-left truncate">{word.albanianWord}</span>
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MixedQuizScreen({ words, language, onFinish }) {
+  const langConfig = LANG_CONFIG[language] || LANG_CONFIG.de;
+  const [matched, setMatched] = useState({});
+  const [selectedGerman, setSelectedGerman] = useState(null);
+  const [wrongPair, setWrongPair] = useState(null);
+  const [finished, setFinished] = useState(false);
+  const [xpAwarded, setXpAwarded] = useState(null);
+  const [isSpeaking, setIsSpeaking] = useState(null);
+
+  const shuffledAlbanianRef = useRef(null);
+  if (!shuffledAlbanianRef.current) {
+    shuffledAlbanianRef.current = [...words].sort(() => Math.random() - 0.5);
+  }
+  const shuffledAlbanian = shuffledAlbanianRef.current;
+
+  const handleGermanClick = (word, index) => {
+    if (matched[word.germanWord]) return;
+    setIsSpeaking(word.germanWord);
+    speakGerman(word.germanWord, word.setId, word.wordIndex ?? index, word.level, language);
+    setSelectedGerman(word);
+    setTimeout(() => setIsSpeaking(null), 2000);
+  };
+
+  const handleAlbanianClick = async (albanianWord) => {
+    if (!selectedGerman) return;
+    if (Object.values(matched).includes(albanianWord)) return;
+
+    if (selectedGerman.albanianWord === albanianWord) {
+      const newMatched = { ...matched, [selectedGerman.germanWord]: albanianWord };
+      setMatched(newMatched);
+      setSelectedGerman(null);
+      setWrongPair(null);
+      if (Object.keys(newMatched).length === words.length) {
+        try {
+          const res = await wordAudioService.submitMixedQuiz();
+          setXpAwarded(res.data?.data?.xpAwarded ?? 10);
+        } catch {
+          setXpAwarded(10);
+        }
+        setFinished(true);
+      }
+    } else {
+      setWrongPair({ german: selectedGerman.germanWord, albanian: albanianWord });
+      setTimeout(() => { setWrongPair(null); setSelectedGerman(null); }, 700);
+    }
+  };
+
+  if (finished) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-emerald-50/20 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-xl border border-emerald-100 p-8 max-w-sm w-full text-center">
+          <div className="text-5xl mb-4">&#127881;</div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">Perfekt!</h2>
+          <p className="text-sm text-gray-500 mb-4">Ke përfunduar quiz-in mikst me sukses!</p>
+          {xpAwarded != null && (
+            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-3 mb-6">
+              <p className="text-emerald-700 font-bold text-lg">+{xpAwarded} XP</p>
+            </div>
+          )}
+          <button
+            onClick={onFinish}
+            className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl transition-all"
+          >
+            Kthehu te fjalet
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const progressPercent = (Object.keys(matched).length / words.length) * 100;
+
+  const SoundWave = () => {
+    const bars = [0.4, 0.7, 1, 0.6, 0.9, 0.5, 0.8, 0.4];
+    return (
+      <span className="flex items-center gap-px ml-auto">
+        {bars.map((h, i) => (
+          <motion.span
+            key={i}
+            className="block w-[3px] rounded-full bg-white/90"
+            animate={{ scaleY: [h * 0.4, h, h * 0.5, h * 0.9, h * 0.3] }}
+            transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: i * 0.07 }}
+            style={{ height: 14, transformOrigin: "center" }}
+          />
+        ))}
+      </span>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-sky-50/30 flex flex-col">
+      <div className="flex items-center gap-2 px-3 pt-3 pb-2 max-w-4xl mx-auto w-full">
+        <button
+          onClick={onFinish}
+          className="w-8 h-8 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-all shadow-sm flex-shrink-0"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+        </button>
+        <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+          <motion.div
+            className="h-full bg-gradient-to-r from-pink-500 via-rose-400 to-orange-400 rounded-full"
+            initial={{ width: 0 }}
+            animate={{ width: `${progressPercent}%` }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          />
+        </div>
+        <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 flex-shrink-0">
+          {Object.keys(matched).length}/{words.length}
+        </span>
+      </div>
+
+      <div className="flex-1 px-3 pb-3 max-w-4xl mx-auto w-full">
+        <div className="flex flex-row gap-2.5 h-full">
+          <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+            <div className="flex items-center justify-center gap-1.5 py-2 bg-gradient-to-r from-gray-800 to-gray-900 rounded-xl shadow-sm mb-1">
+              <img src={langConfig.flag} alt="" style={{ width: 16, height: 11, borderRadius: 2 }} />
+              <span className="text-xs font-bold text-white uppercase tracking-wider">{langConfig.name}</span>
+            </div>
+            {words.map((word, idx) => {
+              const isMatched = !!matched[word.germanWord];
+              const isSelected = selectedGerman?.germanWord === word.germanWord;
+              const isWrong = wrongPair?.german === word.germanWord;
+              const speaking = isSpeaking === word.germanWord;
+              return (
+                <motion.button
+                  key={`mix-ger-${idx}`}
+                  onClick={() => handleGermanClick(word, idx)}
+                  disabled={isMatched}
+                  whileTap={{ scale: 0.96 }}
+                  className={`w-full px-2.5 py-2 rounded-xl border-2 font-semibold text-xs transition-all duration-200 flex items-center gap-2 relative overflow-hidden ${
+                    isMatched ? "bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-300 text-emerald-600"
+                    : isWrong ? "bg-red-50 border-red-400 text-red-600"
+                    : speaking ? "bg-gradient-to-r from-amber-400 to-orange-400 border-amber-300 text-white shadow-md shadow-amber-400/40"
+                    : isSelected ? "bg-gradient-to-r from-blue-500 to-cyan-500 border-blue-400 text-white shadow-md shadow-blue-500/30"
+                    : "bg-white border-gray-200 text-gray-700 hover:border-sky-400 hover:shadow-sm cursor-pointer"
+                  }`}
+                >
+                  {speaking && (
+                    <motion.span
+                      className="absolute inset-0 rounded-xl border-2 border-amber-200"
+                      initial={{ opacity: 0.8, scale: 1 }}
+                      animate={{ opacity: 0, scale: 1.06 }}
+                      transition={{ duration: 0.65, repeat: Infinity, ease: "easeOut" }}
+                    />
+                  )}
+                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    isMatched ? "bg-emerald-100" : speaking ? "bg-white/25" : isSelected ? "bg-white/20" : "bg-gray-100"
+                  }`}>
+                    {isMatched ? <Check className="h-3 w-3 text-emerald-600" /> : <Volume className={`h-3 w-3 ${isSelected || speaking ? "text-white" : "text-gray-600"}`} />}
+                  </div>
+                  <img src={langConfig.flag} alt="" style={{ width: 13, height: 9, borderRadius: 2, flexShrink: 0 }} />
+                  {speaking && <SoundWave />}
+                </motion.button>
+              );
+            })}
+          </div>
+
+          <div className="flex-1 flex flex-col gap-1.5 min-w-0">
+            <div className="flex items-center justify-center gap-1.5 py-2 bg-gradient-to-r from-red-600 to-red-700 rounded-xl shadow-sm mb-1">
+              <AlbanianFlag size={16} />
+              <span className="text-xs font-bold text-white uppercase tracking-wider">Shqip</span>
+            </div>
+            {shuffledAlbanian.map((word, idx) => {
+              const isMatched = Object.values(matched).includes(word.albanianWord);
+              const isWrong = wrongPair?.albanian === word.albanianWord;
+              return (
+                <motion.button
+                  key={`mix-alb-${idx}`}
+                  onClick={() => handleAlbanianClick(word.albanianWord)}
+                  disabled={isMatched}
+                  whileTap={{ scale: 0.96 }}
+                  className={`w-full px-2.5 py-2 rounded-xl border-2 font-semibold text-xs transition-all duration-200 flex items-center gap-2 ${
+                    isMatched ? "bg-gradient-to-r from-emerald-50 to-teal-50 border-emerald-300 text-emerald-600"
+                    : isWrong ? "bg-red-50 border-red-400 text-red-600 animate-pulse"
+                    : selectedGerman ? "bg-white border-red-300 text-gray-700 hover:border-red-500 hover:bg-red-50 cursor-pointer hover:shadow-sm"
+                    : "bg-gray-50 border-gray-200 text-gray-400 cursor-default"
+                  }`}
+                >
+                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    isMatched ? "bg-emerald-100" : selectedGerman ? "bg-red-100" : "bg-gray-100"
+                  }`}>
+                    {isMatched ? <Check className="h-3 w-3 text-emerald-600" /> : isWrong ? <X className="h-3 w-3 text-red-500" /> : <AlbanianFlag size={13} />}
                   </div>
                   <span className="flex-1 text-left truncate">{word.albanianWord}</span>
                 </motion.button>

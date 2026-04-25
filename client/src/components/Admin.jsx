@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from "react";
-import { adminService } from "../services/api";
+import React, { useState, useEffect, useCallback } from "react";
+import { adminService, pathService, listenService, phraseService, sentenceService, wordAudioService, dictionaryService } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
@@ -19,6 +19,25 @@ const Admin = () => {
   const [dateVisitorsLoading, setDateVisitorsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // ── Path manager state ──────────────────────────────────────────────────
+  const [adminPaths, setAdminPaths] = useState([]);
+  const [pathsLoading, setPathsLoading] = useState(false);
+  const [selectedAdminPath, setSelectedAdminPath] = useState(null);
+  const [pathForm, setPathForm] = useState({ title: "", description: "", level: "A1", language: "de", order: 0 });
+  const [showPathForm, setShowPathForm] = useState(false);
+  const [editingPath, setEditingPath] = useState(null);
+  const [pathSaving, setPathSaving] = useState(false);
+  const [showRoundForm, setShowRoundForm] = useState(false);
+  const [roundForm, setRoundForm] = useState({ title: "", description: "", icon: "⭐", xpReward: 20, exercises: [] });
+  const [roundSaving, setRoundSaving] = useState(false);
+  const EXERCISE_TYPES = ["listenTest", "translate", "dictionaryWord", "wordAudio", "phrase", "sentence", "createWord"];
+  const emptyExercise = { type: "translate", question: "", answer: "", translation: "", audioText: "", options: "", words: "", xpReward: 5, contentId: "", contentModel: "" };
+  const [currentExercise, setCurrentExercise] = useState({ ...emptyExercise });
+  // Content browser (pick from existing DB content)
+  const [contentBrowser, setContentBrowser] = useState({ open: false, type: "", results: [], loading: false, level: "A1", search: "" });
+  const [useExistingContent, setUseExistingContent] = useState(false);
+  // ─────────────────────────────────────────────────────────────────────────
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState(null);
 
@@ -37,6 +56,7 @@ const Admin = () => {
     if (activeTab === "paid-users") fetchPaidUsers();
     if (activeTab === "online-users") fetchOnlineUsers();
     if (activeTab === "visitors") fetchVisitorStats(visitorDays);
+    if (activeTab === "paths") fetchAdminPaths();
   }, [activeTab, currentPage, searchTerm]);
 
   useEffect(() => {
@@ -147,6 +167,147 @@ const Admin = () => {
     }
   };
 
+  // ── Path handlers ─────────────────────────────────────────────────────────
+  const fetchAdminPaths = async () => {
+    setPathsLoading(true);
+    try {
+      const res = await pathService.getAllPathsAdmin();
+      const data = res?.data || res;
+      setAdminPaths(data?.paths || []);
+    } catch { alert("Failed to load paths"); }
+    setPathsLoading(false);
+  };
+
+  const handleSavePath = async () => {
+    if (!pathForm.title || !pathForm.level) return alert("Title and level required");
+    setPathSaving(true);
+    try {
+      if (editingPath) {
+        await pathService.updatePath(editingPath._id, pathForm);
+      } else {
+        await pathService.createPath(pathForm);
+      }
+      setShowPathForm(false);
+      setEditingPath(null);
+      setPathForm({ title: "", description: "", level: "A1", language: "de", order: 0 });
+      fetchAdminPaths();
+    } catch { alert("Failed to save path"); }
+    setPathSaving(false);
+  };
+
+  const handleDeletePath = async (pathId) => {
+    if (!window.confirm("Deactivate this path?")) return;
+    try {
+      await pathService.deletePath(pathId);
+      fetchAdminPaths();
+      if (selectedAdminPath?._id === pathId) setSelectedAdminPath(null);
+    } catch { alert("Failed to delete path"); }
+  };
+
+  const handleEditPath = (path) => {
+    setEditingPath(path);
+    setPathForm({ title: path.title, description: path.description || "", level: path.level, language: path.language || "de", order: path.order || 0 });
+    setShowPathForm(true);
+  };
+
+  const handleAddExerciseToRound = () => {
+    const ex = { ...currentExercise };
+    if (ex.options) ex.options = ex.options.split(",").map(s => s.trim()).filter(Boolean);
+    if (ex.words) ex.words = ex.words.split(",").map(s => s.trim()).filter(Boolean);
+    setRoundForm(prev => ({ ...prev, exercises: [...prev.exercises, ex] }));
+    setCurrentExercise({ ...emptyExercise });
+  };
+
+  const handleRemoveExercise = (idx) => {
+    setRoundForm(prev => ({ ...prev, exercises: prev.exercises.filter((_, i) => i !== idx) }));
+  };
+
+  const handleSaveRound = async () => {
+    if (!roundForm.title) return alert("Round title required");
+    if (roundForm.exercises.length === 0) return alert("Add at least one exercise");
+    setRoundSaving(true);
+    try {
+      await pathService.addRound(selectedAdminPath._id, roundForm);
+      setShowRoundForm(false);
+      setRoundForm({ title: "", description: "", icon: "⭐", xpReward: 20, exercises: [] });
+      // Refresh the selected path
+      const res = await pathService.getAllPathsAdmin();
+      const data = res?.data || res;
+      const updated = (data?.paths || []).find(p => p._id === selectedAdminPath._id);
+      setSelectedAdminPath(updated || selectedAdminPath);
+      setAdminPaths(data?.paths || []);
+    } catch { alert("Failed to save round"); }
+    setRoundSaving(false);
+  };
+
+  const searchExistingContent = useCallback(async (overrides = {}) => {
+    const type = overrides.type ?? contentBrowser.type;
+    const level = overrides.level ?? contentBrowser.level;
+    const search = overrides.search ?? contentBrowser.search;
+    setContentBrowser(prev => ({ ...prev, loading: true, results: [] }));
+    try {
+      const params = { level, limit: 30 };
+      if (search) params.search = search;
+      let res;
+      if (type === "listenTest") res = await listenService.getAllTests(params);
+      else if (type === "phrase") res = await phraseService.getAllPhrases(params);
+      else if (type === "sentence") res = await sentenceService.getAllSentences(params);
+      else if (type === "wordAudio") res = await wordAudioService.getAllSets(params);
+      else if (type === "dictionaryWord") res = await dictionaryService.getAllWords(params);
+      const data = res?.data || res;
+      const items = data?.tests || data?.phrases || data?.sentences || data?.sets || data?.words || [];
+      setContentBrowser(prev => ({ ...prev, results: items, loading: false }));
+    } catch {
+      setContentBrowser(prev => ({ ...prev, loading: false }));
+    }
+  }, [contentBrowser.type, contentBrowser.level, contentBrowser.search]);
+
+  const MODEL_MAP_FOR_TYPE = { listenTest: "Listen", phrase: "Phrase", sentence: "Sentence", wordAudio: "WordAudioSet", dictionaryWord: "Dictionary", translate: "Translate", createWord: "CreateWord" };
+
+  const handlePickContent = (item) => {
+    const model = MODEL_MAP_FOR_TYPE[contentBrowser.type] || "";
+    // Build a pre-filled exercise from the content item
+    let ex = { ...emptyExercise, type: contentBrowser.type, contentId: item._id, contentModel: model, xpReward: 5 };
+    if (contentBrowser.type === "listenTest") {
+      ex.question = item.title || item.text || "";
+      ex.audioText = item.text || "";
+      ex.answer = ""; // answer checked via Jaccard on backend
+    } else if (contentBrowser.type === "phrase") {
+      ex.question = item.german || "";
+      ex.answer = item.albanian || "";
+      ex.audioText = item.german || "";
+    } else if (contentBrowser.type === "sentence") {
+      ex.question = item.title || "";
+      ex.answer = item.questions?.[0]?.correctSentence || "";
+      ex.words = item.questions?.[0]?.options?.join(", ") || "";
+    } else if (contentBrowser.type === "wordAudio") {
+      ex.question = item.title || "";
+      ex.audioText = item.words?.[0]?.germanWord || "";
+      ex.answer = item.words?.[0]?.germanWord || "";
+      ex.options = item.words?.map(w => w.germanWord).join(", ") || "";
+    } else if (contentBrowser.type === "dictionaryWord") {
+      ex.question = item.word || item.german || "";
+      ex.answer = item.albanian || item.translation || "";
+      ex.audioText = item.word || item.german || "";
+    }
+    setCurrentExercise(ex);
+    setContentBrowser(prev => ({ ...prev, open: false }));
+    setUseExistingContent(false);
+  };
+
+  const handleDeleteRound = async (roundIdx) => {
+    if (!window.confirm("Delete this round?")) return;
+    try {
+      await pathService.deleteRound(selectedAdminPath._id, roundIdx);
+      const res = await pathService.getAllPathsAdmin();
+      const data = res?.data || res;
+      const updated = (data?.paths || []).find(p => p._id === selectedAdminPath._id);
+      setSelectedAdminPath(updated || null);
+      setAdminPaths(data?.paths || []);
+    } catch { alert("Failed to delete round"); }
+  };
+  // ─────────────────────────────────────────────────────────────────────────
+
   const formatDate = (date) => {
     if (!date) return "N/A";
     return new Date(date).toLocaleDateString("en-US", {
@@ -214,6 +375,13 @@ const Admin = () => {
       id: "visitors", label: "Visitors", icon: (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+        </svg>
+      )
+    },
+    {
+      id: "paths", label: "Paths", icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
         </svg>
       )
     },
@@ -955,6 +1123,323 @@ const Admin = () => {
             )}
           </div>
         )}
+
+        {/* ── PATH MANAGER TAB ─────────────────────────────────────────── */}
+        {activeTab === "paths" && (
+          <div>
+            {/* Header row */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+              <div>
+                <h2 className="text-lg font-semibold" style={{ color: "#1C1917" }}>Learning Paths</h2>
+                <p className="text-xs mt-0.5" style={{ color: "#A8A29E" }}>{adminPaths.length} path{adminPaths.length !== 1 ? "s" : ""} total</p>
+              </div>
+              <div className="flex gap-2">
+                {selectedAdminPath && (
+                  <button
+                    onClick={() => setSelectedAdminPath(null)}
+                    className="px-4 py-2 rounded-xl text-xs font-medium border transition-all"
+                    style={{ borderColor: "#EDE8DF", color: "#78716C" }}
+                  >
+                    ← Back to list
+                  </button>
+                )}
+                <button
+                  onClick={() => { setShowPathForm(true); setEditingPath(null); setPathForm({ title: "", description: "", level: "A1", language: "de", order: 0 }); }}
+                  className="px-4 py-2 rounded-xl text-xs font-medium transition-all"
+                  style={{ backgroundColor: "#1C1917", color: "#fff" }}
+                >
+                  + New Path
+                </button>
+              </div>
+            </div>
+
+            {/* Create / Edit Path modal */}
+            {showPathForm && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+                  <h3 className="font-bold text-gray-800 text-base mb-4">{editingPath ? "Edit Path" : "Create New Path"}</h3>
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase">Title *</label>
+                      <input className="w-full mt-1 border rounded-xl p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" value={pathForm.title} onChange={e => setPathForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. German Basics" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase">Description</label>
+                      <input className="w-full mt-1 border rounded-xl p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" value={pathForm.description} onChange={e => setPathForm(p => ({ ...p, description: e.target.value }))} placeholder="Optional description" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase">Level *</label>
+                        <select className="w-full mt-1 border rounded-xl p-2.5 text-sm focus:outline-none" value={pathForm.level} onChange={e => setPathForm(p => ({ ...p, level: e.target.value }))}>
+                          {["A1","A2","B1","B2","C1","C2"].map(l => <option key={l}>{l}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase">Language</label>
+                        <select className="w-full mt-1 border rounded-xl p-2.5 text-sm focus:outline-none" value={pathForm.language} onChange={e => setPathForm(p => ({ ...p, language: e.target.value }))}>
+                          {["de","en","fr","tr","it"].map(l => <option key={l}>{l}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase">Order (position)</label>
+                      <input type="number" className="w-full mt-1 border rounded-xl p-2.5 text-sm focus:outline-none" value={pathForm.order} onChange={e => setPathForm(p => ({ ...p, order: Number(e.target.value) }))} />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-5">
+                    <button onClick={() => { setShowPathForm(false); setEditingPath(null); }} className="flex-1 py-2.5 rounded-xl border text-sm font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
+                    <button onClick={handleSavePath} disabled={pathSaving} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+                      {pathSaving ? "Saving..." : editingPath ? "Update" : "Create"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Add Round modal */}
+            {showRoundForm && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 overflow-y-auto">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 my-4">
+                  <h3 className="font-bold text-gray-800 text-base mb-4">Add Round to "{selectedAdminPath?.title}"</h3>
+
+                  {/* Round meta */}
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="col-span-2">
+                      <label className="text-xs font-semibold text-gray-500 uppercase">Round Title *</label>
+                      <input className="w-full mt-1 border rounded-xl p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" value={roundForm.title} onChange={e => setRoundForm(p => ({ ...p, title: e.target.value }))} placeholder="e.g. Greetings" />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase">Icon (emoji)</label>
+                      <input className="w-full mt-1 border rounded-xl p-2.5 text-sm focus:outline-none" value={roundForm.icon} onChange={e => setRoundForm(p => ({ ...p, icon: e.target.value }))} />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 uppercase">XP Reward</label>
+                      <input type="number" className="w-full mt-1 border rounded-xl p-2.5 text-sm focus:outline-none" value={roundForm.xpReward} onChange={e => setRoundForm(p => ({ ...p, xpReward: Number(e.target.value) }))} />
+                    </div>
+                  </div>
+
+                  {/* Exercises already added */}
+                  {roundForm.exercises.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Exercises ({roundForm.exercises.length})</p>
+                      <div className="flex flex-col gap-2 max-h-40 overflow-y-auto">
+                        {roundForm.exercises.map((ex, i) => (
+                          <div key={i} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2 text-xs">
+                            <span className="font-semibold text-blue-600 uppercase mr-2">{ex.type}</span>
+                            <span className="flex-1 truncate text-gray-600">{ex.question || ex.audioText || ex.answer || "—"}</span>
+                            <button onClick={() => handleRemoveExercise(i)} className="ml-2 text-red-400 hover:text-red-600 font-bold">✕</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Content browser modal */}
+                  {contentBrowser.open && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+                      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 max-h-[80vh] flex flex-col">
+                        <div className="flex items-center justify-between mb-3">
+                          <h4 className="font-bold text-gray-800 text-sm">Pick from existing: <span className="text-blue-600">{contentBrowser.type}</span></h4>
+                          <button onClick={() => setContentBrowser(p => ({ ...p, open: false }))} className="text-gray-400 hover:text-gray-600 text-lg font-bold">✕</button>
+                        </div>
+                        <div className="flex gap-2 mb-3">
+                          <select className="border rounded-lg p-2 text-xs focus:outline-none" value={contentBrowser.level} onChange={e => setContentBrowser(p => ({ ...p, level: e.target.value }))}>
+                            {["A1","A2","B1","B2","C1","C2"].map(l => <option key={l}>{l}</option>)}
+                          </select>
+                          <input className="flex-1 border rounded-lg p-2 text-xs focus:outline-none" placeholder="Search..." value={contentBrowser.search} onChange={e => setContentBrowser(p => ({ ...p, search: e.target.value }))} />
+                          <button onClick={searchExistingContent} className="px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700">Search</button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto flex flex-col gap-1.5">
+                          {contentBrowser.loading && <p className="text-center text-gray-400 text-xs py-6">Loading...</p>}
+                          {!contentBrowser.loading && contentBrowser.results.length === 0 && <p className="text-center text-gray-400 text-xs py-6">No results. Try a search or change level.</p>}
+                          {contentBrowser.results.map(item => (
+                            <button key={item._id} onClick={() => handlePickContent(item)}
+                              className="text-left p-3 rounded-xl border hover:bg-blue-50 hover:border-blue-300 transition-all text-xs">
+                              <span className="font-semibold text-gray-800 block truncate">
+                                {item.title || item.german || item.word || item.text || item._id}
+                              </span>
+                              {(item.albanian || item.correctText || item.level) && (
+                                <span className="text-gray-400 truncate block">
+                                  {item.albanian || item.correctText || ""} · {item.level}
+                                </span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Add exercise form */}
+                  <div className="border rounded-xl p-3 mb-4 bg-gray-50">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-semibold text-gray-500 uppercase">Add Exercise</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <div className="col-span-2 flex gap-2">
+                        <div className="flex-1">
+                          <label className="text-xs text-gray-500">Type</label>
+                          <select className="w-full mt-0.5 border rounded-lg p-2 text-xs focus:outline-none" value={currentExercise.type} onChange={e => setCurrentExercise(p => ({ ...emptyExercise, type: e.target.value }))}>
+                            {EXERCISE_TYPES.map(t => <option key={t}>{t}</option>)}
+                          </select>
+                        </div>
+                        {["listenTest","phrase","sentence","wordAudio","dictionaryWord"].includes(currentExercise.type) && (
+                          <div className="flex items-end">
+                            <button
+                              onClick={() => { const t = currentExercise.type; setContentBrowser({ open: true, type: t, results: [], loading: false, level: "A1", search: "" }); searchExistingContent({ type: t, level: "A1", search: "" }); }}
+                              className="px-3 py-2 bg-indigo-100 text-indigo-700 rounded-lg text-xs font-semibold hover:bg-indigo-200 whitespace-nowrap"
+                            >
+                              📂 Pick from DB
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      {currentExercise.contentId && (
+                        <div className="col-span-2 text-xs bg-green-50 border border-green-200 rounded-lg px-3 py-1.5 text-green-700 font-medium">
+                          ✓ Linked to existing content (ID: {currentExercise.contentId.slice(-8)})
+                        </div>
+                      )}
+                      <div className="col-span-2">
+                        <label className="text-xs text-gray-500">Question / Prompt</label>
+                        <input className="w-full mt-0.5 border rounded-lg p-2 text-xs focus:outline-none" value={currentExercise.question} onChange={e => setCurrentExercise(p => ({ ...p, question: e.target.value }))} placeholder="Text displayed to user" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500">Correct Answer *</label>
+                        <input className="w-full mt-0.5 border rounded-lg p-2 text-xs focus:outline-none" value={currentExercise.answer} onChange={e => setCurrentExercise(p => ({ ...p, answer: e.target.value }))} placeholder="Correct answer" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500">Translation / Hint</label>
+                        <input className="w-full mt-0.5 border rounded-lg p-2 text-xs focus:outline-none" value={currentExercise.translation} onChange={e => setCurrentExercise(p => ({ ...p, translation: e.target.value }))} placeholder="Hint shown to user" />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="text-xs text-gray-500">Audio Text (for TTS)</label>
+                        <input className="w-full mt-0.5 border rounded-lg p-2 text-xs focus:outline-none" value={currentExercise.audioText} onChange={e => setCurrentExercise(p => ({ ...p, audioText: e.target.value }))} placeholder="Text to convert to audio (leave blank to use question)" />
+                      </div>
+                      {(currentExercise.type === "wordAudio" || currentExercise.type === "dictionaryWord") && (
+                        <div className="col-span-2">
+                          <label className="text-xs text-gray-500">MCQ Options (comma-separated)</label>
+                          <input className="w-full mt-0.5 border rounded-lg p-2 text-xs focus:outline-none" value={currentExercise.options} onChange={e => setCurrentExercise(p => ({ ...p, options: e.target.value }))} placeholder="Option1, Option2, Option3, Option4" />
+                        </div>
+                      )}
+                      {currentExercise.type === "sentence" && (
+                        <div className="col-span-2">
+                          <label className="text-xs text-gray-500">Scrambled Words (comma-separated)</label>
+                          <input className="w-full mt-0.5 border rounded-lg p-2 text-xs focus:outline-none" value={currentExercise.words} onChange={e => setCurrentExercise(p => ({ ...p, words: e.target.value }))} placeholder="Der, Hund, ist, groß" />
+                        </div>
+                      )}
+                      <div>
+                        <label className="text-xs text-gray-500">XP Reward</label>
+                        <input type="number" className="w-full mt-0.5 border rounded-lg p-2 text-xs focus:outline-none" value={currentExercise.xpReward} onChange={e => setCurrentExercise(p => ({ ...p, xpReward: Number(e.target.value) }))} />
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleAddExerciseToRound}
+                      disabled={!currentExercise.answer}
+                      className="w-full py-2 rounded-lg text-xs font-semibold text-white bg-indigo-500 hover:bg-indigo-600 disabled:opacity-40 mt-1"
+                    >
+                      + Add Exercise to Round
+                    </button>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button onClick={() => { setShowRoundForm(false); setRoundForm({ title: "", description: "", icon: "⭐", xpReward: 20, exercises: [] }); }} className="flex-1 py-2.5 rounded-xl border text-sm font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
+                    <button onClick={handleSaveRound} disabled={roundSaving || roundForm.exercises.length === 0} className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
+                      {roundSaving ? "Saving..." : "Save Round"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Path list or rounds view */}
+            {!selectedAdminPath ? (
+              pathsLoading ? (
+                <div className="flex justify-center py-20"><div className="w-8 h-8 rounded-full border-2 border-stone-300 border-t-stone-600 animate-spin" /></div>
+              ) : adminPaths.length === 0 ? (
+                <div className="text-center py-20 rounded-2xl border border-dashed" style={{ borderColor: "#EDE8DF" }}>
+                  <p className="text-gray-400 mb-2">No paths yet</p>
+                  <button onClick={() => setShowPathForm(true)} className="text-blue-500 text-sm font-semibold hover:underline">Create your first path →</button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {adminPaths.map(path => (
+                    <div key={path._id} className="rounded-2xl border p-4 bg-white hover:shadow-md transition-all" style={{ borderColor: "#EDE8DF" }}>
+                      <div className="flex items-start justify-between mb-2">
+                        <div>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full text-white bg-blue-500 mr-2">{path.level}</span>
+                          <span className="text-xs text-gray-400">{path.language}</span>
+                        </div>
+                        {!path.isActive && <span className="text-xs text-red-400 font-semibold">Inactive</span>}
+                      </div>
+                      <h3 className="font-bold text-gray-800 text-sm mb-1 line-clamp-1">{path.title}</h3>
+                      {path.description && <p className="text-xs text-gray-400 mb-2 line-clamp-2">{path.description}</p>}
+                      <p className="text-xs text-gray-500 mb-3">{path.rounds?.length || 0} rounds · {path.totalXp || 0} XP total</p>
+                      <div className="flex gap-2">
+                        <button onClick={() => setSelectedAdminPath(path)} className="flex-1 py-1.5 rounded-lg text-xs font-semibold border hover:bg-gray-50" style={{ borderColor: "#EDE8DF", color: "#1C1917" }}>Manage Rounds</button>
+                        <button onClick={() => handleEditPath(path)} className="py-1.5 px-3 rounded-lg text-xs font-semibold border hover:bg-blue-50 text-blue-600" style={{ borderColor: "#DBEAFE" }}>Edit</button>
+                        <button onClick={() => handleDeletePath(path._id)} className="py-1.5 px-3 rounded-lg text-xs font-semibold border hover:bg-red-50 text-red-500" style={{ borderColor: "#FEE2E2" }}>Del</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : (
+              /* Rounds view */
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-bold text-gray-800">{selectedAdminPath.title}</h3>
+                    <p className="text-xs text-gray-400">{selectedAdminPath.rounds?.length || 0} rounds · {selectedAdminPath.level} · {selectedAdminPath.language}</p>
+                  </div>
+                  <button
+                    onClick={() => setShowRoundForm(true)}
+                    className="px-4 py-2 rounded-xl text-xs font-semibold text-white transition-all"
+                    style={{ backgroundColor: "#1C1917" }}
+                  >
+                    + Add Round
+                  </button>
+                </div>
+
+                {(!selectedAdminPath.rounds || selectedAdminPath.rounds.length === 0) ? (
+                  <div className="text-center py-16 rounded-2xl border border-dashed" style={{ borderColor: "#EDE8DF" }}>
+                    <p className="text-gray-400 mb-2">No rounds yet</p>
+                    <button onClick={() => setShowRoundForm(true)} className="text-blue-500 text-sm font-semibold hover:underline">Add the first round →</button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {selectedAdminPath.rounds.map((round, idx) => (
+                      <div key={round._id || idx} className="rounded-2xl border p-4 bg-white" style={{ borderColor: "#EDE8DF" }}>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-lg flex-shrink-0">
+                              {round.icon || "⭐"}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-800 text-sm">Round {idx + 1}: {round.title}</p>
+                              <p className="text-xs text-gray-400">{round.exercises?.length || 0} exercises · {round.xpReward} XP</p>
+                            </div>
+                          </div>
+                          <button onClick={() => handleDeleteRound(idx)} className="text-xs text-red-400 hover:text-red-600 font-semibold px-2 py-1 rounded-lg hover:bg-red-50">Delete</button>
+                        </div>
+                        {round.exercises && round.exercises.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-1.5">
+                            {round.exercises.map((ex, ei) => (
+                              <span key={ei} className="text-xs px-2 py-0.5 rounded-full font-medium bg-indigo-50 text-indigo-600 border border-indigo-100">
+                                {ex.type}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        {/* ──────────────────────────────────────────────────────────────── */}
+
       </div>
     </div>
   );
