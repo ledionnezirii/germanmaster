@@ -6,6 +6,9 @@ const { ApiResponse } = require("../utils/ApiResponse")
 const { asyncHandler } = require("../utils/asyncHandler")
 const crypto = require("crypto")
 const sendEmail = require("../utils/sendEmail")
+const { OAuth2Client } = require("google-auth-library")
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
 
 // Add this helper function at the top of authController
@@ -525,6 +528,53 @@ const verifyEmail = asyncHandler(async (req, res) => {
   res.json(new ApiResponse(200, {}, "Email-i u verifikua me sukses"))
 })
 
+const googleAuth = asyncHandler(async (req, res) => {
+  const { credential } = req.body
+  if (!credential) throw new ApiError(400, "Google credential is required")
+
+  const ticket = await googleClient.verifyIdToken({
+    idToken: credential,
+    audience: process.env.GOOGLE_CLIENT_ID,
+  })
+  const payload = ticket.getPayload()
+  const { sub: googleId, email, given_name, family_name } = payload
+
+  let user = await User.findOne({ $or: [{ googleId }, { email }] })
+
+  if (user) {
+    if (!user.googleId) {
+      user.googleId = googleId
+      await user.save()
+    }
+  } else {
+    user = await User.create({
+      googleId,
+      email,
+      emri: given_name || "Google",
+      mbiemri: family_name || "User",
+      termsAccepted: true,
+      termsAcceptedAt: new Date(),
+      isEmailVerified: true,
+    })
+  }
+
+  const token = generateToken(user._id)
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  })
+
+  return res.status(200).json(new ApiResponse(200, {
+    _id: user._id,
+    email: user.email,
+    firstName: user.emri,
+    lastName: user.mbiemri,
+    role: user.role,
+  }, "Google login successful"))
+})
+
 module.exports = {
   signup,
   login,
@@ -535,5 +585,6 @@ module.exports = {
   forgotPassword,
   resetPassword,
   verifyEmail,
-  requestVerification
+  requestVerification,
+  googleAuth,
 }
