@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "GermanMaster",
+    "slug": "germanmaster",
+    "scheme": "germanmaster",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.germanmaster.app"
+    },
+    "android": {
+      "package": "com.germanmaster.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#10b981"
+      }
+    },
+    "plugins": [
+      "expo-secure-store",
+      "expo-web-browser"
+    ]
+  }
+}
