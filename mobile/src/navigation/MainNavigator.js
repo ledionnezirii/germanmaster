@@ -41,6 +41,7 @@ import PronunciationScreen   from "../screens/pronunciation/PronunciationScreen"
 import GrammarScreen         from "../screens/grammar/GrammarScreen";
 import GrammarDetailScreen   from "../screens/grammar/GrammarDetailScreen";
 import GrammarQuizScreen     from "../screens/grammar/GrammarQuizScreen";
+import AiTutorScreen         from "../screens/aiTutor/AiTutorScreen";
 // import TestScreen             from "../screens/tests/TestScreen";
 // import WordsScreen            from "../screens/words/WordsScreen";
 // import ChallengeScreen        from "../screens/challenge/ChallengeScreen";
@@ -101,6 +102,7 @@ const HS  = createStackNavigator();
 const PRS = createStackNavigator();
 const PS  = createStackNavigator();
 const GS  = createStackNavigator();
+const ATS = createStackNavigator();
 // const CS  = createStackNavigator();
 
 const HomeNav = () => (
@@ -164,6 +166,11 @@ const GrammarNav = () => (
     <GS.Screen name="GrammarDetail" component={GrammarDetailScreen} />
     <GS.Screen name="GrammarQuiz"   component={GrammarQuizScreen} />
   </GS.Navigator>
+);
+const AiTutorNav = () => (
+  <ATS.Navigator screenOptions={{ headerShown: false }}>
+    <ATS.Screen name="AiTutorMain" component={AiTutorScreen} />
+  </ATS.Navigator>
 );
 
 // ── Top navigation bar ─────────────────────────────────────────────────────────
@@ -491,6 +498,7 @@ function MainLayout() {
             {/* <Tab.Screen name="Challenge"     component={ChallengeNav} /> */}
             {/* <Tab.Screen name="Tests"         component={TestScreen} /> */}
             {/* <Tab.Screen name="Words"         component={WordsScreen} /> */}
+            <Tab.Screen name="AiTutor"       component={AiTutorNav} />
             <Tab.Screen name="Profile"       component={ProfileNav} />
             <Tab.Screen name="Premium"       component={PremiumScreen} />
           </Tab.Navigator>

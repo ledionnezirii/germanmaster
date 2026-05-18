@@ -32,6 +32,19 @@ export default function ListenDetailScreen({ route, navigation }) {
   const [result, setResult]             = useState(null);
   const [submitting, setSubmitting]     = useState(false);
   const [playCount, setPlayCount]       = useState(0);
+  const [playbackPosition, setPlaybackPosition] = useState(0);
+  const [playbackDuration, setPlaybackDuration] = useState(0);
+
+  // ── Translation fade ────────────────────────────────────────────────────────
+  const translationOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(translationOpacity, {
+      toValue: (isPlaying || playCount > 0) ? 1 : 0,
+      duration: 350,
+      useNativeDriver: true,
+    }).start();
+  }, [isPlaying, playCount]);
 
   // ── Wave animation ──────────────────────────────────────────────────────────
   const waveAnims = useRef(BASE_HEIGHTS.map(() => new Animated.Value(0))).current;
@@ -114,10 +127,17 @@ export default function ListenDetailScreen({ route, navigation }) {
         { shouldPlay: true }
       );
 
+      setPlaybackPosition(0);
+
       newSound.setOnPlaybackStatusUpdate((status) => {
         if (!status.isLoaded) return;
         setIsPlaying(Boolean(status.isPlaying));
-        if (status.didJustFinish) setIsPlaying(false);
+        if (status.positionMillis !== undefined) setPlaybackPosition(status.positionMillis);
+        if (status.durationMillis)               setPlaybackDuration(status.durationMillis);
+        if (status.didJustFinish) {
+          setIsPlaying(false);
+          setPlaybackPosition(status.durationMillis || 0);
+        }
       });
 
       setSound(newSound);
@@ -182,6 +202,8 @@ export default function ListenDetailScreen({ route, navigation }) {
     setPlayCount(0);
     setIsPlaying(false);
     setAudioError(false);
+    setPlaybackPosition(0);
+    setPlaybackDuration(0);
     if (sound) { await sound.unloadAsync(); setSound(null); }
   }
 
@@ -296,6 +318,26 @@ export default function ListenDetailScreen({ route, navigation }) {
                   </Text>
                 </View>
               </View>
+            )}
+
+            {playCount > 0 && playbackDuration > 0 && (
+              <View style={styles.liveTextRow}>
+                {test.text.split(" ").map((word, i, arr) => {
+                  const visibleUpTo = Math.floor((playbackPosition / playbackDuration) * arr.length);
+                  return (
+                    <Text key={i} style={[styles.liveWord, i <= visibleUpTo && styles.liveWordActive]}>
+                      {word}
+                    </Text>
+                  );
+                })}
+              </View>
+            )}
+
+            {test.translation && (
+              <Animated.View style={[styles.translationRow, { opacity: translationOpacity }]}>
+                <Ionicons name="language-outline" size={18} color="#0ea5e9" />
+                <Text style={styles.translationText}>{test.translation}</Text>
+              </Animated.View>
             )}
 
             {playCount > 0 && !audioError && (
@@ -504,4 +546,13 @@ const styles = StyleSheet.create({
   compareText:   { color: "#0f172a", fontSize: 14, fontWeight: "600", lineHeight: 21 },
   retryBtn:      { backgroundColor: "#fff", borderRadius: 16, paddingVertical: 13, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7 },
   retryBtnText:  { color: "#0f172a", fontSize: 14, fontWeight: "800" },
+
+  // ── Live word-by-word
+  liveTextRow:    { flexDirection: "row", flexWrap: "wrap", gap: 5, marginTop: 14, paddingHorizontal: 2 },
+  liveWord:       { color: "transparent", fontSize: 16, fontWeight: "800", lineHeight: 26 },
+  liveWordActive: { color: "#ffffff" },
+
+  // ── Translation subtitle
+  translationRow: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "rgba(255,255,255,0.95)", borderRadius: 16, padding: 14, marginTop: 14 },
+  translationText: { flex: 1, color: "#0f172a", fontSize: 16, fontWeight: "700", lineHeight: 23 },
 });

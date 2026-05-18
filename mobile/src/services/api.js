@@ -2,8 +2,8 @@ import axios from "axios";
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 
-const API_BASE_URL = "http://192.168.100.159:5000/api";
-export const SOCKET_URL = "http://192.168.100.159:5000";
+const API_BASE_URL = "http://192.168.1.131:5000/api";
+export const SOCKET_URL = "http://192.168.1.131:5000";
 
 const storage = {
   getItem: (key) =>
@@ -307,5 +307,11 @@ export const paymentService = {
   getSubscription: (userId) => api.get(`/payments/subscription/${userId}`),
 };
 
+
+// ── AI Tutor ──────────────────────────────────────────────────────────────────
+export const aiTutorService = {
+  chat: (messages, appLanguage = "de", userLevel) =>
+    api.post("/ai-tutor/chat", { messages, appLanguage, userLevel }),
+};
 
 export default api;

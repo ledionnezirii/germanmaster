@@ -12,6 +12,7 @@
     },
     "android": {
       "package": "com.germanmaster.app",
+      "softwareKeyboardLayoutMode": "resize",
       "adaptiveIcon": {
         "backgroundColor": "#10b981"
       }

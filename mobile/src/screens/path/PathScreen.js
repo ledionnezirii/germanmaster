@@ -296,12 +296,12 @@ function SectionTestNode({ sectionNum, sectionTitle, passed, unlocked, attempted
 
   const shadowColor = passed ? "#065f46" : failed ? "#b91c1c" : canPress ? "#047857" : "#94a3b8";
 
-  const emoji       = passed ? "🏰" : failed ? "💀" : canPress ? "🏰" : "🔒";
+  const trophyIcon  = failed ? "close-circle" : "trophy";
   const labelText   = passed
-    ? "✓ KALA E PUSHTUAR"
+    ? "✓ TEST I KALUAR"
     : failed
     ? "✗ TENTATIVË E SHTERUAR"
-    : "KALA FINALE";
+    : "TEST FINAL";
   const labelColor  = passed ? "#059669" : failed ? "#dc2626" : canPress ? "#059669" : "#94a3b8";
   const labelBorder = passed ? "#34d399" : failed ? "#fca5a5" : canPress ? "#6ee7b7" : "#e2e8f0";
   const labelBg     = passed ? "#f0fdf4" : failed ? "#fff1f2" : "#fff";
@@ -320,7 +320,7 @@ function SectionTestNode({ sectionNum, sectionTitle, passed, unlocked, attempted
       >
         <View style={[stn.castleBox, stn.castleShadow, { backgroundColor: shadowColor }]} />
         <LinearGradient colors={grad} style={[stn.castleBox, stn.castleTop]}>
-          <Text style={stn.castleEmoji}>{emoji}</Text>
+          <Ionicons name={trophyIcon} size={42} color="#fff" />
         </LinearGradient>
       </TouchableOpacity>
 
@@ -662,7 +662,9 @@ export default function PathScreen({ navigation }) {
   const [sectionTests,    setSectionTests]    = useState([]);
   const [loading,         setLoading]         = useState(true);
   const [refreshing,      setRefreshing]      = useState(false);
-  const [hearts,          setHearts]          = useState({ hearts: 3, isPaid: false });
+  const [hearts,          setHearts]          = useState({ hearts: 3, isPaid: false, heartsResetsAt: null });
+  const [nextHeartIn,     setNextHeartIn]     = useState(null);
+  const [showHeartInfo,   setShowHeartInfo]   = useState(false);
   const [previewTopic,    setPreviewTopic]    = useState(null);
   const [sectionUsersMap, setSectionUsersMap] = useState({});
 
@@ -696,7 +698,7 @@ export default function PathScreen({ navigation }) {
     });
     api.get("/hearts").then((res) => {
       const d = res.data?.data || res.data;
-      if (d) setHearts({ hearts: d.hearts ?? 3, isPaid: d.isPaid ?? false });
+      if (d) setHearts({ hearts: d.hearts ?? 3, isPaid: d.isPaid ?? false, heartsResetsAt: d.heartsResetsAt ?? null });
     }).catch(() => {});
   }, []);
 
@@ -709,6 +711,24 @@ export default function PathScreen({ navigation }) {
     // Sync level to user profile on server
     api.put("/users/profile", { level: code }).catch(() => {});
   };
+
+  // Live countdown for next heart
+  useEffect(() => {
+    function calc() {
+      if (hearts.isPaid || hearts.hearts >= 3 || !hearts.heartsResetsAt) {
+        setNextHeartIn(null);
+        return;
+      }
+      const diff = new Date(hearts.heartsResetsAt).getTime() - Date.now();
+      if (diff <= 0) { setNextHeartIn(null); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      setNextHeartIn(h > 0 ? `${h}h ${m}m` : `${m}m`);
+    }
+    calc();
+    const id = setInterval(calc, 60000);
+    return () => clearInterval(id);
+  }, [hearts]);
 
   const fetchTopics = useCallback(async () => {
     if (!selectedLevel) return;
@@ -847,57 +867,69 @@ export default function PathScreen({ navigation }) {
     <View style={ms.root}>
       {/* ── Header ── */}
       {selectedLevel && (
-        <LinearGradient colors={levelData.grad} style={ms.headerGrad}>
+        <View style={[ms.headerGrad, { backgroundColor: levelData.color + "12" }]}>
           <SafeAreaView edges={["top"]}>
             <View style={ms.headerRow}>
-              {/* Level block */}
-              <View style={ms.levelBlock}>
-                <View style={ms.levelIconCircle}>
-                  <Ionicons name={levelData.icon} size={20} color="#fff" />
+
+              {/* Header: level + hearts in one row */}
+              <View style={[ms.levelCard, {
+                backgroundColor: "transparent",
+                borderColor: levelData.color + "30",
+                borderBottomWidth: 4,
+                borderBottomColor: levelData.color + "60",
+                shadowColor: levelData.color,
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                shadowOffset: { width: 0, height: 4 },
+                elevation: 5,
+              }]}>
+                <View style={[ms.levelIconCircle, { backgroundColor: levelData.color + "18", borderColor: levelData.color + "40" }]}>
+                  <Ionicons name={levelData.icon} size={18} color={levelData.color} />
                 </View>
-                <View>
-                  <Text style={ms.levelCodeTxt}>{levelData.code}</Text>
-                  <Text style={ms.levelNameTxt}>{levelData.name}</Text>
-                  {activeSectionNum !== null && (
+                <View style={{ flex: 1 }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    <Text style={[ms.levelCodeTxt, { color: "#0f172a" }]}>{levelData.code}</Text>
+                    <View style={[ms.levelDot, { backgroundColor: levelData.color + "70" }]} />
+                    <Text style={[ms.levelNameTxt, { color: "#475569" }]}>{levelData.name}</Text>
+                    {levelLocked && (
+                      <View style={[ms.lockBadge, { backgroundColor: "#f1f5f9" }]}><Ionicons name="lock-closed" size={10} color="#94a3b8" /></View>
+                    )}
+                  </View>
+                  {activeSectionNum !== null ? (
                     <View style={ms.unitRow}>
-                      <Ionicons name="location-outline" size={10} color="rgba(255,255,255,0.7)" />
-                      <Text style={ms.unitTxt}>
-                        Seksioni {activeSectionNum} · Njësia {activeUnitNum}
-                      </Text>
+                      <Ionicons name="location-outline" size={10} color="#94a3b8" />
+                      <Text style={[ms.unitTxt, { color: "#94a3b8" }]}>Seksioni {activeSectionNum} · Njësia {activeUnitNum}</Text>
                     </View>
+                  ) : (
+                    <Text style={[ms.unitTxt, { color: "#94a3b8" }]}>{levelData.desc}</Text>
                   )}
                 </View>
-                {levelLocked
-                  ? <View style={ms.lockBadge}><Ionicons name="lock-closed" size={11} color="rgba(255,255,255,0.8)" /></View>
-                  : null
-                }
+                {/* Hearts */}
+                <TouchableOpacity
+                  style={ms.heartPill}
+                  activeOpacity={0.75}
+                  onPress={() => setShowHeartInfo(true)}
+                >
+                  {hearts.isPaid ? (
+                    <>
+                      {[0,1,2].map((i) => <Ionicons key={i} name="heart" size={13} color="#ef4444" />)}
+                      <Text style={ms.infinityTxt}>∞</Text>
+                    </>
+                  ) : (
+                    [0,1,2].map((i) => (
+                      <Ionicons key={i}
+                        name={i < hearts.hearts ? "heart" : "heart-outline"}
+                        size={14}
+                        color={i < hearts.hearts ? "#ef4444" : "#e2e8f0"}
+                      />
+                    ))
+                  )}
+                </TouchableOpacity>
               </View>
 
-              {/* Hearts */}
-              <View style={ms.heartsBlock}>
-                {hearts.isPaid ? (
-                  <View style={ms.heartPill}>
-                    {[0,1,2].map((i) => (
-                      <Ionicons key={i} name="heart" size={18} color="#ef4444" />
-                    ))}
-                    <Text style={ms.infinityTxt}>∞</Text>
-                  </View>
-                ) : (
-                  <View style={ms.heartPill}>
-                    {[0,1,2].map((i) => (
-                      <Ionicons
-                        key={i}
-                        name={i < hearts.hearts ? "heart" : "heart-outline"}
-                        size={20}
-                        color={i < hearts.hearts ? "#ef4444" : "rgba(255,255,255,0.4)"}
-                      />
-                    ))}
-                  </View>
-                )}
-              </View>
             </View>
           </SafeAreaView>
-        </LinearGradient>
+        </View>
       )}
 
       {/* ── Content ── */}
@@ -941,6 +973,47 @@ export default function PathScreen({ navigation }) {
           <View style={{ height: 60 }} />
         </ScrollView>
       ) : null}
+
+      {/* ── Hearts overlay ── */}
+      <Modal visible={showHeartInfo} transparent animationType="fade" onRequestClose={() => setShowHeartInfo(false)}>
+        <TouchableOpacity style={ms.heartOverlayBg} activeOpacity={1} onPress={() => setShowHeartInfo(false)}>
+          <View style={ms.heartOverlayCard}>
+            <View style={ms.heartOverlayRow}>
+              {[0,1,2].map((i) => (
+                <Ionicons key={i}
+                  name={i < hearts.hearts ? "heart" : "heart-outline"}
+                  size={36}
+                  color={i < hearts.hearts ? "#ef4444" : "#e2e8f0"}
+                />
+              ))}
+            </View>
+            <Text style={ms.heartOverlayCount}>{hearts.hearts} / 3 zemra</Text>
+
+            {hearts.hearts >= 3 ? (
+              <View style={ms.heartOverlayInfo}>
+                <Ionicons name="checkmark-circle" size={18} color="#10b981" />
+                <Text style={ms.heartOverlayInfoTxt}>Zemrat janë plotë!</Text>
+              </View>
+            ) : nextHeartIn ? (
+              <View style={ms.heartOverlayInfo}>
+                <Ionicons name="time-outline" size={18} color="#f97316" />
+                <Text style={ms.heartOverlayInfoTxt}>Zemra tjetër në <Text style={{ fontFamily: F.black, color: "#f97316" }}>{nextHeartIn}</Text></Text>
+              </View>
+            ) : (
+              <View style={ms.heartOverlayInfo}>
+                <Ionicons name="time-outline" size={18} color="#f97316" />
+                <Text style={ms.heartOverlayInfoTxt}>Duke gjeneruar zemrën tjetër...</Text>
+              </View>
+            )}
+
+            <Text style={ms.heartOverlaySub}>1 zemër çdo 6 orë</Text>
+
+            <TouchableOpacity style={ms.heartOverlayClose} onPress={() => setShowHeartInfo(false)} activeOpacity={0.8}>
+              <Text style={ms.heartOverlayCloseTxt}>Mbyll</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       {!levelLocked && (
         <LevelPicker
@@ -1146,43 +1219,62 @@ const ms = StyleSheet.create({
   root:       { flex: 1, backgroundColor: "#f8f5f0" },
 
   headerGrad: {
-    shadowColor: "#000", shadowOpacity: 0.18,
-    shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 8,
+    shadowColor: "#000", shadowOpacity: 0.06,
+    shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 4,
   },
   headerRow: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 20, paddingTop: 12, paddingBottom: 16,
+    paddingHorizontal: 16, paddingTop: 6, paddingBottom: 12, gap: 10,
   },
-
-  // Level block
-  levelBlock: {
+  // Level card
+  levelCard: {
     flexDirection: "row", alignItems: "center", gap: 10,
+    borderRadius: 10, padding: 10,
+    borderWidth: 1,
   },
+  levelDot: { width: 3, height: 3, borderRadius: 2, backgroundColor: "#cbd5e1" },
   levelIconCircle: {
-    width: 40, height: 40, borderRadius: 14,
-    backgroundColor: "rgba(255,255,255,0.22)",
-    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.35)",
+    width: 36, height: 36, borderRadius: 8,
+    borderWidth: 1.5,
     alignItems: "center", justifyContent: "center",
   },
-  levelCodeTxt: { fontSize: 20, fontFamily: F.black, color: "#fff", lineHeight: 24 },
-  levelNameTxt: { fontSize: 11, fontFamily: F.semi, color: "rgba(255,255,255,0.75)", marginTop: 1 },
-  unitRow:  { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 3 },
-  unitTxt:  { fontSize: 10, fontFamily: F.bold, color: "rgba(255,255,255,0.65)", letterSpacing: 0.3 },
+  levelCodeTxt: { fontSize: 14, fontFamily: F.black, color: "#0f172a" },
+  levelNameTxt: { fontSize: 12, fontFamily: F.semi, color: "#475569" },
+  unitRow:  { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 2 },
+  unitTxt:  { fontSize: 10, fontFamily: F.bold, color: "#94a3b8", letterSpacing: 0.2 },
   lockBadge: {
-    marginLeft: 4,
-    backgroundColor: "rgba(0,0,0,0.2)",
-    borderRadius: 8, padding: 4,
+    backgroundColor: "#f1f5f9",
+    borderRadius: 7, padding: 3,
   },
 
-  // Hearts block
+  // Hearts
   heartsBlock: {},
   heartPill: {
-    flexDirection: "row", alignItems: "center", gap: 4,
-    backgroundColor: "rgba(255,255,255,0.18)",
-    borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.25)",
+    flexDirection: "row", alignItems: "center", gap: 3,
+    backgroundColor: "#fff",
+    borderRadius: 10, paddingHorizontal: 8, paddingVertical: 5,
+    borderWidth: 1, borderColor: "#e2e8f0",
   },
-  infinityTxt: { fontSize: 16, fontFamily: F.black, color: "#ef4444", marginLeft: 2 },
+  infinityTxt: { fontSize: 15, fontFamily: F.black, color: "#ef4444", marginLeft: 2 },
+  heartOverlayBg: {
+    flex: 1, backgroundColor: "rgba(0,0,0,0.5)",
+    alignItems: "center", justifyContent: "center",
+  },
+  heartOverlayCard: {
+    backgroundColor: "#fff", borderRadius: 28, padding: 28,
+    alignItems: "center", width: width * 0.78,
+    shadowColor: "#000", shadowOpacity: 0.2, shadowRadius: 24, elevation: 16,
+    gap: 12,
+  },
+  heartOverlayRow:      { flexDirection: "row", gap: 10, marginBottom: 4 },
+  heartOverlayCount:    { fontSize: 22, fontFamily: F.black, color: "#0f172a" },
+  heartOverlayInfo:     { flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: "#fff7ed", borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
+  heartOverlayInfoTxt:  { fontSize: 14, fontFamily: F.semi, color: "#0f172a" },
+  heartOverlaySub:      { fontSize: 12, fontFamily: F.regular, color: "#94a3b8" },
+  heartOverlayClose: {
+    marginTop: 4, backgroundColor: "#f1f5f9", borderRadius: 16,
+    paddingVertical: 12, paddingHorizontal: 32,
+  },
+  heartOverlayCloseTxt: { fontSize: 14, fontFamily: F.bold, color: "#64748b" },
 
   scrollContent:{ paddingTop: 4 },
   center:      { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 12 },

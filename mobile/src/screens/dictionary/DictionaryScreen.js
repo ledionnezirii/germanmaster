@@ -24,6 +24,7 @@ import {
   wordsService,
 } from "../../services/api";
 import { useLanguage } from "../../context/LanguageContext";
+import { F } from "../../styles/fonts";
 
 const FREE_DAILY_LIMIT = 5;
 const PAID_DAILY_LIMIT = 25;
@@ -35,13 +36,13 @@ const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
 function getLevelStyle(level) {
   switch (level) {
-    case "A1": return { bg: "#ecfdf5", text: "#065f46", border: "#a7f3d0" };
-    case "A2": return { bg: "#d1fae5", text: "#064e3b", border: "#6ee7b7" };
-    case "B1": return { bg: "#ccfbf1", text: "#0f766e", border: "#5eead4" };
-    case "B2": return { bg: "#99f6e4", text: "#134e4a", border: "#2dd4bf" };
-    case "C1": return { bg: "#0891b2", text: "#ffffff", border: "#0891b2" };
-    case "C2": return { bg: "#0f766e", text: "#ffffff", border: "#0f766e" };
-    default:   return { bg: "#f9fafb", text: "#374151", border: "#e5e7eb" };
+    case "A1": return { bg: "#ecfdf5", text: "#065f46", border: "#a7f3d0", grad: ["#4ade80", "#10b981"] };
+    case "A2": return { bg: "#d1fae5", text: "#064e3b", border: "#6ee7b7", grad: ["#38bdf8", "#0ea5e9"] };
+    case "B1": return { bg: "#ccfbf1", text: "#0f766e", border: "#5eead4", grad: ["#818cf8", "#6366f1"] };
+    case "B2": return { bg: "#99f6e4", text: "#134e4a", border: "#2dd4bf", grad: ["#f472b6", "#ec4899"] };
+    case "C1": return { bg: "#0891b2", text: "#ffffff", border: "#0891b2", grad: ["#fb923c", "#f97316"] };
+    case "C2": return { bg: "#0f766e", text: "#ffffff", border: "#0f766e", grad: ["#f87171", "#ef4444"] };
+    default:   return { bg: "#f9fafb", text: "#374151", border: "#e5e7eb", grad: ["#4ade80", "#10b981"] };
   }
 }
 
@@ -901,62 +902,69 @@ export default function DictionaryScreen({ navigation, route }) {
     const isLocked = !word.isUnlocked;
     const isPlaying = playingId === word._id;
     const lvStyle = getLevelStyle(word.level);
-    const firstExample = word.examples?.[0];
     const posStyle = getPosStyle(word.partOfSpeech);
 
     return (
-      <View style={[styles.wordCard, index % 2 === 0 ? { marginRight: 5 } : { marginLeft: 5 }]}>
+      <View style={[
+        styles.wordCard,
+        index % 2 === 0 ? { marginRight: 6 } : { marginLeft: 6 },
+      ]}>
         {/* Locked overlay */}
         {isLocked && (
           <View style={styles.lockOverlay}>
-            <Ionicons name="lock-closed" size={24} color="#9ca3af" />
+            <View style={styles.lockIconCircle}>
+              <Ionicons name="lock-closed" size={16} color="#fff" />
+            </View>
             <TouchableOpacity
               onPress={() => handleUnlock(word._id)}
               disabled={unlocking === word._id || !unlockStats.canUnlock}
-              style={[
-                styles.unlockBtn,
-                unlocking === word._id && { backgroundColor: "#e5e7eb" },
-                !unlockStats.canUnlock && { backgroundColor: "#e5e7eb" },
-              ]}
+              style={[styles.unlockBtn, !unlockStats.canUnlock && styles.unlockBtnDisabled]}
               activeOpacity={0.85}
             >
               {unlocking === word._id ? (
                 <ActivityIndicator size="small" color="#9ca3af" />
               ) : (
                 <Text style={[styles.unlockBtnText, !unlockStats.canUnlock && { color: "#9ca3af" }]}>
-                  {unlockStats.canUnlock ? "Hap Fjalën" : "Limit u arrit"}
+                  {unlockStats.canUnlock ? "Hap Fjalën" : "Limit"}
                 </Text>
               )}
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Card content (blurred behind lock) */}
         <View style={[isLocked && { opacity: 0 }]}>
-          <View style={styles.wordCardTop}>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={styles.wordTitle} numberOfLines={1}>{word.word}</Text>
-              <Text style={styles.wordTranslation} numberOfLines={1}>{word.translation}</Text>
-            </View>
-            <View style={styles.wordActions}>
+          {/* Top row: word + actions */}
+          <View style={styles.wordCardTopRow}>
+            <Text style={styles.wordTitle} numberOfLines={1}>{word.word}</Text>
+            <View style={styles.wordActionRow}>
               <TouchableOpacity
                 onPress={() => !isLocked && playPronunciation(word)}
                 disabled={isLocked}
-                style={[styles.wordActionBtn, isPlaying && styles.wordActionBtnPlaying]}
+                style={[styles.iconBtn, isPlaying && styles.iconBtnPlaying]}
               >
-                <Ionicons name={isPlaying ? "volume-high" : "volume-medium-outline"} size={14} color={isPlaying ? "#10b981" : "#9ca3af"} />
+                <Ionicons
+                  name={isPlaying ? "volume-high" : "volume-medium-outline"}
+                  size={13}
+                  color={isPlaying ? "#10b981" : "#a8a29e"}
+                />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => !isLocked && toggleFavorite(word._id)}
                 disabled={isLocked}
-                style={[styles.wordActionBtn, isFav && styles.wordActionBtnFav]}
+                style={[styles.iconBtn, isFav && styles.iconBtnFav]}
               >
-                <Ionicons name={isFav ? "heart" : "heart-outline"} size={14} color={isFav ? "#f43f5e" : "#9ca3af"} />
+                <Ionicons
+                  name={isFav ? "heart" : "heart-outline"}
+                  size={13}
+                  color={isFav ? "#f43f5e" : "#a8a29e"}
+                />
               </TouchableOpacity>
             </View>
           </View>
 
-          <View style={styles.wordBadges}>
+          <Text style={styles.wordTranslation} numberOfLines={2}>{word.translation}</Text>
+
+          <View style={styles.wordBadgeRow}>
             <View style={[styles.lvBadge, { backgroundColor: lvStyle.bg, borderColor: lvStyle.border }]}>
               <Text style={[styles.lvBadgeText, { color: lvStyle.text }]}>{word.level}</Text>
             </View>
@@ -966,12 +974,6 @@ export default function DictionaryScreen({ navigation, route }) {
               </View>
             )}
           </View>
-
-          {firstExample?.german && (
-            <View style={styles.exampleBox}>
-              <Text style={styles.exampleText} numberOfLines={2}>"{firstExample.german}"</Text>
-            </View>
-          )}
         </View>
       </View>
     );
@@ -1082,15 +1084,15 @@ export default function DictionaryScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#f8fafc" },
+  root: { flex: 1, backgroundColor: "#f8f5f0" },
 
   // ── Hero ──
   hero: {
     flexDirection: "row",
     alignItems: "center",
     padding: 22,
-    borderRadius: 20,
-    marginBottom: 12,
+    borderRadius: 22,
+    marginBottom: 14,
     overflow: "hidden",
     position: "relative",
   },
@@ -1106,9 +1108,9 @@ const styles = StyleSheet.create({
   },
   heroLeft: { flex: 1 },
   heroEyebrowRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 8 },
-  heroEyebrow: { color: "rgba(255,255,255,0.85)", fontSize: 11, fontWeight: "700", letterSpacing: 0.8, textTransform: "uppercase" },
-  heroTitle: { color: "#fff", fontSize: 26, fontWeight: "900", marginBottom: 6, lineHeight: 30 },
-  heroSub: { color: "rgba(255,255,255,0.8)", fontSize: 13, lineHeight: 18 },
+  heroEyebrow: { color: "rgba(255,255,255,0.85)", fontSize: 11, fontFamily: F.bold, letterSpacing: 0.8, textTransform: "uppercase" },
+  heroTitle: { color: "#fff", fontSize: 26, fontFamily: F.black, marginBottom: 6, lineHeight: 30 },
+  heroSub: { color: "rgba(255,255,255,0.8)", fontSize: 13, fontFamily: F.semi, lineHeight: 18 },
   heroStat: {
     backgroundColor: "rgba(0,0,0,0.15)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.2)",
@@ -1121,8 +1123,8 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.2)",
     alignItems: "center", justifyContent: "center",
   },
-  heroStatValue: { color: "#fff", fontSize: 20, fontWeight: "700", lineHeight: 22 },
-  heroStatLabel: { color: "rgba(255,255,255,0.75)", fontSize: 11, fontWeight: "600" },
+  heroStatValue: { color: "#fff", fontSize: 20, fontFamily: F.black, lineHeight: 22 },
+  heroStatLabel: { color: "rgba(255,255,255,0.75)", fontSize: 11, fontFamily: F.bold },
 
   // ── Unlock banner ──
   bannerWrap: {
@@ -1156,7 +1158,7 @@ const styles = StyleSheet.create({
   unlocksIcon: { width: 42, height: 42, borderRadius: 12, alignItems: "center", justifyContent: "center" },
   unlocksIconFree: { backgroundColor: "#7c3aed" },
   unlocksIconPaid: { backgroundColor: "#fef3c7" },
-  unlocksTitle: { color: "#0f172a", fontSize: 13, fontWeight: "800", marginBottom: 6 },
+  unlocksTitle: { color: "#0f172a", fontSize: 13, fontFamily: F.black, marginBottom: 6 },
   dotsRow: { flexDirection: "row", alignItems: "center", gap: 4, flexWrap: "wrap" },
   dot: { width: 14, height: 14, borderRadius: 7 },
   dotFilled: {},
@@ -1170,53 +1172,56 @@ const styles = StyleSheet.create({
 
   // ── Section cards ──
   sectionCard: {
-    backgroundColor: "#fff", borderRadius: 16, padding: 14,
+    backgroundColor: "#fffdf8", borderRadius: 18, padding: 16,
     marginBottom: 12,
-    shadowColor: "#0f172a", shadowOpacity: 0.04, shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 }, elevation: 2,
+    borderWidth: 1, borderColor: "#ede9e0",
+    borderBottomWidth: 4, borderBottomColor: "#e2ddd6",
+    shadowColor: "#000", shadowOpacity: 0.07, shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 }, elevation: 4,
   },
-  sectionCardLabel: { color: "#374151", fontSize: 12, fontWeight: "800", marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.6 },
+  sectionCardLabel: { color: "#78716c", fontSize: 11, fontFamily: F.black, marginBottom: 12, textTransform: "uppercase", letterSpacing: 0.8 },
 
   // ── Level chips ──
   levelRow: { gap: 8, paddingRight: 4 },
   levelChip: {
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
-    borderWidth: 1.5, borderColor: "#e2e8f0", backgroundColor: "#fff",
+    paddingHorizontal: 18, paddingVertical: 10, borderRadius: 12,
+    borderWidth: 1.5, borderColor: "#e2ddd6", backgroundColor: "#fffdf8",
   },
-  levelChipText: { fontSize: 12, fontWeight: "800", color: "#64748b" },
+  levelChipText: { fontSize: 13, fontFamily: F.black, color: "#78716c" },
 
   // ── Quiz buttons ──
   quizBtnsRow: { flexDirection: "row", gap: 10, marginBottom: 12 },
   quizCard: {
     flex: 1, flexDirection: "row", alignItems: "center", gap: 10,
-    padding: 14, borderRadius: 14, borderWidth: 1,
+    padding: 14, borderRadius: 16, borderWidth: 1,
+    borderBottomWidth: 4,
   },
   quizCardActive: {
-    backgroundColor: "#7c3aed", borderColor: "transparent",
+    backgroundColor: "#7c3aed", borderColor: "transparent", borderBottomColor: "#5b21b6",
   },
   quizCardListen: {
-    backgroundColor: "#0f766e", borderColor: "transparent",
+    backgroundColor: "#0f766e", borderColor: "transparent", borderBottomColor: "#115e59",
   },
-  quizCardLocked: { backgroundColor: "#f1f5f9", borderColor: "#e2e8f0" },
+  quizCardLocked: { backgroundColor: "#f5f1eb", borderColor: "#e2ddd6", borderBottomColor: "#c8c3bc" },
   quizCardIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   quizCardIconActive: { backgroundColor: "rgba(255,255,255,0.2)" },
   quizCardIconListen: { backgroundColor: "rgba(255,255,255,0.2)" },
   quizCardIconLocked: { backgroundColor: "#e2e8f0" },
   quizCardTitleRow: { flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 2 },
-  quizCardTitle: { fontSize: 13, fontWeight: "800", color: "#fff" },
-  quizCardSub: { fontSize: 11 },
+  quizCardTitle: { fontSize: 13, fontFamily: F.black, color: "#fff" },
+  quizCardSub: { fontSize: 11, fontFamily: F.semi },
   quizCardSubActive: { color: "rgba(255,255,255,0.75)" },
   quizCardSubListen: { color: "rgba(255,255,255,0.75)" },
 
   // ── Search & Favorites ──
   searchRow: {
     flexDirection: "row", alignItems: "center", gap: 10,
-    borderWidth: 1.5, borderColor: "#e2e8f0", borderRadius: 14,
-    paddingHorizontal: 14, backgroundColor: "#f8fafc", marginBottom: 10,
+    borderWidth: 1, borderColor: "#ede9e0", borderRadius: 14,
+    paddingHorizontal: 14, backgroundColor: "#f5f1eb", marginBottom: 10,
   },
   searchInput: {
-    flex: 1, color: "#0f172a", paddingVertical: 11,
-    fontSize: 14, fontWeight: "600",
+    flex: 1, color: "#0f172a", paddingVertical: 12,
+    fontSize: 14, fontFamily: F.bold,
   },
   favBtn: {
     flexDirection: "row", alignItems: "center", gap: 6,
@@ -1227,82 +1232,107 @@ const styles = StyleSheet.create({
   favBtnActive: {
     backgroundColor: "#f43f5e", borderColor: "transparent",
   },
-  favBtnText: { fontSize: 13, fontWeight: "700", color: "#64748b" },
+  favBtnText: { fontSize: 13, fontFamily: F.bold, color: "#78716c" },
   favCount: {
     backgroundColor: "#fce7f3", paddingHorizontal: 7, paddingVertical: 2,
     borderRadius: 99,
   },
-  favCountText: { fontSize: 11, fontWeight: "800", color: "#f43f5e" },
+  favCountText: { fontSize: 11, fontFamily: F.black, color: "#f43f5e" },
 
   // ── Word cards ──
-  listContent: { paddingHorizontal: 18, paddingBottom: 28, paddingTop: 8 },
-  columnWrapper: { marginBottom: 10 },
+  listContent: { paddingHorizontal: 18, paddingBottom: 36, paddingTop: 4 },
+  columnWrapper: { marginBottom: 12 },
   wordCard: {
     flex: 1,
-    backgroundColor: "#fff",
-    borderRadius: 18, padding: 14,
-    borderWidth: 1, borderColor: "#f1f5f9",
-    shadowColor: "#0f172a", shadowOpacity: 0.05,
-    shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
+    backgroundColor: "#fffdf8",
+    borderRadius: 18,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "#fde68a",
+    borderBottomWidth: 4,
+    borderBottomColor: "#f59e0b",
+    shadowColor: "#f59e0b",
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 4,
     position: "relative",
-    minHeight: 120,
   },
   lockOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(248,250,252,0.95)",
+    backgroundColor: "rgba(255,253,248,0.96)",
     borderRadius: 18,
     zIndex: 10,
-    alignItems: "center", justifyContent: "center",
-    gap: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  lockIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#94a3b8",
+    alignItems: "center",
+    justifyContent: "center",
   },
   unlockBtn: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
     backgroundColor: "#7c3aed",
   },
-  unlockBtnText: { color: "#fff", fontSize: 12, fontWeight: "800" },
-  wordCardTop: { flexDirection: "row", alignItems: "flex-start", marginBottom: 10 },
-  wordTitle: { color: "#0f172a", fontSize: 15, fontWeight: "800", lineHeight: 20, marginBottom: 2 },
-  wordTranslation: { color: "#64748b", fontSize: 12, fontWeight: "600" },
-  wordActions: { flexDirection: "row", gap: 2, marginLeft: 4 },
-  wordActionBtn: {
-    width: 28, height: 28, borderRadius: 9,
-    alignItems: "center", justifyContent: "center",
-    backgroundColor: "#f8fafc",
+  unlockBtnDisabled: { backgroundColor: "#e5e7eb" },
+  unlockBtnText: { color: "#fff", fontSize: 12, fontFamily: F.xbold },
+  wordCardBody: { padding: 13 },
+  wordCardTopRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    marginBottom: 4,
   },
+  cardAccentBar: { height: 3, width: "100%" },
+  wordActionRow: { flexDirection: "row", gap: 5, marginLeft: 6 },
+  iconBtn: {
+    width: 26, height: 26, borderRadius: 8,
+    alignItems: "center", justifyContent: "center",
+    backgroundColor: "#f0ece5",
+  },
+  iconBtnPlaying: { backgroundColor: "#d1fae5" },
+  iconBtnFav: { backgroundColor: "#fce7f3" },
+  wordTitle: { color: "#0f172a", fontSize: 17, fontFamily: F.black, lineHeight: 22, flex: 1 },
+  wordTranslation: { color: "#78716c", fontSize: 12, fontFamily: F.semi, lineHeight: 17, marginBottom: 10 },
+  wordBadgeRow: { flexDirection: "row", gap: 5, flexWrap: "wrap" },
+  lvBadge: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 7, borderWidth: 1 },
+  lvBadgeText: { fontSize: 10, fontFamily: F.black },
+  posBadge: { paddingHorizontal: 7, paddingVertical: 3, borderRadius: 7 },
+  posBadgeText: { fontSize: 10, fontFamily: F.bold },
+  // legacy
+  wordBadges: { flexDirection: "row", gap: 5, flexWrap: "wrap", marginBottom: 8 },
+  wordCardTop: { flexDirection: "row", alignItems: "flex-start", marginBottom: 10 },
+  wordActions: { flexDirection: "row", gap: 2, marginLeft: 4 },
+  wordActionBtn: { width: 28, height: 28, borderRadius: 9, alignItems: "center", justifyContent: "center", backgroundColor: "#f0ece5" },
   wordActionBtnPlaying: { backgroundColor: "#d1fae5" },
   wordActionBtnFav: { backgroundColor: "#fce7f3" },
-  wordBadges: { flexDirection: "row", gap: 5, flexWrap: "wrap", marginBottom: 8 },
-  lvBadge: {
-    paddingHorizontal: 8, paddingVertical: 3,
-    borderRadius: 8, borderWidth: 1,
-  },
-  lvBadgeText: { fontSize: 11, fontWeight: "900" },
-  posBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
-  posBadgeText: { fontSize: 11, fontWeight: "700" },
-  exampleBox: {
-    backgroundColor: "#f0fdf4", borderRadius: 10, padding: 8,
-    borderWidth: 1, borderColor: "#d1fae5", marginTop: 4,
-  },
+  exampleBox: { backgroundColor: "#f0fdf4", borderRadius: 10, padding: 8, borderWidth: 1, borderColor: "#d1fae5", marginTop: 4 },
   exampleText: { color: "#374151", fontSize: 11, fontStyle: "italic", lineHeight: 16 },
 
   // ── Pagination ──
   paginationCard: {
-    backgroundColor: "#fff", borderRadius: 16, padding: 14,
+    backgroundColor: "#fffdf8", borderRadius: 16, padding: 14,
     marginTop: 8,
-    shadowColor: "#0f172a", shadowOpacity: 0.04, shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 }, elevation: 2,
+    borderWidth: 1, borderColor: "#ede9e0",
+    borderBottomWidth: 4, borderBottomColor: "#e2ddd6",
+    shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 }, elevation: 3,
     alignItems: "center", gap: 10,
   },
-  paginationInfo: { color: "#64748b", fontSize: 12, fontWeight: "600" },
+  paginationInfo: { color: "#78716c", fontSize: 12, fontFamily: F.bold },
   paginationBtns: { flexDirection: "row", alignItems: "center", gap: 6 },
   pageBtn: {
     minWidth: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center",
-    backgroundColor: "#fff", borderWidth: 1, borderColor: "#e2e8f0", paddingHorizontal: 8,
+    backgroundColor: "#fffdf8", borderWidth: 1, borderColor: "#ede9e0", paddingHorizontal: 8,
   },
   pageBtnActive: { backgroundColor: "#10b981", borderColor: "#10b981" },
-  pageBtnDisabled: { backgroundColor: "#f9fafb", borderColor: "#f1f5f9" },
-  pageBtnText: { fontSize: 13, fontWeight: "800", color: "#374151" },
+  pageBtnDisabled: { backgroundColor: "#f5f1eb", borderColor: "#ede9e0" },
+  pageBtnText: { fontSize: 13, fontFamily: F.black, color: "#374151" },
 
   // ── Empty / Loading ──
   emptyCard: { alignItems: "center", paddingVertical: 40, paddingHorizontal: 20 },
@@ -1311,8 +1341,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#ecfdf5", alignItems: "center", justifyContent: "center",
     marginBottom: 16,
   },
-  emptyTitle: { color: "#0f172a", fontSize: 16, fontWeight: "800", marginBottom: 6 },
-  emptyText: { color: "#64748b", fontSize: 13, textAlign: "center", lineHeight: 20 },
+  emptyTitle: { color: "#0f172a", fontSize: 16, fontFamily: F.black, marginBottom: 6 },
+  emptyText: { color: "#78716c", fontSize: 13, fontFamily: F.semi, textAlign: "center", lineHeight: 20 },
   loadingWrap: { paddingVertical: 60, alignItems: "center" },
 
   // ── Paywall Modal ──

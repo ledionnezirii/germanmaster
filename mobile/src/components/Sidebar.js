@@ -49,11 +49,12 @@ const ROUTE_TO_TAB = {
   // Tests: "Tests",
   // Words: "Words",
   Premium: "Premium",
+  AiTutorMain: "AiTutor",
 };
 
 const MENU_ITEMS = [
   { iconOff: "home-outline",    iconOn: "home",    label: "Kryefaqja",  tab: "Home" },
-  { iconOff: "map-outline",     iconOn: "map",     label: "Mëso",       tab: "Path" },
+  { iconOff: "navigate-outline", iconOn: "navigate", label: "Mëso",       tab: "Path" },
   { iconOff: "book-outline",    iconOn: "book",    label: "Fjalori",    tab: "Dictionary" },
   { iconOff: "headset-outline", iconOn: "headset", label: "Dëgjo",      tab: "Listen" },
   { iconOff: "school-outline",  iconOn: "school",  label: "Kuizet",     tab: "Quizzes" },
@@ -69,6 +70,7 @@ const MENU_ITEMS = [
   // { iconOff: "flash-outline",   iconOn: "flash",   label: "Sfida 1v1",    tab: "Challenge" },
   // { iconOff: "document-text-outline", iconOn: "document-text", label: "Teste", tab: "Tests" },
   // { iconOff: "library-outline", iconOn: "library", label: "Fjalët e Mia", tab: "Words" },
+  { iconOff: "chatbubble-ellipses-outline", iconOn: "chatbubble-ellipses", label: "Tutor AI", tab: "AiTutor" },
   { iconOff: "person-outline",  iconOn: "person",  label: "Llogaria",   tab: "Profile" },
 ];
 

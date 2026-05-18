@@ -122,34 +122,42 @@ export default function HomeScreen({ navigation }) {
   const [challengeDone, setChallengeDone] = useState(false);
   const [dictUnlocked,  setDictUnlocked]  = useState(0);
   const [pathStats,     setPathStats]     = useState({ completed: 0, total: 0 });
-  const [loading,       setLoading]       = useState(true);
+  const [lbLoading,     setLbLoading]     = useState(true);
   const [refreshing,    setRefreshing]    = useState(false);
 
 
-  async function fetchData() {
-    try {
-      const [xpRes, rankRes, challengeRes, weeklyRes, dictRes, pathRes] = await Promise.all([
-        userService.getXp(),
-        leaderboardService.getMyRank(),
-        dailyChallengeService.get(),
-        leaderboardService.getWeekly(),
-        dictionaryService.getUnlockStats(),
-        pathService.getAll({ level: user?.level || "A1", language }).catch(() => null),
-      ]);
-      setXpData(xpRes.data);
-      setMyRank(rankRes.data);
-      setChallengeDone(challengeRes.data?.alreadyCompleted ?? false);
-      setTopThree((weeklyRes.data || []).slice(0, 3));
-      setDictUnlocked(dictRes.data?.totalUnlocks ?? 0);
-      if (pathRes) {
-        const topics = pathRes.data?.topics ?? (Array.isArray(pathRes.data) ? pathRes.data : []);
+  function fetchData() {
+    // Each request updates state the moment it resolves — no waiting for others
+    userService.getXp()
+      .then(res => setXpData(res.data))
+      .catch(() => {});
+
+    dictionaryService.getUnlockStats()
+      .then(res => setDictUnlocked(res.data?.totalUnlocks ?? 0))
+      .catch(() => {});
+
+    dailyChallengeService.get()
+      .then(res => setChallengeDone(res.data?.alreadyCompleted ?? false))
+      .catch(() => {});
+
+    pathService.getAll({ level: user?.level || "A1", language })
+      .then(res => {
+        const topics = res.data?.topics ?? (Array.isArray(res.data) ? res.data : []);
         setPathStats({
           completed: topics.filter(t => t.userProgress?.isCompleted).length,
           total: topics.length,
         });
-      }
-    } catch {}
-    finally { setLoading(false); setRefreshing(false); }
+      })
+      .catch(() => {});
+
+    leaderboardService.getMyRank()
+      .then(res => setMyRank(res.data))
+      .catch(() => {});
+
+    // Leaderboard is slowest — controls its own spinner
+    Promise.allSettled([
+      leaderboardService.getWeekly().then(res => setTopThree((res.data || []).slice(0, 3))),
+    ]).finally(() => { setLbLoading(false); setRefreshing(false); });
   }
 
   useEffect(() => { fetchData(); }, []);
@@ -207,13 +215,10 @@ export default function HomeScreen({ navigation }) {
           <View style={s.xpCardTop}>
             <View style={s.xpLeft}>
               <Text style={s.xpCardLbl}>PËRVOJË TOTALE</Text>
-              {loading
-                ? <ActivityIndicator color="#10b981" style={{ marginVertical: 10 }} />
-                : <Text style={s.xpNum}>
-                    {totalXp.toLocaleString()}
-                    <Text style={s.xpUnit}> XP</Text>
-                  </Text>
-              }
+              <Text style={s.xpNum}>
+                {totalXp.toLocaleString()}
+                <Text style={s.xpUnit}> XP</Text>
+              </Text>
               <View style={s.xpPills}>
                 <View style={s.xpPill}>
                   <Ionicons name="trending-up-outline" size={11} color="#10b981" />
@@ -290,7 +295,7 @@ export default function HomeScreen({ navigation }) {
         {/* ── STATS ROW (4 compact cards) ── */}
         <View style={s.statsRow}>
           <StatChip icon="star"   iconColor="#f59e0b" bg={["#fffbeb","#fef3c7"]} textColor="#d97706"
-            value={loading ? "—" : fmtXp(totalXp)} label="XP" delay={0} />
+            value={fmtXp(totalXp)} label="XP" delay={0} />
           <StatChip icon="flame"  iconColor="#ef4444" bg={["#fff1f2","#fee2e2"]} textColor="#dc2626"
             value={`${user?.streakCount ?? 0}`} label="DITË" delay={50} />
           <StatChip icon="trophy" iconColor="#8b5cf6" bg={["#faf5ff","#ede9fe"]} textColor="#7c3aed"
@@ -308,7 +313,7 @@ export default function HomeScreen({ navigation }) {
         <WeeklyTop3
           topThree={topThree}
           userId={user?._id}
-          loading={loading}
+          loading={lbLoading}
           onPress={() => navigation.navigate("Leaderboard")}
         />
 
